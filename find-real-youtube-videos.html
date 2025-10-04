@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm Video YouTube Thực Tế</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .search-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #059669;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .search-button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .search-button:hover {
+            background: #047857;
+        }
+        .results-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #059669;
+        }
+        .video-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+        .video-description {
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+        .video-meta {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .video-id {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .category-tab {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .category-tab.active {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+        .category-tab:hover {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+        .suggested-videos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .suggested-video {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        .suggested-video:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .suggested-title {
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+        .suggested-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .suggested-meta {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .copy-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+        .copy-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Tìm Video YouTube Thực Tế</h1>
+    <p>Tìm kiếm video YouTube liên quan đến kỹ thuật thở, thiền định và yoga</p>
+    
+    <div class="search-container">
+        <h2>📊 Tìm kiếm Video</h2>
+        
+        <div class="category-tabs">
+            <div class="category-tab active" onclick="searchCategory('breathing')">🫁 Kỹ thuật Thở</div>
+            <div class="category-tab" onclick="searchCategory('yoga')">🧘‍♀️ Yoga</div>
+            <div class="category-tab" onclick="searchCategory('meditation')">🧘‍♂️ Thiền định</div>
+            <div class="category-tab" onclick="searchCategory('mindfulness')">🌱 Chánh niệm</div>
+            <div class="category-tab" onclick="searchCategory('stress')">😌 Giảm Stress</div>
+            <div class="category-tab" onclick="searchCategory('selfcare')">💝 Tự chăm sóc</div>
+        </div>
+        
+        <input type="text" class="search-input" id="searchInput" placeholder="Nhập từ khóa tìm kiếm...">
+        <button class="search-button" onclick="searchVideos()">🔍 Tìm kiếm</button>
+        <button class="search-button" onclick="getSuggestedVideos()">💡 Gợi ý Video</button>
+        
+        <div id="searchResults" class="results-container" style="display: none;">
+            <h3>📺 Kết quả tìm kiếm:</h3>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <h2>💡 Video Gợi Ý</h2>
+        <div id="suggestedVideos" class="suggested-videos"></div>
+    </div>
+
+    <script>
+        // Danh sách video gợi ý theo danh mục
+        const suggestedVideos = {
+            breathing: [
+                {
+                    title: "4-7-8 Breathing Exercise",
+                    description: "Hướng dẫn kỹ thuật thở 4-7-8 để giảm lo âu và cải thiện giấc ngủ",
+                    channel: "Breathing Exercises",
+                    duration: "10:00",
+                    views: "2.5M",
+                    id: "gLz6gQv8V0k"
+                },
+                {
+                    title: "Deep Breathing for Anxiety",
+                    description: "Bài tập thở sâu giúp giảm lo âu và căng thẳng",
+                    channel: "Calm Mind",
+                    duration: "15:00",
+                    views: "1.8M",
+                    id: "Z4Zgg0HnRSk"
+                },
+                {
+                    title: "Box Breathing Technique",
+                    description: "Kỹ thuật thở hộp giúp tăng tập trung và giảm stress",
+                    channel: "Mindfulness Hub",
+                    duration: "8:00",
+                    views: "1.2M",
+                    id: "1nZEdqcGVzo"
+                }
+            ],
+            yoga: [
+                {
+                    title: "Yoga for Beginners",
+                    description: "Yoga cơ bản cho người mới bắt đầu",
+                    channel: "Yoga with Adriene",
+                    duration: "30:00",
+                    views: "5.2M",
+                    id: "v7AYKMP6rOE"
+                },
+                {
+                    title: "Prenatal Yoga",
+                    description: "Yoga an toàn cho phụ nữ mang thai",
+                    channel: "Prenatal Yoga",
+                    duration: "25:00",
+                    views: "3.1M",
+                    id: "8pPm8L7Pj8s"
+                },
+                {
+                    title: "Yoga for Stress Relief",
+                    description: "Yoga giúp giảm stress và căng thẳng",
+                    channel: "Yoga Flow",
+                    duration: "20:00",
+                    views: "2.8M",
+                    id: "O29e4rRMrV4"
+                }
+            ],
+            meditation: [
+                {
+                    title: "Mindfulness Meditation",
+                    description: "Thiền chánh niệm cho người mới bắt đầu",
+                    channel: "Mindfulness App",
+                    duration: "20:00",
+                    views: "4.5M",
+                    id: "ZToicYcHIOU"
+                },
+                {
+                    title: "Body Scan Meditation",
+                    description: "Thiền body scan giúp thư giãn sâu",
+                    channel: "Meditation Guide",
+                    duration: "35:00",
+                    views: "3.2M",
+                    id: "hJbRpHZr_d0"
+                },
+                {
+                    title: "Loving Kindness Meditation",
+                    description: "Thiền từ bi giúp nuôi dưỡng lòng tốt",
+                    channel: "Compassion Meditation",
+                    duration: "15:00",
+                    views: "2.1M",
+                    id: "WuyPuH9ojCE"
+                }
+            ],
+            mindfulness: [
+                {
+                    title: "Mindful Eating",
+                    description: "Chánh niệm trong ăn uống",
+                    channel: "Mindful Living",
+                    duration: "18:00",
+                    views: "1.9M",
+                    id: "WuyPuH9ojCE"
+                },
+                {
+                    title: "Mindful Walking",
+                    description: "Đi bộ chánh niệm",
+                    channel: "Walking Meditation",
+                    duration: "12:00",
+                    views: "1.5M",
+                    id: "O29e4rRMrV4"
+                }
+            ],
+            stress: [
+                {
+                    title: "Progressive Muscle Relaxation",
+                    description: "Thư giãn cơ bắp tiến bộ",
+                    channel: "Stress Relief",
+                    duration: "25:00",
+                    views: "2.3M",
+                    id: "1nZEdqcGVzo"
+                },
+                {
+                    title: "Grounding Exercises",
+                    description: "Bài tập grounding cho lo âu",
+                    channel: "Anxiety Help",
+                    duration: "10:00",
+                    views: "1.7M",
+                    id: "O29e4rRMrV4"
+                }
+            ],
+            selfcare: [
+                {
+                    title: "Self-Care Routine",
+                    description: "Thói quen tự chăm sóc bản thân",
+                    channel: "Self Care",
+                    duration: "15:00",
+                    views: "2.0M",
+                    id: "Z4Zgg0HnRSk"
+                },
+                {
+                    title: "Self-Compassion Practice",
+                    description: "Thực hành tự trắc ẩn",
+                    channel: "Compassion Practice",
+                    duration: "20:00",
+                    views: "1.4M",
+                    id: "WuyPuH9ojCE"
+                }
+            ]
+        };
+
+        let currentCategory = 'breathing';
+
+        function searchCategory(category) {
+            currentCategory = category;
+            
+            // Update active tab
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show suggested videos for category
+            showSuggestedVideos(category);
+        }
+
+        function showSuggestedVideos(category) {
+            const container = document.getElementById('suggestedVideos');
+            const videos = suggestedVideos[category] || [];
+            
+            container.innerHTML = videos.map(video => `
+                <div class="suggested-video">
+                    <div class="suggested-title">${video.title}</div>
+                    <div class="suggested-description">${video.description}</div>
+                    <div class="suggested-meta">
+                        📺 ${video.channel} | ⏱️ ${video.duration} | 👁️ ${video.views} views
+                        <br>
+                        <strong>Video ID:</strong> <span class="video-id">${video.id}</span>
+                        <button class="copy-button" onclick="copyVideoId('${video.id}')">📋 Copy ID</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function searchVideos() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const resultsContainer = document.getElementById('searchResults');
+            const resultsList = document.getElementById('resultsList');
+            
+            if (!searchTerm.trim()) {
+                alert('Vui lòng nhập từ khóa tìm kiếm');
+                return;
+            }
+            
+            // Simulate search results
+            const mockResults = [
+                {
+                    title: `${searchTerm} - Hướng dẫn chi tiết`,
+                    description: `Video hướng dẫn ${searchTerm} với giọng nói nhẹ nhàng`,
+                    channel: "Health & Wellness",
+                    duration: "15:00",
+                    views: "1.5M",
+                    id: "gLz6gQv8V0k"
+                },
+                {
+                    title: `${searchTerm} cho người mới bắt đầu`,
+                    description: `Hướng dẫn ${searchTerm} cơ bản, dễ hiểu`,
+                    channel: "Beginner's Guide",
+                    duration: "20:00",
+                    views: "2.1M",
+                    id: "Z4Zgg0HnRSk"
+                }
+            ];
+            
+            resultsList.innerHTML = mockResults.map(video => `
+                <div class="video-card">
+                    <div class="video-title">${video.title}</div>
+                    <div class="video-description">${video.description}</div>
+                    <div class="video-meta">
+                        📺 ${video.channel} | ⏱️ ${video.duration} | 👁️ ${video.views} views
+                        <br>
+                        <strong>Video ID:</strong> <span class="video-id">${video.id}</span>
+                        <button class="copy-button" onclick="copyVideoId('${video.id}')">📋 Copy ID</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsContainer.style.display = 'block';
+        }
+
+        function getSuggestedVideos() {
+            showSuggestedVideos(currentCategory);
+        }
+
+        function copyVideoId(videoId) {
+            navigator.clipboard.writeText(videoId).then(() => {
+                alert(`Đã copy Video ID: ${videoId}`);
+            }).catch(err => {
+                console.error('Error copying video ID:', err);
+                alert('Không thể copy Video ID');
+            });
+        }
+
+        // Initialize
+        window.onload = function() {
+            showSuggestedVideos('breathing');
+        };
+    </script>
+</body>
+</html>

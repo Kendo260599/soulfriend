@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Ultra Detailed Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #d63384;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #c02a5c;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .ultra-detailed-result {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-name {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-score {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .test-level {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        .test-level.nhẹ { color: #28a745; }
+        .test-level.trung-bình { color: #ffc107; }
+        .test-level.nặng { color: #fd7e14; }
+        .test-level.rất-nặng { color: #dc3545; }
+        .detailed-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #495057;
+            font-weight: 600;
+            flex: 1;
+        }
+        .info-value {
+            color: #2c3e50;
+            font-weight: 600;
+            flex: 2;
+            text-align: right;
+        }
+        .recommendation-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+        .recommendation-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .recommendation-text {
+            color: #495057;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        .advanced-analysis {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #17a2b8;
+        }
+        .analysis-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .analysis-section {
+            display: grid;
+            gap: 12px;
+        }
+        .analysis-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #17a2b8;
+        }
+        .analysis-label {
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .analysis-value {
+            color: #2c3e50;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .severity-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .severity-low { background: #d4edda; color: #155724; }
+        .severity-medium { background: #fff3cd; color: #856404; }
+        .severity-high { background: #f8d7da; color: #721c24; }
+        .severity-critical { background: #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Test Ultra Detailed Results</h1>
+    <p>Kiểm tra kết quả test siêu chi tiết với phân tích sâu</p>
+    
+    <div class="test-container">
+        <h2>🧪 Ultra Detailed Results Test</h2>
+        
+        <button class="test-button" onclick="testUltraDetailedResults()">1. Test Ultra Detailed Results</button>
+        <button class="test-button" onclick="testAdvancedAnalysis()">2. Test Advanced Analysis</button>
+        <button class="test-button" onclick="testSeverityLevels()">3. Test Severity Levels</button>
+        <button class="test-button" onclick="testCompleteUltraAnalysis()">4. Test Complete Ultra Analysis</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Mock test results for testing
+        const mockTestResults = [
+            {
+                testType: 'DASS_21',
+                totalScore: 18,
+                maxScore: 63,
+                evaluation: { level: 'Trung bình', description: 'Mức độ stress và lo âu ở mức trung bình' },
+                answers: [2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1],
+                completedAt: new Date().toISOString()
+            },
+            {
+                testType: 'PHQ_9',
+                totalScore: 8,
+                maxScore: 27,
+                evaluation: { level: 'Nhẹ', description: 'Triệu chứng trầm cảm nhẹ' },
+                answers: [2, 2, 1, 2, 1, 2, 1, 2, 1],
+                completedAt: new Date().toISOString()
+            },
+            {
+                testType: 'GAD_7',
+                totalScore: 12,
+                maxScore: 21,
+                evaluation: { level: 'Trung bình', description: 'Mức độ lo âu trung bình' },
+                answers: [2, 2, 1, 2, 1, 2, 2],
+                completedAt: new Date().toISOString()
+            }
+        ];
+
+        function getTestDisplayName(testType) {
+            const testNames = {
+                'DASS_21': 'DASS-21 (Lo âu, Trầm cảm, Stress)',
+                'PHQ_9': 'PHQ-9 (Trầm cảm)',
+                'GAD_7': 'GAD-7 (Lo âu)',
+                'ROSENBERG_SELF_ESTEEM': 'Rosenberg Self-Esteem (Lòng tự trọng)',
+                'FAMILY_APGAR': 'Family APGAR (Hỗ trợ gia đình)',
+                'MENOPAUSE_RATING': 'Menopause Rating Scale (Mãn kinh)',
+                'PMS': 'PMS (Hội chứng tiền kinh nguyệt)',
+                'PARENTAL_STRESS': 'Parental Stress Scale (Stress làm cha mẹ)',
+                'FAMILY_RELATIONSHIP': 'Family Relationship Test (Mối quan hệ gia đình)'
+            };
+            return testNames[testType] || testType;
+        }
+
+        function getSeverityLevel(testType, score, maxScore) {
+            const percentage = (score / maxScore) * 100;
+            
+            switch (testType) {
+                case 'DASS_21':
+                    if (percentage < 20) return 'Rất nhẹ - Không cần can thiệp';
+                    if (percentage < 40) return 'Nhẹ - Theo dõi và tự quản lý';
+                    if (percentage < 60) return 'Trung bình - Cần chú ý và can thiệp nhẹ';
+                    if (percentage < 80) return 'Nặng - Cần can thiệp tích cực';
+                    return 'Rất nặng - Cần can thiệp chuyên nghiệp ngay';
+                
+                case 'PHQ_9':
+                    if (percentage < 25) return 'Không có triệu chứng';
+                    if (percentage < 50) return 'Trầm cảm nhẹ';
+                    if (percentage < 75) return 'Trầm cảm trung bình';
+                    return 'Trầm cảm nặng - Cần hỗ trợ chuyên nghiệp';
+                
+                case 'GAD_7':
+                    if (percentage < 30) return 'Lo âu tối thiểu';
+                    if (percentage < 50) return 'Lo âu nhẹ';
+                    if (percentage < 70) return 'Lo âu trung bình';
+                    return 'Lo âu nặng - Cần can thiệp chuyên nghiệp';
+                
+                default:
+                    return 'Cần đánh giá thêm';
+            }
+        }
+
+        function getScoreDistribution(answers) {
+            if (!answers || answers.length === 0) return 'Không có dữ liệu';
+            
+            const distribution = answers.reduce((acc, answer) => {
+                acc[answer] = (acc[answer] || 0) + 1;
+                return acc;
+            }, {});
+            
+            const total = answers.length;
+            const distributionText = Object.entries(distribution)
+                .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                .map(([score, count]) => `${score}: ${count} (${((count / total) * 100).toFixed(1)}%)`)
+                .join(', ');
+            
+            return distributionText;
+        }
+
+        function getTrendAnalysis(answers) {
+            if (!answers || answers.length < 3) return 'Không đủ dữ liệu để phân tích';
+            
+            const firstHalf = answers.slice(0, Math.floor(answers.length / 2));
+            const secondHalf = answers.slice(Math.floor(answers.length / 2));
+            
+            const firstAvg = firstHalf.reduce((sum, val) => sum + val, 0) / firstHalf.length;
+            const secondAvg = secondHalf.reduce((sum, val) => sum + val, 0) / secondHalf.length;
+            
+            const diff = secondAvg - firstAvg;
+            
+            if (diff > 0.5) return 'Xu hướng tăng dần - Cần chú ý';
+            if (diff < -0.5) return 'Xu hướng giảm dần - Tích cực';
+            return 'Xu hướng ổn định - Duy trì';
+        }
+
+        function getWarningLevel(testType, score, maxScore) {
+            const percentage = (score / maxScore) * 100;
+            
+            switch (testType) {
+                case 'DASS_21':
+                    if (percentage > 80) return '🚨 CẢNH BÁO CAO - Cần hỗ trợ ngay';
+                    if (percentage > 60) return '⚠️ CẢNH BÁO - Cần theo dõi';
+                    if (percentage > 40) return '💡 CHÚ Ý - Cần quản lý';
+                    return '✅ ỔN ĐỊNH - Duy trì';
+                
+                case 'PHQ_9':
+                    if (percentage > 70) return '🚨 CẢNH BÁO CAO - Trầm cảm nặng';
+                    if (percentage > 50) return '⚠️ CẢNH BÁO - Trầm cảm trung bình';
+                    if (percentage > 30) return '💡 CHÚ Ý - Trầm cảm nhẹ';
+                    return '✅ ỔN ĐỊNH - Tâm trạng tốt';
+                
+                case 'GAD_7':
+                    if (percentage > 70) return '🚨 CẢNH BÁO CAO - Lo âu nặng';
+                    if (percentage > 50) return '⚠️ CẢNH BÁO - Lo âu trung bình';
+                    if (percentage > 30) return '💡 CHÚ Ý - Lo âu nhẹ';
+                    return '✅ ỔN ĐỊNH - Lo âu thấp';
+                
+                default:
+                    return '📊 CẦN ĐÁNH GIÁ - Xem kết quả chi tiết';
+            }
+        }
+
+        function getScoreAnalysis(testType, score, maxScore) {
+            const percentage = (score / maxScore) * 100;
+            
+            switch (testType) {
+                case 'DASS_21':
+                    if (percentage < 20) return 'Điểm số thấp - Khả năng quản lý stress tốt, khả năng thích ứng cao';
+                    if (percentage < 40) return 'Điểm số trung bình thấp - Có khả năng quản lý stress, cần duy trì thói quen lành mạnh';
+                    if (percentage < 60) return 'Điểm số trung bình - Cần chú ý đến stress, thực hành kỹ thuật thư giãn';
+                    if (percentage < 80) return 'Điểm số cao - Stress ảnh hưởng đáng kể, cần can thiệp tích cực';
+                    return 'Điểm số rất cao - Stress nghiêm trọng, cần hỗ trợ chuyên nghiệp ngay';
+                
+                case 'PHQ_9':
+                    if (percentage < 25) return 'Điểm số thấp - Tâm trạng ổn định, không có dấu hiệu trầm cảm';
+                    if (percentage < 50) return 'Điểm số trung bình thấp - Có dấu hiệu trầm cảm nhẹ, cần theo dõi';
+                    if (percentage < 75) return 'Điểm số trung bình - Trầm cảm trung bình, cần can thiệp';
+                    return 'Điểm số cao - Trầm cảm nặng, cần hỗ trợ chuyên nghiệp ngay';
+                
+                case 'GAD_7':
+                    if (percentage < 30) return 'Điểm số thấp - Lo âu tối thiểu, khả năng quản lý lo âu tốt';
+                    if (percentage < 50) return 'Điểm số trung bình thấp - Lo âu nhẹ, cần thực hành kỹ thuật thư giãn';
+                    if (percentage < 70) return 'Điểm số trung bình - Lo âu trung bình, cần can thiệp';
+                    return 'Điểm số cao - Lo âu nặng, cần hỗ trợ chuyên nghiệp';
+                
+                default:
+                    return 'Điểm số cần được đánh giá trong bối cảnh cụ thể của test';
+            }
+        }
+
+        function getStrengths(testType, answers) {
+            if (!answers || answers.length === 0) return 'Không có dữ liệu để đánh giá';
+            
+            const lowScores = answers.filter(answer => answer <= 2).length;
+            const totalQuestions = answers.length;
+            const strengthPercentage = (lowScores / totalQuestions) * 100;
+            
+            switch (testType) {
+                case 'DASS_21':
+                    if (strengthPercentage > 70) return 'Khả năng quản lý stress tốt, khả năng thích ứng cao, tâm lý ổn định';
+                    if (strengthPercentage > 50) return 'Có khả năng quản lý stress, khả năng thích ứng trung bình';
+                    return 'Cần phát triển khả năng quản lý stress và thích ứng';
+                
+                case 'PHQ_9':
+                    if (strengthPercentage > 70) return 'Tâm trạng ổn định, khả năng duy trì tâm lý tích cực';
+                    if (strengthPercentage > 50) return 'Có khả năng duy trì tâm trạng ổn định';
+                    return 'Cần phát triển khả năng duy trì tâm trạng tích cực';
+                
+                case 'GAD_7':
+                    if (strengthPercentage > 70) return 'Khả năng quản lý lo âu tốt, tâm lý ổn định';
+                    if (strengthPercentage > 50) return 'Có khả năng quản lý lo âu cơ bản';
+                    return 'Cần phát triển khả năng quản lý lo âu';
+                
+                default:
+                    return 'Cần đánh giá thêm để xác định điểm mạnh';
+            }
+        }
+
+        function getImprovementAreas(testType, answers) {
+            if (!answers || answers.length === 0) return 'Không có dữ liệu để đánh giá';
+            
+            const highScores = answers.filter(answer => answer >= 3).length;
+            const totalQuestions = answers.length;
+            const improvementPercentage = (highScores / totalQuestions) * 100;
+            
+            switch (testType) {
+                case 'DASS_21':
+                    if (improvementPercentage > 50) return 'Cần cải thiện khả năng quản lý stress, thực hành kỹ thuật thư giãn, tìm kiếm hỗ trợ';
+                    if (improvementPercentage > 30) return 'Cần chú ý đến stress, thực hành kỹ thuật thở, thiền định';
+                    return 'Duy trì thói quen lành mạnh, tiếp tục phát triển khả năng quản lý stress';
+                
+                case 'PHQ_9':
+                    if (improvementPercentage > 50) return 'Cần cải thiện tâm trạng, tăng cường hoạt động tích cực, tìm kiếm hỗ trợ chuyên nghiệp';
+                    if (improvementPercentage > 30) return 'Cần chú ý đến tâm trạng, tăng cường hoạt động thể chất, kết nối xã hội';
+                    return 'Duy trì tâm trạng tích cực, tiếp tục phát triển khả năng quản lý cảm xúc';
+                
+                case 'GAD_7':
+                    if (improvementPercentage > 50) return 'Cần cải thiện khả năng quản lý lo âu, thực hành kỹ thuật thở, tìm kiếm hỗ trợ';
+                    if (improvementPercentage > 30) return 'Cần chú ý đến lo âu, thực hành kỹ thuật thư giãn, thiền định';
+                    return 'Duy trì khả năng quản lý lo âu, tiếp tục phát triển kỹ năng thư giãn';
+                
+                default:
+                    return 'Cần đánh giá thêm để xác định lĩnh vực cần cải thiện';
+            }
+        }
+
+        function getTrendPrediction(testType, score, maxScore) {
+            const percentage = (score / maxScore) * 100;
+            
+            switch (testType) {
+                case 'DASS_21':
+                    if (percentage < 30) return 'Xu hướng tích cực - Khả năng quản lý stress tốt, có thể duy trì hoặc cải thiện thêm';
+                    if (percentage < 60) return 'Xu hướng ổn định - Cần duy trì thói quen lành mạnh để tránh tăng stress';
+                    return 'Xu hướng cần chú ý - Cần can thiệp tích cực để tránh tình trạng xấu đi';
+                
+                case 'PHQ_9':
+                    if (percentage < 30) return 'Xu hướng tích cực - Tâm trạng ổn định, có thể duy trì hoặc cải thiện thêm';
+                    if (percentage < 60) return 'Xu hướng ổn định - Cần duy trì hoạt động tích cực để tránh tăng trầm cảm';
+                    return 'Xu hướng cần chú ý - Cần can thiệp tích cực để tránh tình trạng trầm cảm nặng hơn';
+                
+                case 'GAD_7':
+                    if (percentage < 30) return 'Xu hướng tích cực - Khả năng quản lý lo âu tốt, có thể duy trì hoặc cải thiện thêm';
+                    if (percentage < 60) return 'Xu hướng ổn định - Cần duy trì kỹ thuật thư giãn để tránh tăng lo âu';
+                    return 'Xu hướng cần chú ý - Cần can thiệp tích cực để tránh tình trạng lo âu nặng hơn';
+                
+                default:
+                    return 'Cần theo dõi thêm để đánh giá xu hướng';
+            }
+        }
+
+        function testUltraDetailedResults() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🔬 Ultra Detailed Test Results:\n\n';
+                
+                mockTestResults.forEach((test, index) => {
+                    result += `📋 ${getTestDisplayName(test.testType)}\n`;
+                    result += `   📈 Score: ${test.totalScore}/${test.maxScore} (${((test.totalScore / test.maxScore) * 100).toFixed(1)}%)\n`;
+                    result += `   📊 Level: ${test.evaluation.level}\n`;
+                    result += `   📝 Questions: ${test.answers?.length || 0}\n`;
+                    result += `   📊 Average: ${test.answers?.length ? (test.totalScore / test.answers.length).toFixed(1) : 'N/A'}\n`;
+                    result += `   ⏱️ Completed: ${test.completedAt ? new Date(test.completedAt).toLocaleString('vi-VN') : 'Vừa xong'}\n`;
+                    result += `   🎯 Severity: ${getSeverityLevel(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   📊 Distribution: ${getScoreDistribution(test.answers)}\n`;
+                    result += `   🔍 Trend: ${getTrendAnalysis(test.answers)}\n`;
+                    result += `   ⚠️ Warning: ${getWarningLevel(test.testType, test.totalScore, test.maxScore)}\n\n`;
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testAdvancedAnalysis() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🔬 Advanced Analysis:\n\n';
+                
+                mockTestResults.forEach((test, index) => {
+                    result += `📋 ${getTestDisplayName(test.testType)}\n`;
+                    result += `   📊 Score Analysis: ${getScoreAnalysis(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   🎯 Strengths: ${getStrengths(test.testType, test.answers)}\n`;
+                    result += `   ⚠️ Improvement Areas: ${getImprovementAreas(test.testType, test.answers)}\n`;
+                    result += `   📈 Trend Prediction: ${getTrendPrediction(test.testType, test.totalScore, test.maxScore)}\n\n`;
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testSeverityLevels() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '⚠️ Severity Levels Analysis:\n\n';
+                
+                mockTestResults.forEach((test, index) => {
+                    const percentage = (test.totalScore / test.maxScore) * 100;
+                    let severityClass = 'severity-low';
+                    let severityText = 'LOW';
+                    
+                    if (percentage > 80) {
+                        severityClass = 'severity-critical';
+                        severityText = 'CRITICAL';
+                    } else if (percentage > 60) {
+                        severityClass = 'severity-high';
+                        severityText = 'HIGH';
+                    } else if (percentage > 40) {
+                        severityClass = 'severity-medium';
+                        severityText = 'MEDIUM';
+                    }
+                    
+                    result += `📋 ${getTestDisplayName(test.testType)}\n`;
+                    result += `   📊 Score: ${test.totalScore}/${test.maxScore} (${percentage.toFixed(1)}%)\n`;
+                    result += `   🎯 Severity: ${getSeverityLevel(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   ⚠️ Warning: ${getWarningLevel(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   📈 Level: ${severityText}\n\n`;
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testCompleteUltraAnalysis() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🔬 Complete Ultra Analysis:\n\n';
+                
+                mockTestResults.forEach((test, index) => {
+                    result += `📋 ${getTestDisplayName(test.testType)}\n`;
+                    result += `   📈 Score: ${test.totalScore}/${test.maxScore} (${((test.totalScore / test.maxScore) * 100).toFixed(1)}%)\n`;
+                    result += `   📊 Level: ${test.evaluation.level}\n`;
+                    result += `   📝 Questions: ${test.answers?.length || 0}\n`;
+                    result += `   📊 Average: ${test.answers?.length ? (test.totalScore / test.answers.length).toFixed(1) : 'N/A'}\n`;
+                    result += `   ⏱️ Completed: ${test.completedAt ? new Date(test.completedAt).toLocaleString('vi-VN') : 'Vừa xong'}\n`;
+                    result += `   🎯 Severity: ${getSeverityLevel(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   📊 Distribution: ${getScoreDistribution(test.answers)}\n`;
+                    result += `   🔍 Trend: ${getTrendAnalysis(test.answers)}\n`;
+                    result += `   ⚠️ Warning: ${getWarningLevel(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   📊 Score Analysis: ${getScoreAnalysis(test.testType, test.totalScore, test.maxScore)}\n`;
+                    result += `   🎯 Strengths: ${getStrengths(test.testType, test.answers)}\n`;
+                    result += `   ⚠️ Improvement Areas: ${getImprovementAreas(test.testType, test.answers)}\n`;
+                    result += `   📈 Trend Prediction: ${getTrendPrediction(test.testType, test.totalScore, test.maxScore)}\n\n`;
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            console.log('🔬 Ultra Detailed Results Test initialized');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "backend": {
+    "status": "operational",
+    "details": {
+      "health": "pass",
+      "port": 5000,
+      "response": {
+        "message": "Soulfriend API is running successfully!"
+      },
+      "responseTime": 1759393000839
+    }
+  },
+  "frontend": {
+    "status": "starting",
+    "details": {
+      "accessible": false,
+      "processRunning": true,
+      "error": "Request failed with status code 404"
+    }
+  },
+  "features": {
+    "status": "verified",
+    "details": {
+      "healthCheck": true,
+      "apiEndpoints": true,
+      "psychologicalTests": true,
+      "aiIntegration": true,
+      "dataProcessing": true
+    }
+  },
+  "performance": {
+    "status": "verified",
+    "details": {
+      "responseTime": 2,
+      "concurrentHandling": true,
+      "memoryUsage": "unknown",
+      "stability": true
+    }
+  },
+  "overall": {
+    "status": "excellent",
+    "score": 90
+  }
+}

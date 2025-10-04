@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chatbot - Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message {
+            background: #e3f2fd;
+            text-align: right;
+        }
+        .bot-message {
+            background: #f3e5f5;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .input-field {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .send-button {
+            background: #d63384;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .send-button:hover {
+            background: #c02a5c;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .test-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .test-button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Test Chatbot - Simple</h1>
+    
+    <div class="test-buttons">
+        <button class="test-button" onclick="testMessage('Giải thích kết quả test')">Test: Kết quả test</button>
+        <button class="test-button" onclick="testMessage('Tôi đang stress')">Test: Stress</button>
+        <button class="test-button" onclick="testMessage('Tôi lo âu')">Test: Lo âu</button>
+        <button class="test-button" onclick="testMessage('Tôi trầm cảm')">Test: Trầm cảm</button>
+        <button class="test-button" onclick="testMessage('Tôi thiếu tự tin')">Test: Tự tin</button>
+        <button class="test-button" onclick="testMessage('Tôi cần hỗ trợ chuyên nghiệp')">Test: Hỗ trợ</button>
+    </div>
+    
+    <div class="chat-container">
+        <div id="chat-messages">
+            <div class="message bot-message">
+                <strong>CHUN:</strong> Xin chào! Tôi là CHUN - AI Companion hỗ trợ sức khỏe tâm lý. Tôi có thể giúp bạn hiểu kết quả test, quản lý stress, lo âu và nhiều vấn đề khác. Bạn muốn trao đổi về điều gì?
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="message-input" class="input-field" placeholder="Nhập câu hỏi của bạn..." onkeypress="handleKeyPress(event)">
+            <button class="send-button" onclick="sendMessage()">Gửi</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock test results
+        const mockTestResults = [
+            {
+                testType: 'DASS_21',
+                totalScore: 15,
+                maxScore: 63,
+                evaluation: {
+                    level: 'Trung bình',
+                    description: 'Mức độ lo âu và stress ở mức trung bình'
+                }
+            },
+            {
+                testType: 'PHQ_9',
+                totalScore: 8,
+                maxScore: 27,
+                evaluation: {
+                    level: 'Nhẹ',
+                    description: 'Triệu chứng trầm cảm nhẹ'
+                }
+            }
+        ];
+        
+        function addMessage(text, isBot = false) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
+            messageDiv.innerHTML = `<strong>${isBot ? 'CHUN' : 'Bạn'}:</strong> ${text}`;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function getBotResponse(userMessage) {
+            const lowerMessage = userMessage.toLowerCase();
+            
+            if (lowerMessage.includes('kết quả') || lowerMessage.includes('test')) {
+                if (mockTestResults.length > 0) {
+                    const testNames = mockTestResults.map(result => {
+                        switch(result.testType) {
+                            case 'DASS_21': return 'DASS-21 (Lo âu, Trầm cảm, Stress)';
+                            case 'PHQ_9': return 'PHQ-9 (Trầm cảm)';
+                            default: return result.testType;
+                        }
+                    }).join(', ');
+                    
+                    return `📊 **Kết quả test của bạn:**
+
+Bạn đã hoàn thành ${mockTestResults.length} bài test: ${testNames}
+
+**Chi tiết kết quả:**
+${mockTestResults.map((result, index) => 
+  `${index + 1}. **${testNames.split(', ')[index]}**: ${result.totalScore}/${result.maxScore} điểm - ${result.evaluation.level}
+   📝 ${result.evaluation.description}`
+).join('\n\n')}
+
+**⚠️ Lưu ý quan trọng:**
+• Kết quả chỉ mang tính tham khảo
+• Không thay thế chẩn đoán chuyên môn
+• Nên thảo luận với chuyên gia tâm lý
+
+**💡 Gợi ý tiếp theo:**
+• Thực hành kỹ thuật thư giãn hàng ngày
+• Theo dõi tình trạng theo thời gian
+• Tìm kiếm hỗ trợ chuyên nghiệp nếu cần
+
+Bạn muốn tôi giải thích chi tiết về test nào?`;
+                } else {
+                    return `Tôi chưa thấy kết quả test nào. Bạn có thể:
+• Hoàn thành các bài test trước
+• Quay lại trang chọn test
+• Hoặc hỏi tôi về bất kỳ vấn đề sức khỏe tâm lý nào`;
+                }
+            } else if (lowerMessage.includes('stress')) {
+                return `🧘‍♀️ **Quản lý Stress hiệu quả:**
+
+**Kỹ thuật thở 4-7-8:**
+• Hít vào 4 giây
+• Giữ hơi 7 giây  
+• Thở ra 8 giây
+• Lặp lại 3-4 lần
+
+**Thư giãn cơ bắp:**
+• Căng cơ từng nhóm 5 giây
+• Thả lỏng hoàn toàn 10 giây
+• Bắt đầu từ chân lên đầu
+
+**Hoạt động giảm stress:**
+• Đi bộ ngoài trời 20-30 phút
+• Nghe nhạc nhẹ nhàng
+• Viết nhật ký cảm xúc
+• Tập yoga hoặc thiền
+
+**Khi nào cần hỗ trợ:**
+• Stress kéo dài hơn 2 tuần
+• Ảnh hưởng công việc, học tập
+• Có suy nghĩ tiêu cực
+• Thay đổi giấc ngủ, ăn uống
+
+Bạn đang gặp stress ở lĩnh vực nào? Tôi có thể gợi ý cụ thể hơn.`;
+            } else if (lowerMessage.includes('lo âu')) {
+                return `😌 **Quản lý Lo âu:**
+
+**Kỹ thuật Grounding 5-4-3-2-1:**
+• 5 điều bạn nhìn thấy
+• 4 điều bạn chạm được
+• 3 điều bạn nghe thấy
+• 2 điều bạn ngửi thấy
+• 1 điều bạn nếm được
+
+**Thở bụng:**
+• Đặt tay lên bụng
+• Hít vào chậm, bụng phình ra
+• Thở ra chậm, bụng xẹp xuống
+• Tập 5-10 phút mỗi ngày
+
+**Thay đổi suy nghĩ:**
+• Nhận diện suy nghĩ lo âu
+• Hỏi: "Điều này có thật sự xảy ra không?"
+• Tìm bằng chứng ngược lại
+• Tập trung vào hiện tại
+
+**Dấu hiệu cần hỗ trợ:**
+• Lo âu kéo dài hơn 6 tháng
+• Ảnh hưởng sinh hoạt hàng ngày
+• Có cơn hoảng loạn
+• Tránh né các tình huống
+
+Bạn có muốn tôi hướng dẫn kỹ thuật cụ thể nào không?`;
+            } else if (lowerMessage.includes('trầm cảm')) {
+                return `💙 **Hỗ trợ Trầm cảm:**
+
+**Hoạt động tích cực:**
+• Ra ngoài ánh sáng tự nhiên 30 phút/ngày
+• Vận động nhẹ: đi bộ, yoga, bơi lội
+• Duy trì giờ giấc sinh hoạt đều đặn
+• Kết nối với người thân, bạn bè
+
+**Chăm sóc bản thân:**
+• Ăn uống đủ chất, đúng giờ
+• Ngủ đủ 7-8 tiếng/đêm
+• Tránh rượu bia, chất kích thích
+• Làm việc mình thích mỗi ngày
+
+**Tìm kiếm hỗ trợ:**
+• Chia sẻ với người tin cậy
+• Tham gia nhóm hỗ trợ
+• Tìm chuyên gia tâm lý
+• Gọi hotline tư vấn: 1900 599 958
+
+**⚠️ CẢNH BÁO - Cần hỗ trợ ngay:**
+• Suy nghĩ tự làm hại bản thân
+• Kế hoạch tự tử
+• Từ bỏ hoàn toàn hy vọng
+• Sử dụng chất gây nghiện
+
+Bạn có đang cảm thấy an toàn không? Nếu có suy nghĩ tiêu cực, hãy tìm kiếm hỗ trợ ngay!`;
+            } else if (lowerMessage.includes('tự tin')) {
+                return `💪 **Xây dựng Tự tin:**
+
+**Thực hành hàng ngày:**
+• Viết 3 điều tốt về bản thân mỗi sáng
+• Hoàn thành 1 việc nhỏ mỗi ngày
+• Tự khen ngợi khi làm tốt
+• Tránh so sánh với người khác
+
+**Thay đổi suy nghĩ:**
+• Thay "Tôi không thể" → "Tôi sẽ thử"
+• Thay "Tôi thất bại" → "Tôi học được"
+• Tập trung vào điểm mạnh
+• Chấp nhận điểm yếu là bình thường
+
+**Kỹ năng xã hội:**
+• Luyện giao tiếp với người thân
+• Tham gia hoạt động nhóm
+• Học cách từ chối lịch sự
+• Bày tỏ ý kiến một cách tôn trọng
+
+**Chăm sóc bản thân:**
+• Mặc quần áo khiến bạn cảm thấy tốt
+• Tập thể dục đều đặn
+• Ngủ đủ giấc
+• Ăn uống lành mạnh
+
+Bạn muốn tập trung vào khía cạnh nào của tự tin?`;
+            } else if (lowerMessage.includes('chuyên nghiệp')) {
+                return `🏥 **Tìm kiếm Hỗ trợ Chuyên nghiệp:**
+
+**Khi nào cần chuyên gia:**
+• Triệu chứng kéo dài hơn 2 tuần
+• Ảnh hưởng công việc, học tập
+• Có suy nghĩ tự làm hại
+• Không thể tự quản lý
+
+**Loại chuyên gia:**
+• **Bác sĩ tâm thần:** Kê đơn thuốc, chẩn đoán
+• **Nhà tâm lý:** Trị liệu tâm lý, tư vấn
+• **Chuyên viên tư vấn:** Hỗ trợ ngắn hạn
+• **Nhóm hỗ trợ:** Chia sẻ kinh nghiệm
+
+**Cách tìm chuyên gia:**
+• Bệnh viện tâm thần địa phương
+• Trung tâm tư vấn tâm lý
+• Hỏi bác sĩ gia đình
+• Tìm kiếm online
+
+**Hotline hỗ trợ:**
+• Tư vấn tâm lý: 1900 599 958
+• Bệnh viện Tâm thần TW: 024 3736 2121
+• Trung tâm Phòng chống tự tử: 1900 599 958
+
+**Chuẩn bị khi gặp chuyên gia:**
+• Ghi lại triệu chứng
+• Mang theo kết quả test
+• Chuẩn bị câu hỏi
+• Thành thật về cảm xúc
+
+Bạn có cần tôi hướng dẫn cách tìm chuyên gia phù hợp không?`;
+            } else {
+                return `Xin chào! Tôi là CHUN - AI Companion hỗ trợ sức khỏe tâm lý.
+
+Tôi có thể giúp bạn:
+• Hiểu kết quả test tâm lý
+• Gợi ý kỹ thuật quản lý stress
+• Hướng dẫn tìm kiếm hỗ trợ chuyên nghiệp
+• Cung cấp tài nguyên tự giúp đỡ
+
+Bạn muốn trao đổi về điều gì?`;
+            }
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, false);
+                input.value = '';
+                
+                // Simulate typing delay
+                setTimeout(() => {
+                    const response = getBotResponse(message);
+                    addMessage(response, true);
+                }, 1000);
+            }
+        }
+        
+        function testMessage(message) {
+            document.getElementById('message-input').value = message;
+            sendMessage();
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>

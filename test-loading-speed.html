@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Loading Speed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #d63384;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #c02a5c;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .performance-metric {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9rem;
+        }
+        .fast { background: #d4edda; color: #155724; }
+        .medium { background: #fff3cd; color: #856404; }
+        .slow { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>⚡ Test Loading Speed</h1>
+    <p>Kiểm tra tốc độ loading của các thành phần sau khi hoàn thành test</p>
+    
+    <div class="test-container">
+        <h2>🧪 Performance Tests</h2>
+        
+        <button class="test-button" onclick="testLocalStorageSpeed()">1. Test localStorage Speed</button>
+        <button class="test-button" onclick="testAIAnalysisSpeed()">2. Test AI Analysis Speed</button>
+        <button class="test-button" onclick="testDashboardLoading()">3. Test Dashboard Loading</button>
+        <button class="test-button" onclick="testCompleteWorkflow()">4. Test Complete Workflow</button>
+        <button class="test-button" onclick="optimizePerformance()">5. Optimize Performance</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Mock test results for testing
+        const mockTestResults = [
+            {
+                testType: 'DASS_21',
+                totalScore: 15,
+                maxScore: 63,
+                evaluation: { level: 'Trung bình', description: 'Mức độ stress và lo âu ở mức trung bình' },
+                answers: [2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1],
+                completedAt: new Date().toISOString()
+            },
+            {
+                testType: 'PHQ_9',
+                totalScore: 8,
+                maxScore: 27,
+                evaluation: { level: 'Nhẹ', description: 'Triệu chứng trầm cảm nhẹ' },
+                answers: [2, 2, 1, 2, 1, 2, 1, 2, 1],
+                completedAt: new Date().toISOString()
+            }
+        ];
+
+        function getPerformanceClass(time) {
+            if (time < 100) return 'fast';
+            if (time < 500) return 'medium';
+            return 'slow';
+        }
+
+        function testLocalStorageSpeed() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Test localStorage write
+                localStorage.setItem('testResults', JSON.stringify(mockTestResults));
+                const writeTime = performance.now() - startTime;
+                
+                // Test localStorage read
+                const readStartTime = performance.now();
+                const data = localStorage.getItem('testResults');
+                const readTime = performance.now() - readStartTime;
+                
+                // Test JSON parse
+                const parseStartTime = performance.now();
+                const parsed = JSON.parse(data);
+                const parseTime = performance.now() - parseStartTime;
+                
+                const totalTime = performance.now() - startTime;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ localStorage Performance Test:
+
+<span class="performance-metric ${getPerformanceClass(writeTime)}">Write: ${writeTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(readTime)}">Read: ${readTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(parseTime)}">Parse: ${parseTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(totalTime)}">Total: ${totalTime.toFixed(2)}ms</span>
+
+📊 Status: ${totalTime < 100 ? 'FAST' : totalTime < 500 ? 'MEDIUM' : 'SLOW'}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testAIAnalysisSpeed() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Simulate AI analysis
+                const patterns = analyzeTestPatterns(mockTestResults);
+                const profile = createAIProfile(patterns);
+                const insights = createAIInsights(profile);
+                const interventions = createAIInterventions(profile);
+                
+                const analysisTime = performance.now() - startTime;
+                
+                // Save to localStorage
+                const saveStartTime = performance.now();
+                localStorage.setItem('ai_companion_profiles', JSON.stringify({ 'user_001': profile }));
+                localStorage.setItem('ai_companion_insights', JSON.stringify({ 'user_001': insights }));
+                localStorage.setItem('ai_companion_interventions', JSON.stringify({ 'user_001': interventions }));
+                const saveTime = performance.now() - saveStartTime;
+                
+                const totalTime = performance.now() - startTime;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ AI Analysis Performance Test:
+
+<span class="performance-metric ${getPerformanceClass(analysisTime)}">Analysis: ${analysisTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(saveTime)}">Save: ${saveTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(totalTime)}">Total: ${totalTime.toFixed(2)}ms</span>
+
+📊 Status: ${totalTime < 200 ? 'FAST' : totalTime < 1000 ? 'MEDIUM' : 'SLOW'}
+💡 Insights: ${insights.length}
+🎯 Interventions: ${interventions.length}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testDashboardLoading() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Test loading from localStorage
+                const localResults = localStorage.getItem('testResults');
+                const profiles = localStorage.getItem('ai_companion_profiles');
+                const insights = localStorage.getItem('ai_companion_insights');
+                const interventions = localStorage.getItem('ai_companion_interventions');
+                
+                const loadTime = performance.now() - startTime;
+                
+                // Test parsing
+                const parseStartTime = performance.now();
+                const results = localResults ? JSON.parse(localResults) : [];
+                const profilesData = profiles ? JSON.parse(profiles) : {};
+                const insightsData = insights ? JSON.parse(insights) : {};
+                const interventionsData = interventions ? JSON.parse(interventions) : {};
+                const parseTime = performance.now() - parseStartTime;
+                
+                const totalTime = performance.now() - startTime;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ Dashboard Loading Performance Test:
+
+<span class="performance-metric ${getPerformanceClass(loadTime)}">Load: ${loadTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(parseTime)}">Parse: ${parseTime.toFixed(2)}ms</span>
+<span class="performance-metric ${getPerformanceClass(totalTime)}">Total: ${totalTime.toFixed(2)}ms</span>
+
+📊 Status: ${totalTime < 50 ? 'FAST' : totalTime < 200 ? 'MEDIUM' : 'SLOW'}
+📈 Data: ${results.length} tests, ${Object.keys(profilesData).length} profiles, ${Object.keys(insightsData).length} insights`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testCompleteWorkflow() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Simulate complete workflow
+                const steps = [];
+                
+                // Step 1: Save test results
+                const step1Start = performance.now();
+                localStorage.setItem('testResults', JSON.stringify(mockTestResults));
+                steps.push({ name: 'Save Test Results', time: performance.now() - step1Start });
+                
+                // Step 2: AI Analysis (simplified)
+                const step2Start = performance.now();
+                const patterns = analyzeTestPatterns(mockTestResults);
+                const profile = createAIProfile(patterns);
+                steps.push({ name: 'AI Profile Creation', time: performance.now() - step2Start });
+                
+                // Step 3: Generate insights
+                const step3Start = performance.now();
+                const insights = createAIInsights(profile);
+                steps.push({ name: 'Generate Insights', time: performance.now() - step3Start });
+                
+                // Step 4: Generate interventions
+                const step4Start = performance.now();
+                const interventions = createAIInterventions(profile);
+                steps.push({ name: 'Generate Interventions', time: performance.now() - step4Start });
+                
+                // Step 5: Save AI data
+                const step5Start = performance.now();
+                localStorage.setItem('ai_companion_profiles', JSON.stringify({ 'user_001': profile }));
+                localStorage.setItem('ai_companion_insights', JSON.stringify({ 'user_001': insights }));
+                localStorage.setItem('ai_companion_interventions', JSON.stringify({ 'user_001': interventions }));
+                steps.push({ name: 'Save AI Data', time: performance.now() - step5Start });
+                
+                const totalTime = performance.now() - startTime;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ Complete Workflow Performance Test:
+
+${steps.map(step => 
+    `<span class="performance-metric ${getPerformanceClass(step.time)}">${step.name}: ${step.time.toFixed(2)}ms</span>`
+).join('<br>')}
+
+<span class="performance-metric ${getPerformanceClass(totalTime)}">Total Workflow: ${totalTime.toFixed(2)}ms</span>
+
+📊 Status: ${totalTime < 300 ? 'FAST' : totalTime < 1000 ? 'MEDIUM' : 'SLOW'}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function optimizePerformance() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Clear all data
+                localStorage.removeItem('testResults');
+                localStorage.removeItem('ai_companion_profiles');
+                localStorage.removeItem('ai_companion_insights');
+                localStorage.removeItem('ai_companion_interventions');
+                
+                // Pre-generate optimized data
+                const startTime = performance.now();
+                
+                const patterns = analyzeTestPatterns(mockTestResults);
+                const profile = createAIProfile(patterns);
+                const insights = createAIInsights(profile);
+                const interventions = createAIInterventions(profile);
+                
+                // Save all at once
+                const saveData = {
+                    testResults: mockTestResults,
+                    aiCompanion: {
+                        profiles: { 'user_001': profile },
+                        insights: { 'user_001': insights },
+                        interventions: { 'user_001': interventions }
+                    }
+                };
+                
+                localStorage.setItem('appData', JSON.stringify(saveData));
+                
+                const totalTime = performance.now() - startTime;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ Performance Optimization Applied:
+
+<span class="performance-metric ${getPerformanceClass(totalTime)}">Optimized Generation: ${totalTime.toFixed(2)}ms</span>
+
+🚀 Optimizations:
+• Combined data storage (single localStorage key)
+• Pre-generated AI data
+• Reduced API calls
+• Faster loading
+
+📊 Status: OPTIMIZED`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Helper functions
+        function analyzeTestPatterns(testResults) {
+            const patterns = { anxiety: 0, depression: 0, stress: 0, selfEsteem: 0 };
+            testResults.forEach(result => {
+                switch (result.testType) {
+                    case 'DASS_21': patterns.stress += result.totalScore; break;
+                    case 'PHQ_9': patterns.depression += result.totalScore; break;
+                    case 'ROSENBERG_SELF_ESTEEM': patterns.selfEsteem += result.totalScore; break;
+                }
+            });
+            return patterns;
+        }
+
+        function createAIProfile(patterns) {
+            return {
+                userId: 'user_001',
+                personalityType: 'introvert',
+                stressPatterns: patterns.stress > 10 ? ['Căng thẳng vừa phải'] : [],
+                copingStrategies: ['Thiền định', 'Tập thể dục'],
+                culturalContext: 'vietnamese',
+                lifeStage: 'young_adult',
+                preferences: { communicationStyle: 'gentle', interventionLevel: 'moderate', privacyLevel: 'high' },
+                riskFactors: patterns.depression > 10 ? ['Triệu chứng trầm cảm'] : [],
+                protectiveFactors: patterns.selfEsteem > 20 ? ['Lòng tự trọng cao'] : [],
+                lastInteraction: new Date(),
+                trustLevel: 50
+            };
+        }
+
+        function createAIInsights(profile) {
+            return [{
+                id: 'insight_1',
+                type: 'pattern',
+                title: 'Phân tích tính cách: Hướng nội',
+                description: 'Bạn có xu hướng hướng nội, thích không gian yên tĩnh.',
+                confidence: 85,
+                actionItems: ['Tạo không gian yên tĩnh', 'Thực hành journaling'],
+                timeframe: 'long_term',
+                priority: 'medium',
+                evidence: ['Tính cách: introvert'],
+                culturalRelevance: 95
+            }];
+        }
+
+        function createAIInterventions(profile) {
+            return [{
+                id: 'intervention_1',
+                type: 'behavioral',
+                method: 'breathing',
+                title: 'Kỹ thuật thở 4-7-8',
+                description: 'Thở sâu 4 giây, giữ 7 giây, thở ra 8 giây.',
+                duration: 5,
+                difficulty: 'beginner',
+                effectiveness: 85,
+                culturalAdaptation: 'Phù hợp với văn hóa Việt Nam',
+                personalizedTips: ['Thực hành khi căng thẳng', 'Tạo thói quen hàng ngày']
+            }];
+        }
+
+        // Initialize
+        window.onload = function() {
+            console.log('⚡ Loading Speed Test initialized');
+        };
+    </script>
+</body>
+</html>

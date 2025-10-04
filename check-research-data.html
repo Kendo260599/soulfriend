@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm Tra Dữ Liệu Research</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .stat:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #666;
+        }
+        .value {
+            color: #333;
+            font-weight: bold;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-danger {
+            background: #d32f2f;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .data-preview {
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        .storage-keys {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .key-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #e3f2fd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Kiểm Tra Dữ Liệu Research LocalStorage</h1>
+        
+        <div class="section">
+            <h2>📊 Thống Kê Tổng Quan</h2>
+            <div class="stat">
+                <span class="label">Tổng số test results:</span>
+                <span class="value" id="totalTests">-</span>
+            </div>
+            <div class="stat">
+                <span class="label">Kích thước dữ liệu:</span>
+                <span class="value" id="dataSize">-</span>
+            </div>
+            <div class="stat">
+                <span class="label">Test đầu tiên:</span>
+                <span class="value" id="firstTest">-</span>
+            </div>
+            <div class="stat">
+                <span class="label">Test mới nhất:</span>
+                <span class="value" id="lastTest">-</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔑 Các Keys trong LocalStorage</h2>
+            <div class="storage-keys" id="storageKeys"></div>
+        </div>
+
+        <div class="section">
+            <h2>📝 Dữ Liệu Chi Tiết</h2>
+            <button class="btn" onclick="viewData()">Xem Dữ Liệu</button>
+            <button class="btn" onclick="exportData()">Export JSON</button>
+            <button class="btn btn-danger" onclick="clearData()">Xóa Dữ Liệu</button>
+            <div class="data-preview" id="dataPreview"></div>
+        </div>
+
+        <div class="section">
+            <h2>💡 Thông Tin Lưu Trữ</h2>
+            <p><strong>Vị trí:</strong> Browser LocalStorage (Client-side)</p>
+            <p><strong>Tính bền vững:</strong> Dữ liệu tồn tại vĩnh viễn cho đến khi bị xóa</p>
+            <p><strong>Giới hạn:</strong> Tối đa ~5-10MB tùy trình duyệt</p>
+            <p><strong>Bảo mật:</strong> Chỉ truy cập được từ cùng domain</p>
+            <p><strong>File path:</strong> 
+                <code>C:\Users\[Username]\AppData\Local\[Browser]\User Data\Default\Local Storage\leveldb</code>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function updateStats() {
+            try {
+                const testResults = localStorage.getItem('testResults');
+                const data = testResults ? JSON.parse(testResults) : [];
+                
+                document.getElementById('totalTests').textContent = data.length;
+                
+                const dataSize = new Blob([testResults || '']).size;
+                document.getElementById('dataSize').textContent = 
+                    dataSize < 1024 ? `${dataSize} bytes` :
+                    dataSize < 1024 * 1024 ? `${(dataSize / 1024).toFixed(2)} KB` :
+                    `${(dataSize / (1024 * 1024)).toFixed(2)} MB`;
+                
+                if (data.length > 0) {
+                    document.getElementById('firstTest').textContent = 
+                        new Date(data[0].timestamp).toLocaleString('vi-VN');
+                    document.getElementById('lastTest').textContent = 
+                        new Date(data[data.length - 1].timestamp).toLocaleString('vi-VN');
+                } else {
+                    document.getElementById('firstTest').textContent = 'Không có dữ liệu';
+                    document.getElementById('lastTest').textContent = 'Không có dữ liệu';
+                }
+
+                // Show all localStorage keys
+                const keysHTML = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    const size = new Blob([value]).size;
+                    keysHTML.push(`
+                        <div class="key-item">
+                            <span><strong>${key}</strong></span>
+                            <span>${size < 1024 ? size + ' bytes' : (size/1024).toFixed(2) + ' KB'}</span>
+                        </div>
+                    `);
+                }
+                document.getElementById('storageKeys').innerHTML = keysHTML.join('') || '<p>Không có keys</p>';
+                
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        function viewData() {
+            try {
+                const testResults = localStorage.getItem('testResults');
+                const data = testResults ? JSON.parse(testResults) : [];
+                document.getElementById('dataPreview').textContent = 
+                    JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('dataPreview').textContent = 
+                    'Error: ' + error.message;
+            }
+        }
+
+        function exportData() {
+            try {
+                const testResults = localStorage.getItem('testResults');
+                const blob = new Blob([testResults || '[]'], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `research_data_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('Dữ liệu đã được export!');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function clearData() {
+            if (confirm('⚠️ Bạn có chắc muốn xóa TẤT CẢ dữ liệu research?\n\nHành động này KHÔNG THỂ hoàn tác!')) {
+                if (confirm('⚠️ Xác nhận lần cuối: XÓA TẤT CẢ dữ liệu?')) {
+                    localStorage.removeItem('testResults');
+                    localStorage.removeItem('savedToResearch');
+                    alert('✅ Đã xóa dữ liệu!');
+                    updateStats();
+                    document.getElementById('dataPreview').textContent = '';
+                }
+            }
+        }
+
+        // Update stats on load
+        updateStats();
+    </script>
+</body>
+</html>
+

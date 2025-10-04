@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm Link YouTube Việt Nam</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .search-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .search-button {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .search-button:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            transform: translateY(-2px);
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .category-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e5e7eb;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        .category-title {
+            font-size: 1.4rem;
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        .category-icon {
+            font-size: 1.8rem;
+            margin-right: 15px;
+        }
+        .youtube-link {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 600;
+            background: #e3f2fd;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 5px;
+            border: 1px solid #bbdefb;
+            transition: all 0.3s ease;
+        }
+        .youtube-link:hover {
+            background: #1976d2;
+            color: white;
+            text-decoration: none;
+        }
+        .video-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #059669;
+        }
+        .video-title {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .video-description {
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        .video-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .meta-item {
+            background: #e9ecef;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        .vietnam-flag {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🇻🇳 Tìm Link YouTube Việt Nam</h1>
+    <p>Tìm kiếm link YouTube Việt Nam cho các danh mục còn lại</p>
+    
+    <div class="search-container">
+        <h2>🔍 Tìm Kiếm Link YouTube Việt Nam</h2>
+        
+        <button class="search-button" onclick="searchMeditationLinks()">1. Tìm link Thiền định</button>
+        <button class="search-button" onclick="searchMindfulnessLinks()">2. Tìm link Chánh niệm</button>
+        <button class="search-button" onclick="searchStressReliefLinks()">3. Tìm link Giảm stress</button>
+        <button class="search-button" onclick="searchSelfCareLinks()">4. Tìm link Tự chăm sóc</button>
+        <button class="search-button" onclick="showAllLinks()">5. Hiển thị tất cả link</button>
+        <button class="search-button" onclick="generateUpdateCode()">6. Tạo code cập nhật</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <div class="category-section">
+        <div class="category-title">
+            <span class="category-icon">🧘‍♂️</span>
+            Thiền định
+        </div>
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Thiền định cơ bản cho người mới</div>
+            <div class="video-description">Video hướng dẫn thiền định cơ bản, phù hợp cho người mới bắt đầu</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 15-30 phút</span>
+                <span class="meta-item">🎯 Cơ bản</span>
+                <span class="meta-item">👥 Phù hợp mọi lứa tuổi</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=thiền+định+cơ+bản+việt+nam" class="youtube-link" target="_blank">🔗 Tìm kiếm "thiền định cơ bản việt nam"</a>
+                <a href="https://www.youtube.com/results?search_query=meditation+for+beginners+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "meditation for beginners vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=thiền+cho+người+mới" class="youtube-link" target="_blank">🔗 Tìm kiếm "thiền cho người mới"</a>
+            </div>
+        </div>
+        
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Thiền giảm stress và lo âu</div>
+            <div class="video-description">Video thiền định chuyên sâu giúp giảm stress và lo âu hiệu quả</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 20-45 phút</span>
+                <span class="meta-item">🎯 Trung bình</span>
+                <span class="meta-item">💆‍♀️ Giảm stress</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=thiền+giảm+stress+việt+nam" class="youtube-link" target="_blank">🔗 Tìm kiếm "thiền giảm stress việt nam"</a>
+                <a href="https://www.youtube.com/results?search_query=meditation+stress+relief+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "meditation stress relief vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=thiền+thư+giãn" class="youtube-link" target="_blank">🔗 Tìm kiếm "thiền thư giãn"</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="category-section">
+        <div class="category-title">
+            <span class="category-icon">🧠</span>
+            Chánh niệm
+        </div>
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Chánh niệm trong cuộc sống hàng ngày</div>
+            <div class="video-description">Video hướng dẫn thực hành chánh niệm trong cuộc sống hàng ngày</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 10-20 phút</span>
+                <span class="meta-item">🎯 Cơ bản</span>
+                <span class="meta-item">🏠 Tại nhà</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=chánh+niệm+việt+nam" class="youtube-link" target="_blank">🔗 Tìm kiếm "chánh niệm việt nam"</a>
+                <a href="https://www.youtube.com/results?search_query=mindfulness+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "mindfulness vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=sống+chánh+niệm" class="youtube-link" target="_blank">🔗 Tìm kiếm "sống chánh niệm"</a>
+            </div>
+        </div>
+        
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Thực hành chánh niệm tại nhà</div>
+            <div class="video-description">Video hướng dẫn thực hành chánh niệm tại nhà một cách đơn giản</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 15-30 phút</span>
+                <span class="meta-item">🎯 Cơ bản</span>
+                <span class="meta-item">🏠 Tại nhà</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=thực+hành+chánh+niệm" class="youtube-link" target="_blank">🔗 Tìm kiếm "thực hành chánh niệm"</a>
+                <a href="https://www.youtube.com/results?search_query=mindfulness+practice+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "mindfulness practice vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=chánh+niệm+tại+nhà" class="youtube-link" target="_blank">🔗 Tìm kiếm "chánh niệm tại nhà"</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="category-section">
+        <div class="category-title">
+            <span class="category-icon">😌</span>
+            Giảm stress
+        </div>
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Kỹ thuật giảm stress hiệu quả</div>
+            <div class="video-description">Video hướng dẫn các kỹ thuật giảm stress hiệu quả và thực tế</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 10-25 phút</span>
+                <span class="meta-item">🎯 Cơ bản</span>
+                <span class="meta-item">💆‍♀️ Giảm stress</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=giảm+stress+việt+nam" class="youtube-link" target="_blank">🔗 Tìm kiếm "giảm stress việt nam"</a>
+                <a href="https://www.youtube.com/results?search_query=stress+relief+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "stress relief vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=thư+giãn+tâm+lý" class="youtube-link" target="_blank">🔗 Tìm kiếm "thư giãn tâm lý"</a>
+            </div>
+        </div>
+        
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Thư giãn tâm lý và thể chất</div>
+            <div class="video-description">Video hướng dẫn thư giãn toàn diện cả tâm lý và thể chất</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 20-40 phút</span>
+                <span class="meta-item">🎯 Trung bình</span>
+                <span class="meta-item">🧘‍♀️ Thư giãn</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=thư+giãn+tâm+lý" class="youtube-link" target="_blank">🔗 Tìm kiếm "thư giãn tâm lý"</a>
+                <a href="https://www.youtube.com/results?search_query=relaxation+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "relaxation vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=giảm+căng+thẳng" class="youtube-link" target="_blank">🔗 Tìm kiếm "giảm căng thẳng"</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="category-section">
+        <div class="category-title">
+            <span class="category-icon">💆‍♀️</span>
+            Tự chăm sóc
+        </div>
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Tự chăm sóc bản thân toàn diện</div>
+            <div class="video-description">Video hướng dẫn tự chăm sóc bản thân một cách toàn diện và hiệu quả</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 15-30 phút</span>
+                <span class="meta-item">🎯 Cơ bản</span>
+                <span class="meta-item">💆‍♀️ Tự chăm sóc</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=tự+chăm+sóc+việt+nam" class="youtube-link" target="_blank">🔗 Tìm kiếm "tự chăm sóc việt nam"</a>
+                <a href="https://www.youtube.com/results?search_query=self+care+vietnam" class="youtube-link" target="_blank">🔗 Tìm kiếm "self care vietnam"</a>
+                <a href="https://www.youtube.com/results?search_query=chăm+sóc+bản+thân" class="youtube-link" target="_blank">🔗 Tìm kiếm "chăm sóc bản thân"</a>
+            </div>
+        </div>
+        
+        <div class="video-info">
+            <div class="video-title">🇻🇳 Wellness và sức khỏe tâm lý</div>
+            <div class="video-description">Video về wellness và chăm sóc sức khỏe tâm lý toàn diện</div>
+            <div class="video-meta">
+                <span class="meta-item">⏱️ 20-45 phút</span>
+                <span class="meta-item">🎯 Trung bình</span>
+                <span class="meta-item">🏥 Sức khỏe</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="https://www.youtube.com/results?search_query=wellness+việt+nam" class="youtube-link" target="_blank">🔗 Tìm kiếm "wellness việt nam"</a>
+                <a href="https://www.youtube.com/results?search_query=sức+khỏe+tâm+lý" class="youtube-link" target="_blank">🔗 Tìm kiếm "sức khỏe tâm lý"</a>
+                <a href="https://www.youtube.com/results?search_query=sống+khỏe+mạnh" class="youtube-link" target="_blank">🔗 Tìm kiếm "sống khỏe mạnh"</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function searchMeditationLinks() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🧘‍♂️ Tìm kiếm link YouTube Thiền định Việt Nam:\n\n';
+                
+                result += '📺 Kênh YouTube Việt Nam chất lượng:\n';
+                result += '• Thiền và Yoga Việt Nam\n';
+                result += '• Sức Khỏe Tâm Lý\n';
+                result += '• Wellness Việt Nam\n';
+                result += '• Tâm Lý Học Việt Nam\n\n';
+                
+                result += '🔍 Từ khóa tìm kiếm:\n';
+                result += '• "thiền định việt nam"\n';
+                result += '• "meditation vietnam"\n';
+                result += '• "thiền cho người mới"\n';
+                result += '• "thiền giảm stress"\n';
+                result += '• "thiền tâm linh"\n\n';
+                
+                result += '📋 Video đề xuất:\n';
+                result += '1. Thiền định cơ bản cho người mới bắt đầu\n';
+                result += '2. Thiền giảm stress và lo âu\n';
+                result += '3. Thiền tâm linh và chữa lành\n';
+                result += '4. Thiền định buổi sáng\n';
+                result += '5. Thiền định buổi tối\n';
+                result += '6. Thiền định cho phụ nữ\n\n';
+                
+                result += '🎯 Hướng dẫn tìm kiếm:\n';
+                result += '1. Vào YouTube.com\n';
+                result += '2. Tìm kiếm từ khóa trên\n';
+                result += '3. Lọc theo "Video" và "Việt Nam"\n';
+                result += '4. Chọn video có lượt xem cao\n';
+                result += '5. Copy YouTube ID từ URL\n';
+                result += '6. Cập nhật vào videoData.ts';
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function searchMindfulnessLinks() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🧠 Tìm kiếm link YouTube Chánh niệm Việt Nam:\n\n';
+                
+                result += '📺 Kênh YouTube Việt Nam chất lượng:\n';
+                result += '• Sức Khỏe Tâm Lý\n';
+                result += '• Wellness Việt Nam\n';
+                result += '• Tâm Lý Học Việt Nam\n';
+                result += '• Chánh Niệm Việt Nam\n\n';
+                
+                result += '🔍 Từ khóa tìm kiếm:\n';
+                result += '• "chánh niệm việt nam"\n';
+                result += '• "mindfulness vietnam"\n';
+                result += '• "sống chánh niệm"\n';
+                result += '• "thực hành chánh niệm"\n';
+                result += '• "chánh niệm hàng ngày"\n\n';
+                
+                result += '📋 Video đề xuất:\n';
+                result += '1. Chánh niệm trong cuộc sống hàng ngày\n';
+                result += '2. Thực hành chánh niệm tại nhà\n';
+                result += '3. Chánh niệm và hạnh phúc\n';
+                result += '4. Chánh niệm trong công việc\n';
+                result += '5. Chánh niệm và mối quan hệ\n';
+                result += '6. Chánh niệm cho người mới\n\n';
+                
+                result += '🎯 Hướng dẫn tìm kiếm:\n';
+                result += '1. Vào YouTube.com\n';
+                result += '2. Tìm kiếm từ khóa trên\n';
+                result += '3. Lọc theo "Video" và "Việt Nam"\n';
+                result += '4. Chọn video có lượt xem cao\n';
+                result += '5. Copy YouTube ID từ URL\n';
+                result += '6. Cập nhật vào videoData.ts';
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function searchStressReliefLinks() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '😌 Tìm kiếm link YouTube Giảm stress Việt Nam:\n\n';
+                
+                result += '📺 Kênh YouTube Việt Nam chất lượng:\n';
+                result += '• Sức Khỏe Tâm Lý\n';
+                result += '• Wellness Việt Nam\n';
+                result += '• Tâm Lý Học Việt Nam\n';
+                result += '• Sức Khỏe Tinh Thần\n\n';
+                
+                result += '🔍 Từ khóa tìm kiếm:\n';
+                result += '• "giảm stress việt nam"\n';
+                result += '• "stress relief vietnam"\n';
+                result += '• "thư giãn tâm lý"\n';
+                result += '• "giảm căng thẳng"\n';
+                result += '• "quản lý stress"\n\n';
+                
+                result += '📋 Video đề xuất:\n';
+                result += '1. Kỹ thuật giảm stress hiệu quả\n';
+                result += '2. Thư giãn tâm lý và thể chất\n';
+                result += '3. Quản lý stress trong công việc\n';
+                result += '4. Giảm căng thẳng và lo âu\n';
+                result += '5. Thư giãn sau giờ làm\n';
+                result += '6. Quản lý stress cho phụ nữ\n\n';
+                
+                result += '🎯 Hướng dẫn tìm kiếm:\n';
+                result += '1. Vào YouTube.com\n';
+                result += '2. Tìm kiếm từ khóa trên\n';
+                result += '3. Lọc theo "Video" và "Việt Nam"\n';
+                result += '4. Chọn video có lượt xem cao\n';
+                result += '5. Copy YouTube ID từ URL\n';
+                result += '6. Cập nhật vào videoData.ts';
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function searchSelfCareLinks() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '💆‍♀️ Tìm kiếm link YouTube Tự chăm sóc Việt Nam:\n\n';
+                
+                result += '📺 Kênh YouTube Việt Nam chất lượng:\n';
+                result += '• Wellness Việt Nam\n';
+                result += '• Sức Khỏe Tâm Lý\n';
+                result += '• Tâm Lý Học Việt Nam\n';
+                result += '• Sống Khỏe Mạnh\n\n';
+                
+                result += '🔍 Từ khóa tìm kiếm:\n';
+                result += '• "tự chăm sóc việt nam"\n';
+                result += '• "self care vietnam"\n';
+                result += '• "chăm sóc bản thân"\n';
+                result += '• "wellness việt nam"\n';
+                result += '• "sống khỏe mạnh"\n\n';
+                
+                result += '📋 Video đề xuất:\n';
+                result += '1. Tự chăm sóc bản thân toàn diện\n';
+                result += '2. Wellness và sức khỏe tâm lý\n';
+                result += '3. Sống khỏe mạnh và hạnh phúc\n';
+                result += '4. Chăm sóc sức khỏe tinh thần\n';
+                result += '5. Lối sống lành mạnh\n';
+                result += '6. Tự chăm sóc cho phụ nữ\n\n';
+                
+                result += '🎯 Hướng dẫn tìm kiếm:\n';
+                result += '1. Vào YouTube.com\n';
+                result += '2. Tìm kiếm từ khóa trên\n';
+                result += '3. Lọc theo "Video" và "Việt Nam"\n';
+                result += '4. Chọn video có lượt xem cao\n';
+                result += '5. Copy YouTube ID từ URL\n';
+                result += '6. Cập nhật vào videoData.ts';
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function showAllLinks() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🇻🇳 Tìm kiếm link YouTube Việt Nam cho tất cả danh mục:\n\n';
+                
+                result += '📺 Kênh YouTube Việt Nam chất lượng:\n';
+                result += '• Thiền và Yoga Việt Nam\n';
+                result += '• Sức Khỏe Tâm Lý\n';
+                result += '• Wellness Việt Nam\n';
+                result += '• Tâm Lý Học Việt Nam\n';
+                result += '• Sức Khỏe Tinh Thần\n';
+                result += '• Sống Khỏe Mạnh\n\n';
+                
+                result += '🔍 Từ khóa tìm kiếm cho từng danh mục:\n\n';
+                
+                result += '🧘‍♂️ Thiền định:\n';
+                result += '• "thiền định việt nam"\n';
+                result += '• "meditation vietnam"\n';
+                result += '• "thiền cho người mới"\n\n';
+                
+                result += '🧠 Chánh niệm:\n';
+                result += '• "chánh niệm việt nam"\n';
+                result += '• "mindfulness vietnam"\n';
+                result += '• "sống chánh niệm"\n\n';
+                
+                result += '😌 Giảm stress:\n';
+                result += '• "giảm stress việt nam"\n';
+                result += '• "stress relief vietnam"\n';
+                result += '• "thư giãn tâm lý"\n\n';
+                
+                result += '💆‍♀️ Tự chăm sóc:\n';
+                result += '• "tự chăm sóc việt nam"\n';
+                result += '• "self care vietnam"\n';
+                result += '• "chăm sóc bản thân"\n\n';
+                
+                result += '🎯 Hướng dẫn tìm kiếm:\n';
+                result += '1. Vào YouTube.com\n';
+                result += '2. Tìm kiếm từ khóa trên\n';
+                result += '3. Lọc theo "Video" và "Việt Nam"\n';
+                result += '4. Chọn video có lượt xem cao\n';
+                result += '5. Copy YouTube ID từ URL\n';
+                result += '6. Cập nhật vào videoData.ts';
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function generateUpdateCode() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '💻 Code cập nhật videoData.ts:\n\n';
+                
+                result += '// Cập nhật danh mục thiền định\n';
+                result += 'meditation: {\n';
+                result += '  title: \'Thiền định\',\n';
+                result += '  icon: \'🧘‍♂️\',\n';
+                result += '  description: \'Video hướng dẫn thiền định cho người mới bắt đầu\',\n';
+                result += '  videos: [\n';
+                result += '    {\n';
+                result += '      id: 1,\n';
+                result += '      title: \'Thiền định cơ bản\',\n';
+                result += '      description: \'Video hướng dẫn thiền định cho người mới\',\n';
+                result += '      youtubeId: \'VIDEO_ID_1\', // Thay thế bằng ID thực tế\n';
+                result += '      thumbnail: \'https://img.youtube.com/vi/VIDEO_ID_1/maxresdefault.jpg\',\n';
+                result += '      isAvailable: true\n';
+                result += '    },\n';
+                result += '    {\n';
+                result += '      id: 2,\n';
+                result += '      title: \'Thiền giảm stress\',\n';
+                result += '      description: \'Video thiền định giúp giảm stress và lo âu\',\n';
+                result += '      youtubeId: \'VIDEO_ID_2\', // Thay thế bằng ID thực tế\n';
+                result += '      thumbnail: \'https://img.youtube.com/vi/VIDEO_ID_2/maxresdefault.jpg\',\n';
+                result += '      isAvailable: true\n';
+                result += '    }\n';
+                result += '  ]\n';
+                result += '},\n\n';
+                
+                result += '// Cập nhật danh mục chánh niệm\n';
+                result += 'mindfulness: {\n';
+                result += '  title: \'Chánh niệm\',\n';
+                result += '  icon: \'🧠\',\n';
+                result += '  description: \'Video hướng dẫn thực hành chánh niệm\',\n';
+                result += '  videos: [\n';
+                result += '    {\n';
+                result += '      id: 1,\n';
+                result += '      title: \'Chánh niệm cơ bản\',\n';
+                result += '      description: \'Video hướng dẫn chánh niệm cho người mới\',\n';
+                result += '      youtubeId: \'VIDEO_ID_3\', // Thay thế bằng ID thực tế\n';
+                result += '      thumbnail: \'https://img.youtube.com/vi/VIDEO_ID_3/maxresdefault.jpg\',\n';
+                result += '      isAvailable: true\n';
+                result += '    }\n';
+                result += '  ]\n';
+                result += '},\n\n';
+                
+                result += '// Cập nhật danh mục giảm stress\n';
+                result += 'stressRelief: {\n';
+                result += '  title: \'Giảm stress\',\n';
+                result += '  icon: \'😌\',\n';
+                result += '  description: \'Video hướng dẫn giảm stress và thư giãn\',\n';
+                result += '  videos: [\n';
+                result += '    {\n';
+                result += '      id: 1,\n';
+                result += '      title: \'Kỹ thuật giảm stress\',\n';
+                result += '      description: \'Video hướng dẫn kỹ thuật giảm stress hiệu quả\',\n';
+                result += '      youtubeId: \'VIDEO_ID_4\', // Thay thế bằng ID thực tế\n';
+                result += '      thumbnail: \'https://img.youtube.com/vi/VIDEO_ID_4/maxresdefault.jpg\',\n';
+                result += '      isAvailable: true\n';
+                result += '    }\n';
+                result += '  ]\n';
+                result += '},\n\n';
+                
+                result += '// Cập nhật danh mục tự chăm sóc\n';
+                result += 'selfCare: {\n';
+                result += '  title: \'Tự chăm sóc\',\n';
+                result += '  icon: \'💆‍♀️\',\n';
+                result += '  description: \'Video hướng dẫn tự chăm sóc bản thân\',\n';
+                result += '  videos: [\n';
+                result += '    {\n';
+                result += '      id: 1,\n';
+                result += '      title: \'Tự chăm sóc toàn diện\',\n';
+                result += '      description: \'Video hướng dẫn tự chăm sóc bản thân toàn diện\',\n';
+                result += '      youtubeId: \'VIDEO_ID_5\', // Thay thế bằng ID thực tế\n';
+                result += '      thumbnail: \'https://img.youtube.com/vi/VIDEO_ID_5/maxresdefault.jpg\',\n';
+                result += '      isAvailable: true\n';
+                result += '    }\n';
+                result += '  ]\n';
+                result += '}\n\n';
+                
+                result += '🎯 Hướng dẫn sử dụng:\n';
+                result += '1. Tìm video Việt Nam trên YouTube\n';
+                result += '2. Copy YouTube ID từ URL\n';
+                result += '3. Thay thế VIDEO_ID_X bằng ID thực tế\n';
+                result += '4. Cập nhật vào videoData.ts\n';
+                result += '5. Test trong ứng dụng';
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

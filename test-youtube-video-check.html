@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test YouTube Video Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #047857;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .video-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 10px;
+        }
+        .video-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .video-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 10px;
+        }
+        .video-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .status-available {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-unavailable {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-checking {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test YouTube Video Check</h1>
+    <p>Kiểm tra tính khả dụng của video YouTube</p>
+    
+    <div class="test-container">
+        <h2>📊 Danh sách Video YouTube</h2>
+        
+        <button class="test-button" onclick="checkAllVideos()">1. Kiểm tra tất cả video</button>
+        <button class="test-button" onclick="testVideoEmbedding()">2. Test nhúng video</button>
+        <button class="test-button" onclick="findWorkingVideos()">3. Tìm video hoạt động</button>
+        <button class="test-button" onclick="generateFallbackContent()">4. Tạo nội dung thay thế</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>🎬 Video Test</h2>
+        <div id="video-test"></div>
+    </div>
+
+    <script>
+        // Danh sách video YouTube để test
+        const testVideos = [
+            {
+                id: 'Z4Zgg0HnRSk',
+                title: '4-7-8 Breathing Technique',
+                description: 'Kỹ thuật thở 4-7-8 giúp giảm lo âu',
+                status: 'checking'
+            },
+            {
+                id: 'gLz6gQv8V0k',
+                title: 'Deep Breathing Exercise',
+                description: 'Bài tập thở sâu giúp thư giãn',
+                status: 'checking'
+            },
+            {
+                id: 'v7AYKMP6rOE',
+                title: 'Yoga for Women',
+                description: 'Yoga cho phụ nữ',
+                status: 'checking'
+            },
+            {
+                id: 'ZToicYcHIOU',
+                title: 'Mindfulness Meditation',
+                description: 'Thiền chánh niệm',
+                status: 'checking'
+            },
+            {
+                id: 'hJbRpHZr_d0',
+                title: 'Body Scan Meditation',
+                description: 'Thiền body scan',
+                status: 'checking'
+            }
+        ];
+
+        function checkAllVideos() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🔍 Kiểm tra video YouTube:\n\n';
+                
+                testVideos.forEach((video, index) => {
+                    result += `${index + 1}. ${video.title}\n`;
+                    result += `   ID: ${video.id}\n`;
+                    result += `   URL: https://www.youtube.com/watch?v=${video.id}\n`;
+                    result += `   Embed: https://www.youtube.com/embed/${video.id}\n`;
+                    result += `   Status: Đang kiểm tra...\n\n`;
+                });
+                
+                result += `⚠️ Lưu ý: Một số video có thể không khả dụng do:\n`;
+                result += `• Video bị xóa hoặc chặn\n`;
+                result += `• Giới hạn địa lý\n`;
+                result += `• Cài đặt riêng tư\n`;
+                result += `• Vấn đề kết nối\n\n`;
+                result += `💡 Giải pháp: Sử dụng fallback content hoặc tìm video thay thế`;
+                
+                resultDiv.className = 'result warning';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function testVideoEmbedding() {
+            const resultDiv = document.getElementById('result');
+            const videoTest = document.getElementById('video-test');
+            
+            try {
+                // Test với video đầu tiên
+                const testVideo = testVideos[0];
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `🎬 Test nhúng video:\n\n✅ Video: ${testVideo.title}\n✅ ID: ${testVideo.id}\n✅ Embed URL: https://www.youtube.com/embed/${testVideo.id}\n\n🎉 Đang tải video...`;
+                
+                // Tạo video player
+                videoTest.innerHTML = `
+                    <div class="video-info">
+                        <div class="video-title">${testVideo.title}</div>
+                        <div class="video-status status-checking">Đang kiểm tra...</div>
+                        <p>${testVideo.description}</p>
+                    </div>
+                    <div class="video-container">
+                        <iframe 
+                            class="video-iframe"
+                            src="https://www.youtube.com/embed/${testVideo.id}?rel=0&modestbranding=1"
+                            title="${testVideo.title}"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen
+                            onload="checkVideoStatus('${testVideo.id}')"
+                            onerror="handleVideoError('${testVideo.id}')">
+                        </iframe>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function checkVideoStatus(videoId) {
+            console.log(`Checking video status for: ${videoId}`);
+            // Trong thực tế, bạn có thể sử dụng YouTube API để kiểm tra
+            // Ở đây chúng ta chỉ log để demo
+        }
+
+        function handleVideoError(videoId) {
+            console.log(`Video error for: ${videoId}`);
+            // Xử lý lỗi video
+        }
+
+        function findWorkingVideos() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '🔍 Tìm video YouTube hoạt động:\n\n';
+                
+                // Danh sách video thay thế với IDs có thể hoạt động
+                const alternativeVideos = [
+                    {
+                        id: 'dQw4w9WgXcQ', // Rick Roll - Video nổi tiếng, chắc chắn hoạt động
+                        title: 'Video Demo - Rick Roll',
+                        description: 'Video demo để test YouTube integration'
+                    },
+                    {
+                        id: 'jNQXAC9IVRw', // Video nổi tiếng khác
+                        title: 'Video Demo 2',
+                        description: 'Video demo khác'
+                    }
+                ];
+                
+                result += `📋 Video thay thế được đề xuất:\n\n`;
+                alternativeVideos.forEach((video, index) => {
+                    result += `${index + 1}. ${video.title}\n`;
+                    result += `   ID: ${video.id}\n`;
+                    result += `   URL: https://www.youtube.com/watch?v=${video.id}\n`;
+                    result += `   Status: Có thể hoạt động\n\n`;
+                });
+                
+                result += `💡 Khuyến nghị:\n`;
+                result += `• Sử dụng video từ các kênh uy tín\n`;
+                result += `• Kiểm tra video trước khi tích hợp\n`;
+                result += `• Có fallback content khi video không khả dụng\n`;
+                result += `• Sử dụng YouTube API để kiểm tra tính khả dụng`;
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function generateFallbackContent() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                let result = '📚 Tạo nội dung thay thế:\n\n';
+                
+                result += `🎯 Khi video không khả dụng, cung cấp:\n\n`;
+                result += `1. 📖 Nội dung văn bản chi tiết:\n`;
+                result += `   • Hướng dẫn từng bước\n`;
+                result += `   • Lợi ích và tác dụng\n`;
+                result += `   • Mẹo thực hành\n`;
+                result += `   • Lưu ý quan trọng\n\n`;
+                
+                result += `2. 🔗 Liên kết thay thế:\n`;
+                result += `   • Mở video trên YouTube\n`;
+                result += `   • Tìm video tương tự\n`;
+                result += `   • Tài liệu PDF\n`;
+                result += `   • Audio hướng dẫn\n\n`;
+                
+                result += `3. 🎨 Giao diện thân thiện:\n`;
+                result += `   • Icon cảnh báo rõ ràng\n`;
+                result += `   • Thông báo lỗi dễ hiểu\n`;
+                result += `   • Nút hành động rõ ràng\n`;
+                result += `   • Thông tin thay thế hữu ích\n\n`;
+                
+                result += `✅ Fallback content giúp người dùng vẫn có thể:\n`;
+                result += `• Học được nội dung cần thiết\n`;
+                result += `• Tìm kiếm tài liệu thay thế\n`;
+                result += `• Tiếp tục trải nghiệm ứng dụng`;
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            console.log('🔍 YouTube Video Check initialized');
+        };
+    </script>
+</body>
+</html>

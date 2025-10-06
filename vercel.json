@@ -9,7 +9,16 @@
       "dest": "https://soulfriend-api.onrender.com/api/$1"
     },
     {
-      "handle": "filesystem"
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/sw.js",
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",

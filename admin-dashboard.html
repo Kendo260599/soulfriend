@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 SoulFriend HITL Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .alerts-section {
+            padding: 30px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-card {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        .alert-card.critical {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-card.acknowledged {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            animation: none;
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .alert-id {
+            font-weight: bold;
+            color: #721c24;
+            font-size: 1.1em;
+        }
+
+        .alert-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .alert-content {
+            margin-bottom: 15px;
+        }
+
+        .alert-message {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ff6b6b;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        .alert-keywords {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .keyword-tag {
+            background: #ff6b6b;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-acknowledge {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-acknowledge:hover {
+            background: #218838;
+        }
+
+        .btn-resolve {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-resolve:hover {
+            background: #138496;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .escalation-timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .no-alerts {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #0056b3;
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 SoulFriend HITL Admin Dashboard</h1>
+            <p>Human-in-the-Loop Crisis Intervention System</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-alerts">-</div>
+                <div class="stat-label">Total Alerts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pending-alerts">-</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="acknowledged-alerts">-</div>
+                <div class="stat-label">Acknowledged</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="resolved-alerts">-</div>
+                <div class="stat-label">Resolved</div>
+            </div>
+        </div>
+
+        <div class="alerts-section">
+            <h2 class="section-title">
+                🚨 Active Crisis Alerts
+            </h2>
+            <div id="alerts-container">
+                <div class="loading">Loading alerts...</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="loadAlerts()" title="Refresh Alerts">
+        🔄
+    </button>
+
+    <script>
+        const API_BASE = 'https://soulfriend-api.onrender.com';
+        let refreshInterval;
+
+        // Load alerts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAlerts();
+            loadStats();
+            
+            // Auto-refresh every 5 seconds
+            refreshInterval = setInterval(() => {
+                loadAlerts();
+                loadStats();
+            }, 5000);
+        });
+
+        async function loadAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/api/alerts/active`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAlerts(data.alerts);
+                } else {
+                    showError('Failed to load alerts: ' + data.message);
+                }
+            } catch (error) {
+                showError('Error loading alerts: ' + error.message);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/alerts/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStats(data.stats);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function displayAlerts(alerts) {
+            const container = document.getElementById('alerts-container');
+            
+            if (alerts.length === 0) {
+                container.innerHTML = '<div class="no-alerts">🎉 No active alerts - All clear!</div>';
+                return;
+            }
+
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert-card ${alert.status}">
+                    <div class="escalation-timer" id="timer-${alert.id}">
+                        ${getEscalationTime(alert.timestamp)}
+                    </div>
+                    <div class="alert-header">
+                        <div class="alert-id">${alert.id}</div>
+                        <div class="alert-time">${new Date(alert.timestamp).toLocaleString()}</div>
+                    </div>
+                    <div class="alert-content">
+                        <div class="alert-message">"${alert.userMessage}"</div>
+                        <div class="alert-keywords">
+                            ${alert.detectedKeywords.map(keyword => 
+                                `<span class="keyword-tag">${keyword}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn btn-acknowledge" 
+                                onclick="acknowledgeAlert('${alert.id}')"
+                                ${alert.status !== 'pending' ? 'disabled' : ''}>
+                            ${alert.status === 'acknowledged' ? '✅ Acknowledged' : 'Acknowledge Alert'}
+                        </button>
+                        <button class="btn btn-resolve" 
+                                onclick="resolveAlert('${alert.id}')"
+                                ${alert.status === 'resolved' ? 'disabled' : ''}>
+                            ${alert.status === 'resolved' ? '✅ Resolved' : 'Resolve Alert'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Update timers
+            alerts.forEach(alert => {
+                updateTimer(alert.id, alert.timestamp);
+            });
+        }
+
+        function updateStats(stats) {
+            document.getElementById('total-alerts').textContent = stats.total;
+            document.getElementById('pending-alerts').textContent = stats.byStatus.pending;
+            document.getElementById('acknowledged-alerts').textContent = stats.byStatus.acknowledged;
+            document.getElementById('resolved-alerts').textContent = stats.byStatus.intervened;
+        }
+
+        function getEscalationTime(timestamp) {
+            const now = new Date();
+            const alertTime = new Date(timestamp);
+            const elapsed = Math.floor((now - alertTime) / 1000);
+            const remaining = Math.max(0, 300 - elapsed); // 5 minutes = 300 seconds
+            
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            
+            if (remaining <= 0) {
+                return 'ESCALATED';
+            }
+            
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateTimer(alertId, timestamp) {
+            const timerElement = document.getElementById(`timer-${alertId}`);
+            if (timerElement) {
+                timerElement.textContent = getEscalationTime(timestamp);
+            }
+        }
+
+        async function acknowledgeAlert(alertId) {
+            const clinicalMemberId = prompt('Enter your clinical member ID:');
+            if (!clinicalMemberId) return;
+
+            const notes = prompt('Enter intervention notes (optional):') || '';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/alerts/${alertId}/acknowledge`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        clinicalMemberId,
+                        notes
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Alert acknowledged successfully!');
+                    loadAlerts();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('❌ Error acknowledging alert: ' + error.message);
+            }
+        }
+
+        async function resolveAlert(alertId) {
+            const resolution = prompt('Enter resolution details:');
+            if (!resolution) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/alerts/${alertId}/resolve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ resolution })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Alert resolved successfully!');
+                    loadAlerts();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('❌ Error resolving alert: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('alerts-container');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Update timers every second
+        setInterval(() => {
+            const timers = document.querySelectorAll('[id^="timer-"]');
+            timers.forEach(timer => {
+                const alertId = timer.id.replace('timer-', '');
+                // This is a simplified version - in real implementation,
+                // you'd need to track the original timestamp
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

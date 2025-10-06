@@ -147,3 +147,4 @@ Write-Host "   • Press F12 → Check Console" -ForegroundColor White
 Write-Host "   • Expected: ZERO ERRORS!" -ForegroundColor White
 Write-Host ""
 
+

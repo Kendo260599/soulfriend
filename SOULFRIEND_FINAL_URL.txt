@@ -1,0 +1,43 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ SOULFRIEND - URL CHÍNH THỨC (SAU KHI FIX)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 URL RÚT GỌN:
+https://soulfriend.vercel.app
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 DEPLOYMENT INFO:
+Commit: 6a423d3
+Message: Force new deployment with soulfriend domain
+Status: Building... (đợi 2-3 phút)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 TẠI SAO DEPLOYMENT CŨ KHÔNG CÓ URL RÚT GỌN?
+
+- Đổi project name chỉ ảnh hưởng DEPLOYMENT MỚI
+- Deployment CŨ giữ nguyên domain CŨ
+- Phải tạo deployment MỚI để có domain MỚI
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏳ CHECKLIST:
+
+□ Đợi 2-3 phút
+□ Reload Vercel Deployments
+□ Tìm deployment commit 6a423d3
+□ Đợi status = "Ready"
+□ Click vào deployment
+□ Check domains → Phải có "soulfriend.vercel.app"
+□ Test URL: https://soulfriend.vercel.app
+□ Tắt Deployment Protection (nếu cần)
+□ Update Gemini API key trên Render
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔗 BACKEND:
+https://soulfriend-api.onrender.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

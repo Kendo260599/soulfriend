@@ -125,3 +125,4 @@ $output | Out-File -FilePath $outputFile -Encoding UTF8
 # Try to display (might not work but worth trying)
 Write-Output $output
 
+

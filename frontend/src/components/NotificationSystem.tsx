@@ -184,8 +184,8 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
           } catch (error) {
             // Silent error
           }
-      }
-    };
+        }
+      };
 
     checkReminders();
     const interval = setInterval(checkReminders, 60 * 60 * 1000); // Check every hour

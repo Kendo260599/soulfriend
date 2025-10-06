@@ -42,3 +42,4 @@ Write-Host ""
 Write-Host "🚀 SoulFriend is now running!" -ForegroundColor Green
 Write-Host ""
 
+

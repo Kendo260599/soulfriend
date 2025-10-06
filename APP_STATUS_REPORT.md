@@ -197,3 +197,4 @@ Người dùng có thể:
 **🔧 Script khởi động:** start-app-simple.ps1  
 **📖 Tài liệu tham khảo:** MANUAL_START_GUIDE.md
 
+

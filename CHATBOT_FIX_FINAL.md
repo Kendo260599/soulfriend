@@ -286,3 +286,4 @@ Chatbot AI giờ sẽ hoạt động bình thường sau khi:
 **Root cause:** Missing proxy configuration  
 **Solution:** Added `"proxy": "http://localhost:5000"` to package.json
 
+

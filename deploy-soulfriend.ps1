@@ -188,3 +188,4 @@ Write-Host "🌸 SoulFriend is now running with AI Online!" -ForegroundColor Gre
 Write-Host "   Helping Vietnamese women with mental health support" -ForegroundColor Gray
 Write-Host ""
 
+

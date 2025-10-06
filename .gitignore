@@ -45,3 +45,9 @@ coverage/
 *.pem
 
 
+
+# Vercel Token
+.env.vercel
+
+# API Tokens
+.env.tokens

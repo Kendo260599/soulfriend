@@ -322,3 +322,4 @@ When all items are checked:
 **Frontend URL:** https://soulfriend.vercel.app  
 **Deployed By:** _____________
 
+

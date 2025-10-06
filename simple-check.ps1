@@ -3,3 +3,4 @@ $r = Invoke-RestMethod -Uri "https://api.vercel.com/v6/deployments?projectId=$en
 $r.deployments[0] | ConvertTo-Json | Out-File result.json
 "DONE - Check result.json" | Out-File check-done.txt
 
+

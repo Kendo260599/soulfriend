@@ -118,3 +118,4 @@ Now files are served from root of build output!
 **Last updated:** Check file modification time
 **Check method:** Run `auto-check.bat` or `node trigger-redeploy.js`
 
+

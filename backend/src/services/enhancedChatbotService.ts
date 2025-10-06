@@ -25,6 +25,7 @@ import {
   generateDisclaimer, 
   assessRisk 
 } from '../data/crisisManagementData';
+import { criticalInterventionService } from './criticalInterventionService';
 import { 
   evaluateInteractionQuality, 
   identifyKnowledgeGap, 
@@ -158,6 +159,29 @@ export class EnhancedChatbotService {
         
         // Ghi log khủng hoảng
         this.logCrisisEvent(sessionId, crisisLevel, message, response);
+        
+        // 🚨 HITL: Kích hoạt can thiệp của con người
+        try {
+          const criticalAlert = await criticalInterventionService.createCriticalAlert(
+            userId,
+            sessionId,
+            {
+              riskLevel: 'CRITICAL',
+              riskType: crisis!.id as 'suicidal' | 'psychosis' | 'self_harm' | 'violence',
+              userMessage: message,
+              detectedKeywords: crisis!.triggers,
+              userProfile: userProfile
+            }
+          );
+          
+          logger.error(`🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`);
+          
+          // Thêm thông tin về HITL vào response
+          response += `\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.`;
+          
+        } catch (error) {
+          logger.error('Error creating HITL alert:', error);
+        }
       } else if (userSegment) {
         // Sử dụng response template cho segment
         const template = getResponseTemplate(userSegment, message, nuancedEmotion.emotion);

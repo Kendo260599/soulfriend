@@ -1,0 +1,92 @@
+{
+  "timestamp": "2025-10-07T12:42:03.836Z",
+  "summary": {
+    "totalTests": 16,
+    "passed": 16,
+    "failed": 0,
+    "successRate": 100
+  },
+  "errors": [],
+  "details": [
+    {
+      "test": "Server Health Check",
+      "passed": true,
+      "details": "Server is running"
+    },
+    {
+      "test": "Log Conversation",
+      "passed": true,
+      "details": "Conversation logged successfully"
+    },
+    {
+      "test": "Record Feedback",
+      "passed": true,
+      "details": "Feedback recorded successfully"
+    },
+    {
+      "test": "Get Learning Insights",
+      "passed": true,
+      "details": "Insights retrieved successfully"
+    },
+    {
+      "test": "Get Training Data",
+      "passed": true,
+      "details": "Training data retrieved successfully"
+    },
+    {
+      "test": "Get Common Questions",
+      "passed": true,
+      "details": "Common questions retrieved successfully"
+    },
+    {
+      "test": "Get Conversations Needing Review",
+      "passed": true,
+      "details": "Review conversations retrieved successfully"
+    },
+    {
+      "test": "Create Chat Session",
+      "passed": true,
+      "details": "Session created successfully"
+    },
+    {
+      "test": "Send Chat Message",
+      "passed": true,
+      "details": "Message processed successfully"
+    },
+    {
+      "test": "Analyze Intent",
+      "passed": true,
+      "details": "Intent analyzed successfully"
+    },
+    {
+      "test": "Safety Check",
+      "passed": true,
+      "details": "Safety check completed"
+    },
+    {
+      "test": "Database Integration",
+      "passed": true,
+      "details": "Learning endpoints are accessible"
+    },
+    {
+      "test": "Learning Test 1",
+      "passed": true,
+      "details": "Message \"Tôi đang cảm thấy lo âu\" processed (ID: CONV_1759840923825_9m3ro9zff)"
+    },
+    {
+      "test": "Learning Test 2",
+      "passed": true,
+      "details": "Message \"Làm sao để giảm stress?\" processed (ID: CONV_1759840923828_9nzfytyuk)"
+    },
+    {
+      "test": "Learning Test 3",
+      "passed": true,
+      "details": "Message \"Tôi muốn học kỹ thuật thư giãn\" processed (ID: CONV_1759840923831_jubrv2j0l)"
+    },
+    {
+      "test": "Learning Test 4",
+      "passed": true,
+      "details": "Message \"Có test nào để đánh giá tâm lý không?\" processed (ID: CONV_1759840923834_nsq5z6qel)"
+    }
+  ]
+}

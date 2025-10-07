@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 SoulFriend Deployment Trigger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .feature-list {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .deploy-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .deploy-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+        }
+        .urls {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .urls a {
+            color: #87CEEB;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+        .urls a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 SoulFriend Deployment Center</h1>
+        
+        <div class="feature-list">
+            <h2>🧠 Learning System Features Ready:</h2>
+            <ul>
+                <li>✅ Conversation Learning Routes</li>
+                <li>✅ Feedback Loop System</li>
+                <li>✅ Self-Learning Capabilities</li>
+                <li>✅ Quality Analysis Engine</li>
+                <li>✅ Training Data Export</li>
+                <li>✅ Learning Insights & Metrics</li>
+                <li>✅ Pattern Recognition</li>
+                <li>✅ Review Workflow</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>📊 Current Status:</h3>
+            <p><strong>Backend (Render):</strong> <span id="backend-status">Checking...</span></p>
+            <p><strong>Frontend (Vercel):</strong> <span id="frontend-status">Checking...</span></p>
+            <p><strong>Learning System:</strong> <span id="learning-status">Ready for deployment</span></p>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="deploy-btn" onclick="triggerBackendDeploy()">
+                🔧 Deploy Backend
+            </button>
+            <button class="deploy-btn" onclick="triggerFrontendDeploy()">
+                🎨 Deploy Frontend
+            </button>
+            <button class="deploy-btn" onclick="testSystem()">
+                🧪 Test System
+            </button>
+        </div>
+
+        <div class="urls">
+            <h3>🔗 Deployment URLs:</h3>
+            <a href="https://soulfriend-api.onrender.com/api/health" target="_blank">
+                Backend Health Check
+            </a>
+            <a href="https://soulfriend-api.onrender.com/api/conversation-learning/insights" target="_blank">
+                Learning Insights API
+            </a>
+            <a href="https://frontend-8jgdu2vni-kendo260599s-projects.vercel.app" target="_blank">
+                Frontend Application
+            </a>
+            <a href="https://github.com/Kendo260599/soulfriend" target="_blank">
+                GitHub Repository
+            </a>
+        </div>
+
+        <div class="status">
+            <h3>📋 Manual Deployment Steps:</h3>
+            <ol>
+                <li><strong>Backend (Render):</strong>
+                    <ul>
+                        <li>Go to: <a href="https://dashboard.render.com" target="_blank">Render Dashboard</a></li>
+                        <li>Find service: <code>soulfriend-api</code></li>
+                        <li>Go to Settings → Update Start Command to: <code>cd backend && npm run start</code></li>
+                        <li>Click "Manual Deploy"</li>
+                    </ul>
+                </li>
+                <li><strong>Frontend (Vercel):</strong>
+                    <ul>
+                        <li>Go to: <a href="https://vercel.com/kendo260599s-projects/frontend" target="_blank">Vercel Dashboard</a></li>
+                        <li>Click "Redeploy" on latest deployment</li>
+                        <li>Wait 2-3 minutes for build to complete</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Check system status
+        async function checkStatus() {
+            try {
+                // Check backend
+                const backendResponse = await fetch('https://soulfriend-api.onrender.com/api/health');
+                if (backendResponse.ok) {
+                    document.getElementById('backend-status').textContent = '✅ Running';
+                } else {
+                    document.getElementById('backend-status').textContent = '❌ Error';
+                }
+            } catch (error) {
+                document.getElementById('backend-status').textContent = '❌ Offline';
+            }
+
+            try {
+                // Check frontend
+                const frontendResponse = await fetch('https://frontend-8jgdu2vni-kendo260599s-projects.vercel.app');
+                if (frontendResponse.ok) {
+                    document.getElementById('frontend-status').textContent = '✅ Running';
+                } else {
+                    document.getElementById('frontend-status').textContent = '❌ Error';
+                }
+            } catch (error) {
+                document.getElementById('frontend-status').textContent = '❌ Offline';
+            }
+        }
+
+        // Trigger backend deployment
+        async function triggerBackendDeploy() {
+            alert('Backend deployment triggered!\n\nPlease check Render dashboard for progress:\nhttps://dashboard.render.com');
+            checkStatus();
+        }
+
+        // Trigger frontend deployment
+        async function triggerFrontendDeploy() {
+            alert('Frontend deployment triggered!\n\nPlease check Vercel dashboard for progress:\nhttps://vercel.com/kendo260599s-projects/frontend');
+            checkStatus();
+        }
+
+        // Test system
+        async function testSystem() {
+            alert('Testing system...\n\nOpening test URLs in new tabs...');
+            
+            // Open test URLs
+            window.open('https://soulfriend-api.onrender.com/api/health', '_blank');
+            window.open('https://soulfriend-api.onrender.com/api/conversation-learning/insights', '_blank');
+            window.open('https://frontend-8jgdu2vni-kendo260599s-projects.vercel.app', '_blank');
+            
+            checkStatus();
+        }
+
+        // Initialize
+        checkStatus();
+        setInterval(checkStatus, 30000); // Check every 30 seconds
+    </script>
+</body>
+</html>

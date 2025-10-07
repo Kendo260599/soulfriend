@@ -25,6 +25,13 @@ import adminRoutes from './routes/admin';
 import userRoutes from './routes/user';
 import researchRoutes from './routes/research';
 import chatbotRoutes from './routes/chatbot';
+import hitlFeedbackRoutes from './routes/hitlFeedback';
+import conversationLearningRoutes from './routes/conversationLearning';
+
+// Import Models (để MongoDB tạo collections)
+import './models/HITLFeedback';
+import './models/TrainingDataPoint';
+import './models/ConversationLog';
 
 // Initialize Express
 const app = express();
@@ -113,6 +120,10 @@ app.use('/api/v2/admin', adminRoutes);
 app.use('/api/v2/user', userRoutes);
 app.use('/api/v2/research', researchRoutes);
 app.use('/api/v2/chatbot', chatbotRoutes);
+
+// ✨ NEW: HITL Feedback Loop & Conversation Learning
+app.use('/api/hitl-feedback', hitlFeedbackRoutes);
+app.use('/api/conversation-learning', conversationLearningRoutes);
 
 // API v1 routes (legacy - deprecated)
 app.use('/api/consent', consentRoutes);

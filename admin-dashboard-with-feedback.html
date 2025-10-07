@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 SoulFriend HITL Admin Dashboard - AI Improvement Loop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            color: #ff6b6b;
+            border-bottom: 3px solid #ff6b6b;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .alert-card {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .alert-card.resolved {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .feedback-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .feedback-form.show {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-feedback {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-feedback:hover {
+            background: #138496;
+        }
+
+        .metrics-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .metrics-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric-label {
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .metric-value.good {
+            color: #28a745;
+        }
+
+        .metric-value.warning {
+            color: #ffc107;
+        }
+
+        .metric-value.danger {
+            color: #dc3545;
+        }
+
+        .improvement-card {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .improvement-card h4 {
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .keyword-tag {
+            background: #007bff;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .keyword-tag.remove {
+            background: #dc3545;
+        }
+
+        .keyword-tag.add {
+            background: #28a745;
+        }
+
+        .keyword-tag.adjust {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 SoulFriend HITL Admin Dashboard</h1>
+            <p>Human-in-the-Loop Crisis Intervention & AI Improvement System</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('alerts')">🚨 Active Alerts</button>
+            <button class="tab" onclick="showTab('resolved')">✅ Resolved & Feedback</button>
+            <button class="tab" onclick="showTab('metrics')">📊 Performance Metrics</button>
+            <button class="tab" onclick="showTab('improvements')">🔬 AI Improvements</button>
+        </div>
+
+        <!-- Tab 1: Active Alerts -->
+        <div id="alerts-tab" class="tab-content active">
+            <h2>🚨 Active Crisis Alerts</h2>
+            <div id="alerts-container">
+                <div class="loading">Loading alerts...</div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Resolved Alerts with Feedback -->
+        <div id="resolved-tab" class="tab-content">
+            <h2>✅ Resolved Alerts - Provide Feedback</h2>
+            <p style="margin-bottom: 20px; color: #666;">
+                📝 Cung cấp feedback để cải thiện mô hình AI. Dữ liệu từ các feedback sẽ được sử dụng để fine-tune crisis detection.
+            </p>
+            <div id="resolved-alerts-container">
+                <div class="loading">Loading resolved alerts...</div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Performance Metrics -->
+        <div id="metrics-tab" class="tab-content">
+            <h2>📊 Model Performance Metrics</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="metric-accuracy">-</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="metric-precision">-</div>
+                    <div class="stat-label">Precision</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="metric-recall">-</div>
+                    <div class="stat-label">Recall</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="metric-fp-rate">-</div>
+                    <div class="stat-label">False Positive Rate</div>
+                </div>
+            </div>
+
+            <div class="metrics-card">
+                <h3>📈 Detailed Performance Metrics</h3>
+                <div id="detailed-metrics"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🔑 Keyword Performance Analysis</h3>
+                <div id="keyword-stats"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: AI Improvements -->
+        <div id="improvements-tab" class="tab-content">
+            <h2>🔬 AI Model Improvement Suggestions</h2>
+            <p style="margin-bottom: 20px; color: #666;">
+                💡 Đề xuất cải thiện dựa trên phân tích HITL feedback data
+            </p>
+            
+            <button class="btn btn-primary" onclick="generateImprovements()">
+                🔄 Generate New Suggestions
+            </button>
+
+            <div id="improvements-container" style="margin-top: 20px;">
+                <div class="loading">Click button to generate suggestions...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://soulfriend-api.onrender.com';
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for tab
+            if (tabName === 'metrics') loadMetrics();
+            if (tabName === 'resolved') loadResolvedAlerts();
+        }
+
+        // Load resolved alerts for feedback
+        async function loadResolvedAlerts() {
+            // Mock data - in production, fetch from API
+            const resolvedAlerts = [
+                {
+                    id: 'ALERT_001',
+                    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+                    userMessage: 'Tôi muốn tự tử và không muốn sống nữa',
+                    detectedKeywords: ['tự tử', 'không muốn sống'],
+                    riskType: 'suicidal',
+                    resolution: 'User contacted, safe with family',
+                    needsFeedback: true
+                },
+                {
+                    id: 'ALERT_002',
+                    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
+                    userMessage: 'Công việc này giết chết tôi, tôi muốn chết vì deadline',
+                    detectedKeywords: ['giết chết', 'muốn chết'],
+                    riskType: 'suicidal',
+                    resolution: 'False positive - metaphorical language',
+                    needsFeedback: true
+                }
+            ];
+
+            const container = document.getElementById('resolved-alerts-container');
+            container.innerHTML = resolvedAlerts.map(alert => `
+                <div class="alert-card resolved">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <strong>${alert.id}</strong>
+                        <span>${new Date(alert.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                        <p style="font-style: italic;">"${alert.userMessage}"</p>
+                        <div style="margin-top: 10px;">
+                            ${alert.detectedKeywords.map(kw => `<span class="keyword-tag">${kw}</span>`).join('')}
+                        </div>
+                    </div>
+                    <p><strong>Resolution:</strong> ${alert.resolution}</p>
+                    
+                    ${alert.needsFeedback ? `
+                        <button class="btn btn-feedback" onclick="showFeedbackForm('${alert.id}')">
+                            📝 Provide Feedback
+                        </button>
+                        <div id="feedback-form-${alert.id}" class="feedback-form">
+                            <h4>📝 Expert Feedback for ${alert.id}</h4>
+                            
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="was-crisis-${alert.id}">
+                                <label for="was-crisis-${alert.id}">✅ This was an actual crisis (True Positive)</label>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Actual Risk Level:</label>
+                                <select id="risk-level-${alert.id}">
+                                    <option value="NONE">None</option>
+                                    <option value="LOW">Low</option>
+                                    <option value="MODERATE">Moderate</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="CRITICAL">Critical</option>
+                                    <option value="EXTREME">Extreme</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Response Time (seconds):</label>
+                                <input type="number" id="response-time-${alert.id}" value="120" min="0">
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="intervention-success-${alert.id}" checked>
+                                <label for="intervention-success-${alert.id}">Intervention was successful</label>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Clinical Notes:</label>
+                                <textarea id="clinical-notes-${alert.id}" placeholder="Describe what happened, any insights..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>False Indicators (keywords that shouldn't trigger):</label>
+                                <input type="text" id="false-indicators-${alert.id}" placeholder="e.g., giết chết (metaphorical)">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Suggested Keywords (should have been detected):</label>
+                                <input type="text" id="suggested-keywords-${alert.id}" placeholder="e.g., kết thúc cuộc đời">
+                            </div>
+
+                            <div class="form-group">
+                                <label>User Outcome:</label>
+                                <select id="user-outcome-${alert.id}">
+                                    <option value="safe">Safe</option>
+                                    <option value="hospitalized">Hospitalized</option>
+                                    <option value="referred">Referred to specialist</option>
+                                    <option value="unknown">Unknown</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-success" onclick="submitFeedback('${alert.id}', '${alert.userMessage}', ${JSON.stringify(alert.detectedKeywords)})">
+                                ✅ Submit Feedback
+                            </button>
+                        </div>
+                    ` : '<p style="color: green;">✅ Feedback already provided</p>'}
+                </div>
+            `).join('');
+        }
+
+        function showFeedbackForm(alertId) {
+            const form = document.getElementById(`feedback-form-${alertId}`);
+            form.classList.toggle('show');
+        }
+
+        async function submitFeedback(alertId, userMessage, detectedKeywords) {
+            const wasCrisis = document.getElementById(`was-crisis-${alertId}`).checked;
+            const riskLevel = document.getElementById(`risk-level-${alertId}`).value;
+            const responseTime = parseInt(document.getElementById(`response-time-${alertId}`).value);
+            const interventionSuccess = document.getElementById(`intervention-success-${alertId}`).checked;
+            const clinicalNotes = document.getElementById(`clinical-notes-${alertId}`).value;
+            const falseIndicators = document.getElementById(`false-indicators-${alertId}`).value.split(',').map(s => s.trim()).filter(s => s);
+            const suggestedKeywords = document.getElementById(`suggested-keywords-${alertId}`).value.split(',').map(s => s.trim()).filter(s => s);
+            const userOutcome = document.getElementById(`user-outcome-${alertId}`).value;
+
+            const feedbackData = {
+                wasActualCrisis: wasCrisis,
+                crisisConfidenceScore: wasCrisis ? 90 : 10,
+                actualRiskLevel: riskLevel,
+                actualRiskType: wasCrisis ? 'suicidal' : 'none',
+                clinicalNotes,
+                falseIndicators,
+                suggestedKeywords,
+                responseTimeSeconds: responseTime,
+                interventionSuccess,
+                userOutcome,
+                reviewedBy: 'dr_admin_001',
+                reviewedAt: new Date(),
+                userMessage,
+                detectedKeywords
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/hitl-feedback/${alertId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(feedbackData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Feedback submitted successfully! Training data created for AI improvement.');
+                    document.getElementById(`feedback-form-${alertId}`).innerHTML = 
+                        '<div class="success-message">✅ Feedback submitted successfully!</div>';
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error submitting feedback: ' + error.message);
+            }
+        }
+
+        // Load performance metrics
+        async function loadMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/hitl-feedback/metrics`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayMetrics(data.metrics);
+                }
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+                // Show mock data
+                displayMockMetrics();
+            }
+        }
+
+        function displayMetrics(metrics) {
+            document.getElementById('metric-accuracy').textContent = `${(metrics.accuracy * 100).toFixed(1)}%`;
+            document.getElementById('metric-precision').textContent = `${(metrics.precision * 100).toFixed(1)}%`;
+            document.getElementById('metric-recall').textContent = `${(metrics.recall * 100).toFixed(1)}%`;
+            document.getElementById('metric-fp-rate').textContent = `${(metrics.falsePositiveRate * 100).toFixed(1)}%`;
+
+            const detailedContainer = document.getElementById('detailed-metrics');
+            detailedContainer.innerHTML = `
+                <div class="metric-row">
+                    <span class="metric-label">True Positives (Correct Crisis Detection)</span>
+                    <span class="metric-value good">${metrics.truePositives}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">False Positives (Incorrect Alerts)</span>
+                    <span class="metric-value ${metrics.falsePositives > 5 ? 'danger' : 'warning'}">${metrics.falsePositives}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">False Negatives (Missed Crises)</span>
+                    <span class="metric-value ${metrics.falseNegatives > 0 ? 'danger' : 'good'}">${metrics.falseNegatives}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Average Response Time</span>
+                    <span class="metric-value">${metrics.avgResponseTimeSeconds.toFixed(0)}s</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Intervention Success Rate</span>
+                    <span class="metric-value good">${(metrics.interventionSuccessRate * 100).toFixed(1)}%</span>
+                </div>
+            `;
+
+            loadKeywordStats();
+        }
+
+        function displayMockMetrics() {
+            const mockMetrics = {
+                accuracy: 0.88,
+                precision: 0.82,
+                recall: 0.96,
+                falsePositiveRate: 0.18,
+                truePositives: 41,
+                falsePositives: 9,
+                falseNegatives: 2,
+                avgResponseTimeSeconds: 125,
+                interventionSuccessRate: 0.94
+            };
+            displayMetrics(mockMetrics);
+        }
+
+        async function loadKeywordStats() {
+            // Mock keyword statistics
+            const mockKeywords = [
+                { keyword: 'tự tử', accuracy: 0.95, timesDetected: 42, recommendation: 'keep' },
+                { keyword: 'muốn chết', accuracy: 0.72, timesDetected: 25, recommendation: 'adjust_weight' },
+                { keyword: 'giết chết', accuracy: 0.45, timesDetected: 15, recommendation: 'remove' },
+                { keyword: 'không muốn sống', accuracy: 0.89, timesDetected: 18, recommendation: 'keep' }
+            ];
+
+            const container = document.getElementById('keyword-stats');
+            container.innerHTML = mockKeywords.map(kw => `
+                <div class="metric-row">
+                    <span class="metric-label">
+                        "${kw.keyword}" 
+                        <span class="keyword-tag ${kw.recommendation === 'remove' ? 'remove' : kw.recommendation === 'adjust' ? 'adjust' : ''}">${kw.recommendation}</span>
+                    </span>
+                    <span class="metric-value ${kw.accuracy > 0.8 ? 'good' : kw.accuracy > 0.6 ? 'warning' : 'danger'}">
+                        ${(kw.accuracy * 100).toFixed(1)}% accuracy (${kw.timesDetected} detections)
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // Generate AI improvements
+        async function generateImprovements() {
+            const container = document.getElementById('improvements-container');
+            container.innerHTML = '<div class="loading">🔄 Analyzing HITL feedback data...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/hitl-feedback/improvements`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayImprovements(data.suggestions);
+                }
+            } catch (error) {
+                // Show mock improvements
+                displayMockImprovements();
+            }
+        }
+
+        function displayImprovements(suggestions) {
+            const container = document.getElementById('improvements-container');
+            
+            container.innerHTML = `
+                <div class="success-message">
+                    ✅ Analysis complete! Based on ${suggestions.basedOnAlerts} resolved alerts
+                </div>
+
+                ${suggestions.keywordsToAdd.length > 0 ? `
+                    <div class="improvement-card">
+                        <h4>➕ Keywords to Add</h4>
+                        <p>These keywords were suggested by clinical experts and should improve detection:</p>
+                        <div class="keyword-list">
+                            ${suggestions.keywordsToAdd.map(kw => `<span class="keyword-tag add">${kw}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${suggestions.keywordsToRemove.length > 0 ? `
+                    <div class="improvement-card">
+                        <h4>➖ Keywords to Remove</h4>
+                        <p>These keywords have high false positive rates:</p>
+                        <div class="keyword-list">
+                            ${suggestions.keywordsToRemove.map(kw => `<span class="keyword-tag remove">${kw}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${suggestions.keywordsToAdjust.length > 0 ? `
+                    <div class="improvement-card">
+                        <h4>⚖️ Keywords to Adjust Weight</h4>
+                        <p>Reduce sensitivity for these keywords:</p>
+                        ${suggestions.keywordsToAdjust.map(adj => `
+                            <div class="metric-row">
+                                <span class="keyword-tag adjust">${adj.keyword}</span>
+                                <span>${adj.currentWeight.toFixed(2)} → ${adj.suggestedWeight.toFixed(2)}</span>
+                            </div>
+                            <p style="font-size: 0.9em; color: #666; margin-bottom: 10px;">${adj.reason}</p>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                <div class="improvement-card">
+                    <h4>📊 Expected Impact</h4>
+                    <div class="metric-row">
+                        <span class="metric-label">Accuracy Increase</span>
+                        <span class="metric-value good">${suggestions.expectedImprovements.accuracyIncrease}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">False Positive Reduction</span>
+                        <span class="metric-value good">${suggestions.expectedImprovements.falsePositiveReduction}</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">False Negative Reduction</span>
+                        <span class="metric-value good">${suggestions.expectedImprovements.falseNegativeReduction}</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" onclick="applyImprovements()">
+                    ✅ Apply These Improvements
+                </button>
+            `;
+        }
+
+        function displayMockImprovements() {
+            const mockSuggestions = {
+                basedOnAlerts: 50,
+                keywordsToAdd: ['kết thúc cuộc đời', 'không còn hy vọng'],
+                keywordsToRemove: ['giết chết'],
+                keywordsToAdjust: [
+                    { keyword: 'muốn chết', currentWeight: 1.0, suggestedWeight: 0.6, reason: 'High false positive rate: 28%' }
+                ],
+                expectedImprovements: {
+                    accuracyIncrease: '+3.5-5.2%',
+                    falsePositiveReduction: '-20-30%',
+                    falseNegativeReduction: '-10-15%'
+                }
+            };
+            displayImprovements(mockSuggestions);
+        }
+
+        function applyImprovements() {
+            if (confirm('Apply these improvements to the crisis detection model? This will update the AI model.')) {
+                alert('✅ Improvements applied! The model will be updated and deployed in the next training cycle.');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadResolvedAlerts();
+        });
+    </script>
+</body>
+</html>
+

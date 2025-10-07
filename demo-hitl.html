@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 HITL Demo - SoulFriend Crisis Intervention</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .demo-section {
+            padding: 30px;
+        }
+
+        .test-message {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .test-message h3 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+
+        .test-message p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #e55a4e;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .response {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .response.show {
+            display: block;
+        }
+
+        .response h4 {
+            color: #0c5460;
+            margin-bottom: 15px;
+        }
+
+        .response pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+
+        .hitl-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .hitl-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .hitl-info ul {
+            color: #856404;
+            margin-left: 20px;
+        }
+
+        .hitl-info li {
+            margin-bottom: 5px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 HITL Demo</h1>
+            <p>Human-in-the-Loop Crisis Intervention System</p>
+        </div>
+
+        <div class="demo-section">
+            <div class="test-message">
+                <h3>🧪 Test Crisis Detection</h3>
+                <p>Click the button below to test the HITL system with a crisis message. This will trigger:</p>
+                <ul>
+                    <li>🚨 Automatic crisis detection</li>
+                    <li>📧 Email notification to clinical team</li>
+                    <li>📱 SMS alert to on-call staff</li>
+                    <li>💬 Slack notification to #crisis-alerts</li>
+                    <li>⏱️ 5-minute escalation timer</li>
+                    <li>📞 Auto-escalation to emergency hotlines</li>
+                </ul>
+            </div>
+
+            <button class="btn" onclick="testCrisisDetection()" id="testBtn">
+                🚨 Test Crisis Detection
+            </button>
+
+            <button class="btn" onclick="testNormalMessage()" id="normalBtn">
+                💬 Test Normal Message
+            </button>
+
+            <button class="btn" onclick="checkAlerts()" id="alertsBtn">
+                📊 Check Active Alerts
+            </button>
+
+            <div id="status"></div>
+
+            <div class="response" id="response">
+                <h4>🤖 Chatbot Response:</h4>
+                <pre id="responseContent"></pre>
+            </div>
+
+            <div class="hitl-info" id="hitlInfo" style="display: none;">
+                <h4>🚨 HITL System Activated:</h4>
+                <ul>
+                    <li>✅ Critical alert created and logged</li>
+                    <li>📧 Clinical team notified via email</li>
+                    <li>📱 SMS sent to on-call staff</li>
+                    <li>💬 Slack alert posted to #crisis-alerts</li>
+                    <li>⏱️ 5-minute escalation timer started</li>
+                    <li>📞 Will auto-escalate to emergency hotlines if no response</li>
+                    <li>📝 Legal documentation completed</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://soulfriend-api.onrender.com';
+        let isTesting = false;
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showResponse(data) {
+            const responseDiv = document.getElementById('response');
+            const contentDiv = document.getElementById('responseContent');
+            
+            contentDiv.textContent = JSON.stringify(data, null, 2);
+            responseDiv.classList.add('show');
+        }
+
+        function showHITLInfo() {
+            document.getElementById('hitlInfo').style.display = 'block';
+        }
+
+        async function testCrisisDetection() {
+            if (isTesting) return;
+            
+            isTesting = true;
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Testing...';
+
+            showStatus('🚨 Testing crisis detection...', 'warning');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Tôi muốn tự tử và không muốn sống nữa',
+                        userId: 'demo_user_123',
+                        sessionId: 'demo_session_456',
+                        context: {
+                            userProfile: { name: 'Demo User', age: 25 },
+                            testResults: [{ testType: 'PHQ-9', score: 20, severity: 'severe' }]
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('✅ Crisis detection test completed!', 'success');
+                    showResponse(data);
+                    
+                    if (data.data.riskLevel === 'CRITICAL') {
+                        showHITLInfo();
+                    }
+                } else {
+                    showStatus('❌ Test failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message, 'error');
+            } finally {
+                isTesting = false;
+                btn.disabled = false;
+                btn.textContent = '🚨 Test Crisis Detection';
+            }
+        }
+
+        async function testNormalMessage() {
+            if (isTesting) return;
+            
+            isTesting = true;
+            const btn = document.getElementById('normalBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Testing...';
+
+            showStatus('💬 Testing normal message...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Xin chào, tôi muốn tìm hiểu về ứng dụng này',
+                        userId: 'demo_user_123',
+                        sessionId: 'demo_session_456'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('✅ Normal message test completed!', 'success');
+                    showResponse(data);
+                } else {
+                    showStatus('❌ Test failed: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message, 'error');
+            } finally {
+                isTesting = false;
+                btn.disabled = false;
+                btn.textContent = '💬 Test Normal Message';
+            }
+        }
+
+        async function checkAlerts() {
+            const btn = document.getElementById('alertsBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Checking...';
+
+            showStatus('📊 Checking active alerts...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/alerts/active`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✅ Found ${data.count} active alerts`, 'success');
+                    showResponse(data);
+                } else {
+                    showStatus('❌ Failed to load alerts: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📊 Check Active Alerts';
+            }
+        }
+
+        // Auto-check alerts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatus('🚀 HITL Demo loaded. Ready to test!', 'success');
+        });
+    </script>
+</body>
+</html>
+

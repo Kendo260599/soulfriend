@@ -5,7 +5,7 @@
  */
 
 import { createClinicalValidator, VALIDATION_DATASET, ValidationUtils } from './clinicalValidation';
-import { scorePHQ9, scoreGAD7 } from './scoring';
+import { _scorePHQ9, scoreGAD7 } from './scoring';
 import { enhancedPHQ9Scoring, enhancedGAD7Scoring, EnhancedTestResult } from './enhancedScoring';
 
 /**
@@ -479,7 +479,7 @@ export class ClinicalTestRunner {
 
     report += '📋 CHI TIẾT CÁC TESTS:\n\n';
 
-    results.forEach((result, index) => {
+    results.forEach((_result, index) => {
       const status = result.passed ? '✅ PASS' : '❌ FAIL';
       report += `${index + 1}. ${result.testName}\n`;
       report += `   Status: ${status}\n`;

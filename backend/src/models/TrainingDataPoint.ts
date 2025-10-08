@@ -211,8 +211,8 @@ TrainingDataPointSchema.statics.getUnexportedData = async function (
 ): Promise<ITrainingDataPoint[]> {
   const query = this.find({ exportedToFineTuning: false }).sort({ timestamp: -1 });
 
-  if (limit) {
-    query.limit(limit);
+  if (_limit) {
+    query.limit(_limit);
   }
 
   return query.exec();
@@ -240,8 +240,8 @@ TrainingDataPointSchema.statics.exportForFineTuning = async function (
 ): Promise<string> {
   const query = this.find({ exportedToFineTuning: false }).sort({ timestamp: -1 });
 
-  if (limit) {
-    query.limit(limit);
+  if (_limit) {
+    query.limit(_limit);
   }
 
   const data = await query.exec();

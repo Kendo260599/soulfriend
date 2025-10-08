@@ -340,7 +340,7 @@ export interface PCL5Result {
 }
 
 export function scorePCL5(answers: Record<number, number>): PCL5Result {
-  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
 
   // Calculate cluster scores
   const intrusion = [1, 2, 3, 4, 5].reduce((sum, q) => sum + (answers[q] || 0), 0);
@@ -466,7 +466,7 @@ export function scoreCSSRS(answers: Record<number, number>): CSSRSResult {
 
 export const specializedScales = {
   PCL5: {
-    questions: PCL5_QUESTIONS,
+    questions: _PCL5_QUESTIONS,
     answerOptions: PCL5_ANSWER_OPTIONS,
     scoringFunction: scorePCL5,
     name: 'PCL-5 (PTSD Checklist for DSM-5)',
@@ -476,7 +476,7 @@ export const specializedScales = {
   },
 
   EDEQ: {
-    questions: EDEQ_QUESTIONS,
+    questions: _EDEQ_QUESTIONS,
     name: 'EDE-Q (Eating Disorder Examination Questionnaire)',
     description: 'Đánh giá các vấn đề về rối loạn ăn uống',
     targetPopulation: 'Thanh thiếu niên và người lớn',
@@ -484,7 +484,7 @@ export const specializedScales = {
   },
 
   CSSRS: {
-    questions: CSSRS_QUESTIONS,
+    questions: _CSSRS_QUESTIONS,
     scoringFunction: scoreCSSRS,
     name: 'C-SSRS (Columbia Suicide Severity Rating Scale)',
     description: 'Đánh giá nguy cơ tự tử - công cụ tầm soát',

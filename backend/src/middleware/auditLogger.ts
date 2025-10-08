@@ -5,7 +5,6 @@
 
 import { Request, Response, NextFunction } from 'express';
 import fs from 'fs';
-import path from 'path';
 
 export interface AuditLog {
   timestamp: Date;
@@ -44,7 +43,7 @@ export class AuditLogger {
    */
   log(entry: AuditLog): void {
     const logEntry = {
-      ...entry,
+      ..._entry,
       timestamp: entry.timestamp || new Date(),
     };
 
@@ -139,7 +138,7 @@ export class AuditLogger {
       ip: 'system',
       userAgent: 'system',
       changes,
-      result,
+      _result,
     };
 
     this.log(log);
@@ -177,7 +176,7 @@ export class AuditLogger {
       path: `/api/auth/${event}`,
       ip: ip || 'unknown',
       userAgent: 'unknown',
-      result,
+      _result,
     };
 
     this.log(log);
@@ -219,7 +218,7 @@ export class AuditLogger {
             if (filters.action && log.action !== filters.action) {
               return false;
             }
-            if (filters.result && log.result !== filters.result) {
+            if (filters.result && log.result !== filters._result) {
               return false;
             }
             if (filters.startDate && new Date(log.timestamp) < filters.startDate) {
@@ -269,7 +268,7 @@ export class AuditLogger {
     const userCounts = this.groupBy(logs, 'userId');
     return Object.entries(userCounts)
       .sort(([, a], [, b]) => (b as number) - (a as number))
-      .slice(0, limit)
+      .slice(0, _limit)
       .map(([userId, count]) => ({ userId, count }));
   }
 }

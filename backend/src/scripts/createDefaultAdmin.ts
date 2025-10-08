@@ -2,7 +2,6 @@
  * Script để tạo admin mặc định cho hệ thống
  */
 
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Admin from '../models/Admin';
 

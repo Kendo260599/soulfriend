@@ -1,0 +1,42 @@
+# 🚀 SoulFriend Railway Deploy Commands
+# Copy and paste these commands one by one
+
+# STEP 1: Login to Railway
+railway login
+# Paste token: ef97cad8-db03-404b-aa04-1f3338740bcb
+
+# STEP 2: Deploy Backend
+cd backend
+railway init
+railway up --detach
+
+# STEP 3: Set Backend Environment Variables
+railway variables --set "NODE_ENV=production"
+railway variables --set "PORT=5000"
+railway variables --set "MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/soulfriend"
+railway variables --set "JWT_SECRET=your-super-secret-jwt-key-min-32-characters-long-change-this-in-production"
+railway variables --set "ENCRYPTION_KEY=your-encryption-key-must-be-64-hex-characters-long-change-this-in-production"
+railway variables --set "DEFAULT_ADMIN_USERNAME=admin"
+railway variables --set "DEFAULT_ADMIN_EMAIL=admin@soulfriend.vn"
+railway variables --set "DEFAULT_ADMIN_PASSWORD=ChangeThisSecurePassword123!"
+railway variables --set "GEMINI_API_KEY=AIzaSyBaswf5ksxu1g7WvhS2_Hy7PHqWpjZu8LM"
+
+# STEP 4: Get Backend URL
+railway status
+# Copy the URL from the output
+
+# STEP 5: Deploy Frontend
+cd ../frontend
+railway init
+railway up --detach
+
+# STEP 6: Set Frontend Environment Variables
+# Replace YOUR_BACKEND_URL with the actual backend URL from step 4
+railway variables --set "REACT_APP_API_URL=https://YOUR_BACKEND_URL.railway.app"
+railway variables --set "REACT_APP_GEMINI_API_KEY=AIzaSyBaswf5ksxu1g7WvhS2_Hy7PHqWpjZu8LM"
+
+# STEP 7: Get Frontend URL
+railway status
+# Copy the URL from the output
+
+# 🎉 Done! Test your application at the frontend URL

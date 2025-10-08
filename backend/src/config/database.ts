@@ -3,7 +3,6 @@
  * MongoDB with connection pooling, encryption, and monitoring
  */
 
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 dotenv.config();

@@ -103,7 +103,7 @@ router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
     // Execute query với pagination
     const data = await ResearchData.find(query)
       .sort({ timestamp: -1 })
-      .limit(Number(limit))
+      .limit(Number(_limit))
       .skip(Number(skip))
       .lean();
 
@@ -114,7 +114,7 @@ router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
       data,
       pagination: {
         total,
-        limit: Number(limit),
+        limit: Number(_limit),
         skip: Number(skip),
         hasMore: total > Number(skip) + data.length,
       },
@@ -290,7 +290,7 @@ router.delete('/:id', authenticateAdmin, async (req: Request, res: Response) => 
 
     const result = await ResearchData.findByIdAndDelete(id);
 
-    if (!result) {
+    if (!_result) {
       return res.status(404).json({
         success: false,
         error: 'Research data not found',

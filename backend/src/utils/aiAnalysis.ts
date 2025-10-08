@@ -368,7 +368,7 @@ export function performMLAnalysis(
   const cognitivePatterns = analyzeCognitivePatterns(
     responses,
     testResult.testType,
-    historicalData
+    _historicalData
   );
   const behavioralPatterns = analyzeBehavioralPatterns(responses, testResult.testType);
   const detectedPatterns = [...cognitivePatterns, ...behavioralPatterns];

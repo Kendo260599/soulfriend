@@ -204,8 +204,8 @@ ConversationLogSchema.statics.getTrainingData = async function (limit?: number):
     wasHelpful: true,
   }).sort({ timestamp: -1 });
 
-  if (limit) {
-    query.limit(limit);
+  if (_limit) {
+    query.limit(_limit);
   }
 
   return query.exec();

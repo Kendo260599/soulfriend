@@ -278,10 +278,18 @@ TrainingDataPointSchema.statics.exportForFineTuning = async function (
 };
 
 // =============================================================================
+// MODEL INTERFACE
+// =============================================================================
+
+export interface ITrainingDataPointModel extends mongoose.Model<ITrainingDataPoint> {
+  exportForFineTuning(format?: 'jsonl' | 'csv', limit?: number): Promise<string>;
+}
+
+// =============================================================================
 // EXPORT
 // =============================================================================
 
-export const TrainingDataPoint = mongoose.model<ITrainingDataPoint>(
+export const TrainingDataPoint = mongoose.model<ITrainingDataPoint, ITrainingDataPointModel>(
   'TrainingDataPoint',
   TrainingDataPointSchema
 );

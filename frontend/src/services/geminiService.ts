@@ -3,7 +3,7 @@
  * Tích hợp Google Gemini API cho chatbot
  */
 
-const GEMINI_API_KEY = 'AIzaSyBaswf5ksxu1g7WvhS2_Hy7PHqWpjZu8LM';
+const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || 'AIzaSyBaswf5ksxu1g7WvhS2_Hy7PHqWpjZu8LM';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 export interface GeminiMessage {

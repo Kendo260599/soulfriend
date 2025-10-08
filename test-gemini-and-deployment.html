@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Gemini API & Deployment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .warning { background: #ff9800; }
+        .info { background: #2196F3; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .url-link {
+            color: #FFD700;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .url-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Gemini API & Deployment Status</h1>
+        <p>Kiểm tra tình trạng API key Gemini và deployment của SoulFriend</p>
+
+        <!-- URLs -->
+        <div class="test-section">
+            <h2>🔗 URLs</h2>
+            <p><strong>Frontend (Vercel):</strong> <a href="https://soulfriend-fgji492ut-kendo260599s-projects.vercel.app" class="url-link" target="_blank">https://soulfriend-fgji492ut-kendo260599s-projects.vercel.app</a></p>
+            <p><strong>Backend (Render):</strong> <a href="https://soulfriend-backend.onrender.com" class="url-link" target="_blank">https://soulfriend-backend.onrender.com</a></p>
+            <p><strong>GitHub Actions:</strong> <a href="https://github.com/Kendo260599/soulfriend/actions" class="url-link" target="_blank">https://github.com/Kendo260599/soulfriend/actions</a></p>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="test-section">
+            <h2>🎮 Test Controls</h2>
+            <button onclick="testGeminiAPI()">Test Gemini API</button>
+            <button onclick="testBackendHealth()">Test Backend Health</button>
+            <button onclick="testFrontendBackendIntegration()">Test Frontend-Backend Integration</button>
+            <button onclick="testChatbotFunctionality()">Test Chatbot Functionality</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <!-- Status Display -->
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="status-display"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="test-section">
+            <h2>📝 Logs</h2>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_API_KEY = 'AIzaSyBaswf5ksxu1g7WvhS2_Hy7PHqWpjZu8LM';
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+        const BACKEND_URL = 'https://soulfriend-backend.onrender.com';
+        const FRONTEND_URL = 'https://soulfriend-fgji492ut-kendo260599s-projects.vercel.app';
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            // Update status display
+            updateStatus(message, type);
+        }
+
+        function updateStatus(message, type) {
+            const statusDisplay = document.getElementById('status-display');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+            statusDisplay.appendChild(statusElement);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+            document.getElementById('status-display').innerHTML = '';
+        }
+
+        async function testGeminiAPI() {
+            log('🔍 Testing Gemini API...', 'info');
+            
+            try {
+                const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: 'Hello, test message' }]
+                        }]
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    log(`✅ Gemini API working! Response: ${text}`, 'success');
+                    return true;
+                } else {
+                    const error = await response.text();
+                    log(`❌ Gemini API error: ${error}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Gemini API connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testBackendHealth() {
+            log('🔍 Testing Backend Health...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Backend is healthy! Status: ${data.status}`, 'success');
+                    log(`📊 Backend info: ${JSON.stringify(data, null, 2)}`, 'info');
+                    return true;
+                } else {
+                    log(`❌ Backend health check failed: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Backend connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testFrontendBackendIntegration() {
+            log('🔍 Testing Frontend-Backend Integration...', 'info');
+            
+            try {
+                // Test if frontend can reach backend
+                const response = await fetch(`${FRONTEND_URL}`);
+                
+                if (response.ok) {
+                    log(`✅ Frontend is accessible!`, 'success');
+                    
+                    // Test if frontend is configured to use correct backend URL
+                    const frontendContent = await response.text();
+                    if (frontendContent.includes('soulfriend-backend.onrender.com')) {
+                        log(`✅ Frontend configured with correct backend URL`, 'success');
+                    } else {
+                        log(`⚠️ Frontend may not be configured with correct backend URL`, 'warning');
+                    }
+                    
+                    return true;
+                } else {
+                    log(`❌ Frontend not accessible: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Frontend connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testChatbotFunctionality() {
+            log('🔍 Testing Chatbot Functionality...', 'info');
+            
+            try {
+                // Test Gemini API first
+                const geminiWorking = await testGeminiAPI();
+                
+                if (!geminiWorking) {
+                    log(`❌ Cannot test chatbot - Gemini API not working`, 'error');
+                    return false;
+                }
+
+                // Test a more complex conversation
+                const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: 'Xin chào, tôi muốn làm test tâm lý. Bạn có thể giúp tôi không?' }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024,
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    log(`✅ Chatbot response: ${text}`, 'success');
+                    return true;
+                } else {
+                    const error = await response.text();
+                    log(`❌ Chatbot test failed: ${error}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Chatbot test error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            log('🚀 Starting automated tests...', 'info');
+            setTimeout(async () => {
+                await testGeminiAPI();
+                await testBackendHealth();
+                await testFrontendBackendIntegration();
+                await testChatbotFunctionality();
+                log('✅ All tests completed!', 'success');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

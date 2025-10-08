@@ -260,18 +260,9 @@ HITLFeedbackSchema.statics.getKeywordStatistics = async function (): Promise<any
 };
 
 // =============================================================================
-// MODEL INTERFACE
-// =============================================================================
-
-export interface IHITLFeedbackModel extends mongoose.Model<IHITLFeedback> {
-  getQualityMetrics(periodDays?: number): Promise<any>;
-  getKeywordStatistics(): Promise<any[]>;
-}
-
-// =============================================================================
 // EXPORT
 // =============================================================================
 
-export const HITLFeedback = mongoose.model<IHITLFeedback, IHITLFeedbackModel>('HITLFeedback', HITLFeedbackSchema);
+export const HITLFeedback = mongoose.model<IHITLFeedback>('HITLFeedback', HITLFeedbackSchema);
 
 export default HITLFeedback;

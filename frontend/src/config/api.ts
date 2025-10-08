@@ -3,7 +3,7 @@
  */
 
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  BASE_URL: process.env.REACT_APP_API_URL || 'https://soulfriend-backend.onrender.com',
   ENDPOINTS: {
     HEALTH: '/api/health',
     CONSENT: '/api/consent',

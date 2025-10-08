@@ -272,6 +272,9 @@ export interface IHITLFeedbackModel extends mongoose.Model<IHITLFeedback> {
 // EXPORT
 // =============================================================================
 
-export const HITLFeedback = mongoose.model<IHITLFeedback, IHITLFeedbackModel>('HITLFeedback', HITLFeedbackSchema);
+export const HITLFeedback = mongoose.model<IHITLFeedback, IHITLFeedbackModel>(
+  'HITLFeedback',
+  HITLFeedbackSchema
+);
 
 export default HITLFeedback;

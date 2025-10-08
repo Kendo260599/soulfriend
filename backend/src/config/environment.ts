@@ -64,6 +64,12 @@ interface EnvironmentConfig {
   BACKUP_SCHEDULE?: string;
   BACKUP_RETENTION_DAYS: number;
   BACKUP_PATH: string;
+
+  // Security
+  ALLOWED_IPS?: string[];
+  ENABLE_IP_WHITELIST: boolean;
+  SECURITY_HEADERS_ENABLED: boolean;
+  CORS_ENABLED: boolean;
 }
 
 /**
@@ -101,6 +107,14 @@ function parseEnvironment(): EnvironmentConfig {
 
   const getEnvOptional = (key: string): string | undefined => {
     return process.env[key];
+  };
+
+  const getEnvBoolean = (key: string, defaultValue: boolean = false): boolean => {
+    const value = process.env[key];
+    if (!value) {
+      return defaultValue;
+    }
+    return value.toLowerCase() === 'true' || value === '1';
   };
 
   // Validate NODE_ENV
@@ -168,6 +182,12 @@ function parseEnvironment(): EnvironmentConfig {
     BACKUP_SCHEDULE: getEnvOptional('BACKUP_SCHEDULE'),
     BACKUP_RETENTION_DAYS: getEnvNumber('BACKUP_RETENTION_DAYS', 30),
     BACKUP_PATH: getEnv('BACKUP_PATH', '/backups'),
+
+    // Security
+    ALLOWED_IPS: getEnvOptional('ALLOWED_IPS')?.split(','),
+    ENABLE_IP_WHITELIST: getEnvBoolean('ENABLE_IP_WHITELIST', false),
+    SECURITY_HEADERS_ENABLED: getEnvBoolean('SECURITY_HEADERS_ENABLED', true),
+    CORS_ENABLED: getEnvBoolean('CORS_ENABLED', true),
   };
 }
 

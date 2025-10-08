@@ -2,13 +2,79 @@
  * Tests for test routes
  */
 
+// Set test environment before any imports
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test_jwt_secret_key_2024_learning_system_secure_32_chars';
+process.env.ENCRYPTION_KEY = 'test_encryption_key_2024_learning_system_secure_32_chars_hex_64';
+process.env.MONGODB_URI = 'mongodb://localhost:27017/soulfriend_test';
+process.env.DEFAULT_ADMIN_USERNAME = 'test_admin';
+process.env.DEFAULT_ADMIN_EMAIL = 'test@soulfriend.vn';
+process.env.DEFAULT_ADMIN_PASSWORD = 'TestPassword123!@#XYZ';
+
 import request from 'supertest';
-import app from '../../src/index';
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import TestResult from '../../src/models/TestResult';
 import Consent from '../../src/models/Consent';
 
+// Create a simple Express app for testing without database connection
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import mongoSanitize from 'express-mongo-sanitize';
+import { errorHandler } from '../../src/middleware/errorHandler';
+import testRoutes from '../../src/routes/tests';
+
+const app = express();
+
+// Basic middleware setup
+app.use(helmet());
+app.use(cors());
+app.use(compression());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(mongoSanitize());
+
+// Routes
+app.use('/api/tests', testRoutes);
+
+// Error handling
+app.use(errorHandler);
+
 describe('Test Routes', () => {
   let consentId: string;
+  let mongoServer: MongoMemoryServer;
+
+  beforeAll(async () => {
+    // Check if already connected
+    if (mongoose.connection.readyState === 0) {
+      // Start in-memory MongoDB instance
+      mongoServer = await MongoMemoryServer.create();
+      const mongoUri = mongoServer.getUri();
+      
+      // Connect to the in-memory database
+      await mongoose.connect(mongoUri);
+    }
+  });
+
+  afterAll(async () => {
+    // Only close if we created the connection
+    if (mongoServer) {
+      await mongoose.connection.close();
+      await mongoServer.stop();
+    }
+  });
+
+  beforeEach(async () => {
+    // Clear database between tests
+    const collections = mongoose.connection.collections;
+    
+    for (const key in collections) {
+      const collection = collections[key];
+      await collection.deleteMany({});
+    }
+  });
 
   beforeEach(async () => {
     // Create a consent for testing

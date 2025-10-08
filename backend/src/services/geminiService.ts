@@ -13,7 +13,7 @@ export class GeminiService {
       logger.warn('GEMINI_API_KEY is not set. GeminiService will not be initialized.');
       return;
     }
-    
+
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
       // Try gemini-1.5-flash first, fallback to gemini-pro
@@ -37,12 +37,15 @@ export class GeminiService {
     return this.isInitialized;
   }
 
-  async generateResponse(userMessage: string, context: any): Promise<{ text: string; confidence: number }> {
+  async generateResponse(
+    userMessage: string,
+    context: any
+  ): Promise<{ text: string; confidence: number }> {
     if (!this.isReady()) {
       logger.warn('GeminiService not ready, returning fallback response');
       return {
         text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
-        confidence: 0.1
+        confidence: 0.1,
       };
     }
 
@@ -75,7 +78,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
       const result = await this.model.generateContent(prompt);
       const response = result.response;
       const text = response.text();
-      
+
       // Validate response
       if (!text || text.trim().length === 0) {
         throw new Error('Empty response from Gemini');
@@ -87,28 +90,31 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
         logger.warn('Unsafe response detected, using fallback', { issues: safetyCheck.issues });
         return {
           text: 'Xin lỗi, tôi cần thời gian để suy nghĩ về câu trả lời phù hợp. Bạn có thể chia sẻ thêm về tình huống của mình không?',
-          confidence: 0.3
+          confidence: 0.3,
         };
       }
-      
+
       return { text, confidence: 0.9 };
     } catch (error) {
       logger.error('Error generating response from Gemini:', error);
-      
+
       // Return fallback response instead of throwing
       return {
         text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
-        confidence: 0.1
+        confidence: 0.1,
       };
     }
   }
 
-  async chat(userMessage: string, history: any[] = []): Promise<{ text: string; confidence: number }> {
+  async chat(
+    userMessage: string,
+    history: any[] = []
+  ): Promise<{ text: string; confidence: number }> {
     if (!this.isReady()) {
       logger.warn('GeminiService not ready for chat, returning fallback response');
       return {
         text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
-        confidence: 0.1
+        confidence: 0.1,
       };
     }
 
@@ -127,7 +133,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
       const result = await chat.sendMessage(userMessage);
       const response = result.response;
       const text = response.text();
-      
+
       // Validate response
       if (!text || text.trim().length === 0) {
         throw new Error('Empty response from Gemini chat');
@@ -136,21 +142,23 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
       // Check for safety issues in response
       const safetyCheck = this.validateResponse(text);
       if (!safetyCheck.safe) {
-        logger.warn('Unsafe chat response detected, using fallback', { issues: safetyCheck.issues });
+        logger.warn('Unsafe chat response detected, using fallback', {
+          issues: safetyCheck.issues,
+        });
         return {
           text: 'Xin lỗi, tôi cần thời gian để suy nghĩ về câu trả lời phù hợp. Bạn có thể chia sẻ thêm về tình huống của mình không?',
-          confidence: 0.3
+          confidence: 0.3,
         };
       }
-      
+
       return { text, confidence: 0.9 };
     } catch (error) {
       logger.error('Error in chat with Gemini:', error);
-      
+
       // Return fallback response instead of throwing
       return {
         text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
-        confidence: 0.1
+        confidence: 0.1,
       };
     }
   }
@@ -164,8 +172,17 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
 
     // Check for inappropriate content
     const inappropriateKeywords = [
-      'tự tử', 'suicide', 'chết', 'giết', 'bạo hành', 'abuse',
-      'thuốc', 'drug', 'rượu', 'alcohol', 'ma túy'
+      'tự tử',
+      'suicide',
+      'chết',
+      'giết',
+      'bạo hành',
+      'abuse',
+      'thuốc',
+      'drug',
+      'rượu',
+      'alcohol',
+      'ma túy',
     ];
 
     inappropriateKeywords.forEach(keyword => {
@@ -175,7 +192,11 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
     });
 
     // Check for medical advice
-    if (lowerText.includes('uống thuốc') || lowerText.includes('kê đơn') || lowerText.includes('chẩn đoán')) {
+    if (
+      lowerText.includes('uống thuốc') ||
+      lowerText.includes('kê đơn') ||
+      lowerText.includes('chẩn đoán')
+    ) {
       issues.push('Contains medical advice');
     }
 
@@ -190,7 +211,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
 
     return {
       safe: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -201,7 +222,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
     return {
       ready: this.isReady(),
       model: this.isReady() ? 'gemini-1.5-flash' : 'none',
-      initialized: this.isInitialized
+      initialized: this.isInitialized,
     };
   }
 }

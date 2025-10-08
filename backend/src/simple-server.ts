@@ -50,7 +50,7 @@ async function connectToDatabase() {
 app.get('/api/health', (req: Request, res: Response) => {
   const dbStatus = mongoose.connection.readyState;
   const dbConnected = dbStatus === 1;
-  
+
   res.json({
     status: dbConnected ? 'healthy' : 'degraded',
     message: 'Simple SoulFriend Server',
@@ -60,8 +60,8 @@ app.get('/api/health', (req: Request, res: Response) => {
     gemini: 'initialized',
     database: {
       status: dbConnected ? 'connected' : 'disconnected',
-      state: dbStatus
-    }
+      state: dbStatus,
+    },
   });
 });
 
@@ -69,11 +69,11 @@ app.get('/api/health', (req: Request, res: Response) => {
 app.post('/api/chatbot/message', async (req: Request, res: Response) => {
   try {
     const { message, userId = 'anonymous' } = req.body;
-    
+
     if (!message) {
       return res.status(400).json({
         success: false,
-        error: 'Message is required'
+        error: 'Message is required',
       });
     }
 
@@ -83,7 +83,7 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
     const result = await model.generateContent(
       `Bạn là trợ lý tâm lý CHUN. User nói: "${message}". Hãy trả lời đồng cảm bằng tiếng Việt, ngắn gọn và hỗ trợ.`
     );
-    
+
     const response = await result.response;
     const aiResponse = response.text();
 
@@ -96,16 +96,15 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
         aiGenerated: true,
         confidence: 0.85,
         intent: 'general_help',
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('❌ Error:', error);
     res.status(500).json({
       success: false,
       error: 'AI response failed',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
@@ -117,19 +116,21 @@ app.get('/api/test', (req: Request, res: Response) => {
     message: 'Simple server is working!',
     gemini: 'ready',
     database: dbStatus === 1 ? 'connected' : 'disconnected',
-    mongodb_state: dbStatus
+    mongodb_state: dbStatus,
   });
 });
 
 // Start server
 async function startServer() {
   const dbConnected = await connectToDatabase();
-  
+
   app.listen(PORT, () => {
     console.log('╔════════════════════════════════════════════╗');
     console.log('║   🚀 SIMPLE SERVER STARTED!               ║');
     console.log('║   ✅ Gemini AI Ready                       ║');
-    console.log(`║   ${dbConnected ? '✅' : '❌'} Database ${dbConnected ? 'Connected' : 'Disconnected'}                    ║`);
+    console.log(
+      `║   ${dbConnected ? '✅' : '❌'} Database ${dbConnected ? 'Connected' : 'Disconnected'}                    ║`
+    );
     console.log('╠════════════════════════════════════════════╣');
     console.log(`║   Port: ${PORT}                               ║`);
     console.log(`║   Health: http://localhost:${PORT}/api/health ║`);

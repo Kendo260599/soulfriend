@@ -29,7 +29,7 @@ export class ChatbotController {
       if (!message || typeof message !== 'string') {
         res.status(400).json({
           error: 'Invalid request',
-          message: 'Message is required and must be a string'
+          message: 'Message is required and must be a string',
         });
         return;
       }
@@ -37,7 +37,7 @@ export class ChatbotController {
       logger.info('Processing chatbot message', {
         userId,
         sessionId,
-        messageLength: message.length
+        messageLength: message.length,
       });
 
       // Process message with Legacy Chatbot Service (temporarily)
@@ -51,9 +51,8 @@ export class ChatbotController {
       res.json({
         success: true,
         data: response,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       logger.error('Error processing chatbot message:', error);
       next(error);
@@ -81,10 +80,9 @@ export class ChatbotController {
         data: {
           sessionId,
           messages: history,
-          count: history.length
-        }
+          count: history.length,
+        },
       });
-
     } catch (error) {
       logger.error('Error fetching conversation history:', error);
       next(error);
@@ -102,7 +100,7 @@ export class ChatbotController {
       if (!message) {
         res.status(400).json({
           error: 'Invalid request',
-          message: 'Message is required'
+          message: 'Message is required',
         });
         return;
       }
@@ -113,20 +111,19 @@ export class ChatbotController {
         'temp_session',
         'temp_user'
       );
-      
+
       const analysis = {
         intent: result.intent,
         confidence: result.confidence,
         userSegment: result.userSegment,
         emotionalState: result.emotionalState,
-        crisisLevel: result.crisisLevel
+        crisisLevel: result.crisisLevel,
       };
 
       res.json({
         success: true,
-        data: analysis
+        data: analysis,
       });
-
     } catch (error) {
       logger.error('Error analyzing intent:', error);
       next(error);
@@ -144,7 +141,7 @@ export class ChatbotController {
       if (!message) {
         res.status(400).json({
           error: 'Invalid request',
-          message: 'Message is required'
+          message: 'Message is required',
         });
         return;
       }
@@ -156,15 +153,14 @@ export class ChatbotController {
         logger.warn('High-risk message detected', {
           userId,
           riskLevel: safetyResult.riskLevel,
-          messagePreview: message.substring(0, 50)
+          messagePreview: message.substring(0, 50),
         });
       }
 
       res.json({
         success: true,
-        data: safetyResult
+        data: safetyResult,
       });
-
     } catch (error) {
       logger.error('Error performing safety check:', error);
       next(error);
@@ -181,7 +177,7 @@ export class ChatbotController {
       const { query, limit = 10 } = req.query;
 
       const knowledge = await this.chatbotService.retrieveKnowledge(
-        query as string || '',
+        (query as string) || '',
         category ? [category] : [],
         parseInt(limit as string, 10)
       );
@@ -190,10 +186,9 @@ export class ChatbotController {
         success: true,
         data: {
           category: category || 'all',
-          results: knowledge
-        }
+          results: knowledge,
+        },
       });
-
     } catch (error) {
       logger.error('Error retrieving knowledge:', error);
       next(error);
@@ -204,19 +199,22 @@ export class ChatbotController {
    * Get emergency resources
    * GET /api/v2/chatbot/emergency-resources
    */
-  getEmergencyResources = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getEmergencyResources = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const { location } = req.query;
 
       const resources = await this.chatbotService.getEmergencyResources(
-        location as string || 'Vietnam'
+        (location as string) || 'Vietnam'
       );
 
       res.json({
         success: true,
-        data: resources
+        data: resources,
       });
-
     } catch (error) {
       logger.error('Error fetching emergency resources:', error);
       next(error);
@@ -238,9 +236,8 @@ export class ChatbotController {
 
       res.json({
         success: true,
-        data: session
+        data: session,
       });
-
     } catch (error) {
       logger.error('Error creating chat session:', error);
       next(error);
@@ -259,9 +256,8 @@ export class ChatbotController {
 
       res.json({
         success: true,
-        message: 'Session ended successfully'
+        message: 'Session ended successfully',
       });
-
     } catch (error) {
       logger.error('Error ending chat session:', error);
       next(error);
@@ -278,9 +274,8 @@ export class ChatbotController {
 
       res.json({
         success: true,
-        data: stats
+        data: stats,
       });
-
     } catch (error) {
       logger.error('Error fetching chatbot statistics:', error);
       next(error);
@@ -296,4 +291,3 @@ export class ChatbotController {
 }
 
 export default new ChatbotController();
-

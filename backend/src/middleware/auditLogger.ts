@@ -45,12 +45,12 @@ export class AuditLogger {
   log(entry: AuditLog): void {
     const logEntry = {
       ...entry,
-      timestamp: entry.timestamp || new Date()
+      timestamp: entry.timestamp || new Date(),
     };
 
     const logLine = JSON.stringify(logEntry) + '\n';
 
-    fs.appendFile(this.logFile, logLine, (err) => {
+    fs.appendFile(this.logFile, logLine, err => {
       if (err) {
         console.error('Failed to write audit log:', err);
       }
@@ -72,7 +72,7 @@ export class AuditLogger {
     const originalSend = res.send;
     res.send = function (data: any): Response {
       res.send = originalSend;
-      
+
       const duration = Date.now() - startTime;
       const log: AuditLog = {
         timestamp: new Date(),
@@ -85,7 +85,7 @@ export class AuditLogger {
         ip: req.ip || req.socket.remoteAddress || 'unknown',
         userAgent: req.get('user-agent') || 'unknown',
         statusCode: res.statusCode,
-        result: res.statusCode < 400 ? 'success' : 'failure'
+        result: res.statusCode < 400 ? 'success' : 'failure',
       };
 
       // Only log sensitive endpoints
@@ -108,13 +108,15 @@ export class AuditLogger {
       '/api/user',
       '/api/tests',
       '/api/research',
-      '/api/consent'
+      '/api/consent',
     ];
 
     const sensitiveMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
 
-    return sensitiveEndpoints.some(endpoint => path.startsWith(endpoint)) &&
-           sensitiveMethods.includes(method);
+    return (
+      sensitiveEndpoints.some(endpoint => path.startsWith(endpoint)) &&
+      sensitiveMethods.includes(method)
+    );
   }
 
   /**
@@ -137,7 +139,7 @@ export class AuditLogger {
       ip: 'system',
       userAgent: 'system',
       changes,
-      result
+      result,
     };
 
     this.log(log);
@@ -152,13 +154,7 @@ export class AuditLogger {
     action: 'read' | 'write' | 'delete',
     dataType: string
   ): void {
-    this.logAction(
-      `data_${action}`,
-      resource,
-      userId,
-      { dataType },
-      'success'
-    );
+    this.logAction(`data_${action}`, resource, userId, { dataType }, 'success');
   }
 
   /**
@@ -181,7 +177,7 @@ export class AuditLogger {
       path: `/api/auth/${event}`,
       ip: ip || 'unknown',
       userAgent: 'unknown',
-      result
+      result,
     };
 
     this.log(log);
@@ -217,11 +213,21 @@ export class AuditLogger {
           .filter(line => line.trim())
           .map(line => JSON.parse(line) as AuditLog)
           .filter(log => {
-            if (filters.userId && log.userId !== filters.userId) return false;
-            if (filters.action && log.action !== filters.action) return false;
-            if (filters.result && log.result !== filters.result) return false;
-            if (filters.startDate && new Date(log.timestamp) < filters.startDate) return false;
-            if (filters.endDate && new Date(log.timestamp) > filters.endDate) return false;
+            if (filters.userId && log.userId !== filters.userId) {
+              return false;
+            }
+            if (filters.action && log.action !== filters.action) {
+              return false;
+            }
+            if (filters.result && log.result !== filters.result) {
+              return false;
+            }
+            if (filters.startDate && new Date(log.timestamp) < filters.startDate) {
+              return false;
+            }
+            if (filters.endDate && new Date(log.timestamp) > filters.endDate) {
+              return false;
+            }
             return true;
           });
 
@@ -239,7 +245,7 @@ export class AuditLogger {
     return {
       period: {
         start: startDate,
-        end: endDate
+        end: endDate,
       },
       totalEvents: logs.length,
       successfulEvents: logs.filter(l => l.result === 'success').length,
@@ -247,7 +253,7 @@ export class AuditLogger {
       uniqueUsers: new Set(logs.map(l => l.userId).filter(Boolean)).size,
       actionBreakdown: this.groupBy(logs, 'action'),
       resourceBreakdown: this.groupBy(logs, 'resource'),
-      topUsers: this.getTopUsers(logs, 10)
+      topUsers: this.getTopUsers(logs, 10),
     };
   }
 
@@ -271,4 +277,3 @@ export class AuditLogger {
 // Export singleton instance
 export const auditLogger = new AuditLogger();
 export default auditLogger;
-

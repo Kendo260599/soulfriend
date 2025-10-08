@@ -12,7 +12,7 @@ export enum LogLevel {
   ERROR = 0,
   WARN = 1,
   INFO = 2,
-  DEBUG = 3
+  DEBUG = 3,
 }
 
 // Log entry interface
@@ -35,7 +35,7 @@ class Logger {
   constructor() {
     // Set log level from config
     this.logLevel = this.getLogLevelFromString(config.LOG_LEVEL);
-    
+
     // Setup file logging if configured
     if (config.LOG_FILE) {
       this.setupFileLogging(config.LOG_FILE);
@@ -44,11 +44,16 @@ class Logger {
 
   private getLogLevelFromString(level: string): LogLevel {
     switch (level.toLowerCase()) {
-      case 'error': return LogLevel.ERROR;
-      case 'warn': return LogLevel.WARN;
-      case 'info': return LogLevel.INFO;
-      case 'debug': return LogLevel.DEBUG;
-      default: return LogLevel.INFO;
+      case 'error':
+        return LogLevel.ERROR;
+      case 'warn':
+        return LogLevel.WARN;
+      case 'info':
+        return LogLevel.INFO;
+      case 'debug':
+        return LogLevel.DEBUG;
+      default:
+        return LogLevel.INFO;
     }
   }
 
@@ -65,7 +70,7 @@ class Logger {
       this.logFile = logFile;
 
       // Handle stream errors
-      this.logStream.on('error', (error) => {
+      this.logStream.on('error', error => {
         console.error('Log file write error:', error);
       });
 
@@ -79,7 +84,12 @@ class Logger {
     return level <= this.logLevel;
   }
 
-  private formatLogEntry(level: LogLevel, message: string, metadata?: any, stack?: string): LogEntry {
+  private formatLogEntry(
+    level: LogLevel,
+    message: string,
+    metadata?: any,
+    stack?: string
+  ): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level: LogLevel[level],
@@ -105,9 +115,9 @@ class Logger {
   private writeToConsole(entry: LogEntry): void {
     const { timestamp, level, message, metadata } = entry;
     const timeStr = new Date(timestamp).toLocaleTimeString();
-    
+
     let colorCode = '';
-    let resetCode = '\x1b[0m';
+    const resetCode = '\x1b[0m';
 
     switch (level) {
       case 'ERROR':
@@ -125,7 +135,7 @@ class Logger {
     }
 
     let logMessage = `${colorCode}[${timeStr}] ${level}:${resetCode} ${message}`;
-    
+
     if (metadata && Object.keys(metadata).length > 0) {
       logMessage += `\n${colorCode}Metadata:${resetCode} ${JSON.stringify(metadata, null, 2)}`;
     }
@@ -138,7 +148,9 @@ class Logger {
   }
 
   private writeToFile(entry: LogEntry): void {
-    if (!this.logStream) return;
+    if (!this.logStream) {
+      return;
+    }
 
     try {
       const logLine = JSON.stringify(entry) + '\n';
@@ -161,34 +173,37 @@ class Logger {
 
   // Public logging methods
   error(message: string, metadata?: any, error?: Error): void {
-    if (!this.shouldLog(LogLevel.ERROR)) return;
+    if (!this.shouldLog(LogLevel.ERROR)) {
+      return;
+    }
 
-    const entry = this.formatLogEntry(
-      LogLevel.ERROR,
-      message,
-      metadata,
-      error?.stack
-    );
+    const entry = this.formatLogEntry(LogLevel.ERROR, message, metadata, error?.stack);
 
     this.writeLog(entry);
   }
 
   warn(message: string, metadata?: any): void {
-    if (!this.shouldLog(LogLevel.WARN)) return;
+    if (!this.shouldLog(LogLevel.WARN)) {
+      return;
+    }
 
     const entry = this.formatLogEntry(LogLevel.WARN, message, metadata);
     this.writeLog(entry);
   }
 
   info(message: string, metadata?: any): void {
-    if (!this.shouldLog(LogLevel.INFO)) return;
+    if (!this.shouldLog(LogLevel.INFO)) {
+      return;
+    }
 
     const entry = this.formatLogEntry(LogLevel.INFO, message, metadata);
     this.writeLog(entry);
   }
 
   debug(message: string, metadata?: any): void {
-    if (!this.shouldLog(LogLevel.DEBUG)) return;
+    if (!this.shouldLog(LogLevel.DEBUG)) {
+      return;
+    }
 
     const entry = this.formatLogEntry(LogLevel.DEBUG, message, metadata);
     this.writeLog(entry);
@@ -204,14 +219,14 @@ class Logger {
       ...metadata,
       category: 'audit',
       userId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
   performance(operation: string, duration: number, metadata?: any): void {
     const level = duration > 1000 ? LogLevel.WARN : LogLevel.INFO;
     const message = `⚡ PERFORMANCE: ${operation} took ${duration}ms`;
-    
+
     if (level === LogLevel.WARN) {
       this.warn(message, { ...metadata, category: 'performance', duration });
     } else {
@@ -223,23 +238,23 @@ class Logger {
     this.debug(`🗄️  DATABASE: ${operation}`, {
       ...metadata,
       category: 'database',
-      collection
+      collection,
     });
   }
 
   api(method: string, path: string, statusCode: number, duration: number, metadata?: any): void {
-    const level = statusCode >= 400 ? LogLevel.ERROR : 
-                 statusCode >= 300 ? LogLevel.WARN : LogLevel.INFO;
-    
+    const level =
+      statusCode >= 400 ? LogLevel.ERROR : statusCode >= 300 ? LogLevel.WARN : LogLevel.INFO;
+
     const message = `🌐 API: ${method} ${path} - ${statusCode} (${duration}ms)`;
-    
+
     const logMetadata = {
       ...metadata,
       category: 'api',
       method,
       path,
       statusCode,
-      duration
+      duration,
     };
 
     switch (level) {

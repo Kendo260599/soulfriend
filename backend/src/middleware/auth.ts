@@ -29,22 +29,19 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.'
+        message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.',
       });
     }
 
     const token = authHeader.substring(7); // Bỏ "Bearer " prefix
 
     // Verify JWT token
-    const decoded = jwt.verify(
-      token, 
-      process.env.JWT_SECRET || 'soulfriend_secret_key'
-    ) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'soulfriend_secret_key') as any;
 
     if (!decoded.adminId) {
       return res.status(401).json({
         success: false,
-        message: 'Token không hợp lệ'
+        message: 'Token không hợp lệ',
       });
     }
 
@@ -53,14 +50,14 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
     if (!admin) {
       return res.status(401).json({
         success: false,
-        message: 'Admin không tồn tại'
+        message: 'Admin không tồn tại',
       });
     }
 
     if (!admin.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Tài khoản admin đã bị vô hiệu hóa'
+        message: 'Tài khoản admin đã bị vô hiệu hóa',
       });
     }
 
@@ -68,7 +65,7 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
     if ((admin as any).isLocked) {
       return res.status(401).json({
         success: false,
-        message: 'Tài khoản tạm thời bị khóa do đăng nhập sai nhiều lần'
+        message: 'Tài khoản tạm thời bị khóa do đăng nhập sai nhiều lần',
       });
     }
 
@@ -76,31 +73,30 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
     req.admin = {
       adminId: (admin._id as any).toString(),
       username: admin.username,
-      role: admin.role
+      role: admin.role,
     };
 
     next();
-
   } catch (error) {
     console.error('Auth middleware error:', error);
-    
+
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({
         success: false,
-        message: 'Token đã hết hạn. Vui lòng đăng nhập lại.'
+        message: 'Token đã hết hạn. Vui lòng đăng nhập lại.',
       });
     }
-    
+
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({
         success: false,
-        message: 'Token không hợp lệ'
+        message: 'Token không hợp lệ',
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Lỗi server khi xác thực'
+      message: 'Lỗi server khi xác thực',
     });
   }
 };
@@ -112,14 +108,14 @@ export const requireSuperAdmin = (req: Request, res: Response, next: NextFunctio
   if (!req.admin) {
     return res.status(401).json({
       success: false,
-      message: 'Chưa được xác thực'
+      message: 'Chưa được xác thực',
     });
   }
 
   if (req.admin.role !== 'super_admin') {
     return res.status(403).json({
       success: false,
-      message: 'Cần quyền Super Admin để thực hiện hành động này'
+      message: 'Cần quyền Super Admin để thực hiện hành động này',
     });
   }
 
@@ -139,7 +135,7 @@ export const rateLimitLogin = (req: Request, res: Response, next: NextFunction) 
   const maxAttempts = 10; // Tối đa 10 lần trong 15 phút
 
   const attempts = loginAttempts.get(clientIP);
-  
+
   if (attempts) {
     // Reset count nếu đã qua window time
     if (now - attempts.lastAttempt > windowMs) {
@@ -147,7 +143,7 @@ export const rateLimitLogin = (req: Request, res: Response, next: NextFunction) 
     } else if (attempts.count >= maxAttempts) {
       return res.status(429).json({
         success: false,
-        message: 'Quá nhiều lần đăng nhập sai. Vui lòng thử lại sau 15 phút.'
+        message: 'Quá nhiều lần đăng nhập sai. Vui lòng thử lại sau 15 phút.',
       });
     } else {
       attempts.count++;
@@ -167,9 +163,11 @@ export const logAdminAction = (action: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const adminInfo = req.admin;
     const timestamp = new Date().toISOString();
-    
-    console.log(`[${timestamp}] Admin Action: ${action} by ${adminInfo?.username} (${adminInfo?.adminId})`);
-    
+
+    console.log(
+      `[${timestamp}] Admin Action: ${action} by ${adminInfo?.username} (${adminInfo?.adminId})`
+    );
+
     // TODO: Có thể lưu vào database để audit trail
     next();
   };

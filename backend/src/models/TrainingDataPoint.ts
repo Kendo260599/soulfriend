@@ -1,6 +1,6 @@
 /**
  * MONGODB MODEL: Training Data Point
- * 
+ *
  * Lưu trữ training data được tạo từ HITL feedback
  * Dùng để fine-tune AI model
  */
@@ -16,18 +16,18 @@ export interface ITrainingDataPoint extends Document {
   trainingId: string;
   alertId: string;
   timestamp: Date;
-  
+
   // Input features
   userMessage: string;
   userProfile?: any;
   testResults?: any[];
   context?: any;
-  
+
   // Ground truth labels (from human expert)
   label: 'crisis' | 'no_crisis';
   riskLevel: 'NONE' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | 'EXTREME';
   riskType?: string;
-  
+
   // AI prediction (for comparison)
   aiPrediction: {
     label: 'crisis' | 'no_crisis';
@@ -35,7 +35,7 @@ export interface ITrainingDataPoint extends Document {
     confidence: number;
     detectedKeywords: string[];
   };
-  
+
   // Expert annotations
   expertAnnotations: {
     correctKeywords: string[];
@@ -43,20 +43,20 @@ export interface ITrainingDataPoint extends Document {
     missingKeywords: string[];
     contextualFactors: string[];
   };
-  
+
   // Quality metrics
   wasCorrectPrediction: boolean;
   predictionError?: 'false_positive' | 'false_negative';
-  
+
   // Metadata
   createdFrom: 'hitl_feedback' | 'manual_annotation';
   reviewedBy: string;
-  
+
   // For fine-tuning
   exportedToFineTuning: boolean;
   exportedAt?: Date;
   fineTuningJobId?: string;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,98 +71,98 @@ const TrainingDataPointSchema = new Schema<ITrainingDataPoint>(
       type: String,
       required: true,
       unique: true,
-      index: true
+      index: true,
     },
     alertId: {
       type: String,
       required: true,
-      index: true
+      index: true,
     },
     timestamp: {
       type: Date,
       required: true,
       default: Date.now,
-      index: true
+      index: true,
     },
-    
+
     // Input data
     userMessage: {
       type: String,
-      required: true
+      required: true,
     },
     userProfile: Schema.Types.Mixed,
     testResults: [Schema.Types.Mixed],
     context: Schema.Types.Mixed,
-    
+
     // Ground truth
     label: {
       type: String,
       required: true,
       enum: ['crisis', 'no_crisis'],
-      index: true
+      index: true,
     },
     riskLevel: {
       type: String,
       required: true,
-      enum: ['NONE', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL', 'EXTREME']
+      enum: ['NONE', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL', 'EXTREME'],
     },
     riskType: String,
-    
+
     // AI prediction
     aiPrediction: {
-      label: { 
-        type: String, 
+      label: {
+        type: String,
         required: true,
-        enum: ['crisis', 'no_crisis']
+        enum: ['crisis', 'no_crisis'],
       },
       riskLevel: { type: String, required: true },
       confidence: { type: Number, min: 0, max: 1 },
-      detectedKeywords: [{ type: String }]
+      detectedKeywords: [{ type: String }],
     },
-    
+
     // Expert annotations
     expertAnnotations: {
       correctKeywords: [{ type: String }],
       incorrectKeywords: [{ type: String }],
       missingKeywords: [{ type: String }],
-      contextualFactors: [{ type: String }]
+      contextualFactors: [{ type: String }],
     },
-    
+
     // Quality
     wasCorrectPrediction: {
       type: Boolean,
       required: true,
-      index: true
+      index: true,
     },
     predictionError: {
       type: String,
-      enum: ['false_positive', 'false_negative']
+      enum: ['false_positive', 'false_negative'],
     },
-    
+
     // Metadata
     createdFrom: {
       type: String,
       required: true,
       enum: ['hitl_feedback', 'manual_annotation'],
-      default: 'hitl_feedback'
+      default: 'hitl_feedback',
     },
     reviewedBy: {
       type: String,
-      required: true
+      required: true,
     },
-    
+
     // Fine-tuning tracking
     exportedToFineTuning: {
       type: Boolean,
       default: false,
-      index: true
+      index: true,
     },
     exportedAt: Date,
-    fineTuningJobId: String
+    fineTuningJobId: String,
   },
   {
     timestamps: true,
-    collection: 'training_data_points'
+    collection: 'training_data_points',
   }
 );
 
@@ -178,13 +178,16 @@ TrainingDataPointSchema.index({ exportedToFineTuning: 1, timestamp: -1 });
 // METHODS
 // =============================================================================
 
-TrainingDataPointSchema.methods.toFineTuningFormat = function(format: 'openai' | 'google' = 'openai'): any {
+TrainingDataPointSchema.methods.toFineTuningFormat = function (
+  format: 'openai' | 'google' = 'openai'
+): any {
   if (format === 'openai') {
     return {
       prompt: `Detect crisis in message: "${this.userMessage}"`,
-      completion: this.label === 'crisis'
-        ? `Crisis detected: ${this.riskLevel} risk of ${this.riskType || 'crisis'}`
-        : 'No crisis detected'
+      completion:
+        this.label === 'crisis'
+          ? `Crisis detected: ${this.riskLevel} risk of ${this.riskType || 'crisis'}`
+          : 'No crisis detected',
     };
   } else {
     // Google Vertex AI format
@@ -193,8 +196,8 @@ TrainingDataPointSchema.methods.toFineTuningFormat = function(format: 'openai' |
       outputText: this.label === 'crisis' ? 'crisis' : 'no_crisis',
       metadata: {
         riskLevel: this.riskLevel,
-        riskType: this.riskType
-      }
+        riskType: this.riskType,
+      },
     };
   }
 };
@@ -203,18 +206,19 @@ TrainingDataPointSchema.methods.toFineTuningFormat = function(format: 'openai' |
 // STATICS
 // =============================================================================
 
-TrainingDataPointSchema.statics.getUnexportedData = async function(limit?: number): Promise<ITrainingDataPoint[]> {
-  const query = this.find({ exportedToFineTuning: false })
-    .sort({ timestamp: -1 });
-  
+TrainingDataPointSchema.statics.getUnexportedData = async function (
+  limit?: number
+): Promise<ITrainingDataPoint[]> {
+  const query = this.find({ exportedToFineTuning: false }).sort({ timestamp: -1 });
+
   if (limit) {
     query.limit(limit);
   }
-  
+
   return query.exec();
 };
 
-TrainingDataPointSchema.statics.markAsExported = async function(
+TrainingDataPointSchema.statics.markAsExported = async function (
   trainingIds: string[],
   jobId: string
 ): Promise<void> {
@@ -224,47 +228,51 @@ TrainingDataPointSchema.statics.markAsExported = async function(
       $set: {
         exportedToFineTuning: true,
         exportedAt: new Date(),
-        fineTuningJobId: jobId
-      }
+        fineTuningJobId: jobId,
+      },
     }
   );
 };
 
-TrainingDataPointSchema.statics.exportForFineTuning = async function(
+TrainingDataPointSchema.statics.exportForFineTuning = async function (
   format: 'jsonl' | 'csv' = 'jsonl',
   limit?: number
 ): Promise<string> {
-  const query = this.find({ exportedToFineTuning: false })
-    .sort({ timestamp: -1 });
-  
+  const query = this.find({ exportedToFineTuning: false }).sort({ timestamp: -1 });
+
   if (limit) {
     query.limit(limit);
   }
-  
+
   const data = await query.exec();
-  
+
   if (format === 'jsonl') {
     return data
-      .map((point: any) => JSON.stringify({
-        prompt: `Detect crisis in message: "${point.userMessage}"`,
-        completion: point.label === 'crisis' 
-          ? `Crisis detected: ${point.riskLevel} risk`
-          : 'No crisis detected'
-      }))
+      .map((point: any) =>
+        JSON.stringify({
+          prompt: `Detect crisis in message: "${point.userMessage}"`,
+          completion:
+            point.label === 'crisis'
+              ? `Crisis detected: ${point.riskLevel} risk`
+              : 'No crisis detected',
+        })
+      )
       .join('\n');
   } else {
     // CSV format
     const headers = 'message,label,risk_level,risk_type,was_correct\n';
     const rows = data
-      .map((point: any) => [
-        `"${point.userMessage.replace(/"/g, '""')}"`,
-        point.label,
-        point.riskLevel,
-        point.riskType || 'none',
-        point.wasCorrectPrediction
-      ].join(','))
+      .map((point: any) =>
+        [
+          `"${point.userMessage.replace(/"/g, '""')}"`,
+          point.label,
+          point.riskLevel,
+          point.riskType || 'none',
+          point.wasCorrectPrediction,
+        ].join(',')
+      )
       .join('\n');
-    
+
     return headers + rows;
   }
 };
@@ -279,4 +287,3 @@ export const TrainingDataPoint = mongoose.model<ITrainingDataPoint>(
 );
 
 export default TrainingDataPoint;
-

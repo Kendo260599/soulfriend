@@ -1,6 +1,6 @@
 /**
  * HITL FEEDBACK SERVICE - PERSISTENT VERSION WITH MONGODB
- * 
+ *
  * Version sử dụng MongoDB để lưu trữ dữ liệu lâu dài
  * Thay thế cho version in-memory
  */
@@ -104,10 +104,7 @@ export class HITLFeedbackServicePersistent {
   /**
    * STEP 1: Thu thập feedback và lưu vào MongoDB
    */
-  async collectFeedback(
-    alert: CriticalAlert,
-    feedback: HITLFeedbackInput
-  ): Promise<IHITLFeedback> {
+  async collectFeedback(alert: CriticalAlert, feedback: HITLFeedbackInput): Promise<IHITLFeedback> {
     try {
       // Create feedback document
       const feedbackDoc = await HITLFeedback.create({
@@ -115,44 +112,44 @@ export class HITLFeedbackServicePersistent {
         userId: alert.userId,
         sessionId: alert.sessionId,
         timestamp: new Date(),
-        
+
         // Ground truth
         wasActualCrisis: feedback.wasActualCrisis,
         crisisConfidenceScore: feedback.crisisConfidenceScore,
         actualRiskLevel: feedback.actualRiskLevel,
         actualRiskType: feedback.actualRiskType,
-        
+
         // AI prediction
         aiPrediction: {
           riskLevel: alert.riskLevel,
           riskType: alert.riskType,
           detectedKeywords: alert.detectedKeywords,
-          confidence: 0.96
+          confidence: 0.96,
         },
-        
+
         // User message
         userMessage: alert.userMessage,
-        
+
         // Expert feedback
         clinicalNotes: feedback.clinicalNotes,
         missedIndicators: feedback.missedIndicators,
         falseIndicators: feedback.falseIndicators,
         suggestedKeywords: feedback.suggestedKeywords,
         unnecessaryKeywords: feedback.unnecessaryKeywords,
-        
+
         // Intervention results
         responseTimeSeconds: feedback.responseTimeSeconds,
         interventionSuccess: feedback.interventionSuccess,
         userOutcome: feedback.userOutcome,
-        
+
         // Reviewer
         reviewedBy: feedback.reviewedBy,
-        reviewedAt: feedback.reviewedAt || new Date()
+        reviewedAt: feedback.reviewedAt || new Date(),
       });
 
       logger.info(`📊 Feedback saved to MongoDB: ${alert.id}`, {
         wasActualCrisis: feedback.wasActualCrisis,
-        actualRiskLevel: feedback.actualRiskLevel
+        actualRiskLevel: feedback.actualRiskLevel,
       });
 
       // Create training data point
@@ -176,29 +173,29 @@ export class HITLFeedbackServicePersistent {
       trainingId: `TRAINING_${alert.id}`,
       alertId: alert.id,
       timestamp: new Date(),
-      
+
       // Input
       userMessage: alert.userMessage,
       userProfile: alert.userProfile,
       testResults: alert.testResults,
       context: {
         sessionId: alert.sessionId,
-        userId: alert.userId
+        userId: alert.userId,
       },
-      
+
       // Ground truth
       label: feedback.wasActualCrisis ? 'crisis' : 'no_crisis',
       riskLevel: feedback.actualRiskLevel,
       riskType: feedback.actualRiskType,
-      
+
       // AI prediction
       aiPrediction: {
         label: 'crisis',
         riskLevel: alert.riskLevel,
         confidence: 0.96,
-        detectedKeywords: alert.detectedKeywords
+        detectedKeywords: alert.detectedKeywords,
       },
-      
+
       // Expert annotations
       expertAnnotations: {
         correctKeywords: feedback.wasActualCrisis
@@ -206,20 +203,20 @@ export class HITLFeedbackServicePersistent {
           : [],
         incorrectKeywords: feedback.falseIndicators || [],
         missingKeywords: feedback.suggestedKeywords || [],
-        contextualFactors: []
+        contextualFactors: [],
       },
-      
+
       // Quality
       wasCorrectPrediction: feedback.wasActualCrisis,
       predictionError: feedback.wasActualCrisis ? undefined : 'false_positive',
-      
+
       // Metadata
       createdFrom: 'hitl_feedback',
-      reviewedBy: feedback.reviewedBy
+      reviewedBy: feedback.reviewedBy,
     });
 
     logger.info(`🎯 Training data point saved: ${trainingPoint.trainingId}`);
-    
+
     return trainingPoint;
   }
 
@@ -232,7 +229,7 @@ export class HITLFeedbackServicePersistent {
     const periodEnd = new Date();
 
     const feedbacks = await HITLFeedback.find({
-      timestamp: { $gte: periodStart, $lte: periodEnd }
+      timestamp: { $gte: periodStart, $lte: periodEnd },
     });
 
     const totalReviewed = feedbacks.length;
@@ -242,31 +239,25 @@ export class HITLFeedbackServicePersistent {
     const falseNegatives = 0;
 
     const accuracy = totalReviewed > 0 ? truePositives / totalReviewed : 0;
-    const precision = (truePositives + falsePositives) > 0 
-      ? truePositives / (truePositives + falsePositives) 
-      : 0;
-    const recall = (truePositives + falseNegatives) > 0
-      ? truePositives / (truePositives + falseNegatives)
-      : 0;
-    const f1Score = (precision + recall) > 0
-      ? 2 * (precision * recall) / (precision + recall)
-      : 0;
-    const falsePositiveRate = (falsePositives + trueNegatives) > 0
-      ? falsePositives / (falsePositives + trueNegatives)
-      : 0;
-    const falseNegativeRate = (falseNegatives + truePositives) > 0
-      ? falseNegatives / (falseNegatives + truePositives)
-      : 0;
+    const precision =
+      truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
+    const recall =
+      truePositives + falseNegatives > 0 ? truePositives / (truePositives + falseNegatives) : 0;
+    const f1Score = precision + recall > 0 ? (2 * (precision * recall)) / (precision + recall) : 0;
+    const falsePositiveRate =
+      falsePositives + trueNegatives > 0 ? falsePositives / (falsePositives + trueNegatives) : 0;
+    const falseNegativeRate =
+      falseNegatives + truePositives > 0 ? falseNegatives / (falseNegatives + truePositives) : 0;
 
     // Response time metrics
     const responseTimes = feedbacks.map(f => f.responseTimeSeconds);
-    const avgResponseTime = responseTimes.length > 0
-      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-      : 0;
+    const avgResponseTime =
+      responseTimes.length > 0
+        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+        : 0;
     const sortedTimes = [...responseTimes].sort((a, b) => a - b);
-    const medianResponseTime = sortedTimes.length > 0
-      ? sortedTimes[Math.floor(sortedTimes.length / 2)]
-      : 0;
+    const medianResponseTime =
+      sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length / 2)] : 0;
 
     // Intervention success
     const interventionSuccess = feedbacks.filter(f => f.interventionSuccess).length;
@@ -289,7 +280,7 @@ export class HITLFeedbackServicePersistent {
       medianResponseTimeSeconds: medianResponseTime,
       interventionSuccessRate,
       periodStart,
-      periodEnd
+      periodEnd,
     };
   }
 
@@ -298,19 +289,19 @@ export class HITLFeedbackServicePersistent {
    */
   async getKeywordStatistics(): Promise<KeywordAnalysis[]> {
     const keywordStats = await HITLFeedback.getKeywordStatistics();
-    
+
     return keywordStats.map((stats: any) => ({
       ...stats,
-      recommendation: this.generateKeywordRecommendation(stats)
+      recommendation: this.generateKeywordRecommendation(stats),
     }));
   }
 
   /**
    * Generate keyword recommendation
    */
-  private generateKeywordRecommendation(stats: any): 
-    'keep' | 'adjust_weight' | 'remove' | 'add_context_check' {
-    
+  private generateKeywordRecommendation(
+    stats: any
+  ): 'keep' | 'adjust_weight' | 'remove' | 'add_context_check' {
     if (stats.falsePositiveRate > 0.7 && stats.timesDetected >= 5) {
       return 'remove';
     }
@@ -341,8 +332,8 @@ export class HITLFeedbackServicePersistent {
       expectedImprovements: {
         accuracyIncrease: '',
         falsePositiveReduction: '',
-        falseNegativeReduction: ''
-      }
+        falseNegativeReduction: '',
+      },
     };
 
     // Analyze keywords
@@ -355,7 +346,7 @@ export class HITLFeedbackServicePersistent {
           keyword: stats.keyword,
           currentWeight: 1.0,
           suggestedWeight,
-          reason: `High false positive rate: ${(stats.falsePositiveRate * 100).toFixed(1)}%`
+          reason: `High false positive rate: ${(stats.falsePositiveRate * 100).toFixed(1)}%`,
         });
       }
     }
@@ -379,7 +370,7 @@ export class HITLFeedbackServicePersistent {
     suggestions.expectedImprovements = {
       accuracyIncrease: this.estimateImpact(suggestions, 'accuracy'),
       falsePositiveReduction: this.estimateImpact(suggestions, 'fp'),
-      falseNegativeReduction: this.estimateImpact(suggestions, 'fn')
+      falseNegativeReduction: this.estimateImpact(suggestions, 'fn'),
     };
 
     return suggestions;
@@ -387,10 +378,12 @@ export class HITLFeedbackServicePersistent {
 
   private estimateImpact(suggestions: any, type: string): string {
     if (type === 'accuracy') {
-      const impact = suggestions.keywordsToAdd.length * 0.01 + suggestions.keywordsToRemove.length * 0.01;
+      const impact =
+        suggestions.keywordsToAdd.length * 0.01 + suggestions.keywordsToRemove.length * 0.01;
       return `+${(impact * 100).toFixed(1)}-${((impact + 0.02) * 100).toFixed(1)}%`;
     } else if (type === 'fp') {
-      const impact = (suggestions.keywordsToRemove.length + suggestions.keywordsToAdjust.length) * 0.05;
+      const impact =
+        (suggestions.keywordsToRemove.length + suggestions.keywordsToAdjust.length) * 0.05;
       return `-${(impact * 100).toFixed(0)}-${((impact + 0.1) * 100).toFixed(0)}%`;
     } else {
       const impact = suggestions.keywordsToAdd.length * 0.03;
@@ -402,13 +395,12 @@ export class HITLFeedbackServicePersistent {
    * Get training data for export
    */
   async getTrainingData(limit?: number): Promise<any[]> {
-    const query = TrainingDataPoint.find({})
-      .sort({ timestamp: -1 });
-    
+    const query = TrainingDataPoint.find({}).sort({ timestamp: -1 });
+
     if (limit) {
       query.limit(limit);
     }
-    
+
     const data = await query.exec();
     logger.info(`📦 Retrieved ${data.length} training data points from MongoDB`);
     return data;
@@ -431,4 +423,3 @@ export class HITLFeedbackServicePersistent {
 
 // Export singleton
 export const hitlFeedbackServicePersistent = new HITLFeedbackServicePersistent();
-

@@ -93,7 +93,7 @@ function formatErrorResponse(error: any, req: Request): ErrorResponse {
       message: error.message || 'An unexpected error occurred',
       timestamp: new Date().toISOString(),
       requestId: req.headers['x-request-id'] as string,
-    }
+    },
   };
 
   // Add details for validation errors
@@ -112,7 +112,7 @@ function formatErrorResponse(error: any, req: Request): ErrorResponse {
     // In development, include stack trace
     response.error.details = {
       ...response.error.details,
-      stack: error.stack
+      stack: error.stack,
     };
   }
 
@@ -128,7 +128,7 @@ function handleSpecificErrors(error: any): AppError {
     const errors = Object.values(error.errors).map((err: any) => ({
       field: err.path,
       message: err.message,
-      value: err.value
+      value: err.value,
     }));
     return new ValidationAppError(errors, 'Validation failed');
   }
@@ -200,7 +200,7 @@ function logError(error: AppError, req: Request): void {
   if (error instanceof AuthenticationError || error instanceof AuthorizationError) {
     logger.security(`Security violation: ${error.message}`, {
       ...metadata,
-      errorType: error.constructor.name
+      errorType: error.constructor.name,
     });
   }
 }
@@ -208,15 +208,10 @@ function logError(error: AppError, req: Request): void {
 /**
  * Main error handling middleware
  */
-export const errorHandler = (
-  error: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction): void => {
   // Handle the error
   const appError = handleSpecificErrors(error);
-  
+
   // Log the error
   logError(appError, req);
 
@@ -267,13 +262,13 @@ export const timeoutHandler = (timeout: number = 30000) => {
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const { validationResult } = require('express-validator');
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     const validationErrors = errors.array().map((error: any) => ({
       field: error.path || error.param,
       message: error.msg,
       value: error.value,
-      location: error.location
+      location: error.location,
     }));
 
     const appError = new ValidationAppError(validationErrors);
@@ -289,11 +284,11 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
 export const rateLimitHandler = (req: Request, res: Response): void => {
   const error = new RateLimitError('Too many requests, please try again later');
   const errorResponse = formatErrorResponse(error, req);
-  
+
   logger.security('Rate limit exceeded', {
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    url: req.originalUrl
+    url: req.originalUrl,
   });
 
   res.status(429).json(errorResponse);
@@ -305,7 +300,7 @@ export const rateLimitHandler = (req: Request, res: Response): void => {
 export const gracefulShutdown = (server: any): void => {
   const shutdown = (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);
-    
+
     server.close(() => {
       logger.info('Server closed');
       process.exit(0);

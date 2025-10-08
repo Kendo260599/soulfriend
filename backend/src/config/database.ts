@@ -15,29 +15,29 @@ export interface DatabaseConfig {
 
 const getDatabaseConfig = (): DatabaseConfig => {
   const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/soulfriend';
-  
+
   const options: mongoose.ConnectOptions = {
     // Connection pooling
     maxPoolSize: 10,
     minPoolSize: 5,
-    
+
     // Timeouts
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
-    
+
     // Retry logic
     retryWrites: true,
     retryReads: true,
-    
+
     // Write concern
     w: 'majority',
-    
+
     // Read preference
     readPreference: 'primaryPreferred',
-    
+
     // Application name for monitoring
     appName: 'soulfriend-v4',
-    
+
     // Auto index (disable in production for performance)
     autoIndex: process.env.NODE_ENV !== 'production',
   };
@@ -66,14 +66,14 @@ export class DatabaseConnection {
 
     try {
       const config = getDatabaseConfig();
-      
+
       // Connection event handlers
       mongoose.connection.on('connected', () => {
         console.log('✅ MongoDB connected successfully');
         this.isConnected = true;
       });
 
-      mongoose.connection.on('error', (err) => {
+      mongoose.connection.on('error', err => {
         console.error('❌ MongoDB connection error:', err);
         this.isConnected = false;
       });
@@ -90,12 +90,11 @@ export class DatabaseConnection {
       });
 
       await mongoose.connect(config.uri, config.options);
-      
+
       // Enable mongoose debugging in development
       if (process.env.NODE_ENV === 'development') {
         mongoose.set('debug', true);
       }
-
     } catch (error) {
       console.error('⚠️  MongoDB connection failed:', (error as Error).message);
       console.log('🔄 Running in fallback mode without database');
@@ -129,4 +128,3 @@ export class DatabaseConnection {
 
 // Export singleton instance
 export default DatabaseConnection.getInstance();
-

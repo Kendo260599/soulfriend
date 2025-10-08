@@ -16,7 +16,7 @@ export class EncryptionService {
 
   constructor() {
     const key = process.env.ENCRYPTION_KEY;
-    
+
     if (!key) {
       throw new Error('ENCRYPTION_KEY environment variable is required');
     }
@@ -46,11 +46,7 @@ export class EncryptionService {
       const authTag = cipher.getAuthTag();
 
       // Combine IV + authTag + encrypted data
-      const combined = Buffer.concat([
-        iv,
-        authTag,
-        Buffer.from(encrypted, 'hex')
-      ]);
+      const combined = Buffer.concat([iv, authTag, Buffer.from(encrypted, 'hex')]);
 
       return combined.toString('base64');
     } catch (error) {
@@ -95,7 +91,7 @@ export class EncryptionService {
     try {
       const actualSalt = salt || crypto.randomBytes(16).toString('hex');
       const hash = crypto.scryptSync(data, actualSalt, 64).toString('hex');
-      
+
       return { hash, salt: actualSalt };
     } catch (error) {
       throw new Error(`Hashing failed: ${(error as Error).message}`);
@@ -112,10 +108,7 @@ export class EncryptionService {
   verifyHash(data: string, hash: string, salt: string): boolean {
     try {
       const { hash: computedHash } = this.hash(data, salt);
-      return crypto.timingSafeEqual(
-        Buffer.from(hash, 'hex'),
-        Buffer.from(computedHash, 'hex')
-      );
+      return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(computedHash, 'hex'));
     } catch (error) {
       return false;
     }
@@ -138,12 +131,12 @@ export class EncryptionService {
   generatePassword(length: number = 16): string {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let password = '';
-    
+
     for (let i = 0; i < length; i++) {
       const randomIndex = crypto.randomInt(0, charset.length);
       password += charset[randomIndex];
     }
-    
+
     return password;
   }
 
@@ -240,7 +233,8 @@ export const encryptionService = new EncryptionService();
 export const encrypt = (data: string): string => encryptionService.encrypt(data);
 export const decrypt = (encryptedData: string): string => encryptionService.decrypt(encryptedData);
 export const hashData = (data: string, salt?: string) => encryptionService.hash(data, salt);
-export const verifyHash = (data: string, hash: string, salt: string): boolean => 
+export const verifyHash = (data: string, hash: string, salt: string): boolean =>
   encryptionService.verifyHash(data, hash, salt);
 export const generateToken = (length?: number): string => encryptionService.generateToken(length);
-export const generatePassword = (length?: number): string => encryptionService.generatePassword(length);
+export const generatePassword = (length?: number): string =>
+  encryptionService.generatePassword(length);

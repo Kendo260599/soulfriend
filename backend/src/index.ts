@@ -42,30 +42,34 @@ const PORT = config.PORT;
 // ====================
 
 // Helmet - Security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // CORS configuration
-app.use(cors({
-  origin: config.CORS_ORIGIN,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
-  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
-}));
+app.use(
+  cors({
+    origin: config.CORS_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
+    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+  })
+);
 
 // Compression
 app.use(compression());
@@ -84,14 +88,14 @@ app.use(mongoSanitize());
 // Request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - startTime;
     console.log(
       `[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`
     );
   });
-  
+
   next();
 });
 
@@ -146,7 +150,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     gemini: 'initialized',
-    chatbot: 'ready'
+    chatbot: 'ready',
   });
 });
 
@@ -166,19 +170,19 @@ app.get('/api/health/detailed', async (req: Request, res: Response) => {
         database: {
           status: dbHealthy ? 'connected' : 'disconnected',
           state: dbStatus,
-          message: getDbStatusMessage(dbStatus)
+          message: getDbStatusMessage(dbStatus),
         },
-        cache: config.REDIS_URL ? 'configured' : 'not configured'
+        cache: config.REDIS_URL ? 'configured' : 'not configured',
       },
       system: {
         memory: {
           used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
           total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-          unit: 'MB'
+          unit: 'MB',
         },
         cpu: process.cpuUsage(),
-        nodeVersion: process.version
-      }
+        nodeVersion: process.version,
+      },
     };
 
     const statusCode = dbHealthy ? 200 : 503;
@@ -187,7 +191,7 @@ app.get('/api/health/detailed', async (req: Request, res: Response) => {
     res.status(503).json({
       status: 'error',
       message: 'Health check failed',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -224,7 +228,7 @@ app.get('/api', (req: Request, res: Response) => {
         admin: '/api/v2/admin',
         user: '/api/v2/user',
         research: '/api/v2/research',
-        chatbot: '/api/v2/chatbot'
+        chatbot: '/api/v2/chatbot',
       },
       v1_deprecated: {
         note: 'v1 endpoints are deprecated and will be removed in v5.0',
@@ -233,10 +237,10 @@ app.get('/api', (req: Request, res: Response) => {
         admin: '/api/admin',
         user: '/api/user',
         research: '/api/research',
-        chatbot: '/api/chatbot'
-      }
+        chatbot: '/api/chatbot',
+      },
     },
-    documentation: '/api/docs'
+    documentation: '/api/docs',
   });
 });
 
@@ -249,7 +253,7 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
-    suggestion: 'Check the API documentation at /api'
+    suggestion: 'Check the API documentation at /api',
   });
 });
 
@@ -282,10 +286,10 @@ const startServer = async () => {
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
       console.log(`\n⚠️  Received ${signal}. Starting graceful shutdown...`);
-      
+
       server.close(async () => {
         console.log('🔒 HTTP server closed');
-        
+
         try {
           await databaseConnection.disconnect();
           console.log('👋 Graceful shutdown complete');
@@ -308,7 +312,7 @@ const startServer = async () => {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       console.error('💥 Uncaught Exception:', error);
       gracefulShutdown('uncaughtException');
     });
@@ -318,13 +322,12 @@ const startServer = async () => {
       console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
       gracefulShutdown('unhandledRejection');
     });
-
   } catch (error) {
     console.error('⚠️  Database connection failed:', (error as Error).message);
-    
+
     if (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') {
       console.log('🔄 Starting in FALLBACK mode (no database)...');
-      
+
       const server = app.listen(PORT, () => {
         console.log('╔════════════════════════════════════════════╗');
         console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
@@ -349,7 +352,6 @@ const startServer = async () => {
 
       process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
       process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-      
     } else {
       console.error('❌ Cannot start in production without database');
       process.exit(1);
@@ -364,7 +366,7 @@ function getDbStatusMessage(state: number): string {
     1: 'Connected',
     2: 'Connecting',
     3: 'Disconnecting',
-    99: 'Uninitialized'
+    99: 'Uninitialized',
   };
   return states[state] || 'Unknown';
 }

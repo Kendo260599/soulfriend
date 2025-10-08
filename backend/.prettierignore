@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Documentation
+*.md
+
+# Test files
+tests/
+*.test.ts
+*.spec.ts
+
+# Generated files
+*.d.ts
+*.js.map
+*.ts.map

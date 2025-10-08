@@ -28,7 +28,7 @@ const createDefaultAdmin = async () => {
       email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@soulfriend.com',
       password: process.env.DEFAULT_ADMIN_PASSWORD || 'Kendo2605@',
       fullName: 'System Administrator',
-      role: 'super_admin'
+      role: 'super_admin',
     });
 
     await defaultAdmin.save();
@@ -36,7 +36,6 @@ const createDefaultAdmin = async () => {
     console.log(`Username: ${defaultAdmin.username}`);
     console.log(`Email: ${defaultAdmin.email}`);
     console.log('⚠️  Hãy đổi mật khẩu sau khi đăng nhập lần đầu!');
-
   } catch (error) {
     console.error('❌ Lỗi khi tạo admin mặc định:', error);
   } finally {

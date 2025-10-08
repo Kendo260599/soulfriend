@@ -28,15 +28,15 @@ export function scoreDASS21(answers: AnswerMap): TestResult {
   let stressScore = 0;
 
   depressionQuestions.forEach(q => {
-    depressionScore += (answers[q] || 0);
+    depressionScore += answers[q] || 0;
   });
 
   anxietyQuestions.forEach(q => {
-    anxietyScore += (answers[q] || 0);
+    anxietyScore += answers[q] || 0;
   });
 
   stressQuestions.forEach(q => {
-    stressScore += (answers[q] || 0);
+    stressScore += answers[q] || 0;
   });
 
   // Nhân đôi để có điểm DASS-21 chuẩn
@@ -81,7 +81,7 @@ export function scoreDASS21(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -120,7 +120,7 @@ export function scoreGAD7(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -164,7 +164,7 @@ export function scorePHQ9(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -180,13 +180,15 @@ export function scoreEPDS(answers: AnswerMap): TestResult {
 
   if (totalScore >= 13) {
     severity = 'Nguy cơ trầm cảm sau sinh cao';
-    interpretation = 'Điểm số cho thấy nguy cơ cao mắc trầm cảm sau sinh. Cần được đánh giá và hỗ trợ chuyên nghiệp.';
+    interpretation =
+      'Điểm số cho thấy nguy cơ cao mắc trầm cảm sau sinh. Cần được đánh giá và hỗ trợ chuyên nghiệp.';
     recommendations.push('Liên hệ ngay với bác sĩ sản khoa hoặc chuyên gia tâm lý');
     recommendations.push('Tìm kiếm hỗ trợ từ gia đình và bạn bè');
     recommendations.push('Cân nhắc tham gia nhóm hỗ trợ mẹ sau sinh');
   } else if (totalScore >= 10) {
     severity = 'Nguy cơ trầm cảm sau sinh trung bình';
-    interpretation = 'Điểm số cho thấy một số dấu hiệu của trầm cảm sau sinh. Nên theo dõi và tìm kiếm hỗ trợ.';
+    interpretation =
+      'Điểm số cho thấy một số dấu hiệu của trầm cảm sau sinh. Nên theo dõi và tìm kiếm hỗ trợ.';
     recommendations.push('Tham khảo ý kiến bác sĩ hoặc chuyên gia');
     recommendations.push('Tăng cường chăm sóc bản thân');
     recommendations.push('Chia sẻ cảm xúc với người thân');
@@ -201,7 +203,7 @@ export function scoreEPDS(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -215,9 +217,9 @@ export function scoreSelfCompassion(answers: AnswerMap): TestResult {
   Object.keys(answers).forEach(questionId => {
     const qId = parseInt(questionId);
     const rawScore = answers[qId];
-    
+
     if (reverseQuestions.includes(qId)) {
-      totalScore += (6 - rawScore); // Đảo ngược thang điểm 5 -> 1, 4 -> 2, etc.
+      totalScore += 6 - rawScore; // Đảo ngược thang điểm 5 -> 1, 4 -> 2, etc.
     } else {
       totalScore += rawScore;
     }
@@ -255,7 +257,7 @@ export function scoreSelfCompassion(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -297,7 +299,7 @@ export function scoreMindfulness(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -311,9 +313,9 @@ export function scoreSelfConfidence(answers: AnswerMap): TestResult {
   Object.keys(answers).forEach(questionId => {
     const qId = parseInt(questionId);
     const rawScore = answers[qId];
-    
+
     if (reverseQuestions.includes(qId)) {
-      totalScore += (6 - rawScore);
+      totalScore += 6 - rawScore;
     } else {
       totalScore += rawScore;
     }
@@ -351,7 +353,7 @@ export function scoreSelfConfidence(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -365,9 +367,9 @@ export function scoreRosenberg(answers: AnswerMap): TestResult {
   Object.keys(answers).forEach(questionId => {
     const qId = parseInt(questionId);
     const rawScore = answers[qId];
-    
+
     if (reverseQuestions.includes(qId)) {
-      totalScore += (5 - rawScore); // Đảo ngược thang điểm 4 -> 1, 3 -> 2, etc.
+      totalScore += 5 - rawScore; // Đảo ngược thang điểm 4 -> 1, 3 -> 2, etc.
     } else {
       totalScore += rawScore;
     }
@@ -405,7 +407,7 @@ export function scoreRosenberg(answers: AnswerMap): TestResult {
     totalScore,
     severity,
     interpretation,
-    recommendations
+    recommendations,
   };
 }
 
@@ -417,30 +419,30 @@ export function scoreTest(testType: string, answers: AnswerMap): TestResult {
     case 'DASS-21':
     case 'DASS_21':
       return scoreDASS21(answers);
-    
+
     case 'GAD-7':
     case 'GAD_7':
       return scoreGAD7(answers);
-    
+
     case 'PHQ-9':
     case 'PHQ_9':
       return scorePHQ9(answers);
-    
+
     case 'EPDS':
       return scoreEPDS(answers);
-    
+
     case 'SELF_COMPASSION':
       return scoreSelfCompassion(answers);
-    
+
     case 'MINDFULNESS':
       return scoreMindfulness(answers);
-    
+
     case 'SELF_CONFIDENCE':
       return scoreSelfConfidence(answers);
-    
+
     case 'ROSENBERG_SELF_ESTEEM':
       return scoreRosenberg(answers);
-    
+
     default:
       throw new Error(`Không hỗ trợ loại test: ${testType}`);
   }

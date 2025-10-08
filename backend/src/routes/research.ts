@@ -16,19 +16,13 @@ const router = express.Router();
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const {
-      participantId,
-      testResults,
-      sessionData,
-      qualityMetrics,
-      metadata
-    } = req.body;
+    const { participantId, testResults, sessionData, qualityMetrics, metadata } = req.body;
 
     // Validation
     if (!testResults || !Array.isArray(testResults) || testResults.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Test results are required and must be a non-empty array'
+        error: 'Test results are required and must be a non-empty array',
       });
     }
 
@@ -44,19 +38,19 @@ router.post('/', async (req: Request, res: Response) => {
         sessionId: `session_${Date.now()}`,
         startTime: new Date(),
         endTime: new Date(),
-        duration: 0
+        duration: 0,
       },
       qualityMetrics: qualityMetrics || {
         completeness: 1.0,
         validity: 1.0,
         reliability: 1.0,
-        responseTime: 0
+        responseTime: 0,
       },
       metadata: metadata || {
         version: '3.0',
         platform: 'web',
-        locale: 'vi'
-      }
+        locale: 'vi',
+      },
     });
 
     await researchData.save();
@@ -68,16 +62,15 @@ router.post('/', async (req: Request, res: Response) => {
         id: researchData._id,
         participantId: researchData.participantId,
         timestamp: researchData.timestamp,
-        testCount: researchData.testResults.length
-      }
+        testCount: researchData.testResults.length,
+      },
     });
-
   } catch (error) {
     console.error('Error saving research data:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to save research data',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
@@ -88,21 +81,19 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
   try {
-    const { 
-      startDate, 
-      endDate, 
-      testType, 
-      limit = 100,
-      skip = 0 
-    } = req.query;
+    const { startDate, endDate, testType, limit = 100, skip = 0 } = req.query;
 
     // Build query
-    let query: any = {};
+    const query: any = {};
 
     if (startDate || endDate) {
       query.timestamp = {};
-      if (startDate) query.timestamp.$gte = new Date(startDate as string);
-      if (endDate) query.timestamp.$lte = new Date(endDate as string);
+      if (startDate) {
+        query.timestamp.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        query.timestamp.$lte = new Date(endDate as string);
+      }
     }
 
     if (testType) {
@@ -110,8 +101,7 @@ router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
     }
 
     // Execute query với pagination
-    const data = await ResearchData
-      .find(query)
+    const data = await ResearchData.find(query)
       .sort({ timestamp: -1 })
       .limit(Number(limit))
       .skip(Number(skip))
@@ -126,16 +116,15 @@ router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
         total,
         limit: Number(limit),
         skip: Number(skip),
-        hasMore: total > Number(skip) + data.length
-      }
+        hasMore: total > Number(skip) + data.length,
+      },
     });
-
   } catch (error) {
     console.error('Error fetching research data:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch research data',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
@@ -147,7 +136,7 @@ router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
 router.get('/stats', authenticateAdmin, async (req: Request, res: Response) => {
   try {
     const stats = await (ResearchData as any).getStatistics();
-    
+
     // Thêm breakdown by test type
     const testTypeStats = await ResearchData.aggregate([
       { $unwind: '$testResults' },
@@ -155,26 +144,25 @@ router.get('/stats', authenticateAdmin, async (req: Request, res: Response) => {
         $group: {
           _id: '$testResults.testType',
           count: { $sum: 1 },
-          avgScore: { $avg: '$testResults.score' }
-        }
+          avgScore: { $avg: '$testResults.score' },
+        },
       },
-      { $sort: { count: -1 } }
+      { $sort: { count: -1 } },
     ]);
 
     res.json({
       success: true,
       stats: {
         ...stats,
-        testTypeBreakdown: testTypeStats
-      }
+        testTypeBreakdown: testTypeStats,
+      },
     });
-
   } catch (error) {
     console.error('Error fetching stats:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch statistics',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
@@ -187,11 +175,15 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
   try {
     const { format = 'json', startDate, endDate } = req.query;
 
-    let query: any = {};
+    const query: any = {};
     if (startDate || endDate) {
       query.timestamp = {};
-      if (startDate) query.timestamp.$gte = new Date(startDate as string);
-      if (endDate) query.timestamp.$lte = new Date(endDate as string);
+      if (startDate) {
+        query.timestamp.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        query.timestamp.$lte = new Date(endDate as string);
+      }
     }
 
     const data = await ResearchData.find(query).lean();
@@ -199,11 +191,17 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
     if (format === 'csv') {
       // Convert to CSV
       const headers = [
-        'ID', 'Participant ID', 'Timestamp', 'Test Type', 'Score', 
-        'Severity', 'Completion Time', 'Quality'
+        'ID',
+        'Participant ID',
+        'Timestamp',
+        'Test Type',
+        'Score',
+        'Severity',
+        'Completion Time',
+        'Quality',
       ];
-      
-      const rows = data.flatMap((d: any) => 
+
+      const rows = data.flatMap((d: any) =>
         d.testResults.map((t: any) => [
           d._id,
           d.participantId,
@@ -212,37 +210,41 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
           t.score,
           t.severity || 'N/A',
           t.completionTime || 0,
-          d.qualityMetrics.completeness
+          d.qualityMetrics.completeness,
         ])
       );
 
       const csv = [
         headers.join(','),
-        ...rows.map((row: any[]) => row.map(cell => `"${cell}"`).join(','))
+        ...rows.map((row: any[]) => row.map(cell => `"${cell}"`).join(',')),
       ].join('\n');
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="research_data_${Date.now()}.csv"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="research_data_${Date.now()}.csv"`
+      );
       res.send(csv);
-
     } else {
       // JSON format
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="research_data_${Date.now()}.json"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="research_data_${Date.now()}.json"`
+      );
       res.json({
         success: true,
         exportDate: new Date(),
         totalRecords: data.length,
-        data
+        data,
       });
     }
-
   } catch (error) {
     console.error('Error exporting data:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to export data',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
@@ -254,27 +256,26 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
 router.get('/:id', authenticateAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const data = await ResearchData.findById(id);
-    
+
     if (!data) {
       return res.status(404).json({
         success: false,
-        error: 'Research data not found'
+        error: 'Research data not found',
       });
     }
 
     res.json({
       success: true,
-      data
+      data,
     });
-
   } catch (error) {
     console.error('Error fetching research data:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch research data',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
@@ -286,30 +287,28 @@ router.get('/:id', authenticateAdmin, async (req: Request, res: Response) => {
 router.delete('/:id', authenticateAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const result = await ResearchData.findByIdAndDelete(id);
-    
+
     if (!result) {
       return res.status(404).json({
         success: false,
-        error: 'Research data not found'
+        error: 'Research data not found',
       });
     }
 
     res.json({
       success: true,
-      message: 'Research data deleted successfully'
+      message: 'Research data deleted successfully',
     });
-
   } catch (error) {
     console.error('Error deleting research data:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete research data',
-      details: (error as Error).message
+      details: (error as Error).message,
     });
   }
 });
 
 export default router;
-

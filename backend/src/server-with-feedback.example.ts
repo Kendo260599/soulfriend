@@ -1,6 +1,6 @@
 /**
  * EXAMPLE: Server Integration with HITL Feedback Loop
- * 
+ *
  * Ví dụ về cách tích hợp HITL Feedback vào backend server
  */
 
@@ -46,13 +46,12 @@ app.post('/api/alerts/:alertId/resolve', async (req, res) => {
     res.json({
       success: true,
       message: 'Alert resolved. Please provide feedback for AI improvement.',
-      feedbackUrl: `/admin/feedback/${alertId}`
+      feedbackUrl: `/admin/feedback/${alertId}`,
     });
-
   } catch (error: any) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -62,7 +61,7 @@ app.post('/api/alerts/:alertId/resolve', async (req, res) => {
  */
 async function sendFeedbackRequest(alertId: string, clinicalMemberId: string) {
   console.log(`📧 Sending feedback request for alert ${alertId} to ${clinicalMemberId}`);
-  
+
   // TODO: Send email/notification
   // const emailContent = {
   //   to: clinicalMember.email,
@@ -70,7 +69,7 @@ async function sendFeedbackRequest(alertId: string, clinicalMemberId: string) {
   //   body: `
   //     Please provide feedback for alert ${alertId}.
   //     This will help improve the crisis detection AI.
-  //     
+  //
   //     Feedback Form: https://admin.soulfriend.vn/feedback/${alertId}
   //   `
   // };
@@ -88,7 +87,7 @@ app.get('/api/admin/daily-summary', async (req, res) => {
   try {
     // Get metrics from last 24 hours
     const metrics = await hitlFeedbackService.calculatePerformanceMetrics(1);
-    
+
     // Get improvement suggestions if available
     let improvements = null;
     if (metrics.totalReviewed >= 10) {
@@ -100,13 +99,12 @@ app.get('/api/admin/daily-summary', async (req, res) => {
       date: new Date().toISOString().split('T')[0],
       metrics,
       improvements,
-      needsAttention: generateAlerts(metrics)
+      needsAttention: generateAlerts(metrics),
     });
-
   } catch (error: any) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -150,18 +148,18 @@ async function checkFineTuningReadiness() {
 
   if (trainingData.length >= MINIMUM_SAMPLES) {
     console.log(`🤖 Fine-tuning ready! ${trainingData.length} training samples available`);
-    
+
     // Generate improvements
     const improvements = await hitlFeedbackService.generateModelImprovements();
-    
+
     // Notify admin
     console.log('📧 Notifying admin about fine-tuning opportunity...');
     // TODO: Send notification
-    
+
     return {
       ready: true,
       samplesCount: trainingData.length,
-      improvements
+      improvements,
     };
   }
 
@@ -169,7 +167,7 @@ async function checkFineTuningReadiness() {
   return {
     ready: false,
     samplesCount: trainingData.length,
-    needed: MINIMUM_SAMPLES - trainingData.length
+    needed: MINIMUM_SAMPLES - trainingData.length,
   };
 }
 
@@ -178,7 +176,7 @@ app.get('/api/admin/fine-tuning-status', async (req, res) => {
   const status = await checkFineTuningReadiness();
   res.json({
     success: true,
-    ...status
+    ...status,
   });
 });
 
@@ -199,19 +197,15 @@ app.post('/api/chatbot/message', async (req, res) => {
 
     if (isCrisis) {
       // Create HITL alert
-      const alert = await criticalInterventionService.createCriticalAlert(
-        userId,
-        sessionId,
-        {
-          riskLevel: 'CRITICAL',
-          riskType: 'suicidal',
-          userMessage: message,
-          detectedKeywords: crisisKeywords.filter(kw => message.toLowerCase().includes(kw))
-        }
-      );
+      const alert = await criticalInterventionService.createCriticalAlert(userId, sessionId, {
+        riskLevel: 'CRITICAL',
+        riskType: 'suicidal',
+        userMessage: message,
+        detectedKeywords: crisisKeywords.filter(kw => message.toLowerCase().includes(kw)),
+      });
 
       console.log(`🚨 HITL Alert created: ${alert.id}`);
-      
+
       // Note: When this alert is resolved, feedback will be collected
       // and used to improve crisis detection model
     }
@@ -219,13 +213,12 @@ app.post('/api/chatbot/message', async (req, res) => {
     res.json({
       success: true,
       response: 'Response from chatbot...',
-      crisisDetected: isCrisis
+      crisisDetected: isCrisis,
     });
-
   } catch (error: any) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -239,7 +232,7 @@ app.post('/api/chatbot/message', async (req, res) => {
  */
 async function dailyMetricsCheck() {
   console.log('📊 Running daily metrics check...');
-  
+
   const metrics = await hitlFeedbackService.calculatePerformanceMetrics(1);
   const alerts = generateAlerts(metrics);
 
@@ -249,7 +242,7 @@ async function dailyMetricsCheck() {
     // TODO: Send notification to admin
   }
 
-  console.log(`📈 Daily Summary:`);
+  console.log('📈 Daily Summary:');
   console.log(`   Accuracy: ${(metrics.accuracy * 100).toFixed(1)}%`);
   console.log(`   False Positive Rate: ${(metrics.falsePositiveRate * 100).toFixed(1)}%`);
   console.log(`   Response Time: ${metrics.avgResponseTimeSeconds.toFixed(0)}s`);
@@ -260,15 +253,15 @@ async function dailyMetricsCheck() {
  */
 async function weeklyImprovementCheck() {
   console.log('🔬 Running weekly improvement check...');
-  
+
   const improvements = await hitlFeedbackService.generateModelImprovements();
-  
+
   if (improvements.keywordsToRemove.length > 0 || improvements.keywordsToAdd.length > 0) {
     console.log('💡 Model improvements available:');
     console.log(`   Keywords to add: ${improvements.keywordsToAdd.length}`);
     console.log(`   Keywords to remove: ${improvements.keywordsToRemove.length}`);
     console.log(`   Keywords to adjust: ${improvements.keywordsToAdjust.length}`);
-    
+
     // TODO: Send notification to admin with improvement suggestions
   }
 }
@@ -278,9 +271,9 @@ async function weeklyImprovementCheck() {
  */
 async function monthlyFineTuningCheck() {
   console.log('🤖 Running monthly fine-tuning check...');
-  
+
   const status = await checkFineTuningReadiness();
-  
+
   if (status.ready) {
     console.log('✅ Ready for fine-tuning!');
     console.log(`   Training samples: ${status.samplesCount}`);
@@ -291,7 +284,7 @@ async function monthlyFineTuningCheck() {
 }
 
 // Schedule tasks (example using setInterval - in production use cron)
-setInterval(dailyMetricsCheck, 24 * 60 * 60 * 1000);        // Daily
+setInterval(dailyMetricsCheck, 24 * 60 * 60 * 1000); // Daily
 setInterval(weeklyImprovementCheck, 7 * 24 * 60 * 60 * 1000); // Weekly
 setInterval(monthlyFineTuningCheck, 30 * 24 * 60 * 60 * 1000); // Monthly
 
@@ -306,8 +299,8 @@ app.get('/api/health', (req, res) => {
     services: {
       criticalIntervention: 'running',
       feedbackLoop: 'running',
-      fineTuning: 'ready'
-    }
+      fineTuning: 'ready',
+    },
   });
 });
 
@@ -318,11 +311,10 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 HITL Feedback API: http://localhost:${PORT}/api/hitl-feedback`);
-  console.log(`✅ HITL Feedback Loop: ENABLED`);
-  
+  console.log('✅ HITL Feedback Loop: ENABLED');
+
   // Run initial checks
   checkFineTuningReadiness();
 });
 
 export default app;
-

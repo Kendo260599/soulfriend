@@ -89,17 +89,11 @@ export class ChatbotService {
       // Check safety first
       if (intentAnalysis.riskLevel === 'CRISIS' || intentAnalysis.riskLevel === 'HIGH') {
         const safetyResponse = await this.handleSafetyFlow(intentAnalysis);
-        const botMsg = this.createMessage(
-          sessionId,
-          'bot',
-          safetyResponse.message,
-          'bot',
-          {
-            intent: intentAnalysis.intent,
-            riskLevel: intentAnalysis.riskLevel,
-            safetyFlow: true
-          }
-        );
+        const botMsg = this.createMessage(sessionId, 'bot', safetyResponse.message, 'bot', {
+          intent: intentAnalysis.intent,
+          riskLevel: intentAnalysis.riskLevel,
+          safetyFlow: true,
+        });
         this.saveMessage(sessionId, botMsg);
 
         return {
@@ -107,32 +101,25 @@ export class ChatbotService {
           intent: intentAnalysis.intent,
           riskLevel: intentAnalysis.riskLevel,
           safetyFlow: safetyResponse,
-          emergencyContacts: safetyResponse.emergencyContacts
+          emergencyContacts: safetyResponse.emergencyContacts,
         };
       }
 
       // Route based on intent (pass full context for AI)
-      const response = await this.routeIntentToResponse(
-        intentAnalysis, 
-        message, 
-        { ...context, userId, sessionId }
-      );
+      const response = await this.routeIntentToResponse(intentAnalysis, message, {
+        ...context,
+        userId,
+        sessionId,
+      });
 
       // Save bot response
-      const botMsg = this.createMessage(
-        sessionId,
-        'bot',
-        response.message,
-        'bot',
-        {
-          intent: intentAnalysis.intent,
-          riskLevel: intentAnalysis.riskLevel
-        }
-      );
+      const botMsg = this.createMessage(sessionId, 'bot', response.message, 'bot', {
+        intent: intentAnalysis.intent,
+        riskLevel: intentAnalysis.riskLevel,
+      });
       this.saveMessage(sessionId, botMsg);
 
       return response;
-
     } catch (error) {
       logger.error('Error processing message:', error);
       throw error;
@@ -147,8 +134,14 @@ export class ChatbotService {
 
     // Crisis detection
     const crisisKeywords = [
-      'tự tử', 'tự sát', 'không muốn sống', 'chết đi', 'kết thúc cuộc đời',
-      'tự làm mình chết', 'tự hủy', 'giết mình'
+      'tự tử',
+      'tự sát',
+      'không muốn sống',
+      'chết đi',
+      'kết thúc cuộc đời',
+      'tự làm mình chết',
+      'tự hủy',
+      'giết mình',
     ];
 
     const hasCrisisKeywords = crisisKeywords.some(kw => normalizedMessage.includes(kw));
@@ -157,14 +150,18 @@ export class ChatbotService {
         intent: 'crisis',
         confidence: 0.95,
         entities: [],
-        riskLevel: 'CRISIS'
+        riskLevel: 'CRISIS',
       };
     }
 
     // High-risk detection
     const highRiskKeywords = [
-      'trầm cảm nặng', 'đau khổ', 'tuyệt vọng', 'không còn hy vọng',
-      'cuộc sống vô nghĩa', 'muốn biến mất'
+      'trầm cảm nặng',
+      'đau khổ',
+      'tuyệt vọng',
+      'không còn hy vọng',
+      'cuộc sống vô nghĩa',
+      'muốn biến mất',
     ];
 
     const hasHighRiskKeywords = highRiskKeywords.some(kw => normalizedMessage.includes(kw));
@@ -173,44 +170,60 @@ export class ChatbotService {
         intent: 'high_risk',
         confidence: 0.85,
         entities: [],
-        riskLevel: 'HIGH'
+        riskLevel: 'HIGH',
       };
     }
 
     // Intent detection
-    if (normalizedMessage.includes('test') || normalizedMessage.includes('đánh giá') || normalizedMessage.includes('kiểm tra')) {
+    if (
+      normalizedMessage.includes('test') ||
+      normalizedMessage.includes('đánh giá') ||
+      normalizedMessage.includes('kiểm tra')
+    ) {
       return {
         intent: 'screening_test',
         confidence: 0.8,
         entities: [],
-        riskLevel: 'LOW'
+        riskLevel: 'LOW',
       };
     }
 
-    if (normalizedMessage.includes('thư giãn') || normalizedMessage.includes('stress') || normalizedMessage.includes('lo âu')) {
+    if (
+      normalizedMessage.includes('thư giãn') ||
+      normalizedMessage.includes('stress') ||
+      normalizedMessage.includes('lo âu')
+    ) {
       return {
         intent: 'relaxation_skill',
         confidence: 0.75,
         entities: [],
-        riskLevel: 'MED'
+        riskLevel: 'MED',
       };
     }
 
-    if (normalizedMessage.includes('gia đình') || normalizedMessage.includes('vợ chồng') || normalizedMessage.includes('mối quan hệ')) {
+    if (
+      normalizedMessage.includes('gia đình') ||
+      normalizedMessage.includes('vợ chồng') ||
+      normalizedMessage.includes('mối quan hệ')
+    ) {
       return {
         intent: 'relationship_help',
         confidence: 0.7,
         entities: [],
-        riskLevel: 'MED'
+        riskLevel: 'MED',
       };
     }
 
-    if (normalizedMessage.includes('bác sĩ') || normalizedMessage.includes('tư vấn') || normalizedMessage.includes('hỗ trợ')) {
+    if (
+      normalizedMessage.includes('bác sĩ') ||
+      normalizedMessage.includes('tư vấn') ||
+      normalizedMessage.includes('hỗ trợ')
+    ) {
       return {
         intent: 'resource_request',
         confidence: 0.75,
         entities: [],
-        riskLevel: 'LOW'
+        riskLevel: 'LOW',
       };
     }
 
@@ -219,7 +232,7 @@ export class ChatbotService {
       intent: 'general_help',
       confidence: 0.5,
       entities: [],
-      riskLevel: 'LOW'
+      riskLevel: 'LOW',
     };
   }
 
@@ -233,7 +246,7 @@ export class ChatbotService {
       safe: intentAnalysis.riskLevel === 'LOW',
       riskLevel: intentAnalysis.riskLevel,
       detectedIssues: [],
-      recommendedActions: []
+      recommendedActions: [],
     };
 
     if (intentAnalysis.riskLevel === 'CRISIS') {
@@ -276,7 +289,7 @@ export class ChatbotService {
       message,
       emergencyContacts,
       riskLevel: intentAnalysis.riskLevel,
-      requiresImmediateAction: true
+      requiresImmediateAction: true,
     };
   }
 
@@ -291,16 +304,16 @@ export class ChatbotService {
     switch (intentAnalysis.intent) {
       case 'screening_test':
         return this.handleScreeningTestRequest();
-      
+
       case 'relaxation_skill':
         return this.handleRelaxationSkillRequest();
-      
+
       case 'relationship_help':
         return this.handleRelationshipHelpRequest();
-      
+
       case 'resource_request':
         return this.handleResourceRequest();
-      
+
       default:
         return this.handleGeneralHelp(message);
     }
@@ -311,14 +324,15 @@ export class ChatbotService {
    */
   private async handleScreeningTestRequest(): Promise<any> {
     return {
-      message: 'Tôi hiểu bạn muốn đánh giá tình trạng tâm lý của mình. Dưới đây là các test phù hợp:\n\n' +
+      message:
+        'Tôi hiểu bạn muốn đánh giá tình trạng tâm lý của mình. Dưới đây là các test phù hợp:\n\n' +
         '1. PHQ-9 - Đánh giá trầm cảm\n' +
         '2. GAD-7 - Đánh giá lo âu\n' +
         '3. DASS-21 - Đánh giá trầm cảm, lo âu và stress\n\n' +
         'Bạn muốn làm test nào?',
       intent: 'screening_test',
       suggestedTests: ['PHQ-9', 'GAD-7', 'DASS-21'],
-      nextActions: ['Chọn test phù hợp', 'Làm test đánh giá']
+      nextActions: ['Chọn test phù hợp', 'Làm test đánh giá'],
     };
   }
 
@@ -327,7 +341,8 @@ export class ChatbotService {
    */
   private async handleRelaxationSkillRequest(): Promise<any> {
     return {
-      message: '🧘‍♀️ Tôi sẽ hướng dẫn bạn kỹ thuật thư giãn hiệu quả:\n\n' +
+      message:
+        '🧘‍♀️ Tôi sẽ hướng dẫn bạn kỹ thuật thư giãn hiệu quả:\n\n' +
         '**Kỹ thuật thở 4-7-8:**\n' +
         '1. Hít vào qua mũi trong 4 giây\n' +
         '2. Giữ hơi trong 7 giây\n' +
@@ -340,7 +355,7 @@ export class ChatbotService {
         'Hãy thử ngay bây giờ và chia sẻ cảm giác của bạn!',
       intent: 'relaxation_skill',
       techniques: ['breathing', 'progressive_muscle_relaxation', 'mindfulness'],
-      nextActions: ['Thực hành ngay', 'Xem video hướng dẫn']
+      nextActions: ['Thực hành ngay', 'Xem video hướng dẫn'],
     };
   }
 
@@ -349,7 +364,8 @@ export class ChatbotService {
    */
   private async handleRelationshipHelpRequest(): Promise<any> {
     return {
-      message: '❤️ Tôi hiểu bạn đang gặp khó khăn trong mối quan hệ.\n\n' +
+      message:
+        '❤️ Tôi hiểu bạn đang gặp khó khăn trong mối quan hệ.\n\n' +
         '**Một số gợi ý hữu ích:**\n' +
         '1. Giao tiếp cởi mở và trung thực\n' +
         '2. Lắng nghe tích cực\n' +
@@ -359,7 +375,7 @@ export class ChatbotService {
         'Bạn có muốn tôi giới thiệu các chuyên gia tư vấn hôn nhân không?',
       intent: 'relationship_help',
       resources: ['marriage_counseling', 'communication_skills', 'conflict_resolution'],
-      nextActions: ['Tìm chuyên gia tư vấn', 'Học kỹ năng giao tiếp']
+      nextActions: ['Tìm chuyên gia tư vấn', 'Học kỹ năng giao tiếp'],
     };
   }
 
@@ -381,7 +397,7 @@ export class ChatbotService {
       message,
       intent: 'resource_request',
       resources,
-      nextActions: ['Liên hệ ngay', 'Lưu thông tin']
+      nextActions: ['Liên hệ ngay', 'Lưu thông tin'],
     };
   }
 
@@ -404,7 +420,7 @@ export class ChatbotService {
           intent: 'general_help',
           confidence: aiResponse.confidence,
           aiGenerated: true,
-          nextActions: ['Làm test đánh giá', 'Học kỹ thuật thư giãn', 'Tìm chuyên gia']
+          nextActions: ['Làm test đánh giá', 'Học kỹ thuật thư giãn', 'Tìm chuyên gia'],
         };
       } catch (error) {
         logger.warn('AI response failed, falling back to rule-based:', error);
@@ -413,7 +429,8 @@ export class ChatbotService {
 
     // Fallback to rule-based response
     return {
-      message: 'Cảm ơn bạn đã chia sẻ. Tôi ở đây để lắng nghe và hỗ trợ bạn.\n\n' +
+      message:
+        'Cảm ơn bạn đã chia sẻ. Tôi ở đây để lắng nghe và hỗ trợ bạn.\n\n' +
         'Bạn có thể:\n' +
         '- Làm test đánh giá tâm lý\n' +
         '- Học kỹ thuật thư giãn\n' +
@@ -422,7 +439,7 @@ export class ChatbotService {
         'Bạn muốn tôi giúp gì?',
       intent: 'general_help',
       aiGenerated: false,
-      nextActions: ['Làm test đánh giá', 'Học kỹ thuật thư giãn', 'Tìm chuyên gia']
+      nextActions: ['Làm test đánh giá', 'Học kỹ thuật thư giãn', 'Tìm chuyên gia'],
     };
   }
 
@@ -455,29 +472,29 @@ export class ChatbotService {
         phone: '1900 599 958',
         availability: '24/7',
         location: 'Toàn quốc',
-        type: 'hotline'
+        type: 'hotline',
       },
       {
         name: 'Cảnh sát khẩn cấp',
         phone: '113',
         availability: '24/7',
         location: 'Toàn quốc',
-        type: 'emergency'
+        type: 'emergency',
       },
       {
         name: 'Cấp cứu y tế',
         phone: '115',
         availability: '24/7',
         location: 'Toàn quốc',
-        type: 'emergency'
+        type: 'emergency',
       },
       {
         name: 'Trung tâm hỗ trợ phụ nữ',
         phone: '1900 969 969',
         availability: '24/7',
         location: 'Toàn quốc',
-        type: 'support_center'
-      }
+        type: 'support_center',
+      },
     ];
   }
 
@@ -494,14 +511,14 @@ export class ChatbotService {
    */
   async createSession(userId: string, userProfile: any): Promise<ChatSession> {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const session: ChatSession = {
       id: sessionId,
       userId,
       startTime: new Date(),
       messageCount: 0,
       userProfile,
-      status: 'active'
+      status: 'active',
     };
 
     this.sessions.set(sessionId, session);
@@ -529,14 +546,19 @@ export class ChatbotService {
    */
   async getStatistics(): Promise<any> {
     const totalSessions = this.sessions.size;
-    const activeSessions = Array.from(this.sessions.values()).filter(s => s.status === 'active').length;
-    const totalMessages = Array.from(this.messages.values()).reduce((sum, msgs) => sum + msgs.length, 0);
+    const activeSessions = Array.from(this.sessions.values()).filter(
+      s => s.status === 'active'
+    ).length;
+    const totalMessages = Array.from(this.messages.values()).reduce(
+      (sum, msgs) => sum + msgs.length,
+      0
+    );
 
     return {
       totalSessions,
       activeSessions,
       totalMessages,
-      averageMessagesPerSession: totalSessions > 0 ? totalMessages / totalSessions : 0
+      averageMessagesPerSession: totalSessions > 0 ? totalMessages / totalSessions : 0,
     };
   }
 
@@ -557,7 +579,7 @@ export class ChatbotService {
       content,
       sender,
       timestamp: new Date(),
-      metadata
+      metadata,
     };
   }
 
@@ -578,4 +600,3 @@ export class ChatbotService {
 }
 
 export default new ChatbotService();
-

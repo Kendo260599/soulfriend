@@ -1,6 +1,6 @@
 /**
  * MONGODB MODEL: HITL Feedback
- * 
+ *
  * Lưu trữ feedback từ chuyên gia lâm sàng về các alerts đã resolved
  */
 
@@ -16,13 +16,13 @@ export interface IHITLFeedback extends Document {
   userId: string;
   sessionId: string;
   timestamp: Date;
-  
+
   // Ground truth from expert
   wasActualCrisis: boolean;
   crisisConfidenceScore: number;
   actualRiskLevel: 'NONE' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | 'EXTREME';
   actualRiskType?: string;
-  
+
   // Original detection
   aiPrediction: {
     riskLevel: string;
@@ -30,26 +30,26 @@ export interface IHITLFeedback extends Document {
     detectedKeywords: string[];
     confidence: number;
   };
-  
+
   // User message
   userMessage: string;
-  
+
   // Expert feedback
   clinicalNotes: string;
   missedIndicators?: string[];
   falseIndicators?: string[];
   suggestedKeywords?: string[];
   unnecessaryKeywords?: string[];
-  
+
   // Intervention results
   responseTimeSeconds: number;
   interventionSuccess: boolean;
   userOutcome: 'safe' | 'hospitalized' | 'referred' | 'deceased' | 'unknown';
-  
+
   // Reviewer info
   reviewedBy: string;
   reviewedAt: Date;
-  
+
   // Metadata
   createdAt: Date;
   updatedAt: Date;
@@ -66,102 +66,102 @@ const HITLFeedbackSchema = new Schema<IHITLFeedback>(
       type: String,
       required: true,
       index: true,
-      unique: true
+      unique: true,
     },
     userId: {
       type: String,
       required: true,
-      index: true
+      index: true,
     },
     sessionId: {
       type: String,
-      required: true
+      required: true,
     },
     timestamp: {
       type: Date,
       required: true,
       default: Date.now,
-      index: true
+      index: true,
     },
-    
+
     // Ground truth
     wasActualCrisis: {
       type: Boolean,
       required: true,
-      index: true
+      index: true,
     },
     crisisConfidenceScore: {
       type: Number,
       required: true,
       min: 0,
-      max: 100
+      max: 100,
     },
     actualRiskLevel: {
       type: String,
       required: true,
       enum: ['NONE', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL', 'EXTREME'],
-      index: true
+      index: true,
     },
     actualRiskType: {
       type: String,
-      enum: ['suicidal', 'psychosis', 'self_harm', 'violence', 'none']
+      enum: ['suicidal', 'psychosis', 'self_harm', 'violence', 'none'],
     },
-    
+
     // AI prediction
     aiPrediction: {
       riskLevel: { type: String, required: true },
       riskType: { type: String, required: true },
       detectedKeywords: [{ type: String }],
-      confidence: { type: Number, min: 0, max: 1 }
+      confidence: { type: Number, min: 0, max: 1 },
     },
-    
+
     // User message
     userMessage: {
       type: String,
-      required: true
+      required: true,
     },
-    
+
     // Expert feedback
     clinicalNotes: {
       type: String,
-      required: true
+      required: true,
     },
     missedIndicators: [{ type: String }],
     falseIndicators: [{ type: String }],
     suggestedKeywords: [{ type: String }],
     unnecessaryKeywords: [{ type: String }],
-    
+
     // Intervention results
     responseTimeSeconds: {
       type: Number,
       required: true,
-      min: 0
+      min: 0,
     },
     interventionSuccess: {
       type: Boolean,
-      required: true
+      required: true,
     },
     userOutcome: {
       type: String,
       required: true,
-      enum: ['safe', 'hospitalized', 'referred', 'deceased', 'unknown']
+      enum: ['safe', 'hospitalized', 'referred', 'deceased', 'unknown'],
     },
-    
+
     // Reviewer info
     reviewedBy: {
       type: String,
       required: true,
-      index: true
+      index: true,
     },
     reviewedAt: {
       type: Date,
       required: true,
-      default: Date.now
-    }
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
-    collection: 'hitl_feedbacks'
+    collection: 'hitl_feedbacks',
   }
 );
 
@@ -178,11 +178,11 @@ HITLFeedbackSchema.index({ actualRiskLevel: 1, wasActualCrisis: 1 });
 // METHODS
 // =============================================================================
 
-HITLFeedbackSchema.methods.isCorrectPrediction = function(): boolean {
+HITLFeedbackSchema.methods.isCorrectPrediction = function (): boolean {
   return this.wasActualCrisis;
 };
 
-HITLFeedbackSchema.methods.getPredictionError = function(): string | null {
+HITLFeedbackSchema.methods.getPredictionError = function (): string | null {
   if (this.wasActualCrisis) {
     return null; // Correct prediction (True Positive)
   } else {
@@ -194,24 +194,23 @@ HITLFeedbackSchema.methods.getPredictionError = function(): string | null {
 // STATICS
 // =============================================================================
 
-HITLFeedbackSchema.statics.getPerformanceMetrics = async function(
+HITLFeedbackSchema.statics.getPerformanceMetrics = async function (
   periodDays: number = 30
 ): Promise<any> {
   const periodStart = new Date();
   periodStart.setDate(periodStart.getDate() - periodDays);
 
   const feedbacks = await this.find({
-    timestamp: { $gte: periodStart }
+    timestamp: { $gte: periodStart },
   });
 
   const total = feedbacks.length;
-  const truePositives = feedbacks.filter(f => f.wasActualCrisis).length;
-  const falsePositives = feedbacks.filter(f => !f.wasActualCrisis).length;
+  const truePositives = feedbacks.filter((f: any) => f.wasActualCrisis).length;
+  const falsePositives = feedbacks.filter((f: any) => !f.wasActualCrisis).length;
 
   const accuracy = total > 0 ? truePositives / total : 0;
-  const precision = (truePositives + falsePositives) > 0 
-    ? truePositives / (truePositives + falsePositives) 
-    : 0;
+  const precision =
+    truePositives + falsePositives > 0 ? truePositives / (truePositives + falsePositives) : 0;
 
   return {
     totalReviewed: total,
@@ -220,13 +219,13 @@ HITLFeedbackSchema.statics.getPerformanceMetrics = async function(
     accuracy,
     precision,
     periodStart,
-    periodEnd: new Date()
+    periodEnd: new Date(),
   };
 };
 
-HITLFeedbackSchema.statics.getKeywordStatistics = async function(): Promise<any[]> {
+HITLFeedbackSchema.statics.getKeywordStatistics = async function (): Promise<any[]> {
   const feedbacks = await this.find({});
-  
+
   const keywordStats = new Map();
 
   for (const feedback of feedbacks) {
@@ -236,7 +235,7 @@ HITLFeedbackSchema.statics.getKeywordStatistics = async function(): Promise<any[
           keyword,
           timesDetected: 0,
           timesConfirmed: 0,
-          timesFalsePositive: 0
+          timesFalsePositive: 0,
         });
       }
 
@@ -256,7 +255,7 @@ HITLFeedbackSchema.statics.getKeywordStatistics = async function(): Promise<any[
   return Array.from(keywordStats.values()).map(stats => ({
     ...stats,
     accuracy: stats.timesConfirmed / stats.timesDetected,
-    falsePositiveRate: stats.timesFalsePositive / stats.timesDetected
+    falsePositiveRate: stats.timesFalsePositive / stats.timesDetected,
   }));
 };
 
@@ -264,10 +263,6 @@ HITLFeedbackSchema.statics.getKeywordStatistics = async function(): Promise<any[
 // EXPORT
 // =============================================================================
 
-export const HITLFeedback = mongoose.model<IHITLFeedback>(
-  'HITLFeedback',
-  HITLFeedbackSchema
-);
+export const HITLFeedback = mongoose.model<IHITLFeedback>('HITLFeedback', HITLFeedbackSchema);
 
 export default HITLFeedback;
-

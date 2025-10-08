@@ -78,4 +78,3 @@ router.post('/session/:sessionId/end', chatbotController.endSession);
 router.get('/stats', chatbotController.getStats);
 
 export default router;
-

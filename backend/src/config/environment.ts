@@ -195,7 +195,7 @@ function validateSecurity(config: EnvironmentConfig): void {
 
     // Ensure HTTPS in production CORS origins
     const hasInsecureOrigins = config.CORS_ORIGIN.some(
-      origin => origin.startsWith('http://') && !origin.includes('localhost')
+      origin => origin.startsWith('http://') && !origin.includes('localhost'),
     );
     if (hasInsecureOrigins) {
       console.warn('⚠️  Warning: Insecure HTTP origins detected in production CORS settings');

@@ -174,7 +174,7 @@ TestResultSchema.pre('save', function (this: ITestResult, next) {
     return next(
       new Error(
         `Test ${this.testType} cần có đúng ${expectedCount} câu trả lời, nhưng nhận được ${this.answers.length} câu`
-      ),
+      )
     );
   }
 

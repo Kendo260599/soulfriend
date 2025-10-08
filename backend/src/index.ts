@@ -5,7 +5,6 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
 import mongoSanitize from 'express-mongo-sanitize';
 
@@ -17,6 +16,19 @@ import databaseConnection from './config/database';
 import { rateLimiter, authRateLimiter } from './middleware/rateLimiter';
 import { auditLogger } from './middleware/auditLogger';
 import { errorHandler } from './middleware/errorHandler';
+import { httpLogger, logger, generateRequestId } from './utils/pinoLogger';
+import {
+  securityHeaders,
+  apiRateLimit,
+  authRateLimit,
+  chatbotRateLimit,
+  adminRateLimit,
+  securityLogger,
+  corsOptions,
+  validateRequest,
+  requestSizeLimit,
+  securityErrorHandler,
+} from './middleware/security';
 
 // Routes
 import consentRoutes from './routes/consent';
@@ -38,38 +50,36 @@ const app = express();
 const PORT = config.PORT;
 
 // ====================
+// LOGGING MIDDLEWARE
+// ====================
+
+// Request ID middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  req.id = generateRequestId();
+  next();
+});
+
+// HTTP request/response logging
+app.use(httpLogger);
+
+// ====================
 // SECURITY MIDDLEWARE
 // ====================
 
-// Helmet - Security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-      },
-    },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  })
-);
+// Security headers
+app.use(securityHeaders);
 
 // CORS configuration
-app.use(
-  cors({
-    origin: config.CORS_ORIGIN,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
-    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
-  })
-);
+app.use(cors(corsOptions));
+
+// Security logging
+app.use(securityLogger);
+
+// Request validation
+app.use(validateRequest);
+
+// Request size limiting
+app.use(requestSizeLimit((config.MAX_FILE_SIZE || 10485760).toString()));
 
 // Compression
 app.use(compression());
@@ -91,9 +101,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   res.on('finish', () => {
     const duration = Date.now() - startTime;
-    console.log(
-      `[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`
-    );
+    logger.info({
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+      requestId: req.id,
+    }, 'Request completed');
   });
 
   next();
@@ -106,10 +120,19 @@ app.use(auditLogger.middleware);
 // RATE LIMITING
 // ====================
 
-// Global rate limiting
-app.use(rateLimiter.middleware);
+// Global API rate limiting
+app.use('/api', apiRateLimit);
 
-// Stricter rate limiting for auth endpoints
+// Stricter rate limiting for specific endpoints
+app.use('/api/admin', adminRateLimit);
+app.use('/api/v2/admin', adminRateLimit);
+app.use('/api/chatbot', chatbotRateLimit);
+app.use('/api/v2/chatbot', chatbotRateLimit);
+app.use('/api/hitl-feedback', authRateLimit);
+app.use('/api/conversation-learning', authRateLimit);
+
+// Legacy rate limiting (keep for backward compatibility)
+app.use(rateLimiter.middleware);
 app.use('/api/auth', authRateLimiter.middleware);
 app.use('/api/admin/login', authRateLimiter.middleware);
 
@@ -143,7 +166,7 @@ app.use('/api/chatbot', chatbotRoutes);
 
 // Basic health check - ULTRA SIMPLE VERSION
 app.get('/api/health', (req: Request, res: Response) => {
-  res.json({
+  const healthData = {
     status: 'healthy',
     message: 'SoulFriend V4.0 API is running successfully!',
     version: '4.0.0',
@@ -151,7 +174,15 @@ app.get('/api/health', (req: Request, res: Response) => {
     uptime: process.uptime(),
     gemini: 'initialized',
     chatbot: 'ready',
-  });
+  };
+  
+  logger.info({ 
+    requestId: req.id,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+  }, 'Health check requested');
+  
+  res.json(healthData);
 });
 
 // Detailed health check (includes database status)
@@ -257,6 +288,9 @@ app.use((req: Request, res: Response) => {
   });
 });
 
+// Security error handler (must be before general error handler)
+app.use(securityErrorHandler);
+
 // Global error handler
 app.use(errorHandler);
 
@@ -267,42 +301,41 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     // Connect to database
-    console.log('📊 Connecting to database...');
+    logger.info('Connecting to database...');
     await databaseConnection.connect();
-    console.log('✅ Database connected');
+    logger.info('Database connected successfully');
 
     // Start HTTP server
     const server = app.listen(PORT, () => {
-      console.log('╔════════════════════════════════════════════╗');
-      console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
-      console.log('╠════════════════════════════════════════════╣');
-      console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-      console.log(`║   Port: ${PORT.toString().padEnd(35)}║`);
-      console.log(`║   API v2: http://localhost:${PORT}/api/v2     ║`);
-      console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
-      console.log('╚════════════════════════════════════════════╝');
+      logger.info({
+        environment: config.NODE_ENV,
+        port: PORT,
+        apiV2: `http://localhost:${PORT}/api/v2`,
+        health: `http://localhost:${PORT}/api/health`,
+        database: getDbStatusMessage(databaseConnection.getConnectionState()),
+      }, 'SoulFriend V4.0 Server Started!');
     });
 
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
-      console.log(`\n⚠️  Received ${signal}. Starting graceful shutdown...`);
+      logger.warn(`Received ${signal}. Starting graceful shutdown...`);
 
       server.close(async () => {
-        console.log('🔒 HTTP server closed');
+        logger.info('HTTP server closed');
 
         try {
           await databaseConnection.disconnect();
-          console.log('👋 Graceful shutdown complete');
+          logger.info('Graceful shutdown complete');
           process.exit(0);
         } catch (error) {
-          console.error('❌ Error during shutdown:', error);
+          logger.error({ error: (error as Error).message }, 'Error during shutdown');
           process.exit(1);
         }
       });
 
       // Force shutdown after 30 seconds
       setTimeout(() => {
-        console.error('⏰ Shutdown timeout - forcing exit');
+        logger.error('Shutdown timeout - forcing exit');
         process.exit(1);
       }, 30000);
     };
@@ -313,39 +346,36 @@ const startServer = async () => {
 
     // Handle uncaught exceptions
     process.on('uncaughtException', error => {
-      console.error('💥 Uncaught Exception:', error);
+      logger.error({ error: error.message, stack: error.stack }, 'Uncaught Exception');
       gracefulShutdown('uncaughtException');
     });
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-      console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+      logger.error({ reason, promise }, 'Unhandled Rejection');
       gracefulShutdown('unhandledRejection');
     });
   } catch (error) {
-    console.error('⚠️  Database connection failed:', (error as Error).message);
+    logger.error({ error: (error as Error).message }, 'Database connection failed');
 
     if (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') {
-      console.log('🔄 Starting in FALLBACK mode (no database)...');
+      logger.warn('Starting in FALLBACK mode (no database)...');
 
       const server = app.listen(PORT, () => {
-        console.log('╔════════════════════════════════════════════╗');
-        console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
-        console.log('║   ⚠️  FALLBACK MODE (No Database)        ║');
-        console.log('╠════════════════════════════════════════════╣');
-        console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-        console.log(`║   Port: ${PORT.toString().padEnd(35)}║`);
-        console.log(`║   API v2: http://localhost:${PORT}/api/v2     ║`);
-        console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
-        console.log('║   ⚠️  Chatbot works, Database disabled   ║');
-        console.log('╚════════════════════════════════════════════╝');
+        logger.warn({
+          environment: config.NODE_ENV,
+          port: PORT,
+          apiV2: `http://localhost:${PORT}/api/v2`,
+          health: `http://localhost:${PORT}/api/health`,
+          mode: 'FALLBACK - No Database',
+        }, 'SoulFriend V4.0 Server Started in FALLBACK MODE!');
       });
 
       // Graceful shutdown for fallback mode too
       const gracefulShutdown = async (signal: string) => {
-        console.log(`\n⚠️  Received ${signal}. Shutting down...`);
+        logger.warn(`Received ${signal}. Shutting down...`);
         server.close(() => {
-          console.log('👋 Server closed');
+          logger.info('Server closed');
           process.exit(0);
         });
       };
@@ -353,7 +383,7 @@ const startServer = async () => {
       process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
       process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     } else {
-      console.error('❌ Cannot start in production without database');
+      logger.error('Cannot start in production without database');
       process.exit(1);
     }
   }

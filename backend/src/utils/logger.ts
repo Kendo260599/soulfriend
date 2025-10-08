@@ -4,6 +4,7 @@
  */
 
 import fs from 'fs';
+import path from 'path';
 
 import config from '../config/environment';
 
@@ -101,15 +102,15 @@ class Logger {
 
   private writeLog(entry: LogEntry): void {
     // Console output with colors
-    this.writeToConsole(_entry);
+    this.writeToConsole(entry);
 
     // File output
     if (this.logStream) {
-      this.writeToFile(_entry);
+      this.writeToFile(entry);
     }
 
     // Send to external services (Sentry, etc.)
-    this.sendToExternalServices(_entry);
+    this.sendToExternalServices(entry);
   }
 
   private writeToConsole(entry: LogEntry): void {
@@ -153,7 +154,7 @@ class Logger {
     }
 
     try {
-      const logLine = JSON.stringify(_entry) + '\n';
+      const logLine = JSON.stringify(entry) + '\n';
       this.logStream.write(logLine);
     } catch (error) {
       console.error('Failed to write to log file:', error);
@@ -179,7 +180,7 @@ class Logger {
 
     const entry = this.formatLogEntry(LogLevel.ERROR, message, metadata, error?.stack);
 
-    this.writeLog(_entry);
+    this.writeLog(entry);
   }
 
   warn(message: string, metadata?: any): void {
@@ -188,7 +189,7 @@ class Logger {
     }
 
     const entry = this.formatLogEntry(LogLevel.WARN, message, metadata);
-    this.writeLog(_entry);
+    this.writeLog(entry);
   }
 
   info(message: string, metadata?: any): void {
@@ -197,7 +198,7 @@ class Logger {
     }
 
     const entry = this.formatLogEntry(LogLevel.INFO, message, metadata);
-    this.writeLog(_entry);
+    this.writeLog(entry);
   }
 
   debug(message: string, metadata?: any): void {
@@ -206,7 +207,7 @@ class Logger {
     }
 
     const entry = this.formatLogEntry(LogLevel.DEBUG, message, metadata);
-    this.writeLog(_entry);
+    this.writeLog(entry);
   }
 
   // Specialized logging methods
@@ -254,7 +255,7 @@ class Logger {
       method,
       path,
       statusCode,
-      _duration,
+      duration,
     };
 
     switch (level) {

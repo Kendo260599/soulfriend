@@ -7,19 +7,19 @@
 import { logger } from '../utils/logger';
 import geminiService, { GeminiService } from './geminiService';
 import {
-  _userSegments,
+  userSegments,
   identifyUserSegment,
   getResponseTemplate,
   analyzeNuancedEmotion,
 } from '../data/userSegmentationData';
 import {
-  _multiIntentData,
+  multiIntentData,
   analyzeMultiIntent,
   analyzeSentimentIntensity,
   generateEmpatheticResponse,
 } from '../data/advancedNLPData';
 import {
-  _crisisScenarios,
+  crisisScenarios,
   detectCrisis,
   getRelevantReferral,
   generateDisclaimer,
@@ -28,8 +28,8 @@ import {
 import { criticalInterventionService } from './criticalInterventionService';
 import {
   evaluateInteractionQuality,
-  _identifyKnowledgeGap,
-  _interactionPatterns,
+  identifyKnowledgeGap,
+  interactionPatterns,
 } from '../data/feedbackImprovementData';
 
 export interface EnhancedChatMessage {
@@ -243,7 +243,7 @@ export class EnhancedChatbotService {
         response,
         intent: multiIntent?.primaryIntent || 'general',
         confidence: 0.8,
-        _suggestions,
+        suggestions,
         crisisLevel,
         userSegment: userSegment?.id,
         emotionalState: nuancedEmotion.emotion,
@@ -290,7 +290,7 @@ export class EnhancedChatbotService {
           5. Uses warm, supportive tone
         `;
 
-        const aiResponse = await this.geminiService.generateResponse(_context, {});
+        const aiResponse = await this.geminiService.generateResponse(context, {});
         return aiResponse.text;
       } catch (error) {
         logger.error('AI generation failed, using fallback:', error);
@@ -413,7 +413,7 @@ export class EnhancedChatbotService {
     response: string
   ): void {
     const session = this.sessions.get(sessionId);
-    if (_session) {
+    if (session) {
       session.crisisHistory.push({
         level: level as any,
         timestamp: new Date(),
@@ -447,7 +447,7 @@ export class EnhancedChatbotService {
 
     // Cập nhật session
     const session = this.sessions.get(sessionId);
-    if (_session) {
+    if (session) {
       session.messageCount = messages.length;
     }
   }

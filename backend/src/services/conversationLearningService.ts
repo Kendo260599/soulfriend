@@ -41,7 +41,7 @@ export class ConversationLearningService {
         aiResponse: input.aiResponse,
         aiConfidence: input.aiConfidence || 0.8,
         responseTime: input.responseTime || 0,
-        conversationContext: input._context,
+        conversationContext: input.context,
         needsReview: false,
         approvedForTraining: false,
         language: 'vi',
@@ -126,7 +126,7 @@ export class ConversationLearningService {
       quality: number;
     }>
   > {
-    const logs = await ConversationLog.getTrainingData(_limit);
+    const logs = await ConversationLog.getTrainingData(limit);
 
     return logs.map((log: any) => ({
       input: log.userMessage,
@@ -256,7 +256,7 @@ export class ConversationLearningService {
         $sort: { count: -1 },
       },
       {
-        $limit: _limit,
+        $limit: limit,
       },
     ]);
   }
@@ -270,7 +270,7 @@ export class ConversationLearningService {
       reviewedAt: { $exists: false },
     })
       .sort({ timestamp: -1 })
-      .limit(_limit);
+      .limit(limit);
   }
 }
 

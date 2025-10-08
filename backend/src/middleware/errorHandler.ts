@@ -9,6 +9,7 @@ import { ValidationError } from 'express-validator';
 import logger from '../utils/logger';
 import config from '../config/environment';
 
+import mongoose from 'mongoose';
 // Custom error types
 export class AppError extends Error {
   public statusCode: number;
@@ -184,7 +185,7 @@ function logError(error: AppError, req: Request): void {
     userId: (req as any).user?.id,
     body: req.method !== 'GET' ? req.body : undefined,
     query: req.query,
-    params: req._params,
+    params: req.params,
   };
 
   // Log based on error severity
@@ -225,7 +226,7 @@ export const errorHandler = (error: any, req: Request, res: Response, next: Next
  */
 export const asyncHandler = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, _next)).catch(_next);
+    Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
 

@@ -193,7 +193,7 @@ export const conversationStateData = {
 export function analyzeMultiIntent(userInput: string): MultiIntentData | null {
   const inputLower = userInput.toLowerCase();
 
-  for (const intentData of _multiIntentData) {
+  for (const intentData of multiIntentData) {
     const hasPrimaryIntent = intentData.complexPatterns.some(pattern =>
       inputLower.includes(pattern.toLowerCase())
     );

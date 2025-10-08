@@ -368,9 +368,9 @@ export class HITLFeedbackServicePersistent {
     // Expected improvements
     const metrics = await this.calculatePerformanceMetrics();
     suggestions.expectedImprovements = {
-      accuracyIncrease: this.estimateImpact(_suggestions, 'accuracy'),
-      falsePositiveReduction: this.estimateImpact(_suggestions, 'fp'),
-      falseNegativeReduction: this.estimateImpact(_suggestions, 'fn'),
+      accuracyIncrease: this.estimateImpact(suggestions, 'accuracy'),
+      falsePositiveReduction: this.estimateImpact(suggestions, 'fp'),
+      falseNegativeReduction: this.estimateImpact(suggestions, 'fn'),
     };
 
     return suggestions;
@@ -397,8 +397,8 @@ export class HITLFeedbackServicePersistent {
   async getTrainingData(limit?: number): Promise<any[]> {
     const query = TrainingDataPoint.find({}).sort({ timestamp: -1 });
 
-    if (_limit) {
-      query.limit(_limit);
+    if (limit) {
+      query.limit(limit);
     }
 
     const data = await query.exec();

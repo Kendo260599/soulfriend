@@ -157,7 +157,7 @@ router.get('/test-results', authenticateAdmin, async (req: Request, res: Respons
       .populate('consentId', 'timestamp ipAddress')
       .sort({ completedAt: -1 })
       .skip(skip)
-      .limit(_limit);
+      .limit(limit);
 
     const total = await TestResult.countDocuments(filter);
 
@@ -167,9 +167,9 @@ router.get('/test-results', authenticateAdmin, async (req: Request, res: Respons
         testResults,
         pagination: {
           page,
-          _limit,
+          limit,
           total,
-          pages: Math.ceil(total / _limit),
+          pages: Math.ceil(total / limit),
         },
       },
     });

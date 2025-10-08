@@ -314,7 +314,7 @@ export const disclaimerTemplates: DisclaimerTemplate[] = [
 export function detectCrisis(userInput: string): CrisisScenario | null {
   const inputLower = userInput.toLowerCase();
 
-  for (const scenario of _crisisScenarios) {
+  for (const scenario of crisisScenarios) {
     const hasTrigger = scenario.triggers.some(trigger =>
       inputLower.includes(trigger.toLowerCase())
     );
@@ -360,7 +360,7 @@ export function generateDisclaimer(context: string, crisisDetected: boolean): st
     return disclaimerTemplates.find(t => t.context === 'crisis')?.template || '';
   }
 
-  return disclaimerTemplates.find(t => t.context === _context)?.template || '';
+  return disclaimerTemplates.find(t => t.context === context)?.template || '';
 }
 
 // Hàm đánh giá rủi ro

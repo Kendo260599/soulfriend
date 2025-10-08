@@ -74,7 +74,7 @@ router.get('/training-data', async (req, res) => {
       );
       res.send(data);
     } else {
-      const data = await conversationLearningService.getTrainingData(_limit);
+      const data = await conversationLearningService.getTrainingData(limit);
 
       res.json({
         success: true,
@@ -99,7 +99,7 @@ router.get('/common-questions', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
 
-    const questions = await conversationLearningService.findCommonQuestions(_limit);
+    const questions = await conversationLearningService.findCommonQuestions(limit);
 
     res.json({
       success: true,
@@ -123,7 +123,7 @@ router.get('/needs-review', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const conversations = await conversationLearningService.getConversationsNeedingReview(_limit);
+    const conversations = await conversationLearningService.getConversationsNeedingReview(limit);
 
     res.json({
       success: true,

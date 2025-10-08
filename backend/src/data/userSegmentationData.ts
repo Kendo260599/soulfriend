@@ -303,7 +303,7 @@ export function identifyUserSegment(userInput: string, userHistory: string[]): U
   let bestMatch: UserSegment | null = null;
   let maxMatches = 0;
 
-  for (const segment of _userSegments) {
+  for (const segment of userSegments) {
     const matches = segment.keywords.filter(keyword =>
       inputLower.includes(keyword.toLowerCase())
     ).length;

@@ -6,10 +6,10 @@
  */
 
 import {
-  _PCL5_QUESTIONS,
-  _EDEQ_QUESTIONS,
-  _CSSRS_QUESTIONS,
-  _specializedScales,
+  PCL5_QUESTIONS,
+  EDEQ_QUESTIONS,
+  CSSRS_QUESTIONS,
+  specializedScales,
 } from '../data/specializedScales';
 
 /**

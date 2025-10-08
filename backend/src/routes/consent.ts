@@ -7,6 +7,7 @@ import { body, validationResult } from 'express-validator';
 import Consent from '../models/Consent';
 import { MockDataStore } from '../utils/mockDataStore';
 
+import mongoose from 'mongoose';
 const router = express.Router();
 
 /**

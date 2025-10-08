@@ -116,7 +116,7 @@ export class ChatbotController {
         intent: result.intent,
         confidence: result.confidence,
         userSegment: result.userSegment,
-        emotionalState: result._emotionalState,
+        emotionalState: result.emotionalState,
         crisisLevel: result.crisisLevel,
       };
 
@@ -236,7 +236,7 @@ export class ChatbotController {
 
       res.json({
         success: true,
-        data: _session,
+        data: session,
       });
     } catch (error) {
       logger.error('Error creating chat session:', error);

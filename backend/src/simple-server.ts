@@ -9,6 +9,7 @@ import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import config from './config/environment';
 
+import mongoose from 'mongoose';
 const app = express();
 const PORT = config.PORT;
 

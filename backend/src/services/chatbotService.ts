@@ -107,7 +107,7 @@ export class ChatbotService {
 
       // Route based on intent (pass full context for AI)
       const response = await this.routeIntentToResponse(intentAnalysis, message, {
-        ..._context,
+        ...context,
         userId,
         sessionId,
       });
@@ -503,7 +503,7 @@ export class ChatbotService {
    */
   async getConversationHistory(sessionId: string, limit: number = 50): Promise<ChatMessage[]> {
     const messages = this.messages.get(sessionId) || [];
-    return messages.slice(-_limit);
+    return messages.slice(-limit);
   }
 
   /**
@@ -521,7 +521,7 @@ export class ChatbotService {
       status: 'active',
     };
 
-    this.sessions.set(sessionId, _session);
+    this.sessions.set(sessionId, session);
     this.messages.set(sessionId, []);
 
     logger.info('Chat session created', { sessionId, userId });
@@ -534,7 +534,7 @@ export class ChatbotService {
    */
   async endSession(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
-    if (_session) {
+    if (session) {
       session.status = 'ended';
       session.endTime = new Date();
       logger.info('Chat session ended', { sessionId, messageCount: session.messageCount });
@@ -593,7 +593,7 @@ export class ChatbotService {
 
     // Update session message count
     const session = this.sessions.get(sessionId);
-    if (_session) {
+    if (session) {
       session.messageCount = messages.length;
     }
   }

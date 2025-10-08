@@ -155,7 +155,7 @@ TestResultSchema.virtual('scorePercentage').get(function (this: ITestResult) {
 TestResultSchema.set('toJSON', { virtuals: true });
 
 // Middleware để validate số lượng câu trả lời phù hợp với loại test
-TestResultSchema.pre('save', function (this: ITestResult, _next) {
+TestResultSchema.pre('save', function (this: ITestResult, next) {
   const expectedAnswerCounts: { [key in TestType]: number } = {
     [TestType.DASS_21]: 21,
     [TestType.GAD_7]: 7,

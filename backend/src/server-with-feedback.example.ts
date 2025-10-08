@@ -97,9 +97,9 @@ app.get('/api/admin/daily-summary', async (req, res) => {
     res.json({
       success: true,
       date: new Date().toISOString().split('T')[0],
-      _metrics,
+      metrics,
       improvements,
-      needsAttention: generateAlerts(_metrics),
+      needsAttention: generateAlerts(metrics),
     });
   } catch (error: any) {
     res.status(500).json({
@@ -234,7 +234,7 @@ async function dailyMetricsCheck() {
   console.log('📊 Running daily metrics check...');
 
   const metrics = await hitlFeedbackService.calculatePerformanceMetrics(1);
-  const alerts = generateAlerts(_metrics);
+  const alerts = generateAlerts(metrics);
 
   if (alerts.length > 0) {
     console.log('⚠️ Alerts detected:');

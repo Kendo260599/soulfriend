@@ -76,7 +76,7 @@ export interface EnhancedTestResult {
 // =============================================================================
 
 export function enhancedPHQ9Scoring(answers: Record<number, number>): EnhancedTestResult {
-  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
 
   // Standard PHQ-9 severity levels (unchanged - these are validated)
   let severity = 'minimal';
@@ -194,8 +194,8 @@ export function enhancedPHQ9Scoring(answers: Record<number, number>): EnhancedTe
     },
     percentileRank: calculatePercentileRank(totalScore, 'PHQ-9'),
     clinicalSignificance: clinicalSignificant,
-    reliabilityIndex: calculateReliability(_answers),
-    validityFlags: checkValidityFlags(_answers),
+    reliabilityIndex: calculateReliability(answers),
+    validityFlags: checkValidityFlags(answers),
     riskFactors,
     protectiveFactors,
     culturalConsiderations,
@@ -209,7 +209,7 @@ export function enhancedPHQ9Scoring(answers: Record<number, number>): EnhancedTe
 // =============================================================================
 
 export function enhancedGAD7Scoring(answers: Record<number, number>): EnhancedTestResult {
-  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
 
   // Standard GAD-7 severity levels
   let severity = 'minimal';
@@ -295,8 +295,8 @@ export function enhancedGAD7Scoring(answers: Record<number, number>): EnhancedTe
     },
     percentileRank: calculatePercentileRank(totalScore, 'GAD-7'),
     clinicalSignificance: clinicalSignificant,
-    reliabilityIndex: calculateReliability(_answers),
-    validityFlags: checkValidityFlags(_answers),
+    reliabilityIndex: calculateReliability(answers),
+    validityFlags: checkValidityFlags(answers),
     riskFactors,
     protectiveFactors,
     culturalConsiderations: generateCulturalConsiderations('anxiety'),
@@ -375,7 +375,7 @@ function erf(x: number): number {
 
 function calculateReliability(answers: Record<number, number>): number {
   // Cronbach's alpha approximation based on item consistency
-  const values = Object.values(_answers);
+  const values = Object.values(answers);
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
   const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
 
@@ -385,7 +385,7 @@ function calculateReliability(answers: Record<number, number>): number {
 
 function checkValidityFlags(answers: Record<number, number>): string[] {
   const flags: string[] = [];
-  const values = Object.values(_answers);
+  const values = Object.values(answers);
 
   // Check for all same responses (potential acquiescence bias)
   const uniqueValues = new Set(values);

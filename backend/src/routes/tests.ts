@@ -9,7 +9,6 @@ import { MockDataStore } from '../utils/mockDataStore';
 import { scoreTest } from '../utils/scoring';
 import { runClinicalValidation } from '../utils/clinicalTestRunner';
 import { createClinicalValidator } from '../utils/clinicalValidation';
-import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -49,7 +48,7 @@ router.post(
         });
       }
 
-      const { testType, answers, consentId } = req.body;
+      const { testType, _answers, consentId } = req.body;
 
       // Chuyển đổi answers array thành object với key là questionId
       const answersMap: { [key: number]: number } = {};
@@ -66,7 +65,7 @@ router.post(
         // Sử dụng mock data store
         const testResult = MockDataStore.createTestResult({
           testType,
-          answers,
+          _answers,
           totalScore,
           evaluation,
           consentId,
@@ -87,7 +86,7 @@ router.post(
       // Lưu kết quả test vào MongoDB
       const testResult = new TestResult({
         testType,
-        answers,
+        _answers,
         totalScore,
         evaluation,
         consentId,
@@ -181,7 +180,7 @@ router.get('/questions/:testType', (req: Request, res: Response) => {
 function calculateEvaluation(testType: string, totalScore: number, answers: number[]): any {
   switch (testType) {
     case 'DASS-21':
-      return calculateDASSEvaluation(answers);
+      return calculateDASSEvaluation(_answers);
     case 'GAD-7':
       return calculateGADEvaluation(totalScore);
     case 'PHQ-9':
@@ -197,9 +196,9 @@ function calculateEvaluation(testType: string, totalScore: number, answers: numb
     case 'ROSENBERG_SELF_ESTEEM':
       return calculateRosenbergEvaluation(totalScore);
     case 'PMS':
-      return calculatePMSEvaluation(answers);
+      return calculatePMSEvaluation(_answers);
     case 'MENOPAUSE_RATING':
-      return calculateMenopauseEvaluation(answers);
+      return calculateMenopauseEvaluation(_answers);
     default:
       return { level: 'unknown', description: 'Chưa có đánh giá cho loại test này' };
   }

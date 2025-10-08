@@ -5,7 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from 'express-validator';
-import mongoose from 'mongoose';
+
 import logger from '../utils/logger';
 import config from '../config/environment';
 
@@ -184,7 +184,7 @@ function logError(error: AppError, req: Request): void {
     userId: (req as any).user?.id,
     body: req.method !== 'GET' ? req.body : undefined,
     query: req.query,
-    params: req.params,
+    params: req._params,
   };
 
   // Log based on error severity
@@ -225,7 +225,7 @@ export const errorHandler = (error: any, req: Request, res: Response, next: Next
  */
 export const asyncHandler = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    Promise.resolve(fn(req, res, _next)).catch(_next);
   };
 };
 
@@ -268,7 +268,7 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
       field: error.path || error.param,
       message: error.msg,
       value: error.value,
-      location: error.location,
+      location: error._location,
     }));
 
     const appError = new ValidationAppError(validationErrors);

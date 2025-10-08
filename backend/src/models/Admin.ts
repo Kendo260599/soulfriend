@@ -90,7 +90,7 @@ AdminSchema.virtual('isLocked').get(function (this: IAdmin) {
 AdminSchema.index({ isActive: 1 });
 
 // Middleware để hash password trước khi lưu
-AdminSchema.pre('save', async function (this: IAdmin, next) {
+AdminSchema.pre('save', async function (this: IAdmin, _next) {
   // Chỉ hash password khi nó được modify
   if (!this.isModified('password')) {
     return next();

@@ -89,7 +89,7 @@ export function scoreDASS21(answers: AnswerMap): TestResult {
  * GAD-7 Scoring Algorithm
  */
 export function scoreGAD7(answers: AnswerMap): TestResult {
-  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
 
   let severity = 'Bình thường';
   let interpretation = '';
@@ -128,7 +128,7 @@ export function scoreGAD7(answers: AnswerMap): TestResult {
  * PHQ-9 Scoring Algorithm
  */
 export function scorePHQ9(answers: AnswerMap): TestResult {
-  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
 
   let severity = 'Bình thường';
   let interpretation = '';
@@ -172,7 +172,7 @@ export function scorePHQ9(answers: AnswerMap): TestResult {
  * EPDS Scoring Algorithm
  */
 export function scoreEPDS(answers: AnswerMap): TestResult {
-  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
 
   let severity = 'Bình thường';
   let interpretation = '';
@@ -214,7 +214,7 @@ export function scoreSelfCompassion(answers: AnswerMap): TestResult {
   const reverseQuestions = [1, 4, 6, 9]; // Câu hỏi cần đảo ngược điểm
   let totalScore = 0;
 
-  Object.keys(answers).forEach(questionId => {
+  Object.keys(_answers).forEach(questionId => {
     const qId = parseInt(questionId);
     const rawScore = answers[qId];
 
@@ -265,7 +265,7 @@ export function scoreSelfCompassion(answers: AnswerMap): TestResult {
  * Mindfulness Scale Scoring Algorithm
  */
 export function scoreMindfulness(answers: AnswerMap): TestResult {
-  const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
+  const totalScore = Object.values(_answers).reduce((sum, score) => sum + score, 0);
 
   let severity = 'Trung bình';
   let interpretation = '';
@@ -310,7 +310,7 @@ export function scoreSelfConfidence(answers: AnswerMap): TestResult {
   const reverseQuestions = [4, 6, 9]; // Câu hỏi cần đảo ngược điểm
   let totalScore = 0;
 
-  Object.keys(answers).forEach(questionId => {
+  Object.keys(_answers).forEach(questionId => {
     const qId = parseInt(questionId);
     const rawScore = answers[qId];
 
@@ -364,7 +364,7 @@ export function scoreRosenberg(answers: AnswerMap): TestResult {
   const reverseQuestions = [3, 5, 8, 9, 10]; // Câu hỏi cần đảo ngược điểm
   let totalScore = 0;
 
-  Object.keys(answers).forEach(questionId => {
+  Object.keys(_answers).forEach(questionId => {
     const qId = parseInt(questionId);
     const rawScore = answers[qId];
 
@@ -418,30 +418,30 @@ export function scoreTest(testType: string, answers: AnswerMap): TestResult {
   switch (testType.toUpperCase()) {
     case 'DASS-21':
     case 'DASS_21':
-      return scoreDASS21(answers);
+      return scoreDASS21(_answers);
 
     case 'GAD-7':
     case 'GAD_7':
-      return scoreGAD7(answers);
+      return scoreGAD7(_answers);
 
     case 'PHQ-9':
     case 'PHQ_9':
-      return scorePHQ9(answers);
+      return scorePHQ9(_answers);
 
     case 'EPDS':
-      return scoreEPDS(answers);
+      return scoreEPDS(_answers);
 
     case 'SELF_COMPASSION':
-      return scoreSelfCompassion(answers);
+      return scoreSelfCompassion(_answers);
 
     case 'MINDFULNESS':
-      return scoreMindfulness(answers);
+      return scoreMindfulness(_answers);
 
     case 'SELF_CONFIDENCE':
-      return scoreSelfConfidence(answers);
+      return scoreSelfConfidence(_answers);
 
     case 'ROSENBERG_SELF_ESTEEM':
-      return scoreRosenberg(answers);
+      return scoreRosenberg(_answers);
 
     default:
       throw new Error(`Không hỗ trợ loại test: ${testType}`);

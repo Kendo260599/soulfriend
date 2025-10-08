@@ -415,7 +415,7 @@ export class HITLFeedbackService {
       }
     }
 
-    // Find keywords to add (from expert suggestions)
+    // Find keywords to add (from expert _suggestions)
     const suggestedKeywordsCount = new Map<string, number>();
     for (const feedback of this.feedbackData.values()) {
       for (const keyword of feedback.suggestedKeywords || []) {
@@ -448,9 +448,9 @@ export class HITLFeedbackService {
     // Calculate expected improvements
     const currentMetrics = await this.calculatePerformanceMetrics();
     suggestions.expectedImprovements = {
-      accuracyIncrease: this.estimateAccuracyImprovement(suggestions, currentMetrics),
-      falsePositiveReduction: this.estimateFPReduction(suggestions, currentMetrics),
-      falseNegativeReduction: this.estimateFNReduction(suggestions, currentMetrics),
+      accuracyIncrease: this.estimateAccuracyImprovement(_suggestions, _currentMetrics),
+      falsePositiveReduction: this.estimateFPReduction(_suggestions, _currentMetrics),
+      falseNegativeReduction: this.estimateFNReduction(_suggestions, _currentMetrics),
     };
 
     logger.info('✅ Model improvement suggestions generated', {
@@ -628,7 +628,7 @@ export class HITLFeedbackService {
    * Get training data for model fine-tuning
    */
   getTrainingData(limit?: number): TrainingDataPoint[] {
-    const data = limit ? this.trainingData.slice(-limit) : this.trainingData;
+    const data = limit ? this.trainingData.slice(-_limit) : this.trainingData;
     logger.info(`📦 Retrieved ${data.length} training data points for fine-tuning`);
     return data;
   }

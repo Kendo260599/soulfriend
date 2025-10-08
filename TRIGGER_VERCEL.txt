@@ -1,3 +1,0 @@
-# Trigger Vercel Webhook
-Last triggered: 2025-10-06T10:07:55.071Z
-This file triggers Vercel to redeploy when pushed to GitHub.

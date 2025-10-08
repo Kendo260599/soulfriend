@@ -69,10 +69,10 @@ router.get('/metrics', async (req, res) => {
 
     res.json({
       success: true,
-      metrics,
+      _metrics,
       analysis: {
-        summary: generateMetricsSummary(metrics),
-        recommendations: generateRecommendations(metrics),
+        summary: generateMetricsSummary(_metrics),
+        recommendations: generateRecommendations(_metrics),
       },
     });
   } catch (error: any) {
@@ -94,7 +94,7 @@ router.get('/improvements', async (req, res) => {
 
     res.json({
       success: true,
-      suggestions,
+      _suggestions,
       readyToApply: true,
       impact: {
         description: 'Expected improvements based on HITL feedback analysis',
@@ -157,7 +157,7 @@ router.get('/training-data', async (req, res) => {
       res.send(exportedData);
     } else {
       // JSON format
-      const trainingData = hitlFeedbackService.getTrainingData(limit);
+      const trainingData = hitlFeedbackService.getTrainingData(_limit);
 
       res.json({
         success: true,

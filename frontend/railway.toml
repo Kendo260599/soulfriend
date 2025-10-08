@@ -1,6 +1,7 @@
 [build]
 builder = "nixpacks"
 buildCommand = "npm run build"
+nixpacksConfig = { providers = ["nodejs"] }
 
 [deploy]
 startCommand = "npx serve -s build -l 3000"
@@ -10,4 +11,5 @@ restartPolicyMaxRetries = 10
 [environments.production.variables]
 NODE_ENV = "production"
 PORT = "3000"
+NODE_VERSION = "20"
 

@@ -47,7 +47,7 @@ nodemon.json
 .prettierrc
 .prettierignore
 .eslintrc.js
-tsconfig.json
+# tsconfig.json - Keep this for TypeScript compilation
 
 # Temporary files
 tmp/

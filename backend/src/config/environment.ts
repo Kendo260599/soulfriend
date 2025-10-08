@@ -23,7 +23,7 @@ interface EnvironmentConfig {
   // Security
   JWT_SECRET: string;
   ENCRYPTION_KEY: string;
-  
+
   // Admin
   DEFAULT_ADMIN_USERNAME: string;
   DEFAULT_ADMIN_EMAIL: string;
@@ -93,7 +93,9 @@ function parseEnvironment(): EnvironmentConfig {
 
   const getEnvArray = (key: string, defaultValue: string[] = []): string[] => {
     const value = process.env[key];
-    if (!value) return defaultValue;
+    if (!value) {
+      return defaultValue;
+    }
     return value.split(',').map(item => item.trim());
   };
 
@@ -192,8 +194,8 @@ function validateSecurity(config: EnvironmentConfig): void {
     }
 
     // Ensure HTTPS in production CORS origins
-    const hasInsecureOrigins = config.CORS_ORIGIN.some(origin => 
-      origin.startsWith('http://') && !origin.includes('localhost')
+    const hasInsecureOrigins = config.CORS_ORIGIN.some(
+      origin => origin.startsWith('http://') && !origin.includes('localhost')
     );
     if (hasInsecureOrigins) {
       console.warn('⚠️  Warning: Insecure HTTP origins detected in production CORS settings');
@@ -218,7 +220,9 @@ function logConfiguration(config: EnvironmentConfig): void {
   console.log(`   Log Level: ${config.LOG_LEVEL}`);
   console.log(`   Redis: ${config.REDIS_URL ? 'Enabled' : 'Disabled'}`);
   console.log(`   SMTP: ${config.SMTP_HOST ? 'Enabled' : 'Disabled'}`);
-  console.log(`   External APIs: ${config.OPENAI_API_KEY ? 'OpenAI ✓' : ''} ${config.AZURE_COGNITIVE_KEY ? 'Azure ✓' : ''}`);
+  console.log(
+    `   External APIs: ${config.OPENAI_API_KEY ? 'OpenAI ✓' : ''} ${config.AZURE_COGNITIVE_KEY ? 'Azure ✓' : ''}`
+  );
   console.log(`   Monitoring: ${config.SENTRY_DSN ? 'Sentry ✓' : 'Local only'}`);
 }
 
@@ -228,14 +232,21 @@ let config: EnvironmentConfig;
 try {
   config = parseEnvironment();
   validateSecurity(config);
-  
+
   if (config.NODE_ENV !== 'test') {
     logConfiguration(config);
   }
 } catch (error) {
   console.error('❌ Configuration Error:', (error as Error).message);
   console.error('💡 Please check your environment variables and try again.');
-  process.exit(1);
+
+  // Don't exit process in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    process.exit(1);
+  } else {
+    // In test environment, throw error instead of exiting
+    throw error;
+  }
 }
 
 export default config;

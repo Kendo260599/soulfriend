@@ -1,6 +1,6 @@
 /**
  * CONVERSATION LEARNING SERVICE
- * 
+ *
  * Chatbot tự học từ mọi cuộc hội thoại
  */
 
@@ -45,16 +45,14 @@ export class ConversationLearningService {
         needsReview: false,
         approvedForTraining: false,
         language: 'vi',
-        platform: 'web'
+        platform: 'web',
       });
 
       logger.info(`📝 Conversation logged: ${log.conversationId}`);
-      
+
       // Auto-analyze quality (async)
-      this.analyzeResponseQuality(log).catch(err => 
-        logger.error('Error analyzing quality:', err)
-      );
-      
+      this.analyzeResponseQuality(log).catch(err => logger.error('Error analyzing quality:', err));
+
       return log;
     } catch (error: any) {
       logger.error('Error logging conversation:', error);
@@ -70,26 +68,27 @@ export class ConversationLearningService {
     const responseLength = log.aiResponse.length;
     const hasEmpathy = /xin lỗi|hiểu|cảm thông|đồng cảm/i.test(log.aiResponse);
     const hasAction = /hãy|nên|có thể|thử/i.test(log.aiResponse);
-    
+
     const quality = {
       relevance: responseLength > 50 ? 0.8 : 0.5,
       clarity: responseLength < 500 ? 0.9 : 0.7,
       empathy: hasEmpathy ? 0.9 : 0.6,
-      accuracy: log.aiConfidence || 0.8
+      accuracy: log.aiConfidence || 0.8,
     };
 
     log.responseQuality = quality;
-    
+
     // Auto-approve high quality responses
-    const avgQuality = (quality.relevance + quality.clarity + quality.empathy + quality.accuracy) / 4;
+    const avgQuality =
+      (quality.relevance + quality.clarity + quality.empathy + quality.accuracy) / 4;
     if (avgQuality >= 0.8) {
       log.approvedForTraining = true;
     } else if (avgQuality < 0.6) {
       log.needsReview = true;
     }
-    
+
     await log.save();
-    
+
     logger.info(`✨ Quality analyzed: ${log.conversationId} (${(avgQuality * 100).toFixed(0)}%)`);
   }
 
@@ -103,7 +102,7 @@ export class ConversationLearningService {
     feedback?: string
   ): Promise<void> {
     const log = await ConversationLog.findOne({ conversationId });
-    
+
     if (!log) {
       throw new Error(`Conversation ${conversationId} not found`);
     }
@@ -120,17 +119,19 @@ export class ConversationLearningService {
   /**
    * LẤY training data để fine-tune chatbot
    */
-  async getTrainingData(limit: number = 1000): Promise<Array<{
-    input: string;
-    output: string;
-    quality: number;
-  }>> {
+  async getTrainingData(limit: number = 1000): Promise<
+    Array<{
+      input: string;
+      output: string;
+      quality: number;
+    }>
+  > {
     const logs = await ConversationLog.getTrainingData(limit);
-    
-    return logs.map(log => ({
+
+    return logs.map((log: any) => ({
       input: log.userMessage,
       output: log.aiResponse,
-      quality: log.userRating || 4
+      quality: log.userRating || 4,
     }));
   }
 
@@ -140,30 +141,36 @@ export class ConversationLearningService {
   async exportForFineTuning(format: 'jsonl' | 'csv' = 'jsonl'): Promise<string> {
     const logs = await ConversationLog.find({
       approvedForTraining: true,
-      wasHelpful: true
-    }).sort({ timestamp: -1 }).limit(10000);
+      wasHelpful: true,
+    })
+      .sort({ timestamp: -1 })
+      .limit(10000);
 
     if (format === 'jsonl') {
       return logs
-        .map(log => JSON.stringify({
-          messages: [
-            { role: 'user', content: log.userMessage },
-            { role: 'assistant', content: log.aiResponse }
-          ]
-        }))
+        .map(log =>
+          JSON.stringify({
+            messages: [
+              { role: 'user', content: log.userMessage },
+              { role: 'assistant', content: log.aiResponse },
+            ],
+          })
+        )
         .join('\n');
     } else {
       // CSV format
       const headers = 'user_message,ai_response,rating,was_helpful\n';
       const rows = logs
-        .map(log => [
-          `"${log.userMessage.replace(/"/g, '""')}"`,
-          `"${log.aiResponse.replace(/"/g, '""')}"`,
-          log.userRating || 0,
-          log.wasHelpful ? 'true' : 'false'
-        ].join(','))
+        .map(log =>
+          [
+            `"${log.userMessage.replace(/"/g, '""')}"`,
+            `"${log.aiResponse.replace(/"/g, '""')}"`,
+            log.userRating || 0,
+            log.wasHelpful ? 'true' : 'false',
+          ].join(',')
+        )
         .join('\n');
-      
+
       return headers + rows;
     }
   }
@@ -178,14 +185,14 @@ export class ConversationLearningService {
     // Find conversations needing review
     const needsReview = await ConversationLog.countDocuments({
       needsReview: true,
-      reviewedAt: { $exists: false }
+      reviewedAt: { $exists: false },
     });
 
     // Common intents (mock - would use NLP)
     const topIntents = [
       { intent: 'greeting', count: 150 },
       { intent: 'mental_health_question', count: 120 },
-      { intent: 'test_request', count: 80 }
+      { intent: 'test_request', count: 80 },
     ];
 
     // Improvement areas
@@ -206,49 +213,51 @@ export class ConversationLearningService {
       avgRating: metrics.avgRating || 0,
       avgResponseTime: metrics.avgResponseTime || 0,
       topIntents,
-      improvementAreas
+      improvementAreas,
     };
   }
 
   /**
    * TÌM patterns từ conversations
    */
-  async findCommonQuestions(limit: number = 20): Promise<Array<{
-    question: string;
-    count: number;
-    avgRating: number;
-  }>> {
+  async findCommonQuestions(limit: number = 20): Promise<
+    Array<{
+      question: string;
+      count: number;
+      avgRating: number;
+    }>
+  > {
     return ConversationLog.aggregate([
       {
         $match: {
-          wasHelpful: true
-        }
+          wasHelpful: true,
+        },
       },
       {
         $group: {
           _id: { $toLower: '$userMessage' },
           count: { $sum: 1 },
-          avgRating: { $avg: '$userRating' }
-        }
+          avgRating: { $avg: '$userRating' },
+        },
       },
       {
         $match: {
-          count: { $gte: 2 }
-        }
+          count: { $gte: 2 },
+        },
       },
       {
         $project: {
           question: '$_id',
           count: 1,
-          avgRating: 1
-        }
+          avgRating: 1,
+        },
       },
       {
-        $sort: { count: -1 }
+        $sort: { count: -1 },
       },
       {
-        $limit: limit
-      }
+        $limit: limit,
+      },
     ]);
   }
 
@@ -258,12 +267,11 @@ export class ConversationLearningService {
   async getConversationsNeedingReview(limit: number = 50): Promise<IConversationLog[]> {
     return ConversationLog.find({
       needsReview: true,
-      reviewedAt: { $exists: false }
+      reviewedAt: { $exists: false },
     })
-    .sort({ timestamp: -1 })
-    .limit(limit);
+      .sort({ timestamp: -1 })
+      .limit(limit);
   }
 }
 
 export const conversationLearningService = new ConversationLearningService();
-

@@ -16,23 +16,17 @@ router.post('/feedback', async (req, res) => {
   try {
     const { conversationId, wasHelpful, rating, feedback } = req.body;
 
-    await conversationLearningService.recordFeedback(
-      conversationId,
-      wasHelpful,
-      rating,
-      feedback
-    );
+    await conversationLearningService.recordFeedback(conversationId, wasHelpful, rating, feedback);
 
     res.json({
       success: true,
-      message: 'Feedback recorded. Chatbot sẽ học từ phản hồi này!'
+      message: 'Feedback recorded. Chatbot sẽ học từ phản hồi này!',
     });
-
   } catch (error: any) {
     logger.error('Error recording feedback:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -44,20 +38,19 @@ router.post('/feedback', async (req, res) => {
 router.get('/insights', async (req, res) => {
   try {
     const periodDays = parseInt(req.query.days as string) || 30;
-    
+
     const insights = await conversationLearningService.getLearningInsights(periodDays);
 
     res.json({
       success: true,
       insights,
-      message: `Analyzed ${insights.totalConversations} conversations from last ${periodDays} days`
+      message: `Analyzed ${insights.totalConversations} conversations from last ${periodDays} days`,
     });
-
   } catch (error: any) {
     logger.error('Error getting insights:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -73,25 +66,27 @@ router.get('/training-data', async (req, res) => {
 
     if (format === 'jsonl' || format === 'csv') {
       const data = await conversationLearningService.exportForFineTuning(format);
-      
+
       res.setHeader('Content-Type', format === 'jsonl' ? 'application/jsonl' : 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="chatbot-training-${Date.now()}.${format}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="chatbot-training-${Date.now()}.${format}"`
+      );
       res.send(data);
     } else {
       const data = await conversationLearningService.getTrainingData(limit);
-      
+
       res.json({
         success: true,
         count: data.length,
-        data
+        data,
       });
     }
-
   } catch (error: any) {
     logger.error('Error exporting training data:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -103,20 +98,19 @@ router.get('/training-data', async (req, res) => {
 router.get('/common-questions', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
-    
+
     const questions = await conversationLearningService.findCommonQuestions(limit);
 
     res.json({
       success: true,
       count: questions.length,
-      questions
+      questions,
     });
-
   } catch (error: any) {
     logger.error('Error finding common questions:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -128,23 +122,21 @@ router.get('/common-questions', async (req, res) => {
 router.get('/needs-review', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
-    
+
     const conversations = await conversationLearningService.getConversationsNeedingReview(limit);
 
     res.json({
       success: true,
       count: conversations.length,
-      conversations
+      conversations,
     });
-
   } catch (error: any) {
     logger.error('Error getting conversations for review:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 export default router;
-

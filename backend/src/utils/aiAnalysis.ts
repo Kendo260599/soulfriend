@@ -1,7 +1,7 @@
 /**
  * ADVANCED AI/ML PSYCHOLOGICAL ANALYSIS SYSTEM
  * Tích hợp các mô hình machine learning tiên tiến từ nghiên cứu tâm lý học và neuroscience
- * 
+ *
  * Based on latest research:
  * - Natural Language Processing for psychological assessment
  * - Pattern recognition in psychological responses
@@ -62,8 +62,8 @@ export function analyzeCognitivePatterns(
           'Rumination-focused Cognitive Behavioral Therapy (RF-CBT)',
           'Mindfulness-based cognitive therapy (MBCT)',
           'Behavioral activation techniques',
-          'Thought stopping and cognitive restructuring'
-        ]
+          'Thought stopping and cognitive restructuring',
+        ],
       });
     }
   }
@@ -84,8 +84,8 @@ export function analyzeCognitivePatterns(
           'Cognitive restructuring exercises',
           'Probability estimation training',
           'Worry time scheduling',
-          'Decatastrophizing techniques'
-        ]
+          'Decatastrophizing techniques',
+        ],
       });
     }
   }
@@ -93,7 +93,7 @@ export function analyzeCognitivePatterns(
   // 3. All-or-Nothing Thinking (Research: Burns, 1980-2023)
   const extremeResponses = Object.values(responses).filter(v => v === 0 || v === 3).length;
   const totalResponses = Object.values(responses).length;
-  
+
   if (extremeResponses / totalResponses > 0.7) {
     patterns.push({
       patternType: 'cognitive',
@@ -102,10 +102,10 @@ export function analyzeCognitivePatterns(
       clinicalSignificance: 'moderate',
       interventionTargets: [
         'Cognitive flexibility training',
-        'Gray area exploration exercises', 
+        'Gray area exploration exercises',
         'Perspective-taking techniques',
-        'Balanced thinking worksheets'
-      ]
+        'Balanced thinking worksheets',
+      ],
     });
   }
 
@@ -138,8 +138,8 @@ export function analyzeBehavioralPatterns(
           'Systematic desensitization',
           'Exposure and response prevention',
           'Behavioral activation',
-          'Graded exposure therapy'
-        ]
+          'Graded exposure therapy',
+        ],
       });
     }
   }
@@ -160,8 +160,8 @@ export function analyzeBehavioralPatterns(
           'Behavioral activation therapy',
           'Social skills training',
           'Pleasant activity scheduling',
-          'Interpersonal therapy (IPT)'
-        ]
+          'Interpersonal therapy (IPT)',
+        ],
       });
     }
   }
@@ -181,8 +181,8 @@ export function analyzeBehavioralPatterns(
           'Cognitive Behavioral Therapy for Insomnia (CBT-I)',
           'Sleep hygiene education',
           'Stimulus control therapy',
-          'Light therapy for circadian rhythm regulation'
-        ]
+          'Light therapy for circadian rhythm regulation',
+        ],
       });
     }
   }
@@ -203,11 +203,11 @@ export function predictTreatmentResponse(
 
   // Based on meta-analyses and RCT data
   const baseRates = {
-    'CBT': 0.65,           // Cognitive Behavioral Therapy
-    'medication': 0.58,    // SSRI/SNRI
-    'mindfulness': 0.52,   // MBSR/MBCT
-    'exercise': 0.48,      // Structured exercise programs
-    'interpersonal': 0.61, // Interpersonal Therapy
+    CBT: 0.65, // Cognitive Behavioral Therapy
+    medication: 0.58, // SSRI/SNRI
+    mindfulness: 0.52, // MBSR/MBCT
+    exercise: 0.48, // Structured exercise programs
+    interpersonal: 0.61, // Interpersonal Therapy
   };
 
   // Modifiers based on detected patterns
@@ -222,10 +222,16 @@ export function predictTreatmentResponse(
 
     // Medication is more effective for severe cases
     if (treatment === 'medication') {
-      if (currentAssessment.severity === 'severe' || currentAssessment.severity === 'moderately_severe') {
+      if (
+        currentAssessment.severity === 'severe' ||
+        currentAssessment.severity === 'moderately_severe'
+      ) {
         modifier += 0.2;
       }
-      if (currentAssessment.comorbidityRisk?.anxiety_disorder && currentAssessment.comorbidityRisk.anxiety_disorder > 0.6) {
+      if (
+        currentAssessment.comorbidityRisk?.anxiety_disorder &&
+        currentAssessment.comorbidityRisk.anxiety_disorder > 0.6
+      ) {
         modifier += 0.15;
       }
     }
@@ -240,8 +246,10 @@ export function predictTreatmentResponse(
 
     // Exercise is effective for mild-moderate depression
     if (treatment === 'exercise') {
-      if (currentAssessment.testType === 'PHQ-9' && 
-          (currentAssessment.severity === 'mild' || currentAssessment.severity === 'moderate')) {
+      if (
+        currentAssessment.testType === 'PHQ-9' &&
+        (currentAssessment.severity === 'mild' || currentAssessment.severity === 'moderate')
+      ) {
         modifier += 0.2;
       }
     }
@@ -263,9 +271,11 @@ export function generateEarlyWarningSignals(
   const warnings: string[] = [];
 
   // Suicide risk (highest priority)
-  if (currentAssessment.testType === 'PHQ-9' && 
-      currentAssessment.subscaleScores?.suicidality && 
-      currentAssessment.subscaleScores.suicidality > 0) {
+  if (
+    currentAssessment.testType === 'PHQ-9' &&
+    currentAssessment.subscaleScores?.suicidality &&
+    currentAssessment.subscaleScores.suicidality > 0
+  ) {
     warnings.push('🚨 CRITICAL: Suicidal ideation detected - immediate intervention required');
   }
 
@@ -275,14 +285,18 @@ export function generateEarlyWarningSignals(
   }
 
   // Comorbidity risk
-  const highComorbidityRisk = Object.values(currentAssessment.comorbidityRisk || {})
-    .some(risk => risk > 0.7);
+  const highComorbidityRisk = Object.values(currentAssessment.comorbidityRisk || {}).some(
+    risk => risk > 0.7
+  );
   if (highComorbidityRisk) {
     warnings.push('📈 COMORBIDITY RISK: High probability of additional mental health conditions');
   }
 
   // Functional impairment
-  if (currentAssessment.severity === 'severe' || currentAssessment.severity === 'moderately_severe') {
+  if (
+    currentAssessment.severity === 'severe' ||
+    currentAssessment.severity === 'moderately_severe'
+  ) {
     warnings.push('🏥 FUNCTIONAL IMPAIRMENT: Significant impact on daily functioning likely');
   }
 
@@ -322,14 +336,18 @@ export function identifyResilienceFactors(
   }
 
   // Low comorbidity risk
-  const lowComorbidityRisk = Object.values(currentAssessment.comorbidityRisk || {})
-    .every(risk => risk < 0.3);
+  const lowComorbidityRisk = Object.values(currentAssessment.comorbidityRisk || {}).every(
+    risk => risk < 0.3
+  );
   if (lowComorbidityRisk) {
     resilienceFactors.push('✅ Low comorbidity risk - focused treatment approach possible');
   }
 
   // Cultural strengths
-  if (currentAssessment.culturalConsiderations && currentAssessment.culturalConsiderations.length > 0) {
+  if (
+    currentAssessment.culturalConsiderations &&
+    currentAssessment.culturalConsiderations.length > 0
+  ) {
     resilienceFactors.push('✅ Cultural identity and family support systems available');
   }
 
@@ -345,15 +363,19 @@ export function performMLAnalysis(
   historicalData?: any[]
 ): MLInsights {
   const responses = reconstructResponses(testResult); // Helper to get responses from result
-  
+
   // Analyze patterns
-  const cognitivePatterns = analyzeCognitivePatterns(responses, testResult.testType, historicalData);
+  const cognitivePatterns = analyzeCognitivePatterns(
+    responses,
+    testResult.testType,
+    historicalData
+  );
   const behavioralPatterns = analyzeBehavioralPatterns(responses, testResult.testType);
   const detectedPatterns = [...cognitivePatterns, ...behavioralPatterns];
 
   // Generate predictions
   const treatmentResponse = predictTreatmentResponse(testResult, detectedPatterns);
-  
+
   // Calculate risk predictions
   const deteriorationRisk = calculateDeteriorationRisk(testResult, detectedPatterns);
   const recoveryPotential = calculateRecoveryPotential(testResult, detectedPatterns);
@@ -362,8 +384,8 @@ export function performMLAnalysis(
   const earlyWarningSignals = generateEarlyWarningSignals(testResult, detectedPatterns);
   const resilienceFactors = identifyResilienceFactors(testResult, detectedPatterns);
   const personalizedRecommendations = generatePersonalizedRecommendations(
-    testResult, 
-    detectedPatterns, 
+    testResult,
+    detectedPatterns,
     treatmentResponse
   );
 
@@ -391,14 +413,18 @@ function reconstructResponses(result: EnhancedTestResult): Record<number, number
 }
 
 function calculateDeteriorationRisk(
-  result: EnhancedTestResult, 
+  result: EnhancedTestResult,
   patterns: PsychologicalPattern[]
 ): number {
   let baseRisk = 0.1; // 10% base rate
 
-  if (result.clinicalSignificance) baseRisk += 0.3;
-  if (result.severity === 'severe') baseRisk += 0.4;
-  
+  if (result.clinicalSignificance) {
+    baseRisk += 0.3;
+  }
+  if (result.severity === 'severe') {
+    baseRisk += 0.4;
+  }
+
   const highRiskPatterns = patterns.filter(p => p.clinicalSignificance === 'high');
   baseRisk += highRiskPatterns.length * 0.15;
 
@@ -411,9 +437,13 @@ function calculateRecoveryPotential(
 ): number {
   let basePotential = 0.7; // 70% base recovery rate
 
-  if (result.severity === 'minimal' || result.severity === 'mild') basePotential += 0.2;
-  if (result.validityFlags && result.validityFlags.length === 0) basePotential += 0.1;
-  
+  if (result.severity === 'minimal' || result.severity === 'mild') {
+    basePotential += 0.2;
+  }
+  if (result.validityFlags && result.validityFlags.length === 0) {
+    basePotential += 0.1;
+  }
+
   const behavioralPatterns = patterns.filter(p => p.patternType === 'behavioral');
   basePotential -= behavioralPatterns.length * 0.05; // Behavioral patterns are harder to change
 
@@ -428,27 +458,38 @@ function generatePersonalizedRecommendations(
   const recommendations: string[] = [];
 
   // Top treatment recommendation
-  const bestTreatment = Object.entries(treatmentResponse)
-    .sort(([,a], [,b]) => b - a)[0];
-  
+  const bestTreatment = Object.entries(treatmentResponse).sort(([, a], [, b]) => b - a)[0];
+
   if (bestTreatment) {
-    recommendations.push(`🎯 OPTIMAL TREATMENT: ${bestTreatment[0]} (${Math.round(bestTreatment[1] * 100)}% predicted success rate)`);
+    recommendations.push(
+      `🎯 OPTIMAL TREATMENT: ${bestTreatment[0]} (${Math.round(bestTreatment[1] * 100)}% predicted success rate)`
+    );
   }
 
   // Pattern-specific recommendations
   patterns.forEach(pattern => {
-    recommendations.push(`🧠 ${pattern.patternType.toUpperCase()}: ${pattern.interventionTargets[0]}`);
+    recommendations.push(
+      `🧠 ${pattern.patternType.toUpperCase()}: ${pattern.interventionTargets[0]}`
+    );
   });
 
   // Lifestyle recommendations based on evidence
   if (result.testType === 'PHQ-9') {
-    recommendations.push('🏃‍♂️ EXERCISE: 30 minutes moderate exercise 3x/week - equivalent to antidepressant for mild depression');
-    recommendations.push('🌙 SLEEP: Maintain 7-9 hours consistent sleep schedule - crucial for mood regulation');
+    recommendations.push(
+      '🏃‍♂️ EXERCISE: 30 minutes moderate exercise 3x/week - equivalent to antidepressant for mild depression'
+    );
+    recommendations.push(
+      '🌙 SLEEP: Maintain 7-9 hours consistent sleep schedule - crucial for mood regulation'
+    );
   }
 
   if (result.testType === 'GAD-7') {
-    recommendations.push('🧘‍♀️ MEDITATION: 10-20 minutes daily mindfulness - reduces anxiety by 40-60%');
-    recommendations.push('📱 TECH: Limit social media to 30 minutes/day - reduces comparison anxiety');
+    recommendations.push(
+      '🧘‍♀️ MEDITATION: 10-20 minutes daily mindfulness - reduces anxiety by 40-60%'
+    );
+    recommendations.push(
+      '📱 TECH: Limit social media to 30 minutes/day - reduces comparison anxiety'
+    );
   }
 
   return recommendations;

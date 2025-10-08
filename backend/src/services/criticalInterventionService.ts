@@ -1,9 +1,9 @@
 /**
  * CRITICAL INTERVENTION SERVICE - HUMAN-IN-THE-LOOP (HITL)
- * 
+ *
  * Hệ thống can thiệp khủng hoảng với sự tham gia của con người
  * Tuân thủ đạo đức và pháp lý cho các trường hợp Critical Risk
- * 
+ *
  * @module CriticalInterventionService
  * @version 1.0.0
  */
@@ -50,23 +50,23 @@ export interface InterventionConfig {
   // HITL Settings
   autoEscalationEnabled: boolean;
   escalationDelayMinutes: number; // Default: 5 minutes
-  
+
   // Clinical Team
   clinicalTeam: ClinicalTeamMember[];
-  
+
   // Notification Channels
   emailEnabled: boolean;
   smsEnabled: boolean;
   slackEnabled: boolean;
   emergencyHotlineEnabled: boolean;
-  
+
   // Emergency Hotlines (Vietnam)
   hotlines: {
     name: string;
     phone: string;
     available24h: boolean;
   }[];
-  
+
   // Legal Compliance
   autoDocumentation: boolean;
   consentRequired: boolean;
@@ -80,7 +80,7 @@ export interface InterventionConfig {
 const DEFAULT_CONFIG: InterventionConfig = {
   autoEscalationEnabled: true,
   escalationDelayMinutes: 5,
-  
+
   clinicalTeam: [
     {
       id: 'crisis_team_1',
@@ -88,36 +88,36 @@ const DEFAULT_CONFIG: InterventionConfig = {
       role: 'crisis_counselor',
       email: 'crisis@soulfriend.vn',
       phone: '+84-xxx-xxx-xxx',
-      availability: 'available'
-    }
+      availability: 'available',
+    },
   ],
-  
+
   emailEnabled: true,
   smsEnabled: true,
   slackEnabled: true,
   emergencyHotlineEnabled: true,
-  
+
   hotlines: [
     {
       name: 'Đường dây nóng Sức khỏe Tâm thần Quốc gia',
       phone: '1800-599-920',
-      available24h: true
+      available24h: true,
     },
     {
       name: 'Trung tâm Chống độc (Bệnh viện Bạch Mai)',
       phone: '19001115',
-      available24h: true
+      available24h: true,
     },
     {
       name: 'SOS Quốc tế Việt Nam',
       phone: '024-3934-5000',
-      available24h: false
-    }
+      available24h: false,
+    },
   ],
-  
+
   autoDocumentation: true,
   consentRequired: false, // In crisis, consent can be waived
-  dataRetentionDays: 365 // 1 year for legal purposes
+  dataRetentionDays: 365, // 1 year for legal purposes
 };
 
 // =============================================================================
@@ -155,7 +155,7 @@ export class CriticalInterventionService {
       userId,
       sessionId,
       ...riskData,
-      status: 'pending'
+      status: 'pending',
     };
 
     this.activeAlerts.set(alert.id, alert);
@@ -163,7 +163,7 @@ export class CriticalInterventionService {
     logger.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`, {
       userId,
       riskType: alert.riskType,
-      keywords: alert.detectedKeywords
+      keywords: alert.detectedKeywords,
     });
 
     // STEP 2: Immediate documentation
@@ -189,7 +189,7 @@ export class CriticalInterventionService {
     try {
       // TODO: Integrate with MongoDB to store alert
       logger.info(`📝 Alert documented: ${alert.id}`);
-      
+
       // Create audit log
       const auditLog = {
         alertId: alert.id,
@@ -198,8 +198,8 @@ export class CriticalInterventionService {
         details: {
           riskLevel: alert.riskLevel,
           riskType: alert.riskType,
-          keywords: alert.detectedKeywords
-        }
+          keywords: alert.detectedKeywords,
+        },
       };
 
       // TODO: Save to database
@@ -244,16 +244,20 @@ export class CriticalInterventionService {
     const timer = setTimeout(async () => {
       // Kiểm tra xem alert đã được xử lý chưa
       const currentAlert = this.activeAlerts.get(alert.id);
-      
+
       if (currentAlert && currentAlert.status === 'pending') {
-        logger.error(`⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`);
+        logger.error(
+          `⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`
+        );
         await this.escalateToEmergencyServices(alert);
       }
     }, delayMs);
 
     this.escalationTimers.set(alert.id, timer);
 
-    logger.info(`⏱️ Escalation timer started: ${this.config.escalationDelayMinutes} minutes for alert ${alert.id}`);
+    logger.info(
+      `⏱️ Escalation timer started: ${this.config.escalationDelayMinutes} minutes for alert ${alert.id}`
+    );
   }
 
   /**
@@ -305,12 +309,12 @@ export class CriticalInterventionService {
         Please acknowledge this alert within 5 minutes.
         
         Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
-      `
+      `,
     };
 
     logger.info(`📧 Email alert sent to clinical team for ${alert.id}`);
     console.log('Email Alert:', emailContent);
-    
+
     // TODO: Actual email sending
     // await emailService.send(emailContent);
   }
@@ -322,12 +326,12 @@ export class CriticalInterventionService {
     // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
     const smsContent = {
       to: this.config.clinicalTeam.map(member => member.phone),
-      message: `🚨 CRITICAL: ${alert.riskType} detected. User: ${alert.userId}. Respond immediately. Alert: ${alert.id}`
+      message: `🚨 CRITICAL: ${alert.riskType} detected. User: ${alert.userId}. Respond immediately. Alert: ${alert.id}`,
     };
 
     logger.info(`📱 SMS alert sent to clinical team for ${alert.id}`);
     console.log('SMS Alert:', smsContent);
-    
+
     // TODO: Actual SMS sending
     // await smsService.send(smsContent);
   }
@@ -339,7 +343,7 @@ export class CriticalInterventionService {
     // TODO: Integrate with Slack API
     const slackMessage = {
       channel: '#crisis-alerts',
-      text: `🚨 *CRITICAL INTERVENTION REQUIRED*`,
+      text: '🚨 *CRITICAL INTERVENTION REQUIRED*',
       attachments: [
         {
           color: 'danger',
@@ -349,27 +353,27 @@ export class CriticalInterventionService {
             { title: 'User ID', value: alert.userId, short: true },
             { title: 'Timestamp', value: alert.timestamp.toISOString(), short: true },
             { title: 'Keywords', value: alert.detectedKeywords.join(', '), short: false },
-            { title: 'Message', value: alert.userMessage, short: false }
+            { title: 'Message', value: alert.userMessage, short: false },
           ],
           actions: [
             {
               type: 'button',
               text: 'Acknowledge Alert',
-              url: `https://soulfriend-admin.vercel.app/alerts/${alert.id}/acknowledge`
+              url: `https://soulfriend-admin.vercel.app/alerts/${alert.id}/acknowledge`,
             },
             {
               type: 'button',
               text: 'View Details',
-              url: `https://soulfriend-admin.vercel.app/alerts/${alert.id}`
-            }
-          ]
-        }
-      ]
+              url: `https://soulfriend-admin.vercel.app/alerts/${alert.id}`,
+            },
+          ],
+        },
+      ],
     };
 
     logger.info(`💬 Slack alert sent for ${alert.id}`);
     console.log('Slack Alert:', slackMessage);
-    
+
     // TODO: Actual Slack posting
     // await slackClient.postMessage(slackMessage);
   }
@@ -379,9 +383,12 @@ export class CriticalInterventionService {
    */
   private async notifyEmergencyHotline(alert: CriticalAlert): Promise<void> {
     const hotlines = this.config.hotlines.filter(h => h.available24h);
-    
-    logger.error(`☎️ Emergency hotlines notified for ${alert.id}:`, hotlines.map(h => h.name));
-    
+
+    logger.error(
+      `☎️ Emergency hotlines notified for ${alert.id}:`,
+      hotlines.map(h => h.name)
+    );
+
     // TODO: Integrate with automated phone system to notify hotlines
     // This could involve:
     // 1. Automated phone call to hotline with alert details
@@ -408,7 +415,7 @@ export class CriticalInterventionService {
         User ID: ${alert.userId}
         
         This case requires IMMEDIATE attention.
-      `
+      `,
     };
 
     logger.error(`🚨 Urgent notifications sent for escalated alert ${alert.id}`);
@@ -424,25 +431,21 @@ export class CriticalInterventionService {
       timestamp: new Date(),
       action: 'ESCALATED_TO_EMERGENCY',
       reason: 'No clinical team response within 5 minutes',
-      notifiedHotlines: this.config.hotlines.filter(h => h.available24h).map(h => h.name)
+      notifiedHotlines: this.config.hotlines.filter(h => h.available24h).map(h => h.name),
     };
 
     logger.info(`📝 Escalation documented for ${alert.id}`);
     console.log('Escalation Log:', escalationLog);
-    
+
     // TODO: Save to database for legal compliance
   }
 
   /**
    * STEP 6: Clinical team acknowledges alert (stops escalation)
    */
-  async acknowledgeAlert(
-    alertId: string,
-    clinicalMemberId: string,
-    notes?: string
-  ): Promise<void> {
+  async acknowledgeAlert(alertId: string, clinicalMemberId: string, notes?: string): Promise<void> {
     const alert = this.activeAlerts.get(alertId);
-    
+
     if (!alert) {
       throw new Error(`Alert ${alertId} not found`);
     }
@@ -480,7 +483,7 @@ export class CriticalInterventionService {
       timestamp: alert.acknowledgedAt,
       action: 'ACKNOWLEDGED',
       acknowledgedBy: alert.acknowledgedBy,
-      notes: alert.interventionNotes
+      notes: alert.interventionNotes,
     };
 
     logger.info(`📝 Acknowledgment documented for ${alert.id}`);
@@ -501,7 +504,7 @@ export class CriticalInterventionService {
    */
   async resolveAlert(alertId: string, resolution: string): Promise<void> {
     const alert = this.activeAlerts.get(alertId);
-    
+
     if (!alert) {
       throw new Error(`Alert ${alertId} not found`);
     }
@@ -522,4 +525,3 @@ export class CriticalInterventionService {
 
 // Export singleton instance
 export const criticalInterventionService = new CriticalInterventionService();
-

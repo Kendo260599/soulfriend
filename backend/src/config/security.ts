@@ -12,8 +12,8 @@ dotenv.config();
 export class SecurityConfig {
   // Encryption settings
   private static readonly ALGORITHM = 'aes-256-cbc';
-  private static readonly ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 
-    crypto.randomBytes(32).toString('hex');
+  private static readonly ENCRYPTION_KEY =
+    process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
   private static readonly IV_LENGTH = 16;
 
   // Hashing settings
@@ -27,10 +27,10 @@ export class SecurityConfig {
       const iv = crypto.randomBytes(this.IV_LENGTH);
       const key = Buffer.from(this.ENCRYPTION_KEY, 'hex').slice(0, 32);
       const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
-      
+
       let encrypted = cipher.update(text, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      
+
       // Return IV + encrypted data
       return iv.toString('hex') + ':' + encrypted;
     } catch (error) {
@@ -52,12 +52,12 @@ export class SecurityConfig {
       const iv = Buffer.from(parts[0], 'hex');
       const encryptedText = parts[1];
       const key = Buffer.from(this.ENCRYPTION_KEY, 'hex').slice(0, 32);
-      
+
       const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
-      
+
       let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
-      
+
       return decrypted;
     } catch (error) {
       console.error('Decryption error:', error);
@@ -104,11 +104,11 @@ export class SecurityConfig {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     const randomBytes = crypto.randomBytes(length);
-    
+
     for (let i = 0; i < length; i++) {
       result += chars[randomBytes[i] % chars.length];
     }
-    
+
     return result;
   }
 
@@ -131,10 +131,7 @@ export class SecurityConfig {
    */
   static verifyHMAC(data: string, signature: string, secret: string): boolean {
     const expectedSignature = this.createHMAC(data, secret);
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
   }
 
   /**
@@ -174,4 +171,3 @@ export class SecurityConfig {
 }
 
 export default SecurityConfig;
-

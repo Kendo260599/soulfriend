@@ -16,7 +16,7 @@ const SENSITIVE_FIELDS = [
   'phone',
   'address',
   'medicalHistory',
-  'notes'
+  'notes',
 ];
 
 /**
@@ -40,20 +40,20 @@ export const encryptRequestData = (req: Request, res: Response, next: NextFuncti
  */
 export const decryptResponseData = (req: Request, res: Response, next: NextFunction) => {
   const originalSend = res.send;
-  
-  res.send = function(data: any) {
+
+  res.send = function (data: any) {
     try {
       if (data && typeof data === 'object') {
         // Parse JSON if it's a string
         let parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-        
+
         // Decrypt sensitive fields
         if (parsedData.data) {
           parsedData.data = decryptSensitiveFields(parsedData.data);
         } else {
           parsedData = decryptSensitiveFields(parsedData);
         }
-        
+
         // Send the decrypted data
         return originalSend.call(this, JSON.stringify(parsedData));
       }
@@ -61,10 +61,10 @@ export const decryptResponseData = (req: Request, res: Response, next: NextFunct
       console.error('Decryption middleware error:', error);
       // If decryption fails, send original data
     }
-    
+
     return originalSend.call(this, data);
   };
-  
+
   next();
 };
 
@@ -124,7 +124,7 @@ function decryptSensitiveFields(obj: any): any {
         // Only decrypt if it looks encrypted
         if (typeof decrypted[key] === 'string' && isEncrypted(decrypted[key])) {
           const decryptedValue = encryptionService.decrypt(decrypted[key]);
-          
+
           // Try to parse as JSON, fallback to string
           try {
             decrypted[key] = JSON.parse(decryptedValue);
@@ -165,7 +165,7 @@ export const encryptTestResult = (req: Request, res: Response, next: NextFunctio
     if (req.body && req.body.answers) {
       // Encrypt test answers
       req.body.encryptedAnswers = encryptionService.encrypt(JSON.stringify(req.body.answers));
-      
+
       // Keep original answers for processing, remove before saving
       req.body._originalAnswers = req.body.answers;
     }
@@ -196,13 +196,13 @@ export const encryptPersonalInfo = (req: Request, res: Response, next: NextFunct
  */
 export const decryptPersonalInfo = (req: Request, res: Response, next: NextFunction) => {
   const originalJson = res.json;
-  
-  res.json = function(data: any) {
+
+  res.json = function (data: any) {
     try {
       if (data && data.personalInfo) {
         data.personalInfo = encryptionService.decryptPersonalInfo(data.personalInfo);
       }
-      
+
       if (data && data.data && Array.isArray(data.data)) {
         data.data = data.data.map((item: any) => {
           if (item.personalInfo) {
@@ -214,9 +214,9 @@ export const decryptPersonalInfo = (req: Request, res: Response, next: NextFunct
     } catch (error) {
       console.error('Personal info decryption error:', error);
     }
-    
+
     return originalJson.call(this, data);
   };
-  
+
   next();
 };

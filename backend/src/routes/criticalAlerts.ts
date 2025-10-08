@@ -1,7 +1,7 @@
 /**
  * CRITICAL ALERTS API ROUTES
  * Admin Dashboard cho Clinical Team
- * 
+ *
  * Endpoints:
  * - GET /api/alerts/active - Lấy danh sách alerts đang active
  * - POST /api/alerts/:id/acknowledge - Acknowledge một alert
@@ -23,18 +23,18 @@ const router = express.Router();
 router.get('/active', async (req: Request, res: Response) => {
   try {
     const activeAlerts = criticalInterventionService.getActiveAlerts();
-    
+
     res.json({
       success: true,
       count: activeAlerts.length,
-      alerts: activeAlerts
+      alerts: activeAlerts,
     });
   } catch (error) {
     logger.error('Error fetching active alerts:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching active alerts',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -51,7 +51,7 @@ router.post('/:id/acknowledge', async (req: Request, res: Response) => {
     if (!clinicalMemberId) {
       return res.status(400).json({
         success: false,
-        message: 'clinicalMemberId is required'
+        message: 'clinicalMemberId is required',
       });
     }
 
@@ -62,13 +62,13 @@ router.post('/:id/acknowledge', async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Alert acknowledged successfully',
-      alertId: id
+      alertId: id,
     });
   } catch (error) {
     logger.error('Error acknowledging alert:', error);
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Error acknowledging alert'
+      message: error instanceof Error ? error.message : 'Error acknowledging alert',
     });
   }
 });
@@ -85,7 +85,7 @@ router.post('/:id/resolve', async (req: Request, res: Response) => {
     if (!resolution) {
       return res.status(400).json({
         success: false,
-        message: 'resolution is required'
+        message: 'resolution is required',
       });
     }
 
@@ -97,13 +97,13 @@ router.post('/:id/resolve', async (req: Request, res: Response) => {
       success: true,
       message: 'Alert resolved successfully',
       alertId: id,
-      resolution
+      resolution,
     });
   } catch (error) {
     logger.error('Error resolving alert:', error);
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Error resolving alert'
+      message: error instanceof Error ? error.message : 'Error resolving alert',
     });
   }
 });
@@ -121,20 +121,20 @@ router.get('/:id', async (req: Request, res: Response) => {
     if (!alert) {
       return res.status(404).json({
         success: false,
-        message: 'Alert not found'
+        message: 'Alert not found',
       });
     }
 
     res.json({
       success: true,
-      alert
+      alert,
     });
   } catch (error) {
     logger.error('Error fetching alert details:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching alert details',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -146,35 +146,34 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     const activeAlerts = criticalInterventionService.getActiveAlerts();
-    
+
     const stats = {
       total: activeAlerts.length,
       byStatus: {
         pending: activeAlerts.filter(a => a.status === 'pending').length,
         acknowledged: activeAlerts.filter(a => a.status === 'acknowledged').length,
-        intervened: activeAlerts.filter(a => a.status === 'intervened').length
+        intervened: activeAlerts.filter(a => a.status === 'intervened').length,
       },
       byRiskType: {
         suicidal: activeAlerts.filter(a => a.riskType === 'suicidal').length,
         psychosis: activeAlerts.filter(a => a.riskType === 'psychosis').length,
         self_harm: activeAlerts.filter(a => a.riskType === 'self_harm').length,
-        violence: activeAlerts.filter(a => a.riskType === 'violence').length
-      }
+        violence: activeAlerts.filter(a => a.riskType === 'violence').length,
+      },
     };
 
     res.json({
       success: true,
-      stats
+      stats,
     });
   } catch (error) {
     logger.error('Error fetching alert stats:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching alert stats',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
 
 export default router;
-

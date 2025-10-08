@@ -20,7 +20,7 @@ export class RateLimiter {
   constructor(windowMs: number = 15 * 60 * 1000, maxRequests: number = 100) {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
-    
+
     // Clean up old entries every minute
     setInterval(() => this.cleanup(), 60 * 1000);
   }
@@ -32,7 +32,7 @@ export class RateLimiter {
     if (!this.store[key] || now > this.store[key].resetTime) {
       this.store[key] = {
         count: 1,
-        resetTime: now + this.windowMs
+        resetTime: now + this.windowMs,
       };
       return next();
     }
@@ -48,7 +48,7 @@ export class RateLimiter {
       res.status(429).json({
         error: 'Too many requests',
         message: 'Bạn đã vượt quá giới hạn yêu cầu. Vui lòng thử lại sau.',
-        retryAfter: Math.ceil((this.store[key].resetTime - now) / 1000)
+        retryAfter: Math.ceil((this.store[key].resetTime - now) / 1000),
       });
       return;
     }
@@ -90,4 +90,3 @@ export const rateLimiter = new RateLimiter(
 export const authRateLimiter = new AuthRateLimiter();
 
 export default rateLimiter;
-

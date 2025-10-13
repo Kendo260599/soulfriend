@@ -80,131 +80,143 @@ router.post(
  * GET /api/admin/dashboard
  * Lấy thống kê tổng quan cho dashboard admin
  */
-router.get('/dashboard', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
-  // Thống kê tổng quan
-  const totalConsents = await Consent.countDocuments({ agreed: true });
-  const totalTests = await TestResult.countDocuments({});
+router.get(
+  '/dashboard',
+  authenticateAdmin,
+  asyncHandler(async (req: Request, res: Response) => {
+    // Thống kê tổng quan
+    const totalConsents = await Consent.countDocuments({ agreed: true });
+    const totalTests = await TestResult.countDocuments({});
 
-  // Thống kê theo ngày
-  const today = new Date();
-  const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-  const todayConsents = await Consent.countDocuments({
-    agreed: true,
-    timestamp: { $gte: startOfDay },
-  });
-  const todayTests = await TestResult.countDocuments({
-    completedAt: { $gte: startOfDay },
-  });
+    // Thống kê theo ngày
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const todayConsents = await Consent.countDocuments({
+      agreed: true,
+      timestamp: { $gte: startOfDay },
+    });
+    const todayTests = await TestResult.countDocuments({
+      completedAt: { $gte: startOfDay },
+    });
 
-  // Thống kê theo loại test
-  const testStats = await TestResult.aggregate([
-    {
-      $group: {
-        _id: '$testType',
-        count: { $sum: 1 },
+    // Thống kê theo loại test
+    const testStats = await TestResult.aggregate([
+      {
+        $group: {
+          _id: '$testType',
+          count: { $sum: 1 },
+        },
       },
-    },
-  ]);
+    ]);
 
-  res.json({
-    success: true,
-    data: {
-      overview: {
-        totalConsents,
-        totalTests,
-        todayConsents,
-        todayTests,
+    res.json({
+      success: true,
+      data: {
+        overview: {
+          totalConsents,
+          totalTests,
+          todayConsents,
+          todayTests,
+        },
+        testStats,
       },
-      testStats,
-    },
-  });
-}));
+    });
+  })
+);
 
 /**
  * GET /api/admin/test-results
  * Lấy danh sách kết quả test với phân trang và lọc
  */
-router.get('/test-results', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const testType = req.query.testType as string;
-  const skip = (page - 1) * limit;
+router.get(
+  '/test-results',
+  authenticateAdmin,
+  asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const testType = req.query.testType as string;
+    const skip = (page - 1) * limit;
 
-  // Tạo filter query
-  const filter: any = {};
-  if (testType && testType !== 'all') {
-    filter.testType = testType;
-  }
+    // Tạo filter query
+    const filter: any = {};
+    if (testType && testType !== 'all') {
+      filter.testType = testType;
+    }
 
-  // Lấy dữ liệu với phân trang
-  const testResults = await TestResult.find(filter)
-    .populate('consentId', 'timestamp ipAddress')
-    .sort({ completedAt: -1 })
-    .skip(skip)
-    .limit(limit);
+    // Lấy dữ liệu với phân trang
+    const testResults = await TestResult.find(filter)
+      .populate('consentId', 'timestamp ipAddress')
+      .sort({ completedAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-  const total = await TestResult.countDocuments(filter);
+    const total = await TestResult.countDocuments(filter);
 
-  res.json({
-    success: true,
-    data: {
-      testResults,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
+    res.json({
+      success: true,
+      data: {
+        testResults,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
       },
-    },
-  });
-}));
+    });
+  })
+);
 
 /**
  * GET /api/admin/export
  * Xuất dữ liệu ra file CSV
  */
-router.get('/export', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
-  const testType = req.query.testType as string;
-  const startDate = req.query.startDate as string;
-  const endDate = req.query.endDate as string;
+router.get(
+  '/export',
+  authenticateAdmin,
+  asyncHandler(async (req: Request, res: Response) => {
+    const testType = req.query.testType as string;
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
 
-  // Tạo filter query
-  const filter: any = {};
-  if (testType && testType !== 'all') {
-    filter.testType = testType;
-  }
-  if (startDate && endDate) {
-    filter.completedAt = {
-      $gte: new Date(startDate),
-      $lte: new Date(endDate),
-    };
-  }
+    // Tạo filter query
+    const filter: any = {};
+    if (testType && testType !== 'all') {
+      filter.testType = testType;
+    }
+    if (startDate && endDate) {
+      filter.completedAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
 
-  const testResults = await TestResult.find(filter)
-    .populate('consentId', 'timestamp ipAddress')
-    .sort({ completedAt: -1 });
+    const testResults = await TestResult.find(filter)
+      .populate('consentId', 'timestamp ipAddress')
+      .sort({ completedAt: -1 });
 
-  // Tạo CSV content
-  const csvHeaders = 'ID,Loại Test,Tổng Điểm,Đánh Giá,Ngày Hoàn Thành,IP Address\n';
-  const csvRows = testResults
-    .map(result => {
-      const consent = result.consentId as any;
-      return [
-        result._id,
-        result.testType,
-        result.totalScore,
-        result.evaluation?.severity || '',
-        result.completedAt.toISOString(),
-        consent?.ipAddress || '',
-      ].join(',');
-    })
-    .join('\n');
+    // Tạo CSV content
+    const csvHeaders = 'ID,Loại Test,Tổng Điểm,Đánh Giá,Ngày Hoàn Thành,IP Address\n';
+    const csvRows = testResults
+      .map(result => {
+        const consent = result.consentId as any;
+        return [
+          result._id,
+          result.testType,
+          result.totalScore,
+          result.evaluation?.severity || '',
+          result.completedAt.toISOString(),
+          consent?.ipAddress || '',
+        ].join(',');
+      })
+      .join('\n');
 
-  const csvContent = csvHeaders + csvRows;
+    const csvContent = csvHeaders + csvRows;
 
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename=soulfriend_data.csv');
-  res.send(csvContent);
-}));
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=soulfriend_data.csv');
+    res.send(csvContent);
+  })
+);
 
 export default router;

@@ -112,29 +112,32 @@ router.post(
  * GET /api/tests/results
  * Lấy tất cả kết quả test đã lưu (cho dev/debug)
  */
-router.get('/results', asyncHandler(async (req: Request, res: Response) => {
-  // Kiểm tra kết nối MongoDB
-  if (mongoose.connection.readyState !== 1) {
-    // Sử dụng mock data store
-    const results = MockDataStore.getTestResults();
+router.get(
+  '/results',
+  asyncHandler(async (req: Request, res: Response) => {
+    // Kiểm tra kết nối MongoDB
+    if (mongoose.connection.readyState !== 1) {
+      // Sử dụng mock data store
+      const results = MockDataStore.getTestResults();
 
-    return res.json({
+      return res.json({
+        success: true,
+        message: 'Dữ liệu từ Mock Data Store',
+        count: results.length,
+        data: results,
+      });
+    }
+
+    // Lấy từ MongoDB
+    const results = await TestResult.find().sort({ completedAt: -1 });
+
+    res.json({
       success: true,
-      message: 'Dữ liệu từ Mock Data Store',
       count: results.length,
       data: results,
     });
-  }
-
-  // Lấy từ MongoDB
-  const results = await TestResult.find().sort({ completedAt: -1 });
-
-  res.json({
-    success: true,
-    count: results.length,
-    data: results,
-  });
-}));
+  })
+);
 
 /**
  * GET /api/tests/questions/:testType
@@ -472,65 +475,71 @@ function calculateMenopauseEvaluation(answers: number[]) {
  * GET /api/tests/validate
  * Chạy validation toàn diện cho hệ thống đánh giá tâm lý
  */
-router.get('/validate', asyncHandler(async (req: Request, res: Response) => {
-  console.log('🔬 Starting Clinical Validation...');
+router.get(
+  '/validate',
+  asyncHandler(async (req: Request, res: Response) => {
+    console.log('🔬 Starting Clinical Validation...');
 
-  // Tạo validator trước để check
-  const validator = createClinicalValidator();
-  const validationReport = validator.generateValidationReport();
-  const crossValidation = validator.crossValidateWithInternationalStandards();
+    // Tạo validator trước để check
+    const validator = createClinicalValidator();
+    const validationReport = validator.generateValidationReport();
+    const crossValidation = validator.crossValidateWithInternationalStandards();
 
-  // Chạy validation tests (có thể gây lỗi, nên tách riêng)
-  let testResults = null;
-  try {
-    await runClinicalValidation();
-    testResults = 'Validation tests completed successfully';
-  } catch (validationError) {
-    console.warn('⚠️ Validation tests had issues:', validationError);
-    testResults = 'Validation tests encountered issues but system is functional';
-  }
+    // Chạy validation tests (có thể gây lỗi, nên tách riêng)
+    let testResults = null;
+    try {
+      await runClinicalValidation();
+      testResults = 'Validation tests completed successfully';
+    } catch (validationError) {
+      console.warn('⚠️ Validation tests had issues:', validationError);
+      testResults = 'Validation tests encountered issues but system is functional';
+    }
 
-  res.json({
-    success: true,
-    message: 'Clinical validation completed',
-    data: {
-      validationReport,
-      crossValidation,
-      testResults,
-      timestamp: new Date().toISOString(),
-    },
-  });
-}));
+    res.json({
+      success: true,
+      message: 'Clinical validation completed',
+      data: {
+        validationReport,
+        crossValidation,
+        testResults,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  })
+);
 
 /**
  * GET /api/tests/health-check
  * Kiểm tra sức khỏe của hệ thống đánh giá
  */
-router.get('/health-check', asyncHandler(async (req: Request, res: Response) => {
-  const healthStatus = {
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    scoring: 'operational',
-    validation: 'ready',
-    enhancedAnalysis: 'active',
-    aiIntegration: 'available',
-    timestamp: new Date().toISOString(),
-  };
+router.get(
+  '/health-check',
+  asyncHandler(async (req: Request, res: Response) => {
+    const healthStatus = {
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      scoring: 'operational',
+      validation: 'ready',
+      enhancedAnalysis: 'active',
+      aiIntegration: 'available',
+      timestamp: new Date().toISOString(),
+    };
 
-  const overallHealth = Object.values(healthStatus).every(
-    status =>
-      status === 'connected' ||
-      status === 'operational' ||
-      status === 'ready' ||
-      status === 'active' ||
-      status === 'available' ||
-      typeof status === 'string'
-  );
+    const overallHealth = Object.values(healthStatus).every(
+      status =>
+        status === 'connected' ||
+        status === 'operational' ||
+        status === 'ready' ||
+        status === 'active' ||
+        status === 'available' ||
+        typeof status === 'string'
+    );
 
-  res.json({
-    success: true,
-    healthy: overallHealth,
-    components: healthStatus,
-  });
-}));
+    res.json({
+      success: true,
+      healthy: overallHealth,
+      components: healthStatus,
+    });
+  })
+);
 
 export default router;

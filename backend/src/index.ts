@@ -79,9 +79,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Sanitize user input against NoSQL injection
-app.use(mongoSanitize({
-  replaceWith: '_', // Replace dangerous chars instead of removing entire object
-}));
+app.use(
+  mongoSanitize({
+    replaceWith: '_', // Replace dangerous chars instead of removing entire object
+  })
+);
 
 // ====================
 // LOGGING & MONITORING

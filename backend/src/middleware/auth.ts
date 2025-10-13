@@ -23,84 +23,86 @@ declare global {
 /**
  * Middleware xác thực admin bằng JWT token
  */
-export const authenticateAdmin = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  // Lấy token từ header Authorization
-  const authHeader = req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.',
-    });
+export const authenticateAdmin = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Lấy token từ header Authorization
+    const authHeader = req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.',
+      });
+    }
+
+    const token = authHeader.substring(7); // Bỏ "Bearer " prefix
+
+    // Verify JWT token
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'soulfriend_secret_key') as any;
+
+      if (!decoded.adminId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token không hợp lệ',
+        });
+      }
+
+      // Tìm admin trong database và kiểm tra trạng thái
+      const admin = await Admin.findById(decoded.adminId).select('-password');
+      if (!admin) {
+        return res.status(401).json({
+          success: false,
+          message: 'Admin không tồn tại',
+        });
+      }
+
+      if (!admin.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Tài khoản admin đã bị vô hiệu hóa',
+        });
+      }
+
+      // Kiểm tra tài khoản có bị khóa không
+      if ((admin as any).isLocked) {
+        return res.status(401).json({
+          success: false,
+          message: 'Tài khoản tạm thời bị khóa do đăng nhập sai nhiều lần',
+        });
+      }
+
+      // Thêm thông tin admin vào request object
+      req.admin = {
+        adminId: (admin._id as any).toString(),
+        username: admin.username,
+        role: admin.role,
+      };
+
+      next();
+    } catch (error) {
+      console.error('Auth middleware error:', error);
+
+      if (error instanceof jwt.TokenExpiredError) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token đã hết hạn. Vui lòng đăng nhập lại.',
+        });
+      }
+
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token không hợp lệ',
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi server khi xác thực',
+      });
+    }
   }
-
-  const token = authHeader.substring(7); // Bỏ "Bearer " prefix
-
-  // Verify JWT token
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'soulfriend_secret_key') as any;
-
-    if (!decoded.adminId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token không hợp lệ',
-      });
-    }
-
-    // Tìm admin trong database và kiểm tra trạng thái
-    const admin = await Admin.findById(decoded.adminId).select('-password');
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Admin không tồn tại',
-      });
-    }
-
-    if (!admin.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Tài khoản admin đã bị vô hiệu hóa',
-      });
-    }
-
-    // Kiểm tra tài khoản có bị khóa không
-    if ((admin as any).isLocked) {
-      return res.status(401).json({
-        success: false,
-        message: 'Tài khoản tạm thời bị khóa do đăng nhập sai nhiều lần',
-      });
-    }
-
-    // Thêm thông tin admin vào request object
-    req.admin = {
-      adminId: (admin._id as any).toString(),
-      username: admin.username,
-      role: admin.role,
-    };
-
-    next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token đã hết hạn. Vui lòng đăng nhập lại.',
-      });
-    }
-
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token không hợp lệ',
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi xác thực',
-    });
-  }
-});
+);
 
 /**
  * Middleware kiểm tra quyền super admin

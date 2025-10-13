@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
 buildCommand = "npm run build"
-nixpacksConfig = { providers = ["nodejs"] }
+nixpacksConfig = { providers = ["nodejs"], variables = { NODE_VERSION = "20" } }
 
 [deploy]
 startCommand = "npx serve -s build -l 3000"

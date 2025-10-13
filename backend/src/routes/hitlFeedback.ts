@@ -48,13 +48,13 @@ router.post('/:alertId', asyncHandler(async (req, res) => {
       message: 'Feedback collected successfully',
       feedback,
       trainingDataCreated: true,
-    }));
+    });
   } catch (error: any) {
     logger.error('Error collecting HITL feedback:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -75,13 +75,13 @@ router.get('/metrics', asyncHandler(async (req, res) => {
         summary: generateMetricsSummary(metrics),
         recommendations: generateRecommendations(metrics),
       },
-    }));
+    });
   } catch (error: any) {
     logger.error('Error calculating metrics:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -101,13 +101,13 @@ router.get('/improvements', asyncHandler(async (req, res) => {
         description: 'Expected improvements based on HITL feedback analysis',
         ...suggestions.expectedImprovements,
       },
-    }));
+    });
   } catch (error: any) {
     logger.error('Error generating improvements:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -128,13 +128,13 @@ router.get('/keywords', asyncHandler(async (req, res) => {
         needsAdjustment: keywordStats.filter(k => k.recommendation === 'adjust_weight').length,
         shouldRemove: keywordStats.filter(k => k.recommendation === 'remove').length,
       },
-    }));
+    });
   } catch (error: any) {
     logger.error('Error getting keyword statistics:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -172,7 +172,7 @@ router.get('/training-data', asyncHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -188,13 +188,13 @@ router.get('/all', asyncHandler(async (req, res) => {
       success: true,
       count: allFeedback.length,
       feedback: allFeedback,
-    }));
+    });
   } catch (error: any) {
     logger.error('Error getting all feedback:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 

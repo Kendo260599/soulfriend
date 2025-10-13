@@ -1,0 +1,17 @@
+{
+    "scripts": {
+        "fix:all": "npm run fix:lint && npm run fix:types && npm run fix:deps && npm run fix:format",
+        "fix:lint": "eslint src/**/*.{ts,tsx} --fix",
+        "fix:types": "tsc --noEmit --skipLibCheck",
+        "fix:deps": "npm audit fix --force",
+        "fix:format": "prettier --write src/**/*.{ts,tsx,js,jsx,json,css,md}",
+        "fix:unused": "npx unimported",
+        "fix:security": "npm audit --audit-level moderate",
+        "fix:build": "npm run clean && npm run build",
+        "clean": "rimraf build dist node_modules/.cache",
+        "dev:debug": "react-scripts start --inspect",
+        "test:debug": "react-scripts test --inspect",
+        "analyze": "npm run build && npx bundle-analyzer build/static/js/*.js",
+        "check:all": "npm run fix:types && npm run fix:lint && npm run fix:security && npm run test"
+    }
+}

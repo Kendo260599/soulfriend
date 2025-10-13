@@ -311,7 +311,7 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
 
   useEffect(() => {
     loadCompanionData();
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]); // eslint-disable-line
 
   const loadCompanionData = async () => {
     try {

@@ -1,0 +1,52 @@
+{
+    "mcpServers": {
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-filesystem",
+                "/path/to/your/project"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            }
+        },
+        "git": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-git",
+                "--repository",
+                "."
+            ],
+            "env": {
+                "GIT_AUTHOR_NAME": "SoulFriend Developer",
+                "GIT_AUTHOR_EMAIL": "dev@soulfriend.vn"
+            }
+        },
+        "sqlite": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-sqlite",
+                "--db-path",
+                "./database/soulfriend.db"
+            ]
+        },
+        "brave-search": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-brave-search"
+            ],
+            "env": {
+                "BRAVE_API_KEY": "your-brave-api-key"
+            }
+        },
+        "postgres": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-postgres"
+            ],
+            "env": {
+                "POSTGRES_CONNECTION_STRING": "postgresql://username:password@localhost:5432/soulfriend"
+            }
+        }
+    }
+}

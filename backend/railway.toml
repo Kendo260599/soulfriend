@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build"
+buildCommand = "npm ci && npm run build"
 nixpacksConfig = { providers = ["nodejs"], variables = { NODE_VERSION = "20" }, phases = { setup = "nix-env -iA nixpkgs.nodejs_20" } }
 
 [deploy]

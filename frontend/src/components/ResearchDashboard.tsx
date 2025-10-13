@@ -458,7 +458,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
         setCurrentUser(null);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -536,7 +536,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line
   }, []);
 
   const generateReport = async () => {

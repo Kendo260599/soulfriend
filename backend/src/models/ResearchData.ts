@@ -3,7 +3,7 @@
  * Privacy-first: Không lưu thông tin cá nhân
  */
 
-import { Schema, model, Document } from 'mongoose';
+import { Document, Schema, model } from 'mongoose';
 
 // Interface cho TestResult trong ResearchData
 interface ITestResult {
@@ -196,12 +196,12 @@ const ResearchDataSchema = new Schema(
 );
 
 // Indexes để tối ưu queries
-ResearchDataSchema.index({ timestamp: -1 }); // Newest first
-ResearchDataSchema.index({ participantId: 1 });
-ResearchDataSchema.index({ 'testResults.testType': 1 });
+// Note: participantId, timestamp, và testResults.testType đã có index trong schema field definition
+// Chỉ giữ lại compound index và index không có trong field definition
 ResearchDataSchema.index({ createdAt: -1 });
 
 // Compound index cho research queries phức tạp
+// Compound index khác với single-field index, không bị duplicate
 ResearchDataSchema.index({
   timestamp: -1,
   'testResults.testType': 1,

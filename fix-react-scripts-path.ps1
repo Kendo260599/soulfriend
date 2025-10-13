@@ -16,13 +16,15 @@ Write-Host ""
 Write-Host "📦 Step 2: Checking react-scripts installation..." -ForegroundColor Cyan
 if (Test-Path "node_modules\.bin\react-scripts.cmd") {
     Write-Host "✅ react-scripts.cmd found" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ react-scripts.cmd not found" -ForegroundColor Red
 }
 
 if (Test-Path "node_modules\.bin\react-scripts") {
     Write-Host "✅ react-scripts found" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ react-scripts not found" -ForegroundColor Red
 }
 Write-Host ""
@@ -96,7 +98,8 @@ Write-Host "Testing with npx..." -ForegroundColor White
 npx react-scripts build
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ npx react-scripts build works" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ npx react-scripts build failed" -ForegroundColor Red
 }
 
@@ -104,7 +107,8 @@ Write-Host "Testing with direct path..." -ForegroundColor White
 .\node_modules\.bin\react-scripts.cmd build
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Direct path works" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "❌ Direct path failed" -ForegroundColor Red
 }
 

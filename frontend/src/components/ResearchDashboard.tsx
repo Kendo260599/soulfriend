@@ -5,14 +5,14 @@
  * Chỉ dành cho admin với dữ liệu nghiên cứu đích thực
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import AnimatedCard from './AnimatedCard';
-import AnimatedButton from './AnimatedButton';
-import LoadingSpinner from './LoadingSpinner';
-import { realResearchService, RealResearchData, ResearchInsights, ResearchReport } from '../services/realResearchService';
 import { adminAuthService } from '../services/adminAuthService';
 import { realDataCollector } from '../services/realDataCollector';
+import { RealResearchData, realResearchService, ResearchInsights, ResearchReport } from '../services/realResearchService';
+import AnimatedButton from './AnimatedButton';
+import AnimatedCard from './AnimatedCard';
+import LoadingSpinner from './LoadingSpinner';
 
 // ============================
 // KEYFRAME ANIMATIONS
@@ -180,7 +180,7 @@ const StatsGrid = styled.div`
   margin-bottom: 3rem;
 `;
 
-const StatsCard = styled(AnimatedCard)<{ color?: string }>`
+const StatsCard = styled(AnimatedCard) <{ color?: string }>`
   background: white;
   padding: 1.5rem;
   text-align: center;
@@ -458,7 +458,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
         setCurrentUser(null);
       }
     }
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -503,11 +503,11 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
       if (!auth.valid || !auth.user) {
         throw new Error('Invalid token');
       }
-      
+
       // Ensure we're using the correct admin user ID
       const adminUserId = 'admin';
       console.log('Loading research data for admin:', adminUserId);
-      
+
       // Đợi service sẵn sàng
       let retries = 0;
       while (!realResearchService.isReady() && retries < 10) {
@@ -515,17 +515,17 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
         await new Promise(resolve => setTimeout(resolve, 500));
         retries++;
       }
-      
+
       if (!realResearchService.isReady()) {
         throw new Error('Service not ready after 5 seconds');
       }
-      
+
       const data = realResearchService.getResearchData(adminUserId, filters);
       const researchInsights = realResearchService.analyzeResearchData(adminUserId, filters);
       const stats = realResearchService.getOverviewStats(adminUserId);
-      
+
       console.log('Research data loaded:', { dataLength: data.length, stats });
-      
+
       setResearchData(data);
       setInsights(researchInsights);
       setOverviewStats(stats);
@@ -536,12 +536,12 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, []);
 
   const generateReport = async () => {
     if (!currentUser) return;
-    
+
     try {
       setIsLoading(true);
       const token = localStorage.getItem('adminToken');
@@ -569,7 +569,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
 
   const exportData = async (format: 'csv' | 'json' | 'excel') => {
     if (!currentUser) return;
-    
+
     try {
       const token = localStorage.getItem('adminToken');
       if (!token) return;
@@ -580,12 +580,12 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
       }
 
       const data = realResearchService.exportResearchData('admin', format, filters);
-      
+
       // Create download link
-      const blob = new Blob([data], { 
-        type: format === 'csv' ? 'text/csv' : 
-              format === 'json' ? 'application/json' : 
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      const blob = new Blob([data], {
+        type: format === 'csv' ? 'text/csv' :
+          format === 'json' ? 'application/json' :
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -613,24 +613,24 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
 
   const applyFilters = (): void => {
     const newFilters: Record<string, any> = {};
-    
+
     if (selectedPeriod !== 'all') {
       newFilters.dateRange = {
         start: new Date(Date.now() - getPeriodDays(selectedPeriod) * 24 * 60 * 60 * 1000),
         end: new Date()
       };
     }
-    
+
     if (selectedTest !== 'all') {
       newFilters.testType = selectedTest;
     }
-    
+
     if (selectedLocation !== 'all') {
       newFilters.demographics = { location: selectedLocation };
     }
-    
+
     setFilters(newFilters);
-    
+
     const token = localStorage.getItem('adminToken');
     if (token) {
       const auth = adminAuthService.authenticateToken(token);
@@ -675,8 +675,8 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
               />
             </InputGroup>
             {error && <ErrorMessage>{error}</ErrorMessage>}
-            <AnimatedButton 
-              type="submit" 
+            <AnimatedButton
+              type="submit"
               disabled={isLoading}
               animation="glow"
               aria-label={isLoading ? 'Logging in...' : 'Login'}
@@ -715,7 +715,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
 
       <UserInfo>
         <UserDetails>
-          Welcome, <strong>{currentUser.username}</strong> ({currentUser.role}) | 
+          Welcome, <strong>{currentUser.username}</strong> ({currentUser.role}) |
           Last login: {currentUser.lastLogin.toLocaleString()}
         </UserDetails>
         <LogoutButton onClick={handleLogout} animation="glow" aria-label="Logout">
@@ -772,19 +772,19 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
             </InsightText>
           </InsightCard>
         </DataInfoContainer>
-        
+
         {overviewStats.totalParticipants === 0 && (
           <NoDataNotice>
-            <strong>📝 No Research Data Yet</strong><br/>
-            This dashboard will show real data once users complete mental health assessments. 
+            <strong>📝 No Research Data Yet</strong><br />
+            This dashboard will show real data once users complete mental health assessments.
             All data comes from actual test results, not simulated data.
           </NoDataNotice>
         )}
-        
+
         {overviewStats.totalParticipants > 0 && (
           <PrivacyNotice>
-            <strong>ℹ️ Privacy-First Data Collection</strong><br/>
-            This research only collects test results and scores. No personal demographics 
+            <strong>ℹ️ Privacy-First Data Collection</strong><br />
+            This research only collects test results and scores. No personal demographics
             (age, gender, location) are collected to protect user privacy.
           </PrivacyNotice>
         )}
@@ -793,9 +793,9 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
       <FilterSection>
         <FilterGroup>
           <FilterLabel htmlFor="period-filter">Time Period</FilterLabel>
-          <FilterSelect 
+          <FilterSelect
             id="period-filter"
-            value={selectedPeriod} 
+            value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value as 'all' | '7d' | '30d' | '90d' | '1y')}
             aria-label="Select time period"
           >
@@ -808,9 +808,9 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
         </FilterGroup>
         <FilterGroup>
           <FilterLabel htmlFor="test-filter">Test Type</FilterLabel>
-          <FilterSelect 
+          <FilterSelect
             id="test-filter"
-            value={selectedTest} 
+            value={selectedTest}
             onChange={(e) => setSelectedTest(e.target.value as 'all' | 'DASS-21' | 'GAD-7' | 'PHQ-9' | 'EPDS' | 'Family-APGAR' | 'Family-Relationship' | 'Parental-Stress')}
             aria-label="Select test type"
           >
@@ -826,9 +826,9 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
         </FilterGroup>
         <FilterGroup>
           <FilterLabel htmlFor="location-filter">Location</FilterLabel>
-          <FilterSelect 
+          <FilterSelect
             id="location-filter"
-            value={selectedLocation} 
+            value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value as 'all' | 'Hanoi' | 'Ho Chi Minh City' | 'Da Nang' | 'Hai Phong' | 'Can Tho')}
             aria-label="Select location"
           >
@@ -860,9 +860,9 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
                 <InsightTitle>Age Distribution</InsightTitle>
                 <InsightText>
                   {insights.demographics && Object.keys(insights.demographics.ageDistribution).length > 0
-                    ? Object.entries(insights.demographics.ageDistribution).map(([age, count]) => 
-                        `${age}: ${count} participants`
-                      ).join(', ')
+                    ? Object.entries(insights.demographics.ageDistribution).map(([age, count]) =>
+                      `${age}: ${count} participants`
+                    ).join(', ')
                     : 'No age data available'
                   }
                 </InsightText>
@@ -871,9 +871,9 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
                 <InsightTitle>Gender Distribution</InsightTitle>
                 <InsightText>
                   {insights.demographics && Object.keys(insights.demographics.genderDistribution).length > 0
-                    ? Object.entries(insights.demographics.genderDistribution).map(([gender, count]) => 
-                        `${gender}: ${count}`
-                      ).join(', ')
+                    ? Object.entries(insights.demographics.genderDistribution).map(([gender, count]) =>
+                      `${gender}: ${count}`
+                    ).join(', ')
                     : 'No gender data available'
                   }
                 </InsightText>
@@ -882,23 +882,23 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
                 <InsightTitle>Education Distribution</InsightTitle>
                 <InsightText>
                   {insights.demographics && Object.keys(insights.demographics.educationDistribution).length > 0
-                    ? Object.entries(insights.demographics.educationDistribution).map(([edu, count]) => 
-                        `${edu}: ${count}`
-                      ).join(', ')
+                    ? Object.entries(insights.demographics.educationDistribution).map(([edu, count]) =>
+                      `${edu}: ${count}`
+                    ).join(', ')
                     : 'No education data available'
                   }
                 </InsightText>
               </InsightCard>
             </AnalysisContainer>
             <ButtonGroup>
-              <AnimatedButton 
+              <AnimatedButton
                 onClick={() => exportData('csv')}
                 animation="glow"
                 aria-label="Export demographics data"
               >
                 Export Demographics
               </AnimatedButton>
-              <AnimatedButton 
+              <AnimatedButton
                 onClick={generateReport}
                 animation="glow"
                 aria-label="Generate research report"
@@ -918,15 +918,15 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
                 <InsightCard key={testType}>
                   <InsightTitle>{testType}</InsightTitle>
                   <InsightText>
-                    Avg Score: {score.toFixed(1)}<br/>
-                    Completion: {(insights.testAnalysis.completionRates[testType] * 100).toFixed(1)}%<br/>
+                    Avg Score: {score.toFixed(1)}<br />
+                    Completion: {(insights.testAnalysis.completionRates[testType] * 100).toFixed(1)}%<br />
                     Avg Time: {Math.round(insights.testAnalysis.timeAnalysis[testType] / 1000)}s
                   </InsightText>
                 </InsightCard>
               ))}
             </AnalysisContainer>
             <ButtonGroup>
-              <AnimatedButton 
+              <AnimatedButton
                 onClick={() => exportData('excel')}
                 animation="glow"
                 aria-label="Export performance data"
@@ -942,7 +942,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
               <InsightCard>
                 <InsightTitle>High Risk Groups</InsightTitle>
                 <InsightText>
-                  {insights.patterns.highRiskGroups.length > 0 
+                  {insights.patterns.highRiskGroups.length > 0
                     ? insights.patterns.highRiskGroups.join(', ')
                     : 'No high risk groups identified'
                   }
@@ -982,7 +982,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
               </tr>
             </thead>
             <tbody>
-              {researchData.slice(0, 10).map((data, index) => 
+              {researchData.slice(0, 10).map((data, index) =>
                 (data.testResults || []).map((test, testIndex) => (
                   <tr key={`${data.id}-${testIndex}`}>
                     <TableCell>{data.participantId}</TableCell>
@@ -1000,21 +1000,21 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
           </Table>
         </DataTable>
         <ButtonGroup>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={() => exportData('csv')}
             animation="glow"
             aria-label="Export to CSV"
           >
             Export to CSV
           </AnimatedButton>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={() => exportData('excel')}
             animation="glow"
             aria-label="Export to Excel"
           >
             Export to Excel
           </AnimatedButton>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={() => exportData('json')}
             animation="glow"
             aria-label="Export to JSON"
@@ -1037,21 +1037,21 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
               <p><strong>Average Score:</strong> {report.summary.averageScore}</p>
               <p><strong>Completion Rate:</strong> {(report.summary.completionRate * 100).toFixed(1)}%</p>
               <p><strong>Data Quality:</strong> {(report.summary.dataQuality * 100).toFixed(1)}%</p>
-              
+
               <h4>Recommendations:</h4>
               <ul>
                 {report.recommendations.map((rec, index) => (
                   <li key={index}>{rec}</li>
                 ))}
               </ul>
-              
+
               <h4>Limitations:</h4>
               <ul>
                 {report.limitations.map((lim, index) => (
                   <li key={index}>{lim}</li>
                 ))}
               </ul>
-              
+
               <p><strong>Methodology:</strong> {report.methodology}</p>
               <p><strong>Ethical Approval:</strong> {report.ethicalApproval}</p>
             </ReportContent>
@@ -1062,21 +1062,21 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
       <Section animation="slideInUp">
         <SectionTitle>📤 Data Export</SectionTitle>
         <ExportSection>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={() => exportData('csv')}
             animation="glow"
             aria-label="Export CSV data"
           >
             Export CSV
           </AnimatedButton>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={() => exportData('json')}
             animation="glow"
             aria-label="Export JSON data"
           >
             Export JSON
           </AnimatedButton>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={() => exportData('excel')}
             animation="glow"
             aria-label="Export Excel data"
@@ -1089,7 +1089,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
       {/* Navigation */}
       {onBack && (
         <NavigationContainer>
-          <AnimatedButton 
+          <AnimatedButton
             onClick={onBack}
             animation="glow"
             aria-label="Return to main dashboard"

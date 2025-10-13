@@ -4,9 +4,8 @@ import App from './App';
 
 test('renders SoulFriend application', () => {
   render(<App />);
-  const titleElements = screen.getAllByText(/SoulFriend V3.0/i);
-  expect(titleElements.length).toBeGreaterThan(0);
-  expect(titleElements[0]).toBeInTheDocument();
+  const title = screen.getByText(/SoulFriend/i);
+  expect(title).toBeInTheDocument();
 });
 
 test('renders main navigation button', () => {

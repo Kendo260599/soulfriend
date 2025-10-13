@@ -9,6 +9,7 @@ import { MockDataStore } from '../utils/mockDataStore';
 import { scoreTest } from '../utils/scoring';
 import { runClinicalValidation } from '../utils/clinicalTestRunner';
 import { createClinicalValidator } from '../utils/clinicalValidation';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 import mongoose from 'mongoose';
 const router = express.Router();
@@ -38,54 +39,32 @@ router.post(
     body('answers.*').isInt({ min: 0, max: 10 }).withMessage('Điểm số phải từ 0-10'),
     body('consentId').isString().isLength({ min: 1 }).withMessage('Consent ID không hợp lệ'),
   ],
-  async (req: Request, res: Response) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Dữ liệu không hợp lệ',
-          errors: errors.array(),
-        });
-      }
-
-      const { testType, answers, consentId } = req.body;
-
-      // Chuyển đổi answers array thành object với key là questionId
-      const answersMap: { [key: number]: number } = {};
-      answers.forEach((score: number, index: number) => {
-        answersMap[index + 1] = score;
+  asyncHandler(async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dữ liệu không hợp lệ',
+        errors: errors.array(),
       });
+    }
 
-      // Tính toán điểm số và đánh giá sử dụng thuật toán mới
-      const evaluation = scoreTest(testType, answersMap);
-      const totalScore = evaluation.totalScore;
+    const { testType, answers, consentId } = req.body;
 
-      // Kiểm tra kết nối MongoDB
-      if (mongoose.connection.readyState !== 1) {
-        // Sử dụng mock data store
-        const testResult = MockDataStore.createTestResult({
-          testType,
-          answers,
-          totalScore,
-          evaluation,
-          consentId,
-          completedAt: new Date(),
-        });
+    // Chuyển đổi answers array thành object với key là questionId
+    const answersMap: { [key: number]: number } = {};
+    answers.forEach((score: number, index: number) => {
+      answersMap[index + 1] = score;
+    });
 
-        return res.status(201).json({
-          success: true,
-          message: 'Đã lưu kết quả test thành công (Mock mode)',
-          data: {
-            testId: testResult.id,
-            totalScore,
-            evaluation,
-          },
-        });
-      }
+    // Tính toán điểm số và đánh giá sử dụng thuật toán mới
+    const evaluation = scoreTest(testType, answersMap);
+    const totalScore = evaluation.totalScore;
 
-      // Lưu kết quả test vào MongoDB
-      const testResult = new TestResult({
+    // Kiểm tra kết nối MongoDB
+    if (mongoose.connection.readyState !== 1) {
+      // Sử dụng mock data store
+      const testResult = MockDataStore.createTestResult({
         testType,
         answers,
         totalScore,
@@ -94,62 +73,68 @@ router.post(
         completedAt: new Date(),
       });
 
-      await testResult.save();
-
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        message: 'Đã lưu kết quả test thành công',
+        message: 'Đã lưu kết quả test thành công (Mock mode)',
         data: {
-          testId: testResult._id,
+          testId: testResult.id,
           totalScore,
           evaluation,
         },
       });
-    } catch (error) {
-      console.error('Error saving test result:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Lỗi server khi lưu kết quả test',
-      });
     }
-  }
+
+    // Lưu kết quả test vào MongoDB
+    const testResult = new TestResult({
+      testType,
+      answers,
+      totalScore,
+      evaluation,
+      consentId,
+      completedAt: new Date(),
+    });
+
+    await testResult.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Đã lưu kết quả test thành công',
+      data: {
+        testId: testResult._id,
+        totalScore,
+        evaluation,
+      },
+    });
+  })
 );
 
 /**
  * GET /api/tests/results
  * Lấy tất cả kết quả test đã lưu (cho dev/debug)
  */
-router.get('/results', async (req: Request, res: Response) => {
-  try {
-    // Kiểm tra kết nối MongoDB
-    if (mongoose.connection.readyState !== 1) {
-      // Sử dụng mock data store
-      const results = MockDataStore.getTestResults();
+router.get('/results', asyncHandler(async (req: Request, res: Response) => {
+  // Kiểm tra kết nối MongoDB
+  if (mongoose.connection.readyState !== 1) {
+    // Sử dụng mock data store
+    const results = MockDataStore.getTestResults();
 
-      return res.json({
-        success: true,
-        message: 'Dữ liệu từ Mock Data Store',
-        count: results.length,
-        data: results,
-      });
-    }
-
-    // Lấy từ MongoDB
-    const results = await TestResult.find().sort({ completedAt: -1 });
-
-    res.json({
+    return res.json({
       success: true,
+      message: 'Dữ liệu từ Mock Data Store',
       count: results.length,
       data: results,
     });
-  } catch (error) {
-    console.error('Error getting test results:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy kết quả test',
-    });
   }
-});
+
+  // Lấy từ MongoDB
+  const results = await TestResult.find().sort({ completedAt: -1 });
+
+  res.json({
+    success: true,
+    count: results.length,
+    data: results,
+  });
+}));
 
 /**
  * GET /api/tests/questions/:testType
@@ -487,82 +472,65 @@ function calculateMenopauseEvaluation(answers: number[]) {
  * GET /api/tests/validate
  * Chạy validation toàn diện cho hệ thống đánh giá tâm lý
  */
-router.get('/validate', async (req: Request, res: Response) => {
+router.get('/validate', asyncHandler(async (req: Request, res: Response) => {
+  console.log('🔬 Starting Clinical Validation...');
+
+  // Tạo validator trước để check
+  const validator = createClinicalValidator();
+  const validationReport = validator.generateValidationReport();
+  const crossValidation = validator.crossValidateWithInternationalStandards();
+
+  // Chạy validation tests (có thể gây lỗi, nên tách riêng)
+  let testResults = null;
   try {
-    console.log('🔬 Starting Clinical Validation...');
-
-    // Tạo validator trước để check
-    const validator = createClinicalValidator();
-    const validationReport = validator.generateValidationReport();
-    const crossValidation = validator.crossValidateWithInternationalStandards();
-
-    // Chạy validation tests (có thể gây lỗi, nên tách riêng)
-    let testResults = null;
-    try {
-      await runClinicalValidation();
-      testResults = 'Validation tests completed successfully';
-    } catch (validationError) {
-      console.warn('⚠️ Validation tests had issues:', validationError);
-      testResults = 'Validation tests encountered issues but system is functional';
-    }
-
-    res.json({
-      success: true,
-      message: 'Clinical validation completed',
-      data: {
-        validationReport,
-        crossValidation,
-        testResults,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    console.error('❌ Validation error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Validation failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    await runClinicalValidation();
+    testResults = 'Validation tests completed successfully';
+  } catch (validationError) {
+    console.warn('⚠️ Validation tests had issues:', validationError);
+    testResults = 'Validation tests encountered issues but system is functional';
   }
-});
+
+  res.json({
+    success: true,
+    message: 'Clinical validation completed',
+    data: {
+      validationReport,
+      crossValidation,
+      testResults,
+      timestamp: new Date().toISOString(),
+    },
+  });
+}));
 
 /**
  * GET /api/tests/health-check
  * Kiểm tra sức khỏe của hệ thống đánh giá
  */
-router.get('/health-check', async (req: Request, res: Response) => {
-  try {
-    const healthStatus = {
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      scoring: 'operational',
-      validation: 'ready',
-      enhancedAnalysis: 'active',
-      aiIntegration: 'available',
-      timestamp: new Date().toISOString(),
-    };
+router.get('/health-check', asyncHandler(async (req: Request, res: Response) => {
+  const healthStatus = {
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    scoring: 'operational',
+    validation: 'ready',
+    enhancedAnalysis: 'active',
+    aiIntegration: 'available',
+    timestamp: new Date().toISOString(),
+  };
 
-    const overallHealth = Object.values(healthStatus).every(
-      status =>
-        status === 'connected' ||
-        status === 'operational' ||
-        status === 'ready' ||
-        status === 'active' ||
-        status === 'available' ||
-        typeof status === 'string'
-    );
+  const overallHealth = Object.values(healthStatus).every(
+    status =>
+      status === 'connected' ||
+      status === 'operational' ||
+      status === 'ready' ||
+      status === 'active' ||
+      status === 'available' ||
+      typeof status === 'string'
+  );
 
-    res.json({
-      success: true,
-      healthy: overallHealth,
-      components: healthStatus,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      healthy: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  res.json({
+    success: true,
+    healthy: overallHealth,
+    components: healthStatus,
+  });
+}));
 
 export default router;

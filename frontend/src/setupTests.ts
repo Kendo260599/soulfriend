@@ -9,7 +9,8 @@ global.PerformanceObserver = jest.fn().mockImplementation((callback) => ({
   observe: jest.fn(),
   disconnect: jest.fn(),
   takeRecords: jest.fn(() => []),
-}));
+})) as any;
+(global.PerformanceObserver as any).supportedEntryTypes = [];
 
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
@@ -46,8 +47,10 @@ const localStorageMock = {
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+  length: 0,
+  key: jest.fn(),
 };
-global.localStorage = localStorageMock;
+global.localStorage = localStorageMock as any;
 
 // Mock sessionStorage
 const sessionStorageMock = {
@@ -55,8 +58,10 @@ const sessionStorageMock = {
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+  length: 0,
+  key: jest.fn(),
 };
-global.sessionStorage = sessionStorageMock;
+global.sessionStorage = sessionStorageMock as any;
 
 // Mock console methods to reduce noise in tests
 global.console = {
@@ -133,7 +138,9 @@ global.URL = class URL {
   pathname: string;
   search: string;
   hash: string;
-};
+  static createObjectURL = jest.fn(() => 'blob:mock-url');
+  static revokeObjectURL = jest.fn();
+} as any;
 
 global.URLSearchParams = class URLSearchParams {
   constructor() {}
@@ -143,7 +150,14 @@ global.URLSearchParams = class URLSearchParams {
   delete = jest.fn();
   has = jest.fn();
   toString = jest.fn(() => '');
-};
+  getAll = jest.fn(() => []);
+  sort = jest.fn();
+  forEach = jest.fn();
+  entries = jest.fn();
+  keys = jest.fn();
+  values = jest.fn();
+  [Symbol.iterator] = jest.fn();
+} as any;
 
 // Polyfills for SOULFRIEND V2.0 testing environment
 import { TextEncoder, TextDecoder } from 'util';

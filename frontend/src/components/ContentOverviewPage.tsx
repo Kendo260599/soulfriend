@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { colors, typography, spacing, shadows, animations, gradients } from '../styles/designSystem';
+import { TestType } from './TestSelection';
 
 // Enhanced color palette
 const overviewColors = {
@@ -461,7 +462,7 @@ const ResearchDescription = styled.div`
 
 interface ContentOverviewPageProps {
   onBack: () => void;
-  onViewTest: (testType: string) => void;
+  onViewTest: (testType: TestType) => void;
   onViewAI: () => void;
   onViewResearch: () => void;
   onViewCrisis: () => void;
@@ -695,7 +696,7 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
               {filteredTests.map((test, index) => (
                 <TestCard 
                   key={test.id}
-                  onClick={() => onViewTest(test.id)}
+                  onClick={() => onViewTest(test.id as TestType)}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <TestIcon>{test.icon}</TestIcon>

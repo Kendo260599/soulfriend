@@ -232,12 +232,10 @@ function App() {
       case AppStep.CONTENT_OVERVIEW:
         return <ContentOverviewPage 
           onBack={() => setCurrentStep(AppStep.WELCOME)}
-          onNavigateToTest={(testType) => {
-            setSelectedTests([testType]);
-            setCurrentStep(AppStep.TAKING_TEST);
-          }}
-          onNavigateToAI={() => setCurrentStep(AppStep.AI_COMPANION)}
-          onNavigateToResearch={() => setCurrentStep(AppStep.RESEARCH_DASHBOARD)}
+          onViewTest={(testType: TestType) => { setSelectedTests([testType]); setCurrentStep(AppStep.TAKING_TEST); }}
+          onViewAI={() => setCurrentStep(AppStep.AI_COMPANION)}
+          onViewResearch={() => setCurrentStep(AppStep.RESEARCH_DASHBOARD)}
+          onViewCrisis={() => setCurrentStep(AppStep.WELCOME)}
         />;
         
       case AppStep.CONSENT:
@@ -511,8 +509,11 @@ function App() {
                {/* Content Showcase Landing Screen */}
                {showSplash && (
                  <ContentShowcaseLanding 
-                   onComplete={() => setShowSplash(false)}
-                   duration={3000}
+                   onGetStarted={() => setShowSplash(false)}
+                   onViewTests={() => setShowSplash(false)}
+                   onViewAI={() => setShowSplash(false)}
+                   onViewResearch={() => setShowSplash(false)}
+                   onAdminLogin={() => setShowSplash(false)}
                  />
                )}
                

@@ -1,6 +1,6 @@
 # Multi-stage Docker build for SoulFriend V3.0
 # Stage 1: Build backend
-FROM node:18-alpine AS backend-builder
+FROM node:20-alpine AS backend-builder
 
 WORKDIR /app/backend
 
@@ -16,7 +16,7 @@ COPY backend/tsconfig.json ./
 RUN npm run build
 
 # Stage 2: Build frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -33,7 +33,7 @@ COPY frontend/tsconfig.json ./
 RUN npm run build
 
 # Stage 3: Production image
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init

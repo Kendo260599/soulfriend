@@ -3,36 +3,36 @@
  * Production-Grade Server with Security, Monitoring & Performance
  */
 
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
+import cors from 'cors';
+import express, { NextFunction, Request, Response } from 'express';
 import mongoSanitize from 'express-mongo-sanitize';
+import helmet from 'helmet';
 
 // Configuration
-import config from './config/environment';
 import databaseConnection from './config/database';
+import config from './config/environment';
 
 // Middleware
-import { rateLimiter, authRateLimiter } from './middleware/rateLimiter';
 import { auditLogger } from './middleware/auditLogger';
 import { errorHandler } from './middleware/errorHandler';
+import { authRateLimiter, rateLimiter } from './middleware/rateLimiter';
 
 // Routes
-import consentRoutes from './routes/consent';
-import testRoutes from './routes/tests';
 import adminRoutes from './routes/admin';
-import userRoutes from './routes/user';
-import researchRoutes from './routes/research';
 import chatbotRoutes from './routes/chatbot';
-import hitlFeedbackRoutes from './routes/hitlFeedback';
+import consentRoutes from './routes/consent';
 import conversationLearningRoutes from './routes/conversationLearning';
 import criticalAlertsRoutes from './routes/criticalAlerts';
+import hitlFeedbackRoutes from './routes/hitlFeedback';
+import researchRoutes from './routes/research';
+import testRoutes from './routes/tests';
+import userRoutes from './routes/user';
 
 // Import Models (để MongoDB tạo collections)
+import './models/ConversationLog';
 import './models/HITLFeedback';
 import './models/TrainingDataPoint';
-import './models/ConversationLog';
 
 // Initialize Express
 const app = express();
@@ -80,11 +80,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Sanitize user input against NoSQL injection
-app.use(
-  mongoSanitize({
-    replaceWith: '_', // Replace dangerous chars instead of removing entire object
-  })
-);
+// Note: Disabled for Express v5 compatibility - implementing manual sanitization in validators
+// app.use(
+//   mongoSanitize({
+//     replaceWith: '_',
+//   })
+// );
 
 // ====================
 // LOGGING & MONITORING
@@ -360,7 +361,7 @@ const startServer = async () => {
       process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     } else {
       console.log('🔄 Starting in FALLBACK mode (no database)...');
-      
+
       const server = app.listen(PORT, () => {
         console.log('╔════════════════════════════════════════════╗');
         console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');

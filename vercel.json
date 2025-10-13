@@ -1,11 +1,11 @@
 {
-  "buildCommand": "cd frontend && npm ci --legacy-peer-deps && npm run build",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/build",
-  "framework": null,
-  "installCommand": "cd frontend && npm ci --legacy-peer-deps",
+  "installCommand": "npm run install",
   "env": {
     "NODE_VERSION": "20",
     "DISABLE_ESLINT_PLUGIN": "true",
-    "GENERATE_SOURCEMAP": "false"
+    "GENERATE_SOURCEMAP": "false",
+    "SKIP_PREFLIGHT_CHECK": "true"
   }
 }

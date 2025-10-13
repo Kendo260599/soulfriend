@@ -1,11 +1,12 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "frontend/build",
-  "installCommand": "npm install",
+  "installCommand": "npm --version",
   "env": {
     "NODE_VERSION": "20",
     "DISABLE_ESLINT_PLUGIN": "true",
     "GENERATE_SOURCEMAP": "false",
     "SKIP_PREFLIGHT_CHECK": "true"
-  }
+  },
+  "framework": null
 }

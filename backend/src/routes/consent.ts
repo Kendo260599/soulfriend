@@ -6,6 +6,7 @@ import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import Consent from '../models/Consent';
 import { MockDataStore } from '../utils/mockDataStore';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 import mongoose from 'mongoose';
 const router = express.Router();
@@ -22,7 +23,7 @@ router.post(
     body('ipAddress').optional().isIP().withMessage('IP address không hợp lệ'),
     body('userAgent').optional().isString().withMessage('User agent phải là string'),
   ],
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       // Kiểm tra validation errors
       const errors = validationResult(req);
@@ -84,13 +85,13 @@ router.post(
       });
     }
   }
-);
+));
 
 /**
  * GET /api/consent/stats
  * Lấy thống kê về số lượng đồng ý tham gia
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', asyncHandler(async (req, res) => {
   try {
     const totalConsents = await Consent.countDocuments({ agreed: true });
     const todayConsents = await Consent.countDocuments({
@@ -114,6 +115,6 @@ router.get('/stats', async (req, res) => {
       message: 'Lỗi server khi lấy thống kê',
     });
   }
-});
+}));
 
 export default router;

@@ -6,6 +6,7 @@
 import express, { Request, Response } from 'express';
 import { ResearchData, IResearchData } from '../models/ResearchData';
 import { authenticateAdmin } from '../middleware/auth';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const router = express.Router();
  * Lưu dữ liệu research mới
  * Public route - không cần authentication
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   try {
     const { participantId, testResults, sessionData, qualityMetrics, metadata } = req.body;
 
@@ -73,13 +74,13 @@ router.post('/', async (req: Request, res: Response) => {
       details: (error as Error).message,
     });
   }
-});
+}));
 
 /**
  * GET /api/research
  * Lấy tất cả dữ liệu research (Admin only)
  */
-router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
+router.get('/', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, testType, limit = 100, skip = 0 } = req.query;
 
@@ -127,13 +128,13 @@ router.get('/', authenticateAdmin, async (req: Request, res: Response) => {
       details: (error as Error).message,
     });
   }
-});
+}));
 
 /**
  * GET /api/research/stats
  * Lấy thống kê tổng quan (Admin only)
  */
-router.get('/stats', authenticateAdmin, async (req: Request, res: Response) => {
+router.get('/stats', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const stats = await (ResearchData as any).getStatistics();
 
@@ -165,13 +166,13 @@ router.get('/stats', authenticateAdmin, async (req: Request, res: Response) => {
       details: (error as Error).message,
     });
   }
-});
+}));
 
 /**
  * GET /api/research/export
  * Export dữ liệu dạng CSV hoặc JSON (Admin only)
  */
-router.get('/export', authenticateAdmin, async (req: Request, res: Response) => {
+router.get('/export', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { format = 'json', startDate, endDate } = req.query;
 
@@ -247,13 +248,13 @@ router.get('/export', authenticateAdmin, async (req: Request, res: Response) => 
       details: (error as Error).message,
     });
   }
-});
+}));
 
 /**
  * GET /api/research/:id
  * Lấy chi tiết một research record (Admin only)
  */
-router.get('/:id', authenticateAdmin, async (req: Request, res: Response) => {
+router.get('/:id', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -278,13 +279,13 @@ router.get('/:id', authenticateAdmin, async (req: Request, res: Response) => {
       details: (error as Error).message,
     });
   }
-});
+}));
 
 /**
  * DELETE /api/research/:id
  * Xóa một research record (Admin only)
  */
-router.delete('/:id', authenticateAdmin, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateAdmin, asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -309,6 +310,6 @@ router.delete('/:id', authenticateAdmin, async (req: Request, res: Response) => 
       details: (error as Error).message,
     });
   }
-});
+}));
 
 export default router;

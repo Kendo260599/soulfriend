@@ -10,12 +10,13 @@ test('renders SoulFriend application', () => {
 
 test('renders main navigation button', () => {
   render(<App />);
-  const startButton = screen.getByText(/Bắt đầu khám phá/i);
+  const startButton = screen.getByText(/🚀 Khám phá ngay/i);
   expect(startButton).toBeInTheDocument();
 });
 
-test('renders AI companion features', () => {
+test('renders AI Chatbot CHUN features', () => {
   render(<App />);
-  const aiCompanion = screen.getByText(/AI Companion/i);
-  expect(aiCompanion).toBeInTheDocument();
+  const aiChatbots = screen.getAllByText(/AI Chatbot CHUN/i);
+  expect(aiChatbots.length).toBeGreaterThan(0);
+  expect(aiChatbots[0]).toBeInTheDocument();
 });

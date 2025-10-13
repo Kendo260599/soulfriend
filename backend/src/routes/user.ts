@@ -5,6 +5,7 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { MockDataStore } from '../utils/mockDataStore';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const router = express.Router();
  * GET /api/user/data
  * Lấy tất cả dữ liệu cá nhân của người dùng
  */
-router.get('/data', async (req: Request, res: Response) => {
+router.get('/data', asyncHandler(async (req: Request, res: Response) => {
   try {
     // Trong thực tế, cần xác thực người dùng qua JWT token
     // Tạm thời sử dụng mock data
@@ -52,13 +53,13 @@ router.get('/data', async (req: Request, res: Response) => {
       error: process.env.NODE_ENV === 'development' ? error : undefined,
     });
   }
-});
+}));
 
 /**
  * GET /api/user/export
  * Xuất dữ liệu cá nhân ở định dạng JSON
  */
-router.get('/export', async (req: Request, res: Response) => {
+router.get('/export', asyncHandler(async (req: Request, res: Response) => {
   try {
     const userData = {
       exportInfo: {
@@ -100,13 +101,13 @@ router.get('/export', async (req: Request, res: Response) => {
       error: process.env.NODE_ENV === 'development' ? error : undefined,
     });
   }
-});
+}));
 
 /**
  * POST /api/user/withdraw-consent
  * Rút lại sự đồng ý xử lý dữ liệu
  */
-router.post('/withdraw-consent', async (req: Request, res: Response) => {
+router.post('/withdraw-consent', asyncHandler(async (req: Request, res: Response) => {
   try {
     // Log consent withdrawal
     console.log(
@@ -140,13 +141,13 @@ router.post('/withdraw-consent', async (req: Request, res: Response) => {
       error: process.env.NODE_ENV === 'development' ? error : undefined,
     });
   }
-});
+}));
 
 /**
  * DELETE /api/user/data
  * Xóa tất cả dữ liệu cá nhân (Right to be forgotten)
  */
-router.delete('/data', async (req: Request, res: Response) => {
+router.delete('/data', asyncHandler(async (req: Request, res: Response) => {
   try {
     // Log deletion request for audit trail
     console.log(`[AUDIT] Data deletion request from IP: ${req.ip} at ${new Date().toISOString()}`);
@@ -191,7 +192,7 @@ router.delete('/data', async (req: Request, res: Response) => {
       error: process.env.NODE_ENV === 'development' ? error : undefined,
     });
   }
-});
+}));
 
 /**
  * POST /api/user/update-consent
@@ -255,7 +256,7 @@ router.post(
  * GET /api/user/audit-log
  * Lấy lịch sử truy cập và xử lý dữ liệu
  */
-router.get('/audit-log', async (req: Request, res: Response) => {
+router.get('/audit-log', asyncHandler(async (req: Request, res: Response) => {
   try {
     // Log audit log access
     console.log(`[AUDIT] Audit log access from IP: ${req.ip} at ${new Date().toISOString()}`);
@@ -276,6 +277,6 @@ router.get('/audit-log', async (req: Request, res: Response) => {
       error: process.env.NODE_ENV === 'development' ? error : undefined,
     });
   }
-});
+}));
 
 export default router;

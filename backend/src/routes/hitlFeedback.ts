@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import { hitlFeedbackService } from '../services/hitlFeedbackService';
 import logger from '../utils/logger';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ const router = Router();
  * POST /api/hitl-feedback/:alertId
  * Submit feedback for a resolved alert
  */
-router.post('/:alertId', async (req, res) => {
+router.post('/:alertId', asyncHandler(async (req, res) => {
   try {
     const { alertId } = req.params;
     const feedbackData = req.body;
@@ -47,21 +48,21 @@ router.post('/:alertId', async (req, res) => {
       message: 'Feedback collected successfully',
       feedback,
       trainingDataCreated: true,
-    });
+    }));
   } catch (error: any) {
     logger.error('Error collecting HITL feedback:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    });
+    }));
   }
-});
+}));
 
 /**
  * GET /api/hitl-feedback/metrics
  * Get model performance metrics
  */
-router.get('/metrics', async (req, res) => {
+router.get('/metrics', asyncHandler(async (req, res) => {
   try {
     const periodDays = parseInt(req.query.days as string) || 30;
 
@@ -74,21 +75,21 @@ router.get('/metrics', async (req, res) => {
         summary: generateMetricsSummary(metrics),
         recommendations: generateRecommendations(metrics),
       },
-    });
+    }));
   } catch (error: any) {
     logger.error('Error calculating metrics:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    });
+    }));
   }
-});
+}));
 
 /**
  * GET /api/hitl-feedback/improvements
  * Get model improvement suggestions
  */
-router.get('/improvements', async (req, res) => {
+router.get('/improvements', asyncHandler(async (req, res) => {
   try {
     const suggestions = await hitlFeedbackService.generateModelImprovements();
 
@@ -100,21 +101,21 @@ router.get('/improvements', async (req, res) => {
         description: 'Expected improvements based on HITL feedback analysis',
         ...suggestions.expectedImprovements,
       },
-    });
+    }));
   } catch (error: any) {
     logger.error('Error generating improvements:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    });
+    }));
   }
-});
+}));
 
 /**
  * GET /api/hitl-feedback/keywords
  * Get keyword statistics and analysis
  */
-router.get('/keywords', async (req, res) => {
+router.get('/keywords', asyncHandler(async (req, res) => {
   try {
     const keywordStats = hitlFeedbackService.getKeywordStatistics();
 
@@ -127,21 +128,21 @@ router.get('/keywords', async (req, res) => {
         needsAdjustment: keywordStats.filter(k => k.recommendation === 'adjust_weight').length,
         shouldRemove: keywordStats.filter(k => k.recommendation === 'remove').length,
       },
-    });
+    }));
   } catch (error: any) {
     logger.error('Error getting keyword statistics:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    });
+    }));
   }
-});
+}));
 
 /**
  * GET /api/hitl-feedback/training-data
  * Get training data for model fine-tuning
  */
-router.get('/training-data', async (req, res) => {
+router.get('/training-data', asyncHandler(async (req, res) => {
   try {
     const format = (req.query.format as 'jsonl' | 'csv') || 'jsonl';
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
@@ -171,15 +172,15 @@ router.get('/training-data', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
-    });
+    }));
   }
-});
+}));
 
 /**
  * GET /api/hitl-feedback/all
  * Get all feedback entries
  */
-router.get('/all', async (req, res) => {
+router.get('/all', asyncHandler(async (req, res) => {
   try {
     const allFeedback = hitlFeedbackService.getAllFeedback();
 
@@ -187,15 +188,15 @@ router.get('/all', async (req, res) => {
       success: true,
       count: allFeedback.length,
       feedback: allFeedback,
-    });
+    }));
   } catch (error: any) {
     logger.error('Error getting all feedback:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    });
+    }));
   }
-});
+}));
 
 // =============================================================================
 // HELPER FUNCTIONS

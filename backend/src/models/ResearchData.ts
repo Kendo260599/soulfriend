@@ -65,7 +65,7 @@ const TestResultSchema = new Schema(
     testType: {
       type: String,
       required: true,
-      index: true,
+      // Index được khai báo ở ResearchDataSchema level
     },
     score: {
       type: Number,
@@ -157,7 +157,7 @@ const ResearchDataSchema = new Schema(
     participantId: {
       type: String,
       required: true,
-      index: true,
+      // Index được khai báo riêng bên dưới
     },
     timestamp: {
       type: Date,
@@ -196,12 +196,12 @@ const ResearchDataSchema = new Schema(
 );
 
 // Indexes để tối ưu queries
-// Note: participantId, timestamp, và testResults.testType đã có index trong schema field definition
-// Chỉ giữ lại compound index và index không có trong field definition
+// Khai báo tất cả indexes tập trung ở đây để tránh duplicate
+ResearchDataSchema.index({ participantId: 1 });
 ResearchDataSchema.index({ createdAt: -1 });
+ResearchDataSchema.index({ 'testResults.testType': 1 });
 
 // Compound index cho research queries phức tạp
-// Compound index khác với single-field index, không bị duplicate
 ResearchDataSchema.index({
   timestamp: -1,
   'testResults.testType': 1,

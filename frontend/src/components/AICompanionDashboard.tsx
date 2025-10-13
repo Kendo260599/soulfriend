@@ -8,9 +8,9 @@
  * - Kết nối cộng đồng và chuyên gia
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { aiCompanionService, AICompanionProfile, AIInsight, AIIntervention } from '../services/aiCompanionService';
+import { AICompanionProfile, aiCompanionService, AIInsight, AIIntervention } from '../services/aiCompanionService';
 
 // ================================
 // ANIMATIONS
@@ -103,7 +103,7 @@ const CardTitle = styled.h3`
   gap: 0.5rem;
 `;
 
-const InsightCard = styled(Card)<{ type: string }>`
+const InsightCard = styled(Card) <{ type: string }>`
   border-left: 5px solid ${props => {
     switch (props.type) {
       case 'pattern': return '#3b82f6';
@@ -116,7 +116,7 @@ const InsightCard = styled(Card)<{ type: string }>`
   }};
 `;
 
-const InterventionCard = styled(Card)<{ difficulty: string }>`
+const InterventionCard = styled(Card) <{ difficulty: string }>`
   border-left: 5px solid ${props => {
     switch (props.difficulty) {
       case 'beginner': return '#10b981';
@@ -316,10 +316,10 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
   const loadCompanionData = async () => {
     try {
       setLoading(true);
-      
+
       // Load profile
       let userProfile = aiCompanionService.getProfile(userId);
-      
+
       // No demo data - only real user data
       if (!userProfile) {
         console.log('⚠️ No AI Companion profile found. Please complete tests first.');
@@ -329,26 +329,26 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
         setLoading(false);
         return;
       }
-      
+
       setProfile(userProfile);
-      
+
       // Load insights and interventions
       let userInsights = aiCompanionService.getInsights(userId);
       let userInterventions = aiCompanionService.getInterventions(userId);
-      
+
       // No demo insights - only real AI analysis
       if (userInsights.length === 0) {
         console.log('⚠️ No AI insights found. Complete tests to generate insights.');
       }
-      
+
       // No demo interventions - only real AI recommendations
       if (userInterventions.length === 0) {
         console.log('⚠️ No AI interventions found. Complete tests to generate recommendations.');
       }
-      
+
       setInsights(userInsights);
       setInterventions(userInterventions);
-      
+
     } catch (error) {
       console.error('Error loading companion data:', error);
       setError('Có lỗi xảy ra khi tải dữ liệu AI companion.');
@@ -405,13 +405,13 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
         <Card>
           <CardTitle>🤖 AI Companion</CardTitle>
           <p style={{ textAlign: 'center', color: '#666', lineHeight: '1.6' }}>
-            <strong>Chưa có dữ liệu phân tích AI</strong><br/>
-            Để sử dụng AI Companion, bạn cần hoàn thành ít nhất một bài test.<br/>
-            <br/>
-            AI sẽ phân tích kết quả test của bạn và tạo ra:<br/>
-            • Insights cá nhân hóa<br/>
-            • Gợi ý can thiệp phù hợp<br/>
-            • Theo dõi tiến độ cải thiện<br/>
+            <strong>Chưa có dữ liệu phân tích AI</strong><br />
+            Để sử dụng AI Companion, bạn cần hoàn thành ít nhất một bài test.<br />
+            <br />
+            AI sẽ phân tích kết quả test của bạn và tạo ra:<br />
+            • Insights cá nhân hóa<br />
+            • Gợi ý can thiệp phù hợp<br />
+            • Theo dõi tiến độ cải thiện<br />
           </p>
           {onBack && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
@@ -442,16 +442,16 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
               <ProfileLabel>Loại tính cách</ProfileLabel>
               <ProfileValue>
                 {profile.personalityType === 'introvert' ? 'Hướng nội' :
-                 profile.personalityType === 'extrovert' ? 'Hướng ngoại' : 'Cân bằng'}
+                  profile.personalityType === 'extrovert' ? 'Hướng ngoại' : 'Cân bằng'}
               </ProfileValue>
             </ProfileItem>
             <ProfileItem>
               <ProfileLabel>Giai đoạn cuộc sống</ProfileLabel>
               <ProfileValue>
                 {profile.lifeStage === 'young_adult' ? 'Trẻ trưởng thành' :
-                 profile.lifeStage === 'mother' ? 'Người mẹ' :
-                 profile.lifeStage === 'professional' ? 'Chuyên nghiệp' :
-                 profile.lifeStage === 'menopause' ? 'Mãn kinh' : 'Cao tuổi'}
+                  profile.lifeStage === 'mother' ? 'Người mẹ' :
+                    profile.lifeStage === 'professional' ? 'Chuyên nghiệp' :
+                      profile.lifeStage === 'menopause' ? 'Mãn kinh' : 'Cao tuổi'}
               </ProfileValue>
             </ProfileItem>
             <ProfileItem>

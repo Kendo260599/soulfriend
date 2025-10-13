@@ -1,0 +1,16 @@
+{
+  "phases": {
+    "setup": {
+      "nixPkgs": ["nodejs_20", "npm"]
+    },
+    "install": {
+      "cmds": ["npm ci --legacy-peer-deps"]
+    },
+    "build": {
+      "cmds": ["npx react-scripts build"]
+    }
+  },
+  "start": {
+    "cmd": "npx serve -s build -l $PORT"
+  }
+}

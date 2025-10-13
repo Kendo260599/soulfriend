@@ -189,9 +189,18 @@ Tôi ở đây để lắng nghe và hỗ trợ bạn.`;
       }
     } else {
       // Normal AI response
-      const result = await model.generateContent(message);
-      const response = await result.response;
-      responseText = response.text();
+      if (aiReady) {
+        try {
+          const result = await model.generateContent(message);
+          const response = await result.response;
+          responseText = response.text();
+        } catch (aiError) {
+          console.error('AI Error:', aiError.message);
+          responseText = "Xin lỗi, tôi đang gặp sự cố kỹ thuật. Hãy thử lại sau hoặc liên hệ với chúng tôi qua hotline: 1800-599-920";
+        }
+      } else {
+        responseText = "Xin lỗi, hệ thống AI đang bảo trì. Hãy liên hệ với chúng tôi qua hotline: 1800-599-920";
+      }
     }
 
     res.json({

@@ -6,23 +6,25 @@ yarn-error.log*
 
 # Testing
 coverage/
-*.test.ts
-*.test.js
-tests/
-__tests__/
-jest.config.js
+src/**/*.test.tsx
+src/**/*.test.ts
+src/**/*.spec.tsx
+src/**/*.spec.ts
+src/__tests__/
+src/**/__tests__/
+
+# Build (only for dev Dockerfile, production needs build/)
+# build/
 
 # Environment files
 .env
 .env.test
 .env.local
-.env.*.local
-
-# Build artifacts
-dist/
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Logs
-logs/
 *.log
 npm-debug.log*
 
@@ -41,7 +43,6 @@ npm-debug.log*
 # Documentation
 README.md
 *.md
-docs/
 
 # Docker
 Dockerfile*
@@ -51,7 +52,6 @@ docker-compose*.yml
 # CI/CD
 .github/
 .gitlab-ci.yml
-.travis.yml
 
 # OS
 .DS_Store
@@ -64,19 +64,8 @@ Thumbs.db
 
 # Railway specific
 railway.toml
-railway.json
 
-# Development servers
-*-server.js
-debug-*.js
-emergency-*.js
-minimal-*.js
-simple-*.js
-perfect-*.js
-ultimate-*.js
-working-*.js
+# Development files
+manual-test.js
+public/robots.txt
 
-# Test files
-*-test.js
-test-*.js
-*.test.json

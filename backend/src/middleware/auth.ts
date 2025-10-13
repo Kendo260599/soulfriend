@@ -5,6 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin';
+import { asyncHandler } from './asyncHandler';
 
 // Extend Request interface để thêm admin info
 declare global {
@@ -22,20 +23,20 @@ declare global {
 /**
  * Middleware xác thực admin bằng JWT token
  */
-export const authenticateAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateAdmin = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  // Lấy token từ header Authorization
+  const authHeader = req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.',
+    });
+  }
+
+  const token = authHeader.substring(7); // Bỏ "Bearer " prefix
+
+  // Verify JWT token
   try {
-    // Lấy token từ header Authorization
-    const authHeader = req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.',
-      });
-    }
-
-    const token = authHeader.substring(7); // Bỏ "Bearer " prefix
-
-    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'soulfriend_secret_key') as any;
 
     if (!decoded.adminId) {
@@ -94,12 +95,12 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Lỗi server khi xác thực',
     });
   }
-};
+});
 
 /**
  * Middleware kiểm tra quyền super admin

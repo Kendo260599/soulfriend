@@ -2,10 +2,11 @@
   "name": "soulfriend",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "vercel-build": "cd frontend && npm ci --legacy-peer-deps && npm run build",
-    "build": "cd frontend && npm run build",
-    "install": "cd frontend && npm ci --legacy-peer-deps"
+    "build": "cd frontend && npm install --legacy-peer-deps && npm run build"
   },
   "engines": {
     "node": ">=20.0.0",

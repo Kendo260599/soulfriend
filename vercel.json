@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "npm run build",
   "outputDirectory": "frontend/build",
-  "installCommand": "npm run install",
+  "installCommand": "npm install",
   "env": {
     "NODE_VERSION": "20",
     "DISABLE_ESLINT_PLUGIN": "true",

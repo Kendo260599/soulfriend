@@ -6,7 +6,7 @@ WORKDIR /app/backend
 
 # Copy backend package files
 COPY backend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci --include=dev
 
 # Copy backend source
 COPY backend/src ./src
@@ -15,6 +15,9 @@ COPY backend/tsconfig.json ./
 # Build backend
 RUN npm run build
 
+# Remove devDependencies after build
+RUN npm prune --production
+
 # Stage 2: Build frontend
 FROM node:20-alpine AS frontend-builder
 
@@ -22,14 +25,18 @@ WORKDIR /app/frontend
 
 # Copy frontend package files
 COPY frontend/package*.json ./
-RUN npm ci
+COPY frontend/.npmrc ./
+RUN npm ci --legacy-peer-deps
 
 # Copy frontend source
 COPY frontend/src ./src
 COPY frontend/public ./public
 COPY frontend/tsconfig.json ./
+COPY frontend/.env* ./
 
 # Build frontend
+ENV DISABLE_ESLINT_PLUGIN=true
+ENV GENERATE_SOURCEMAP=false
 RUN npm run build
 
 # Stage 3: Production image

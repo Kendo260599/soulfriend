@@ -357,8 +357,32 @@ const startServer = async () => {
       process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
       process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     } else {
-      console.error('❌ Cannot start in production without database');
-      process.exit(1);
+      console.log('🔄 Starting in FALLBACK mode (no database)...');
+      
+      const server = app.listen(PORT, () => {
+        console.log('╔════════════════════════════════════════════╗');
+        console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
+        console.log('║   ⚠️  FALLBACK MODE (No Database)        ║');
+        console.log('╠════════════════════════════════════════════╣');
+        console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
+        console.log(`║   Port: ${PORT.toString().padEnd(35)}║`);
+        console.log(`║   API v2: http://localhost:${PORT}/api/v2     ║`);
+        console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
+        console.log('║   ⚠️  Chatbot works, Database disabled   ║');
+        console.log('╚════════════════════════════════════════════╝');
+      });
+
+      // Graceful shutdown for fallback mode too
+      const gracefulShutdown = async (signal: string) => {
+        console.log(`\n⚠️  Received ${signal}. Shutting down...`);
+        server.close(() => {
+          console.log('👋 Server closed');
+          process.exit(0);
+        });
+      };
+
+      process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+      process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     }
   }
 };

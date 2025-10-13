@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Frontend → Backend</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .box {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Test Frontend ↔ Backend Connection</h1>
+
+    <div class="info box">
+        <strong>Backend URL:</strong>
+        <input type="text" id="backendUrl" value="https://soulfriend-production.up.railway.app"
+            style="width: 100%; padding: 5px;">
+    </div>
+
+    <div>
+        <button onclick="testHealth()">1️⃣ Test Health</button>
+        <button onclick="testCORS()">2️⃣ Test CORS</button>
+        <button onclick="testChatbot()">3️⃣ Test Chatbot</button>
+        <button onclick="clearResults()">🗑️ Clear</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function getBackendUrl() {
+            return document.getElementById('backendUrl').value.trim();
+        }
+
+        function showResult(title, data, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `box ${type}`;
+
+            let content = `<strong>${title}</strong>`;
+            if (typeof data === 'object') {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } else {
+                content += `<p>${data}</p>`;
+            }
+
+            div.innerHTML = content;
+            document.getElementById('results').insertBefore(div, document.getElementById('results').firstChild);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testHealth() {
+            try {
+                const url = getBackendUrl() + '/api/health';
+                console.log('🔍 Testing:', url);
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('✅ Health Check SUCCESS', data, 'success');
+
+                    if (data.gemini === 'initialized') {
+                        alert('✅ PERFECT! Backend + Gemini are working!\n\nNow check why frontend can\'t connect...');
+                    } else {
+                        alert('⚠️ Backend OK but Gemini not initialized');
+                    }
+                } else {
+                    showResult('⚠️ Health Check - Non-OK Status', data, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Health Check FAILED', {
+                    error: error.message,
+                    hint: 'Check CORS or Network'
+                }, 'error');
+                alert('❌ Cannot connect to backend!\n\n' + error.message + '\n\nPossible causes:\n- CORS not configured\n- Backend URL wrong\n- Backend down');
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const url = getBackendUrl() + '/api/health';
+
+                showResult('🔄 Testing CORS...', {
+                    from: window.location.origin,
+                    to: url
+                }, 'info');
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Origin': window.location.origin
+                    }
+                });
+
+                const corsHeaders = {
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                    'access-control-allow-credentials': response.headers.get('access-control-allow-credentials'),
+                    'access-control-allow-methods': response.headers.get('access-control-allow-methods')
+                };
+
+                const data = await response.json();
+
+                showResult('✅ CORS Test Result', {
+                    status: 'CORS is working!',
+                    corsHeaders,
+                    data
+                }, 'success');
+
+            } catch (error) {
+                showResult('❌ CORS Test FAILED', {
+                    error: error.message,
+                    solution: 'Add your domain to CORS_ORIGIN in Railway:\n' + window.location.origin
+                }, 'error');
+            }
+        }
+
+        async function testChatbot() {
+            try {
+                const url = getBackendUrl() + '/api/v2/chatbot/message';
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Xin chào, tôi cần trợ giúp',
+                        userId: 'test_user_' + Date.now(),
+                        sessionId: 'test_session_' + Date.now()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResult('✅ Chatbot Test SUCCESS', {
+                        message: data.data.message,
+                        full_response: data
+                    }, 'success');
+                    alert('✅ CHATBOT WORKS!\n\nResponse: ' + data.data.message);
+                } else {
+                    showResult('⚠️ Chatbot Response (check details)', data, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Chatbot Test FAILED', {
+                    error: error.message
+                }, 'error');
+            }
+        }
+
+        // Auto test on load
+        window.addEventListener('load', () => {
+            console.log('🚀 Test page loaded');
+            console.log('💡 Click buttons to test backend connection');
+        });
+    </script>
+</body>
+
+</html>

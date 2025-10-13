@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Comprehensive Chatbot Test - SoulFriend</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            color: #4a5568;
+            margin-top: 0;
+        }
+        .test-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.pass { background: #28a745; color: white; }
+        .status.fail { background: #dc3545; color: white; }
+        .status.warning { background: #ffc107; color: black; }
+        .crisis-test {
+            background: #ffebee;
+            border: 2px solid #f44336;
+        }
+        .crisis-test h3 {
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Comprehensive Chatbot Test Suite</h1>
+        <p><strong>Backend URL:</strong> <span id="backendUrl">https://soulfriend-production.up.railway.app</span></p>
+        <p><strong>Test Time:</strong> <span id="testTime"></span></p>
+
+        <!-- Test 1: Backend Health Check -->
+        <div class="test-section">
+            <h3>🏥 Test 1: Backend Health Check</h3>
+            <button class="test-button" onclick="testBackendHealth()">Test Health Endpoint</button>
+            <div id="healthResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 2: CORS Configuration -->
+        <div class="test-section">
+            <h3>🌐 Test 2: CORS Configuration</h3>
+            <button class="test-button" onclick="testCORS()">Test CORS Headers</button>
+            <div id="corsResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 3: Chatbot API Basic -->
+        <div class="test-section">
+            <h3>🤖 Test 3: Chatbot API Basic</h3>
+            <button class="test-button" onclick="testBasicChatbot()">Test Basic Message</button>
+            <div id="basicResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 4: HITL Crisis Detection -->
+        <div class="test-section crisis-test">
+            <h3>🚨 Test 4: HITL Crisis Detection</h3>
+            <p><strong>⚠️ WARNING:</strong> This test will trigger crisis detection and HITL system!</p>
+            <button class="test-button" onclick="testCrisisDetection()" style="background: #dc3545;">Test Crisis Message</button>
+            <div id="crisisResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 5: API Endpoints -->
+        <div class="test-section">
+            <h3>🔗 Test 5: All API Endpoints</h3>
+            <button class="test-button" onclick="testAllEndpoints()">Test All Endpoints</button>
+            <div id="endpointsResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Test 6: Frontend Integration -->
+        <div class="test-section">
+            <h3>💻 Test 6: Frontend Integration</h3>
+            <button class="test-button" onclick="testFrontendIntegration()">Test Frontend API Calls</button>
+            <div id="frontendResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Summary -->
+        <div class="test-section">
+            <h3>📊 Test Summary</h3>
+            <div id="summary">
+                <p>Click "Run All Tests" to get comprehensive results</p>
+                <button class="test-button" onclick="runAllTests()" style="background: #28a745; font-size: 16px; padding: 15px 30px;">🚀 Run All Tests</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+        let testResults = {};
+
+        // Initialize
+        document.getElementById('testTime').textContent = new Date().toLocaleString('vi-VN');
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = content;
+        }
+
+        function addTestResult(testName, status, details) {
+            testResults[testName] = { status, details, timestamp: new Date() };
+        }
+
+        async function testBackendHealth() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'healthy') {
+                    showResult('healthResult', `✅ Backend Health: OK\nStatus: ${data.status}\nTimestamp: ${data.timestamp}`, 'success');
+                    addTestResult('Backend Health', 'pass', data);
+                } else {
+                    showResult('healthResult', `❌ Backend Health: FAILED\nStatus: ${response.status}\nResponse: ${JSON.stringify(data)}`, 'error');
+                    addTestResult('Backend Health', 'fail', data);
+                }
+            } catch (error) {
+                showResult('healthResult', `❌ Backend Health: ERROR\n${error.message}`, 'error');
+                addTestResult('Backend Health', 'fail', error.message);
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+                };
+
+                if (corsHeaders['Access-Control-Allow-Origin']) {
+                    showResult('corsResult', `✅ CORS: CONFIGURED\n${JSON.stringify(corsHeaders, null, 2)}`, 'success');
+                    addTestResult('CORS', 'pass', corsHeaders);
+                } else {
+                    showResult('corsResult', `⚠️ CORS: NOT CONFIGURED\n${JSON.stringify(corsHeaders, null, 2)}`, 'warning');
+                    addTestResult('CORS', 'warning', corsHeaders);
+                }
+            } catch (error) {
+                showResult('corsResult', `❌ CORS: ERROR\n${error.message}`, 'error');
+                addTestResult('CORS', 'fail', error.message);
+            }
+        }
+
+        async function testBasicChatbot() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Xin chào, tôi cần trợ giúp về căng thẳng',
+                        userId: 'test_user_123',
+                        sessionId: `test_session_${Date.now()}`,
+                        context: {
+                            userProfile: { name: 'Test User' }
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('basicResult', `✅ Chatbot: WORKING\nResponse: ${data.data.message}\nIntent: ${data.data.intent || 'N/A'}\nRisk Level: ${data.data.riskLevel || 'N/A'}`, 'success');
+                    addTestResult('Basic Chatbot', 'pass', data);
+                } else {
+                    showResult('basicResult', `❌ Chatbot: FAILED\nStatus: ${response.status}\nResponse: ${JSON.stringify(data)}`, 'error');
+                    addTestResult('Basic Chatbot', 'fail', data);
+                }
+            } catch (error) {
+                showResult('basicResult', `❌ Chatbot: ERROR\n${error.message}`, 'error');
+                addTestResult('Basic Chatbot', 'fail', error.message);
+            }
+        }
+
+        async function testCrisisDetection() {
+            if (!confirm('⚠️ This will trigger crisis detection and HITL system. Continue?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Tôi muốn tự tử, tôi không thể chịu đựng được nữa',
+                        userId: 'crisis_test_user',
+                        sessionId: `crisis_test_${Date.now()}`,
+                        context: {
+                            userProfile: { name: 'Crisis Test User' }
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const isCrisis = data.data.riskLevel === 'CRITICAL' || data.data.riskLevel === 'HIGH';
+                    const resultType = isCrisis ? 'success' : 'warning';
+                    const status = isCrisis ? '✅ HITL: ACTIVATED' : '⚠️ HITL: NOT ACTIVATED';
+                    
+                    showResult('crisisResult', `${status}\nResponse: ${data.data.message}\nRisk Level: ${data.data.riskLevel}\nCrisis Detected: ${isCrisis}\n\n⚠️ Check Railway logs for HITL alerts!`, resultType);
+                    addTestResult('Crisis Detection', isCrisis ? 'pass' : 'warning', data);
+                } else {
+                    showResult('crisisResult', `❌ Crisis Test: FAILED\nStatus: ${response.status}\nResponse: ${JSON.stringify(data)}`, 'error');
+                    addTestResult('Crisis Detection', 'fail', data);
+                }
+            } catch (error) {
+                showResult('crisisResult', `❌ Crisis Test: ERROR\n${error.message}`, 'error');
+                addTestResult('Crisis Detection', 'fail', error.message);
+            }
+        }
+
+        async function testAllEndpoints() {
+            const endpoints = [
+                { name: 'Health', url: '/api/health', method: 'GET' },
+                { name: 'Chatbot Message', url: '/api/v2/chatbot/message', method: 'POST', body: { message: 'test', userId: 'test' } },
+                { name: 'Emergency Resources', url: '/api/v2/chatbot/emergency-resources', method: 'GET' },
+                { name: 'Knowledge Base', url: '/api/v2/chatbot/knowledge', method: 'GET' },
+                { name: 'Create Session', url: '/api/v2/chatbot/session', method: 'POST', body: { userId: 'test' } }
+            ];
+
+            let results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const options = {
+                        method: endpoint.method,
+                        headers: { 'Content-Type': 'application/json' }
+                    };
+                    
+                    if (endpoint.body) {
+                        options.body = JSON.stringify(endpoint.body);
+                    }
+
+                    const response = await fetch(`${BACKEND_URL}${endpoint.url}`, options);
+                    const data = await response.json();
+                    
+                    results.push(`${response.ok ? '✅' : '❌'} ${endpoint.name}: ${response.status} - ${response.ok ? 'OK' : data.error || 'Error'}`);
+                } catch (error) {
+                    results.push(`❌ ${endpoint.name}: ERROR - ${error.message}`);
+                }
+            }
+
+            showResult('endpointsResult', results.join('\n'), 'info');
+            addTestResult('All Endpoints', 'info', results);
+        }
+
+        async function testFrontendIntegration() {
+            // Test the exact same calls that frontend makes
+            const tests = [
+                {
+                    name: 'AIContext API Call',
+                    url: `${BACKEND_URL}/api/v2/chatbot/message`,
+                    body: {
+                        message: 'Test from frontend integration',
+                        userId: 'web_user',
+                        sessionId: `session_${Date.now()}`,
+                        context: {
+                            userProfile: {},
+                            testResults: []
+                        }
+                    }
+                }
+            ];
+
+            let results = [];
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(test.body)
+                    });
+
+                    const data = await response.json();
+                    results.push(`${response.ok ? '✅' : '❌'} ${test.name}: ${response.status} - ${response.ok ? 'Success' : data.error || 'Failed'}`);
+                } catch (error) {
+                    results.push(`❌ ${test.name}: ERROR - ${error.message}`);
+                }
+            }
+
+            showResult('frontendResult', results.join('\n'), 'info');
+            addTestResult('Frontend Integration', 'info', results);
+        }
+
+        async function runAllTests() {
+            // Clear previous results
+            testResults = {};
+            
+            // Run all tests sequentially
+            await testBackendHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testBasicChatbot();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAllEndpoints();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testFrontendIntegration();
+            
+            // Generate summary
+            generateSummary();
+        }
+
+        function generateSummary() {
+            const summary = document.getElementById('summary');
+            let summaryHTML = '<h4>📊 Test Results Summary</h4>';
+            
+            const passCount = Object.values(testResults).filter(r => r.status === 'pass').length;
+            const failCount = Object.values(testResults).filter(r => r.status === 'fail').length;
+            const warningCount = Object.values(testResults).filter(r => r.status === 'warning').length;
+            
+            summaryHTML += `<p><strong>Total Tests:</strong> ${Object.keys(testResults).length}</p>`;
+            summaryHTML += `<p><span class="status pass">PASS: ${passCount}</span> `;
+            summaryHTML += `<span class="status warning">WARNING: ${warningCount}</span> `;
+            summaryHTML += `<span class="status fail">FAIL: ${failCount}</span></p>`;
+            
+            summaryHTML += '<h5>Detailed Results:</h5><ul>';
+            for (const [testName, result] of Object.entries(testResults)) {
+                const statusClass = result.status === 'pass' ? 'pass' : result.status === 'fail' ? 'fail' : 'warning';
+                summaryHTML += `<li><span class="status ${statusClass}">${result.status.toUpperCase()}</span> ${testName}</li>`;
+            }
+            summaryHTML += '</ul>';
+            
+            summary.innerHTML = summaryHTML;
+        }
+    </script>
+</body>
+</html>

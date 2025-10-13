@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quick Test Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .box {
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Quick Test Chatbot</h1>
+
+    <div class="box">
+        <button onclick="testAll()">🚀 TEST TẤT CẢ (Auto)</button>
+    </div>
+
+    <div class="loading" id="loading">⏳ Đang test...</div>
+
+    <div id="results"></div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        function showResult(title, message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'result ' + (isError ? 'error' : '');
+            div.innerHTML = `<strong>${title}</strong>\n${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').className = show ? 'loading show' : 'loading';
+        }
+
+        async function testAll() {
+            document.getElementById('results').innerHTML = '';
+            showLoading(true);
+
+            // Test 1: Backend Health
+            try {
+                const health = await fetch(BACKEND_URL + '/api/health');
+                const data = await health.json();
+
+                if (data.status === 'healthy') {
+                    showResult('✅ Test 1: Backend Health',
+                        `Status: ${data.status}\nGemini: ${data.gemini}\nChatbot: ${data.chatbot || 'ready'}`);
+                } else {
+                    showResult('⚠️ Test 1: Backend Warning',
+                        JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                showResult('❌ Test 1: Backend Health FAILED',
+                    `Error: ${error.message}\n\nBackend không kết nối được!`, true);
+            }
+
+            // Test 2: CORS
+            try {
+                const health = await fetch(BACKEND_URL + '/api/health', {
+                    headers: { 'Origin': window.location.origin }
+                });
+
+                const corsHeader = health.headers.get('access-control-allow-origin');
+
+                if (corsHeader) {
+                    showResult('✅ Test 2: CORS OK',
+                        `CORS Header: ${corsHeader}\nOrigin: ${window.location.origin}`);
+                } else {
+                    showResult('⚠️ Test 2: CORS Warning',
+                        'Không thấy CORS header, có thể cần thêm domain vào Railway');
+                }
+            } catch (error) {
+                showResult('❌ Test 2: CORS FAILED',
+                    `Error: ${error.message}\n\n→ Cần thêm domain vào CORS_ORIGIN trong Railway!`, true);
+            }
+
+            // Test 3: Chatbot
+            try {
+                const response = await fetch(BACKEND_URL + '/api/v2/chatbot/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: 'Xin chào, tôi cần trợ giúp',
+                        userId: 'test_user_' + Date.now(),
+                        sessionId: 'test_session_' + Date.now()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    showResult('✅ Test 3: Chatbot WORKS!',
+                        `Response: ${data.data.message || data.data.response}\n\nChatbot đang hoạt động tốt! 🎉`);
+
+                    // Show success alert
+                    alert('🎉 TẤT CẢ TEST THÀNH CÔNG!\n\nChatbot đang hoạt động!\n\nResponse: ' + (data.data.message || data.data.response));
+                } else {
+                    showResult('⚠️ Test 3: Chatbot Response',
+                        JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                showResult('❌ Test 3: Chatbot FAILED',
+                    `Error: ${error.message}\n\nChatbot không hoạt động!`, true);
+
+                alert('❌ CHATBOT LỖI!\n\n' + error.message + '\n\nKiểm tra:\n1. CORS trong Railway\n2. Gemini API Key\n3. Backend logs');
+            }
+
+            showLoading(false);
+        }
+    </script>
+</body>
+
+</html>

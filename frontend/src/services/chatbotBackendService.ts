@@ -293,7 +293,7 @@ export class ChatbotBackendService {
       }
 
       await this.apiClient.post(`/session/${activeSessionId}/end`);
-      
+
       if (activeSessionId === this.currentSessionId) {
         this.currentSessionId = null;
       }

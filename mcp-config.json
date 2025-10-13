@@ -1,5 +1,14 @@
 {
     "mcpServers": {
+        "gemini": {
+            "command": "node",
+            "args": [
+                "./mcp-servers/gemini-server.js"
+            ],
+            "env": {
+                "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE"
+            }
+        },
         "filesystem": {
             "command": "npx",
             "args": [

@@ -210,6 +210,12 @@ function logError(error: AppError, req: Request): void {
  * Main error handling middleware
  */
 export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction): void => {
+  // Log original error for debugging
+  console.error('❌ Original error in errorHandler:', error);
+  console.error('Error type:', error.constructor.name);
+  console.error('Error message:', error.message);
+  console.error('Error stack:', error.stack);
+
   // Handle the error
   const appError = handleSpecificErrors(error);
 

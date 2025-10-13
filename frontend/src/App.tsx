@@ -20,6 +20,8 @@ import PageTransition from './components/PageTransition';
 import ChatBot from './components/ChatBot';
 import CrisisAlert from './components/CrisisAlert';
 import WelcomeSplash from './components/WelcomeSplash';
+import ContentShowcaseLanding from './components/ContentShowcaseLanding';
+import ContentOverviewPage from './components/ContentOverviewPage';
 import { AIProvider } from './contexts/AIContext';
 import { TestResult } from './types';
 import { workflowManager, WorkflowStep } from './services/workflowManager';
@@ -32,6 +34,7 @@ import './App.css';
 // Enum để quản lý các bước của ứng dụng (legacy)
 enum AppStep {
   WELCOME = 'welcome',
+  CONTENT_OVERVIEW = 'content-overview',
   CONSENT = 'consent',
   DASHBOARD = 'dashboard',
   TEST_SELECTION = 'test-selection',
@@ -224,6 +227,17 @@ function App() {
           onResearchDashboard={() => setCurrentStep(AppStep.RESEARCH_DASHBOARD)}
           onCommunitySupport={() => setCurrentStep(AppStep.COMMUNITY_SUPPORT)}
           onDataBackup={() => setCurrentStep(AppStep.DATA_BACKUP)}
+        />;
+        
+      case AppStep.CONTENT_OVERVIEW:
+        return <ContentOverviewPage 
+          onBack={() => setCurrentStep(AppStep.WELCOME)}
+          onNavigateToTest={(testType) => {
+            setSelectedTests([testType]);
+            setCurrentStep(AppStep.TAKING_TEST);
+          }}
+          onNavigateToAI={() => setCurrentStep(AppStep.AI_COMPANION)}
+          onNavigateToResearch={() => setCurrentStep(AppStep.RESEARCH_DASHBOARD)}
         />;
         
       case AppStep.CONSENT:
@@ -433,6 +447,7 @@ function App() {
     // Map string step to AppStep
     const stepMap: Record<string, AppStep> = {
       'welcome': AppStep.WELCOME,
+      'content-overview': AppStep.CONTENT_OVERVIEW,
       'consent': AppStep.CONSENT,
       'test-selection': AppStep.TEST_SELECTION,
       'taking-test': AppStep.TAKING_TEST,
@@ -450,6 +465,7 @@ function App() {
   const getCurrentStepString = () => {
     const stepMap: Record<AppStep, string> = {
       [AppStep.WELCOME]: 'welcome',
+      [AppStep.CONTENT_OVERVIEW]: 'content-overview',
       [AppStep.CONSENT]: 'consent',
       [AppStep.DASHBOARD]: 'dashboard',
       [AppStep.TEST_SELECTION]: 'test-selection',
@@ -492,9 +508,9 @@ function App() {
          return (
            <AIProvider>
              <div className="App">
-               {/* Welcome Splash Screen */}
+               {/* Content Showcase Landing Screen */}
                {showSplash && (
-                 <WelcomeSplash 
+                 <ContentShowcaseLanding 
                    onComplete={() => setShowSplash(false)}
                    duration={3000}
                  />

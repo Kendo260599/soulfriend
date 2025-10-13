@@ -13,6 +13,7 @@
 import express, { Request, Response } from 'express';
 import { criticalInterventionService } from '../services/criticalInterventionService';
 import { logger } from '../utils/logger';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const router = express.Router();
  * GET /api/alerts/active
  * Lấy danh sách alerts đang active
  */
-router.get('/active', async (req: Request, res: Response) => {
+router.get('/active', asyncHandler(async (req: Request, res: Response) => {
   try {
     const activeAlerts = criticalInterventionService.getActiveAlerts();
 
@@ -37,13 +38,13 @@ router.get('/active', async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-});
+}));
 
 /**
  * POST /api/alerts/:id/acknowledge
  * Acknowledge một alert (dừng escalation timer)
  */
-router.post('/:id/acknowledge', async (req: Request, res: Response) => {
+router.post('/:id/acknowledge', asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { clinicalMemberId, notes } = req.body;
@@ -71,13 +72,13 @@ router.post('/:id/acknowledge', async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : 'Error acknowledging alert',
     });
   }
-});
+}));
 
 /**
  * POST /api/alerts/:id/resolve
  * Resolve một alert (crisis đã được xử lý)
  */
-router.post('/:id/resolve', async (req: Request, res: Response) => {
+router.post('/:id/resolve', asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { resolution } = req.body;
@@ -106,13 +107,13 @@ router.post('/:id/resolve', async (req: Request, res: Response) => {
       message: error instanceof Error ? error.message : 'Error resolving alert',
     });
   }
-});
+}));
 
 /**
  * GET /api/alerts/:id
  * Lấy chi tiết một alert
  */
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const activeAlerts = criticalInterventionService.getActiveAlerts();
@@ -137,13 +138,13 @@ router.get('/:id', async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-});
+}));
 
 /**
  * GET /api/alerts/stats
  * Lấy thống kê alerts
  */
-router.get('/stats', async (req: Request, res: Response) => {
+router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
   try {
     const activeAlerts = criticalInterventionService.getActiveAlerts();
 
@@ -174,6 +175,6 @@ router.get('/stats', async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-});
+}));
 
 export default router;

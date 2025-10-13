@@ -22,13 +22,13 @@ router.post('/feedback', asyncHandler(async (req, res) => {
     res.json({
       success: true,
       message: 'Feedback recorded. Chatbot sẽ học từ phản hồi này!',
-    }));
+    });
   } catch (error: any) {
     logger.error('Error recording feedback:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -46,13 +46,13 @@ router.get('/insights', asyncHandler(async (req, res) => {
       success: true,
       insights,
       message: `Analyzed ${insights.totalConversations} conversations from last ${periodDays} days`,
-    }));
+    });
   } catch (error: any) {
     logger.error('Error getting insights:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -88,7 +88,7 @@ router.get('/training-data', asyncHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -106,13 +106,13 @@ router.get('/common-questions', asyncHandler(async (req, res) => {
       success: true,
       count: questions.length,
       questions,
-    }));
+    });
   } catch (error: any) {
     logger.error('Error finding common questions:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 
@@ -130,13 +130,13 @@ router.get('/needs-review', asyncHandler(async (req, res) => {
       success: true,
       count: conversations.length,
       conversations,
-    }));
+    });
   } catch (error: any) {
     logger.error('Error getting conversations for review:', error);
     res.status(500).json({
       success: false,
       error: error.message,
-    }));
+    });
   }
 }));
 

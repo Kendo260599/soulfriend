@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+nixpacksConfig = { providers = ["nodejs"], variables = { NODE_VERSION = "20" } }
 
 [deploy]
 startCommand = "npm start"

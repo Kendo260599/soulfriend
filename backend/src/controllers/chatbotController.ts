@@ -40,12 +40,12 @@ export class ChatbotController {
         messageLength: message.length,
       });
 
-      // Process message with Legacy Chatbot Service (temporarily)
-      const response = await this.chatbotService.processMessage(
+      // Process message with Enhanced Chatbot Service (với HITL crisis detection)
+      const response = await this.enhancedChatbotService.processMessage(
         message,
-        userId || 'anonymous',
         sessionId || this.generateSessionId(),
-        context || {}
+        userId || 'anonymous',
+        context?.userProfile
       );
 
       res.json({

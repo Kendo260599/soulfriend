@@ -27,6 +27,7 @@ import researchRoutes from './routes/research';
 import chatbotRoutes from './routes/chatbot';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
 import conversationLearningRoutes from './routes/conversationLearning';
+import criticalAlertsRoutes from './routes/criticalAlerts';
 
 // Import Models (để MongoDB tạo collections)
 import './models/HITLFeedback';
@@ -132,6 +133,7 @@ app.use('/api/v2/chatbot', chatbotRoutes);
 // ✨ NEW: HITL Feedback Loop & Conversation Learning
 app.use('/api/hitl-feedback', hitlFeedbackRoutes);
 app.use('/api/conversation-learning', conversationLearningRoutes);
+app.use('/api/alerts', criticalAlertsRoutes);
 
 // API v1 routes (legacy - deprecated)
 app.use('/api/consent', consentRoutes);

@@ -241,23 +241,33 @@ export class CriticalInterventionService {
   private startEscalationTimer(alert: CriticalAlert): void {
     const delayMs = this.config.escalationDelayMinutes * 60 * 1000;
 
+    logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logger.warn(`🚨 HITL ACTIVATED - CRISIS DETECTED`);
+    logger.warn(`Alert ID: ${alert.id}`);
+    logger.warn(`User: ${alert.userId}`);
+    logger.warn(`Risk Type: ${alert.riskType}`);
+    logger.warn(`Message: "${alert.userMessage}"`);
+    logger.warn(`⏱️  ESCALATION TIMER: ${this.config.escalationDelayMinutes} minutes`);
+    logger.warn(`📢 Clinical team has been notified`);
+    logger.warn(`⚠️  If no response in ${this.config.escalationDelayMinutes} min → Auto escalate to emergency`);
+    logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const timer = setTimeout(async () => {
       // Kiểm tra xem alert đã được xử lý chưa
       const currentAlert = this.activeAlerts.get(alert.id);
 
       if (currentAlert && currentAlert.status === 'pending') {
-        logger.error(
-          `⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`
-        );
+        logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logger.error(`⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`);
+        logger.error(`Alert ${alert.id} - Escalating to emergency services`);
+        logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         await this.escalateToEmergencyServices(alert);
+      } else {
+        logger.info(`✅ Alert ${alert.id} was handled before escalation`);
       }
     }, delayMs);
 
     this.escalationTimers.set(alert.id, timer);
-
-    logger.info(
-      `⏱️ Escalation timer started: ${this.config.escalationDelayMinutes} minutes for alert ${alert.id}`
-    );
   }
 
   /**

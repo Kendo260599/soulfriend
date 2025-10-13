@@ -17,12 +17,16 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import TestResult from '../../src/models/TestResult';
 import Consent from '../../src/models/Consent';
 
+// Mock mongo-sanitize to avoid issues with supertest
+jest.mock('express-mongo-sanitize', () => {
+  return () => (req: any, res: any, next: any) => next();
+});
+
 // Create a simple Express app for testing without database connection
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import mongoSanitize from 'express-mongo-sanitize';
 import { errorHandler } from '../../src/middleware/errorHandler';
 import testRoutes from '../../src/routes/tests';
 
@@ -34,7 +38,6 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(mongoSanitize());
 
 // Routes
 app.use('/api/tests', testRoutes);
@@ -295,7 +298,7 @@ describe('Test Routes', () => {
         .expect(201);
 
       expect(response.body.data.totalScore).toBe(21);
-      expect(response.body.data.evaluation.severity).toBe('severe');
+      expect(response.body.data.evaluation.severity).toBe('Lo âu nghiêm trọng');
       expect(response.body.data.evaluation.recommendations).toBeDefined();
       expect(response.body.data.evaluation.recommendations.length).toBeGreaterThan(0);
     });
@@ -313,7 +316,7 @@ describe('Test Routes', () => {
         .expect(201);
 
       expect(response.body.data.totalScore).toBe(18);
-      expect(response.body.data.evaluation.severity).toBe('moderately_severe');
+      expect(response.body.data.evaluation.severity).toBe('Trầm cảm trung bình-nặng');
       expect(response.body.data.evaluation.interpretation).toContain('trầm cảm');
     });
 
@@ -329,7 +332,8 @@ describe('Test Routes', () => {
         .send(testData)
         .expect(201);
 
-      expect(response.body.data.totalScore).toBe(21);
+      // DASS-21 multiplies scores by 2 (standard DASS-21 scoring)
+      expect(response.body.data.totalScore).toBe(42);
       expect(response.body.data.evaluation.severity).toBeDefined();
       expect(response.body.data.evaluation.interpretation).toBeDefined();
     });

@@ -6,7 +6,6 @@
 import compression from 'compression';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
-import mongoSanitize from 'express-mongo-sanitize';
 import helmet from 'helmet';
 
 // Configuration
@@ -81,11 +80,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Sanitize user input against NoSQL injection
 // Note: Disabled for Express v5 compatibility - implementing manual sanitization in validators
-// app.use(
-//   mongoSanitize({
-//     replaceWith: '_',
-//   })
-// );
+// Manual sanitization implemented in route validators
 
 // ====================
 // LOGGING & MONITORING

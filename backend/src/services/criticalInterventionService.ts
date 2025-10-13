@@ -165,6 +165,15 @@ export class CriticalInterventionService {
       riskType: alert.riskType,
       keywords: alert.detectedKeywords,
     });
+    
+    // Force console output for Railway visibility
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
+    console.error(`User: ${userId}`);
+    console.error(`Risk Type: ${alert.riskType}`);
+    console.error(`Keywords: ${alert.detectedKeywords.join(', ')}`);
+    console.error(`Message: "${alert.userMessage}"`);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // STEP 2: Immediate documentation
     if (this.config.autoDocumentation) {

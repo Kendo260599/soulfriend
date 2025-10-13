@@ -3,7 +3,7 @@
  * Handles chatbot API endpoints for Phase 1
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ChatbotService } from '../services/chatbotService';
 import { EnhancedChatbotService } from '../services/enhancedChatbotService';
 import { logger } from '../utils/logger';

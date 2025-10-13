@@ -81,7 +81,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       // Try backend AI service first
       if (isOnline) {
         try {
-          const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
+          const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
           const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
             method: 'POST',
             headers: {

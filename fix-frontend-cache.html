@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Fix Frontend Cache - SoulFriend</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+
+        .step h3 {
+            color: #4a5568;
+            margin-top: 0;
+        }
+
+        .button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 Fix Frontend Cache Issues</h1>
+        <p><strong>Backend URL:</strong> https://soulfriend-production.up.railway.app</p>
+        <p><strong>Frontend URL:</strong> https://soulfriend-kendo260599s-projects.vercel.app</p>
+
+        <!-- Step 1: Clear Browser Cache -->
+        <div class="step">
+            <h3>🧹 Step 1: Clear Browser Cache</h3>
+            <p>Click the button below to clear all cached data for this site:</p>
+            <button class="button" onclick="clearCache()">Clear Browser Cache</button>
+            <div id="cacheResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Step 2: Test Backend Connection -->
+        <div class="step">
+            <h3>🔗 Step 2: Test Backend Connection</h3>
+            <p>Test if backend is accessible from frontend:</p>
+            <button class="button" onclick="testBackend()">Test Backend Health</button>
+            <div id="backendResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Step 3: Test Chatbot API -->
+        <div class="step">
+            <h3>🤖 Step 3: Test Chatbot API</h3>
+            <p>Test chatbot API with CORS:</p>
+            <button class="button" onclick="testChatbot()">Test Chatbot API</button>
+            <div id="chatbotResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Step 4: Test Crisis Detection -->
+        <div class="step">
+            <h3>🚨 Step 4: Test Crisis Detection</h3>
+            <p>Test crisis detection and HITL system:</p>
+            <button class="button" onclick="testCrisis()" style="background: #dc3545;">Test Crisis Message</button>
+            <div id="crisisResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Summary -->
+        <div class="step">
+            <h3>📊 Test Summary</h3>
+            <div id="summary">
+                <p>Click "Run All Tests" to get comprehensive results</p>
+                <button class="button" onclick="runAllTests()"
+                    style="background: #28a745; font-size: 16px; padding: 15px 30px;">🚀 Run All Tests</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+        let testResults = {};
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = content;
+        }
+
+        function addTestResult(testName, status, details) {
+            testResults[testName] = { status, details, timestamp: new Date() };
+        }
+
+        async function clearCache() {
+            try {
+                // Clear localStorage
+                localStorage.clear();
+
+                // Clear sessionStorage
+                sessionStorage.clear();
+
+                // Clear IndexedDB (if exists)
+                if ('indexedDB' in window) {
+                    const databases = await indexedDB.databases();
+                    for (const db of databases) {
+                        indexedDB.deleteDatabase(db.name);
+                    }
+                }
+
+                showResult('cacheResult', '✅ Browser cache cleared successfully!\n- localStorage cleared\n- sessionStorage cleared\n- IndexedDB cleared', 'success');
+                addTestResult('Clear Cache', 'pass', 'Cache cleared');
+            } catch (error) {
+                showResult('cacheResult', `❌ Error clearing cache: ${error.message}`, 'error');
+                addTestResult('Clear Cache', 'fail', error.message);
+            }
+        }
+
+        async function testBackend() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await response.json();
+
+                if (response.ok && data.status === 'healthy') {
+                    showResult('backendResult', `✅ Backend Health: OK\nStatus: ${data.status}\nTimestamp: ${data.timestamp}\nResponse Time: ${Date.now() - performance.now()}ms`, 'success');
+                    addTestResult('Backend Health', 'pass', data);
+                } else {
+                    showResult('backendResult', `❌ Backend Health: FAILED\nStatus: ${response.status}\nResponse: ${JSON.stringify(data)}`, 'error');
+                    addTestResult('Backend Health', 'fail', data);
+                }
+            } catch (error) {
+                showResult('backendResult', `❌ Backend Health: ERROR\n${error.message}`, 'error');
+                addTestResult('Backend Health', 'fail', error.message);
+            }
+        }
+
+        async function testChatbot() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Xin chào, tôi cần trợ giúp về căng thẳng',
+                        userId: 'test_user_123',
+                        sessionId: `test_session_${Date.now()}`,
+                        context: {
+                            userProfile: { name: 'Test User' }
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResult('chatbotResult', `✅ Chatbot: WORKING\nResponse: ${data.data.message}\nIntent: ${data.data.intent || 'N/A'}\nRisk Level: ${data.data.riskLevel || 'N/A'}\nAI Generated: ${data.data.aiGenerated || false}`, 'success');
+                    addTestResult('Chatbot API', 'pass', data);
+                } else {
+                    showResult('chatbotResult', `❌ Chatbot: FAILED\nStatus: ${response.status}\nResponse: ${JSON.stringify(data)}`, 'error');
+                    addTestResult('Chatbot API', 'fail', data);
+                }
+            } catch (error) {
+                showResult('chatbotResult', `❌ Chatbot: ERROR\n${error.message}`, 'error');
+                addTestResult('Chatbot API', 'fail', error.message);
+            }
+        }
+
+        async function testCrisis() {
+            if (!confirm('⚠️ This will trigger crisis detection and HITL system. Continue?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Tôi muốn tự tử, tôi không thể chịu đựng được nữa',
+                        userId: 'crisis_test_user',
+                        sessionId: `crisis_test_${Date.now()}`,
+                        context: {
+                            userProfile: { name: 'Crisis Test User' }
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const isCrisis = data.data.riskLevel === 'CRITICAL' || data.data.riskLevel === 'HIGH';
+                    const resultType = isCrisis ? 'success' : 'warning';
+                    const status = isCrisis ? '✅ HITL: ACTIVATED' : '⚠️ HITL: NOT ACTIVATED';
+
+                    showResult('crisisResult', `${status}\nResponse: ${data.data.message}\nRisk Level: ${data.data.riskLevel}\nCrisis Level: ${data.data.crisisLevel}\nCrisis Detected: ${isCrisis}\nEmergency Contacts: ${data.data.emergencyContacts?.length || 0}\n\n⚠️ Check Railway logs for HITL alerts!`, resultType);
+                    addTestResult('Crisis Detection', isCrisis ? 'pass' : 'warning', data);
+                } else {
+                    showResult('crisisResult', `❌ Crisis Test: FAILED\nStatus: ${response.status}\nResponse: ${JSON.stringify(data)}`, 'error');
+                    addTestResult('Crisis Detection', 'fail', data);
+                }
+            } catch (error) {
+                showResult('crisisResult', `❌ Crisis Test: ERROR\n${error.message}`, 'error');
+                addTestResult('Crisis Detection', 'fail', error.message);
+            }
+        }
+
+        async function runAllTests() {
+            // Clear previous results
+            testResults = {};
+
+            // Run all tests sequentially
+            await clearCache();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testBackend();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testChatbot();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Generate summary
+            generateSummary();
+        }
+
+        function generateSummary() {
+            const summary = document.getElementById('summary');
+            let summaryHTML = '<h4>📊 Test Results Summary</h4>';
+
+            const passCount = Object.values(testResults).filter(r => r.status === 'pass').length;
+            const failCount = Object.values(testResults).filter(r => r.status === 'fail').length;
+            const warningCount = Object.values(testResults).filter(r => r.status === 'warning').length;
+
+            summaryHTML += `<p><strong>Total Tests:</strong> ${Object.keys(testResults).length}</p>`;
+            summaryHTML += `<p><span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">PASS: ${passCount}</span> `;
+            summaryHTML += `<span style="background: #ffc107; color: black; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">WARNING: ${warningCount}</span> `;
+            summaryHTML += `<span style="background: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">FAIL: ${failCount}</span></p>`;
+
+            summaryHTML += '<h5>Detailed Results:</h5><ul>';
+            for (const [testName, result] of Object.entries(testResults)) {
+                const statusClass = result.status === 'pass' ? 'background: #28a745; color: white' : result.status === 'fail' ? 'background: #dc3545; color: white' : 'background: #ffc107; color: black';
+                summaryHTML += `<li><span style="${statusClass}; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold;">${result.status.toUpperCase()}</span> ${testName}</li>`;
+            }
+            summaryHTML += '</ul>';
+
+            summary.innerHTML = summaryHTML;
+        }
+    </script>
+</body>
+
+</html>

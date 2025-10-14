@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app/api';
 
 export interface CloudResearchData {
   participantId?: string;
@@ -98,14 +98,14 @@ class CloudResearchService {
       }
     } catch (error) {
       console.error('❌ Error saving research data to cloud:', error);
-      
+
       if (axios.isAxiosError(error)) {
         return {
           success: false,
           error: error.response?.data?.error || error.message
         };
       }
-      
+
       return {
         success: false,
         error: 'Unknown error occurred'
@@ -154,7 +154,7 @@ class CloudResearchService {
       console.error('Error fetching research data:', error);
       return {
         success: false,
-        error: axios.isAxiosError(error) 
+        error: axios.isAxiosError(error)
           ? error.response?.data?.error || error.message
           : 'Unknown error'
       };
@@ -184,7 +184,7 @@ class CloudResearchService {
       console.error('Error fetching statistics:', error);
       return {
         success: false,
-        error: axios.isAxiosError(error) 
+        error: axios.isAxiosError(error)
           ? error.response?.data?.error || error.message
           : 'Unknown error'
       };
@@ -238,7 +238,7 @@ class CloudResearchService {
       console.error('Error exporting data:', error);
       return {
         success: false,
-        error: axios.isAxiosError(error) 
+        error: axios.isAxiosError(error)
           ? error.response?.data?.error || error.message
           : 'Unknown error'
       };

@@ -78,45 +78,49 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     setLastError(null);
 
     try {
-      // Try backend AI service first
-      if (isOnline) {
-        try {
-          const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
-          const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message,
-              userId: 'web_user',
-              sessionId: `session_${Date.now()}`,
-              context: {
-                userProfile,
-                testResults
-              }
-            })
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setIsOnline(true);
-              return {
-                text: data.data.message,
-                crisisDetected: data.data.riskLevel === 'CRISIS' || data.data.riskLevel === 'HIGH',
-                recommendations: data.data.nextActions || [],
-                nextActions: data.data.emergencyContacts ? 
-                  data.data.emergencyContacts.map((contact: any) => `${contact.name}: ${contact.phone}`) : [],
-                confidence: data.data.confidence || 0.8,
-                aiGenerated: data.data.aiGenerated || false
-              };
+      // ALWAYS try backend AI service first (removed isOnline check)
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
+        const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+          body: JSON.stringify({
+            message,
+            userId: 'web_user',
+            sessionId: `session_${Date.now()}`,
+            context: {
+              userProfile,
+              testResults
             }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setIsOnline(true); // ✅ Backend working!
+            return {
+              text: data.data.message || data.data.response,
+              crisisDetected: data.data.riskLevel === 'CRITICAL' || data.data.riskLevel === 'HIGH' || data.data.crisisLevel === 'critical',
+              recommendations: data.data.nextActions || [],
+              nextActions: data.data.emergencyContacts ? 
+                data.data.emergencyContacts.map((contact: any) => `${contact.name}: ${contact.phone}`) : [],
+              confidence: data.data.confidence || 0.8,
+              aiGenerated: data.data.aiGenerated || false
+            };
           }
-        } catch (error) {
-          console.warn('Backend AI service unavailable, using offline fallback:', error);
-          setIsOnline(false);
         }
+        
+        // If response not ok, throw error to trigger offline fallback
+        throw new Error(`Backend returned status ${response.status}`);
+        
+      } catch (error) {
+        console.warn('Backend AI service unavailable, using offline fallback:', error);
+        setIsOnline(false);
+        
+        // Don't throw - continue to offline fallback
       }
 
       // Use offline service as fallback
@@ -147,7 +151,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [isOnline]);
+  }, []);
 
   // Clear error
   const clearError = useCallback(() => {

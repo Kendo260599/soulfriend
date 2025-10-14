@@ -77,4 +77,45 @@ router.post('/session/:sessionId/end', chatbotController.endSession);
  */
 router.get('/stats', chatbotController.getStats);
 
+/**
+ * DEBUG ENDPOINT - Test crisis detection directly
+ * GET /api/v2/chatbot/debug/crisis-test?message=xxx
+ */
+router.get('/debug/crisis-test', async (req, res) => {
+  try {
+    const { message } = req.query;
+    
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        error: 'Message query parameter required'
+      });
+    }
+
+    // Import crisis detection function directly
+    const { detectCrisis } = await import('../data/crisisManagementData');
+    
+    const crisis = detectCrisis(message);
+    const crisisLevel = crisis ? crisis.level : 'low';
+    
+    res.json({
+      success: true,
+      input: message,
+      crisisDetected: crisis !== null,
+      crisis: crisis ? {
+        id: crisis.id,
+        level: crisis.level,
+        triggers: crisis.triggers,
+      } : null,
+      crisisLevel,
+      riskLevel: crisisLevel === 'critical' ? 'CRITICAL' : crisisLevel === 'high' ? 'HIGH' : 'LOW',
+      message: 'This is a debug endpoint to test crisis detection function directly'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 export default router;

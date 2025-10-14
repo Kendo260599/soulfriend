@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 Monitor Railway Deployment</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .log { margin: 5px 0; padding: 5px; }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        .info { color: #00aaff; }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Railway Deployment Monitor</h1>
+    <p>Backend: https://soulfriend-production.up.railway.app</p>
+    
+    <div>
+        <button onclick="testDeployment()">🧪 Test Deployment</button>
+        <button onclick="testCrisis()">🚨 Test Crisis Detection</button>
+        <button onclick="clearLogs()">🗑️ Clear</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('logs').appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testDeployment() {
+            log('🔄 Starting deployment test...', 'info');
+            
+            try {
+                const health = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await health.json();
+                
+                if (health.ok) {
+                    log(`✅ Backend is UP (Status: ${data.status})`, 'success');
+                    log(`✅ Gemini: ${data.gemini}`, 'success');
+                    log(`✅ Chatbot: ${data.chatbot}`, 'success');
+                } else {
+                    log(`❌ Backend unhealthy: ${health.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Backend connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCrisis() {
+            log('🚨 Testing crisis detection...', 'warning');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: 'Tôi muốn tự tử, tôi không thể chịu đựng được nữa',
+                        userId: 'crisis_test_' + Date.now(),
+                        sessionId: 'crisis_session_' + Date.now()
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    log(`📤 Response received:`, 'info');
+                    log(`   Risk Level: ${data.data.riskLevel}`, 
+                        data.data.riskLevel === 'CRITICAL' ? 'success' : 'error');
+                    log(`   Crisis Level: ${data.data.crisisLevel}`, 
+                        data.data.crisisLevel === 'critical' ? 'success' : 'error');
+                    log(`   Emergency Contacts: ${data.data.emergencyContacts?.length || 0}`, 
+                        data.data.emergencyContacts?.length > 0 ? 'success' : 'error');
+                    
+                    if (data.data.riskLevel === 'CRITICAL') {
+                        log('', 'info');
+                        log('✅✅✅ CRISIS DETECTION: WORKING!', 'success');
+                        log('✅✅✅ HITL SYSTEM: ACTIVATED!', 'success');
+                        log('', 'info');
+                        log('⚠️  CHECK RAILWAY LOGS FOR:', 'warning');
+                        log('   - 🔍 CRISIS DEBUG messages', 'warning');
+                        log('   - 🚨 CRISIS DETECTED alerts', 'warning');
+                        log('   - 🚨 HITL Alert created', 'warning');
+                        log('   - ⏱️  Escalation timer messages', 'warning');
+                    } else {
+                        log('', 'info');
+                        log('❌❌❌ CRISIS DETECTION: NOT WORKING!', 'error');
+                        log(`Expected riskLevel=CRITICAL, got ${data.data.riskLevel}`, 'error');
+                        log(`Expected crisisLevel=critical, got ${data.data.crisisLevel}`, 'error');
+                        log('', 'info');
+                        log('🔍 DEBUGGING STEPS:', 'warning');
+                        log('1. Check Railway logs for deployment', 'warning');
+                        log('2. Look for 🔍 CRISIS DEBUG messages', 'warning');
+                        log('3. Verify code was deployed successfully', 'warning');
+                    }
+                    
+                    log('', 'info');
+                    log(`Response preview: ${data.data.message.substring(0, 100)}...`, 'info');
+                } else {
+                    log(`❌ API error: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Crisis test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto test on load after 2 seconds
+        setTimeout(() => {
+            log('🚀 Auto-testing deployment...', 'info');
+            testDeployment();
+        }, 2000);
+    </script>
+</body>
+</html>
+

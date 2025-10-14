@@ -140,6 +140,15 @@ export class EnhancedChatbotService {
       // 5. Phát hiện khủng hoảng
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
+      
+      // Debug logging for crisis detection
+      if (crisis) {
+        logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {
+          triggers: crisis.triggers,
+          message: message.substring(0, 100),
+        });
+        console.error(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel}) - Message: "${message}"`);
+      }
 
       // 6. Đánh giá rủi ro
       const riskAssessment = assessRisk(
@@ -240,26 +249,34 @@ export class EnhancedChatbotService {
       });
 
       return {
-        response,
+        message: response, // Frontend expects 'message' not 'response'
+        response, // Keep both for compatibility
         intent: multiIntent?.primaryIntent || 'general',
         confidence: 0.8,
-        suggestions,
-        crisisLevel,
         userSegment: userSegment?.id,
         emotionalState: nuancedEmotion.emotion,
+        riskLevel: crisisLevel === 'critical' ? 'CRITICAL' : crisisLevel === 'high' ? 'HIGH' : 'LOW', // Frontend expects 'riskLevel'
+        crisisLevel, // Keep both for compatibility
+        suggestions,
         qualityScore: qualityEvaluation.qualityScore,
         referralInfo,
         disclaimer,
         followUpActions,
+        emergencyContacts: crisisLevel === 'critical' ? referralInfo : [],
+        nextActions: followUpActions,
+        aiGenerated: true,
       };
     } catch (error) {
       logger.error('Error processing message:', error);
       return {
+        message: 'Xin lỗi, tôi gặp sự cố kỹ thuật. Bạn có thể thử lại sau không?',
         response: 'Xin lỗi, tôi gặp sự cố kỹ thuật. Bạn có thể thử lại sau không?',
         intent: 'error',
         confidence: 0,
         suggestions: ['Thử lại', 'Liên hệ hỗ trợ'],
+        riskLevel: 'LOW',
         crisisLevel: 'low',
+        aiGenerated: false,
       };
     }
   }

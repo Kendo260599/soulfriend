@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🧪 Vercel Env Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+        }
+
+        .log {
+            margin: 5px 0;
+            padding: 5px;
+        }
+
+        .success {
+            color: #00ff00;
+        }
+
+        .error {
+            color: #ff0000;
+        }
+
+        .warning {
+            color: #ffaa00;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Vercel Environment Variables Test</h1>
+    <p>Test if Vercel has the correct env vars deployed</p>
+
+    <div>
+        <button onclick="testVercel()">🧪 Test Vercel Frontend</button>
+        <button onclick="testBackend()">🔧 Test Backend Direct</button>
+        <button onclick="clearLogs()">🗑️ Clear</button>
+    </div>
+
+    <div id="logs"></div>
+
+    <script>
+        const VERCEL_URL = 'https://soulfriend-kendo260599s-projects.vercel.app';
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        function log(message, type = 'log') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('logs').appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testBackend() {
+            log('🔧 Testing Backend Direct...', 'warning');
+
+            try {
+                const health = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await health.json();
+
+                if (health.ok) {
+                    log(`✅ Backend Health: ${data.status}`, 'success');
+                    log(`✅ Gemini: ${data.gemini}`, 'success');
+                    log(`✅ Chatbot: ${data.chatbot}`, 'success');
+                } else {
+                    log(`❌ Backend unhealthy: ${health.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Backend error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testVercel() {
+            log('🧪 Testing Vercel Frontend...', 'warning');
+
+            try {
+                // Test if Vercel can reach backend
+                const response = await fetch(`${VERCEL_URL}/`);
+
+                if (response.ok) {
+                    log(`✅ Vercel Frontend: Online`, 'success');
+                    log(`   Status: ${response.status} ${response.statusText}`, 'success');
+
+                    // Now test if frontend's API calls work
+                    log('', 'log');
+                    log('📡 Testing Frontend → Backend connection...', 'warning');
+                    log('   (Check browser console for API calls)', 'warning');
+                    log('', 'log');
+                    log('⚠️  IMPORTANT:', 'warning');
+                    log('   1. Open Vercel app in new tab', 'warning');
+                    log('   2. Open DevTools (F12)', 'warning');
+                    log('   3. Go to Console tab', 'warning');
+                    log('   4. Look for errors', 'warning');
+                    log('', 'log');
+                    log('Expected if WORKING:', 'success');
+                    log('   - No 404 errors', 'success');
+                    log('   - Health check: 200 OK', 'success');
+                    log('   - API calls to: ' + BACKEND_URL, 'success');
+                    log('', 'log');
+                    log('Expected if NOT WORKING:', 'error');
+                    log('   - 404 Not Found errors', 'error');
+                    log('   - Wrong URL in network tab', 'error');
+                    log('   - Missing env vars', 'error');
+                } else {
+                    log(`❌ Vercel Frontend: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Vercel error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto test backend on load
+        setTimeout(() => {
+            log('🚀 Auto-testing backend...', 'log');
+            testBackend();
+        }, 1000);
+    </script>
+</body>
+
+</html>

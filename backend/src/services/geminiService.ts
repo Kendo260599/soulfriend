@@ -6,6 +6,12 @@ export class GeminiService {
   private genAI!: GoogleGenerativeAI;
   private model!: GenerativeModel;
   private isInitialized: boolean = false;
+  
+  // Rate limiting for free tier (15 RPM)
+  private requestCount: number = 0;
+  private requestWindowStart: number = Date.now();
+  private readonly MAX_REQUESTS_PER_MINUTE = 12; // Conservative limit for free tier
+  private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute in ms
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -46,6 +52,38 @@ export class GeminiService {
     return this.isInitialized;
   }
 
+  /**
+   * Check if we're within rate limits (FREE tier: 15 RPM)
+   * Returns true if OK to proceed, false if rate limited
+   */
+  private checkRateLimit(): boolean {
+    const now = Date.now();
+    const elapsed = now - this.requestWindowStart;
+    
+    // Reset counter if window expired
+    if (elapsed >= this.RATE_LIMIT_WINDOW) {
+      this.requestCount = 0;
+      this.requestWindowStart = now;
+    }
+    
+    // Check if we're over limit
+    if (this.requestCount >= this.MAX_REQUESTS_PER_MINUTE) {
+      const waitTime = this.RATE_LIMIT_WINDOW - elapsed;
+      logger.warn(`⚠️ Gemini FREE tier rate limit reached (${this.requestCount}/${this.MAX_REQUESTS_PER_MINUTE} RPM). Wait ${Math.ceil(waitTime/1000)}s`);
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Increment request counter
+   */
+  private incrementRequestCount(): void {
+    this.requestCount++;
+    logger.debug(`📊 Gemini requests: ${this.requestCount}/${this.MAX_REQUESTS_PER_MINUTE} in current minute`);
+  }
+
   async generateResponse(
     userMessage: string,
     context: any
@@ -58,7 +96,18 @@ export class GeminiService {
       };
     }
 
+    // Check rate limit for FREE tier
+    if (!this.checkRateLimit()) {
+      logger.warn('🆓 FREE tier rate limit - using offline response');
+      return {
+        text: 'Mình đang xử lý nhiều yêu cầu cùng lúc. Bạn có thể chia sẻ thêm về tình huống của mình không? Mình sẽ cố gắng hỗ trợ bạn tốt nhất có thể. 💙',
+        confidence: 0.5,
+      };
+    }
+
     try {
+      // Increment counter before API call
+      this.incrementRequestCount();
       // Enhanced prompt with safety guidelines
       const prompt = `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
@@ -104,14 +153,29 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
       }
 
       return { text, confidence: 0.9 };
-    } catch (error) {
-      logger.error('Error generating response from Gemini:', error);
-
-      // Return fallback response instead of throwing
-      return {
-        text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
-        confidence: 0.1,
-      };
+    } catch (error: any) {
+      // Enhanced error logging for FREE tier issues
+      const errorMsg = error?.message || String(error);
+      
+      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota')) {
+        logger.warn('🆓 Gemini FREE tier quota exceeded:', errorMsg);
+        return {
+          text: 'Mình hiểu bạn đang cần hỗ trợ. Do giới hạn dịch vụ miễn phí, mình sẽ lắng nghe và cố gắng giúp bạn với những gì mình có thể. Bạn muốn chia sẻ gì với mình? 💙',
+          confidence: 0.5,
+        };
+      } else if (errorMsg.includes('API key') || errorMsg.includes('INVALID') || errorMsg.includes('403')) {
+        logger.error('❌ Gemini API key invalid or expired:', errorMsg);
+        return {
+          text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
+          confidence: 0.1,
+        };
+      } else {
+        logger.error('❌ Gemini API error:', errorMsg);
+        return {
+          text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
+          confidence: 0.1,
+        };
+      }
     }
   }
 

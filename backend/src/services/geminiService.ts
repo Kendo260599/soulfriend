@@ -16,19 +16,28 @@ export class GeminiService {
 
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      // Try gemini-1.5-flash first, fallback to gemini-pro
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      // Use gemini-pro as primary (more stable)
+      // gemini-1.5-flash may require different API tier
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
       this.isInitialized = true;
-      logger.info('✅ Gemini AI initialized successfully with gemini-1.5-flash');
+      logger.info('✅ Gemini AI initialized successfully with gemini-pro');
     } catch (error) {
       logger.error('❌ Failed to initialize Gemini AI:', error);
-      // Try fallback to gemini-pro
-      try {
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-        this.isInitialized = true;
-        logger.info('✅ Gemini AI initialized successfully with gemini-pro (fallback)');
-      } catch (fallbackError) {
-        logger.error('❌ Fallback also failed:', fallbackError);
+      logger.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // Try alternative model names
+      const fallbackModels = ['gemini-1.0-pro', 'gemini-1.5-pro'];
+      for (const modelName of fallbackModels) {
+        try {
+          logger.info(`Trying fallback model: ${modelName}`);
+          this.model = this.genAI.getGenerativeModel({ model: modelName });
+          this.isInitialized = true;
+          logger.info(`✅ Gemini AI initialized successfully with ${modelName} (fallback)`);
+          break;
+        } catch (fallbackError) {
+          logger.error(`❌ Fallback ${modelName} also failed:`, fallbackError);
+        }
       }
     }
   }

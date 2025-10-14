@@ -1,6 +1,7 @@
 /**
  * SoulFriend V4.0 - Server chính
  * Production-Grade Server with Security, Monitoring & Performance
+ * Version: 1.0.1 - Crisis Detection & HITL System Enhanced
  */
 
 import compression from 'compression';

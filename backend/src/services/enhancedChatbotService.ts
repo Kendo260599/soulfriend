@@ -86,17 +86,22 @@ export interface QualityMetrics {
 }
 
 export interface EnhancedResponse {
-  response: string;
+  message: string; // Frontend expects 'message'
+  response: string; // Keep for compatibility
   intent: string;
   confidence: number;
   suggestions: string[];
-  crisisLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'; // Frontend expects 'riskLevel'
+  crisisLevel: 'low' | 'medium' | 'high' | 'critical'; // Keep for compatibility
   userSegment?: string;
   emotionalState?: string;
   qualityScore?: number;
   referralInfo?: any[];
   disclaimer?: string;
   followUpActions?: string[];
+  emergencyContacts?: any[]; // For crisis situations
+  nextActions?: string[]; // For follow-up actions
+  aiGenerated?: boolean; // Indicates if response is AI-generated
 }
 
 export class EnhancedChatbotService {

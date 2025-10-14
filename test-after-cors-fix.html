@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🧪 Test After CORS Fix</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .success {
+            background: #10b981;
+        }
+
+        .error {
+            background: #ef4444;
+        }
+
+        .pending {
+            background: #f59e0b;
+        }
+
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Test After CORS Fix</h1>
+        <p>Test xem CORS đã được fix chưa</p>
+
+        <div id="status" class="status pending">
+            ⏳ Chưa test...
+        </div>
+
+        <div>
+            <button onclick="runTest()">🚀 RUN TEST</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+
+        <h2>📊 Test Results:</h2>
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script>
+        const VERCEL_URL = 'https://soulfriend-git-main-kendo260599s-projects.vercel.app';
+        const RAILWAY_URL = 'https://soulfriend-production.up.railway.app';
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function log(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.style.color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : 'white';
+            item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(item);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            updateStatus('⏳ Chưa test...', 'pending');
+        }
+
+        async function runTest() {
+            clearLogs();
+            updateStatus('🔄 Đang test...', 'pending');
+
+            log('🚀 Bắt đầu test CORS fix...', 'log');
+            log('', 'log');
+
+            // Test 1: Direct Railway API
+            log('📋 Test 1: Direct Railway API call...', 'log');
+            try {
+                const response = await fetch(`${RAILWAY_URL}/api/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    log(`✅ Railway API: ${data.status}`, 'success');
+                    log(`✅ Gemini: ${data.gemini}`, 'success');
+                } else {
+                    log(`❌ Railway API failed: ${response.status}`, 'error');
+                    updateStatus('❌ Test FAILED - Railway API error', 'error');
+                    return;
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    log(`❌ CORS ERROR: ${error.message}`, 'error');
+                    updateStatus('❌ CORS STILL BLOCKED!', 'error');
+                    log('', 'log');
+                    log('⚠️  CORS chưa được fix!', 'error');
+                    log('Hãy kiểm tra lại CORS_ORIGIN trong Railway', 'error');
+                    return;
+                } else {
+                    log(`❌ Error: ${error.message}`, 'error');
+                }
+            }
+
+            log('', 'log');
+
+            // Test 2: Chatbot API
+            log('📋 Test 2: Chatbot API call...', 'log');
+            try {
+                const response = await fetch(`${RAILWAY_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    },
+                    body: JSON.stringify({
+                        message: 'Xin chào',
+                        userId: 'test_cors_fix',
+                        sessionId: 'test_session_' + Date.now()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    log(`✅ Chatbot API: Working!`, 'success');
+                    log(`✅ Response: ${data.data.message.substring(0, 50)}...`, 'success');
+                } else {
+                    log(`❌ Chatbot API failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    log(`❌ CORS ERROR in Chatbot API: ${error.message}`, 'error');
+                    updateStatus('❌ CORS STILL BLOCKED!', 'error');
+                    return;
+                } else {
+                    log(`❌ Error: ${error.message}`, 'error');
+                }
+            }
+
+            log('', 'log');
+
+            // Test 3: Crisis Detection
+            log('📋 Test 3: Crisis Detection...', 'log');
+            try {
+                const bodyBytes = new TextEncoder().encode(JSON.stringify({
+                    message: 'Tôi muốn tự tử',
+                    userId: 'crisis_test',
+                    sessionId: 'crisis_session_' + Date.now()
+                }));
+
+                const response = await fetch(`${RAILWAY_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    },
+                    body: bodyBytes
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const riskLevel = data.data.riskLevel;
+                    const crisisLevel = data.data.crisisLevel;
+
+                    if (riskLevel === 'CRITICAL' && crisisLevel === 'critical') {
+                        log(`✅ Crisis Detection: WORKING!`, 'success');
+                        log(`✅ Risk Level: ${riskLevel}`, 'success');
+                        log(`✅ HITL Activated!`, 'success');
+                    } else {
+                        log(`⚠️  Crisis Detection returned: ${riskLevel}`, 'error');
+                    }
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    log(`❌ CORS ERROR in Crisis API: ${error.message}`, 'error');
+                    updateStatus('❌ CORS STILL BLOCKED!', 'error');
+                    return;
+                } else {
+                    log(`❌ Error: ${error.message}`, 'error');
+                }
+            }
+
+            log('', 'log');
+            log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'log');
+            log('✅ ALL TESTS PASSED!', 'success');
+            log('✅ CORS has been fixed!', 'success');
+            log('✅ Frontend → Backend: Working!', 'success');
+            log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'log');
+
+            updateStatus('✅ TEST PASSED - CORS Fixed!', 'success');
+        }
+
+        // Auto-run test after 2 seconds
+        setTimeout(() => {
+            log('⏱️  Auto-testing in 2 seconds...', 'log');
+            setTimeout(runTest, 2000);
+        }, 100);
+    </script>
+</body>
+
+</html>

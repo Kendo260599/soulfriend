@@ -141,12 +141,22 @@ export class EnhancedChatbotService {
       // 4. Phân tích cường độ cảm xúc
       const sentimentIntensity = analyzeSentimentIntensity(message);
 
-      // 5. Phát hiện khủng hoảng
+      // 5. Phát hiện khủng hoảng - EXTENSIVE DEBUG
+      console.error(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.error(`🔍 ABOUT TO CALL detectCrisis()`);
+      console.error(`📝 Original Message: "${message}"`);
+      console.error(`📏 Message Length: ${message.length}`);
+      console.error(`🔤 Message Type: ${typeof message}`);
+      console.error(`📋 Message Chars: ${Array.from(message).map(c => c.charCodeAt(0)).slice(0, 20).join(',')}`);
+      
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
 
-      // Debug logging for crisis detection
-      console.error(`🔍 CRISIS DEBUG: Message="${message}" | Crisis=${crisis ? crisis.id : 'null'} | Level=${crisisLevel}`);
+      // Debug logging for crisis detection result
+      console.error(`🎯 detectCrisis() RETURNED: ${crisis ? 'OBJECT' : 'NULL'}`);
+      console.error(`📊 Crisis: ${crisis ? JSON.stringify({id: crisis.id, level: crisis.level, triggers: crisis.triggers}) : 'null'}`);
+      console.error(`⚠️  Crisis Level: ${crisisLevel}`);
+      console.error(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
       if (crisis) {
         logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {

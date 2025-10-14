@@ -4,33 +4,28 @@
  * Cá nhân hóa sâu sắc và quản lý khủng hoảng hoàn hảo
  */
 
-import { logger } from '../utils/logger';
-import geminiService, { GeminiService } from './geminiService';
 import {
-  userSegments,
-  identifyUserSegment,
-  getResponseTemplate,
-  analyzeNuancedEmotion,
-} from '../data/userSegmentationData';
-import {
-  multiIntentData,
   analyzeMultiIntent,
   analyzeSentimentIntensity,
-  generateEmpatheticResponse,
+  generateEmpatheticResponse
 } from '../data/advancedNLPData';
 import {
-  crisisScenarios,
-  detectCrisis,
-  getRelevantReferral,
-  generateDisclaimer,
   assessRisk,
+  detectCrisis,
+  generateDisclaimer,
+  getRelevantReferral
 } from '../data/crisisManagementData';
-import { criticalInterventionService } from './criticalInterventionService';
 import {
-  evaluateInteractionQuality,
-  identifyKnowledgeGap,
-  interactionPatterns,
+  evaluateInteractionQuality
 } from '../data/feedbackImprovementData';
+import {
+  analyzeNuancedEmotion,
+  getResponseTemplate,
+  identifyUserSegment
+} from '../data/userSegmentationData';
+import { logger } from '../utils/logger';
+import { criticalInterventionService } from './criticalInterventionService';
+import geminiService, { GeminiService } from './geminiService';
 
 export interface EnhancedChatMessage {
   id: string;
@@ -145,7 +140,7 @@ export class EnhancedChatbotService {
       // 5. Phát hiện khủng hoảng
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
-      
+
       // Debug logging for crisis detection
       if (crisis) {
         logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {

@@ -120,6 +120,10 @@ export class EnhancedChatbotService {
     userProfile?: any
   ): Promise<EnhancedResponse> {
     try {
+      // Version logging to verify deployment
+      console.error(`🔍 EnhancedChatbotService v2.0 - Processing message`);
+      console.error(`📝 Input: "${message}" | User: ${userId} | Session: ${sessionId}`);
+      
       logger.info(`Processing message for session ${sessionId}`, {
         userId,
         messageLength: message.length,
@@ -140,10 +144,10 @@ export class EnhancedChatbotService {
       // 5. Phát hiện khủng hoảng
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
-      
+
       // Debug logging for crisis detection
       console.error(`🔍 CRISIS DEBUG: Message="${message}" | Crisis=${crisis ? crisis.id : 'null'} | Level=${crisisLevel}`);
-      
+
       if (crisis) {
         logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {
           triggers: crisis.triggers,
@@ -183,7 +187,7 @@ export class EnhancedChatbotService {
         // 🚨 HITL: Kích hoạt can thiệp của con người
         try {
           console.error(`🚨 ACTIVATING HITL for crisis: ${crisis!.id}`);
-          
+
           const criticalAlert = await criticalInterventionService.createCriticalAlert(
             userId,
             sessionId,
@@ -256,14 +260,19 @@ export class EnhancedChatbotService {
         qualityScore: qualityEvaluation.qualityScore,
       });
 
-      return {
+      const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 
+        crisisLevel === 'critical' ? 'CRITICAL' : 
+        crisisLevel === 'high' ? 'HIGH' : 
+        crisisLevel === 'medium' ? 'MEDIUM' : 'LOW';
+      
+      const finalResponse: EnhancedResponse = {
         message: response, // Frontend expects 'message' not 'response'
         response, // Keep both for compatibility
         intent: multiIntent?.primaryIntent || 'general',
         confidence: 0.8,
         userSegment: userSegment?.id,
         emotionalState: nuancedEmotion.emotion,
-        riskLevel: crisisLevel === 'critical' ? 'CRITICAL' : crisisLevel === 'high' ? 'HIGH' : 'LOW', // Frontend expects 'riskLevel'
+        riskLevel, // Frontend expects 'riskLevel'
         crisisLevel, // Keep both for compatibility
         suggestions,
         qualityScore: qualityEvaluation.qualityScore,
@@ -274,6 +283,11 @@ export class EnhancedChatbotService {
         nextActions: followUpActions,
         aiGenerated: true,
       };
+      
+      // Log final response structure for debugging
+      console.error(`📤 FINAL RESPONSE: riskLevel=${finalResponse.riskLevel} | crisisLevel=${finalResponse.crisisLevel} | emergencyContacts=${finalResponse.emergencyContacts?.length || 0}`);
+      
+      return finalResponse;
     } catch (error) {
       logger.error('Error processing message:', error);
       return {

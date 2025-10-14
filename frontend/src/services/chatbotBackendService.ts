@@ -80,7 +80,8 @@ export class ChatbotBackendService {
       baseURL: CHATBOT_BASE,
       timeout: API_TIMEOUT,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Accept-Charset': 'utf-8'
       },
     });
 

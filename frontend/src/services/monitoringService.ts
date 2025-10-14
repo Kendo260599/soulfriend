@@ -192,7 +192,7 @@ class MonitoringService {
 
   public startMonitoring(): void {
     if (this.isMonitoring) return;
-    
+
     this.isMonitoring = true;
     this.monitoringInterval = setInterval(() => {
       this.collectMetrics();
@@ -244,10 +244,10 @@ class MonitoringService {
   private collectUserMetrics(): void {
     // Active users (simplified - in real app would come from analytics)
     this.metrics.user.activeUsers = this.getActiveUserCount();
-    
+
     // Session duration
     this.metrics.user.sessionDuration = this.getSessionDuration();
-    
+
     // Feature usage
     this.updateFeatureUsage();
   }
@@ -262,10 +262,10 @@ class MonitoringService {
   private collectQualityMetrics(): void {
     // Code coverage (would come from CI/CD)
     this.metrics.quality.codeCoverage = this.getCodeCoverage();
-    
+
     // Test pass rate
     this.metrics.quality.testPassRate = this.getTestPassRate();
-    
+
     // Performance score
     this.metrics.quality.performanceScore = this.calculatePerformanceScore();
   }
@@ -280,7 +280,7 @@ class MonitoringService {
         const startTime = Date.now();
         await this.executeHealthCheck(check);
         const responseTime = Date.now() - startTime;
-        
+
         check.status = 'healthy';
         check.responseTime = responseTime;
         check.lastCheck = new Date();
@@ -288,7 +288,7 @@ class MonitoringService {
         check.status = 'unhealthy';
         check.lastCheck = new Date();
         check.details = error;
-        
+
         this.createAlert({
           level: 'error',
           message: `Health check failed: ${check.name}`,
@@ -331,7 +331,7 @@ class MonitoringService {
   private async checkApiEndpoints(): Promise<void> {
     // Check if API endpoints are responding
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
       const response = await fetch(`${apiUrl}/api/health`);
       if (!response.ok) {
         throw new Error(`API health check failed: ${response.status}`);
@@ -385,7 +385,7 @@ class MonitoringService {
 
     this.alerts.push(alert);
     this.notifyAlertCallbacks(alert);
-    
+
     console.warn(`🚨 Alert [${alert.level.toUpperCase()}]: ${alert.message}`, alert.context);
   }
 
@@ -447,14 +447,14 @@ class MonitoringService {
   public trackError(error: Error, context?: any): void {
     this.metrics.errors.totalErrors++;
     this.metrics.errors.lastError = error;
-    
+
     const errorType = error.name || 'Unknown';
     const currentCount = this.metrics.errors.errorTypes.get(errorType) || 0;
     this.metrics.errors.errorTypes.set(errorType, currentCount + 1);
-    
+
     // Update error rate
     this.metrics.errors.errorRate = (this.metrics.errors.totalErrors / this.getTotalRequests()) * 100;
-    
+
     // Create alert for critical errors
     if (error.name === 'CriticalError' || error.message.includes('critical')) {
       this.metrics.errors.criticalErrors++;
@@ -466,7 +466,7 @@ class MonitoringService {
     } else {
       this.metrics.errors.warningErrors++;
     }
-    
+
     console.error('🚨 Error tracked:', error, context);
   }
 
@@ -502,10 +502,10 @@ class MonitoringService {
 
   private calculateOverallProgress(): number {
     if (this.metrics.progress.phaseProgress.size === 0) return 0;
-    
+
     const totalProgress = Array.from(this.metrics.progress.phaseProgress.values())
       .reduce((sum, progress) => sum + progress, 0);
-    
+
     return totalProgress / this.metrics.progress.phaseProgress.size;
   }
 
@@ -541,13 +541,13 @@ class MonitoringService {
   private calculatePerformanceScore(): number {
     const loadTime = this.metrics.performance.pageLoadTime;
     const responseTime = this.metrics.performance.apiResponseTime;
-    
+
     let score = 100;
     if (loadTime > 2000) score -= 20;
     if (loadTime > 3000) score -= 30;
     if (responseTime > 500) score -= 15;
     if (responseTime > 1000) score -= 25;
-    
+
     return Math.max(0, score);
   }
 

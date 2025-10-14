@@ -101,7 +101,7 @@ router.get('/debug/version', (req, res) => {
 router.get('/debug/crisis-test', async (req, res) => {
   try {
     const { message } = req.query;
-    
+
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
         error: 'Message query parameter required'
@@ -110,10 +110,10 @@ router.get('/debug/crisis-test', async (req, res) => {
 
     // Import crisis detection function directly
     const { detectCrisis } = await import('../data/crisisManagementData');
-    
+
     const crisis = detectCrisis(message);
     const crisisLevel = crisis ? crisis.level : 'low';
-    
+
     res.json({
       success: true,
       input: message,

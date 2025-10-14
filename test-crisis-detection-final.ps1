@@ -1,10 +1,15 @@
 # Comprehensive Crisis Detection & HITL Test Script
 # Test toàn bộ hệ thống sau khi deploy
+# FIXED: Now sends UTF-8 with explicit charset header
 
 Write-Host "=================================" -ForegroundColor Cyan
 Write-Host "🧪 CRISIS DETECTION & HITL TEST" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 Write-Host ""
+
+# CRITICAL: Set UTF-8 encoding
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
 $BACKEND_URL = "https://soulfriend-production.up.railway.app"
 
@@ -31,7 +36,9 @@ try {
         sessionId = "session_normal"
     } | ConvertTo-Json
     
-    $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v2/chatbot/message" -Method POST -Body $body -ContentType "application/json"
+    # Send UTF-8 bytes with explicit charset
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+    $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v2/chatbot/message" -Method POST -Body $bodyBytes -ContentType "application/json; charset=utf-8"
     Write-Host "✅ Normal Message Response:" -ForegroundColor Green
     Write-Host "   Risk Level: $($response.data.riskLevel)" -ForegroundColor Green
     Write-Host "   Crisis Level: $($response.data.crisisLevel)" -ForegroundColor Green
@@ -52,7 +59,9 @@ try {
         sessionId = "crisis_session_$(Get-Date -Format 'yyyyMMddHHmmss')"
     } | ConvertTo-Json
     
-    $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v2/chatbot/message" -Method POST -Body $body -ContentType "application/json"
+    # Send UTF-8 bytes with explicit charset
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+    $response = Invoke-RestMethod -Uri "$BACKEND_URL/api/v2/chatbot/message" -Method POST -Body $bodyBytes -ContentType "application/json; charset=utf-8"
     
     Write-Host "📤 Crisis Response:" -ForegroundColor Cyan
     Write-Host "   Risk Level: $($response.data.riskLevel)" -ForegroundColor $(if ($response.data.riskLevel -eq 'CRITICAL') { 'Green' } else { 'Red' })

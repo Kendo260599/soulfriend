@@ -140,14 +140,18 @@ export class EnhancedChatbotService {
       // 5. Phát hiện khủng hoảng
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
-
+      
       // Debug logging for crisis detection
+      console.error(`🔍 CRISIS DEBUG: Message="${message}" | Crisis=${crisis ? crisis.id : 'null'} | Level=${crisisLevel}`);
+      
       if (crisis) {
         logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {
           triggers: crisis.triggers,
           message: message.substring(0, 100),
         });
         console.error(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel}) - Message: "${message}"`);
+      } else {
+        console.error(`❌ NO CRISIS DETECTED for message: "${message}"`);
       }
 
       // 6. Đánh giá rủi ro
@@ -178,6 +182,8 @@ export class EnhancedChatbotService {
 
         // 🚨 HITL: Kích hoạt can thiệp của con người
         try {
+          console.error(`🚨 ACTIVATING HITL for crisis: ${crisis!.id}`);
+          
           const criticalAlert = await criticalInterventionService.createCriticalAlert(
             userId,
             sessionId,
@@ -193,12 +199,14 @@ export class EnhancedChatbotService {
           logger.error(
             `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
           );
+          console.error(`🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`);
 
           // Thêm thông tin về HITL vào response
           response +=
             '\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.';
         } catch (error) {
           logger.error('Error creating HITL alert:', error);
+          console.error('❌ HITL Error:', error);
         }
       } else if (userSegment) {
         // Sử dụng response template cho segment

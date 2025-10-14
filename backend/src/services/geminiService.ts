@@ -1,12 +1,11 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import config from '../config/environment';
+import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from '../utils/logger';
 
 export class GeminiService {
   private genAI!: GoogleGenerativeAI;
   private model!: GenerativeModel;
   private isInitialized: boolean = false;
-  
+
   // Rate limiting for free tier (15 RPM)
   private requestCount: number = 0;
   private requestWindowStart: number = Date.now();
@@ -22,7 +21,7 @@ export class GeminiService {
 
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      
+
       // Use gemini-pro as primary (more stable)
       // gemini-1.5-flash may require different API tier
       this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
@@ -31,7 +30,7 @@ export class GeminiService {
     } catch (error) {
       logger.error('❌ Failed to initialize Gemini AI:', error);
       logger.error('Error details:', JSON.stringify(error, null, 2));
-      
+
       // Try alternative model names
       const fallbackModels = ['gemini-1.0-pro', 'gemini-1.5-pro'];
       for (const modelName of fallbackModels) {
@@ -59,20 +58,20 @@ export class GeminiService {
   private checkRateLimit(): boolean {
     const now = Date.now();
     const elapsed = now - this.requestWindowStart;
-    
+
     // Reset counter if window expired
     if (elapsed >= this.RATE_LIMIT_WINDOW) {
       this.requestCount = 0;
       this.requestWindowStart = now;
     }
-    
+
     // Check if we're over limit
     if (this.requestCount >= this.MAX_REQUESTS_PER_MINUTE) {
       const waitTime = this.RATE_LIMIT_WINDOW - elapsed;
-      logger.warn(`⚠️ Gemini FREE tier rate limit reached (${this.requestCount}/${this.MAX_REQUESTS_PER_MINUTE} RPM). Wait ${Math.ceil(waitTime/1000)}s`);
+      logger.warn(`⚠️ Gemini FREE tier rate limit reached (${this.requestCount}/${this.MAX_REQUESTS_PER_MINUTE} RPM). Wait ${Math.ceil(waitTime / 1000)}s`);
       return false;
     }
-    
+
     return true;
   }
 
@@ -156,7 +155,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
     } catch (error: any) {
       // Enhanced error logging for FREE tier issues
       const errorMsg = error?.message || String(error);
-      
+
       if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota')) {
         logger.warn('🆓 Gemini FREE tier quota exceeded:', errorMsg);
         return {

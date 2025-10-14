@@ -78,6 +78,23 @@ router.post('/session/:sessionId/end', chatbotController.endSession);
 router.get('/stats', chatbotController.getStats);
 
 /**
+ * DEBUG ENDPOINT - Version check
+ * GET /api/v2/chatbot/debug/version
+ */
+router.get('/debug/version', (req, res) => {
+  res.json({
+    version: '1.0.1',
+    timestamp: new Date().toISOString(),
+    features: {
+      crisisDetection: 'enhanced-v2',
+      hitlSystem: 'active',
+      debugLogging: 'enabled'
+    },
+    message: 'If you see version 1.0.1, crisis detection fixes are deployed'
+  });
+});
+
+/**
  * DEBUG ENDPOINT - Test crisis detection directly
  * GET /api/v2/chatbot/debug/crisis-test?message=xxx
  */

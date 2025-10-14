@@ -121,8 +121,14 @@ export class EnhancedChatbotService {
   ): Promise<EnhancedResponse> {
     try {
       // Version logging to verify deployment
-      console.error(`🔍 EnhancedChatbotService v2.0 - Processing message`);
+      console.error(`🔍 EnhancedChatbotService v2.1 - Processing message`);
       console.error(`📝 Input: "${message}" | User: ${userId} | Session: ${sessionId}`);
+      
+      // HEX DUMP to verify UTF-8 encoding
+      const messageBytes = Buffer.from(message, 'utf8');
+      const messageHex = messageBytes.toString('hex').substring(0, 100);
+      console.error(`🔢 Message HEX (first 50 bytes): ${messageHex}`);
+      console.error(`📏 Message byte length: ${messageBytes.length} | char length: ${message.length}`);
       
       logger.info(`Processing message for session ${sessionId}`, {
         userId,

@@ -62,9 +62,25 @@ app.use(
 );
 
 // CORS configuration
+const allowedOrigins = new Set(config.CORS_ORIGIN);
+const vercelProdRegex = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
+const vercelPreviewRegex = /^https:\/\/[a-z0-9-]+-git-[a-z0-9-]+-[^.]+\.vercel\.app$/i;
+const localhostRegex = /^http:\/\/localhost(?::\d+)?$/i;
+
 app.use(
   cors({
-    origin: config.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.has(origin) ||
+        vercelProdRegex.test(origin) ||
+        vercelPreviewRegex.test(origin) ||
+        localhostRegex.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS not allowed'), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],

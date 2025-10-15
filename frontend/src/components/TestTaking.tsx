@@ -20,6 +20,7 @@ import FamilyAPGARTest from './FamilyAPGARTest';
 import FamilyRelationshipTest from './FamilyRelationshipTest';
 import ParentalStressTest from './ParentalStressTest';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 import styled from 'styled-components';
 import { aiCompanionService } from '../services/aiCompanionService';
 import { TestResult } from '../types';
@@ -246,7 +247,8 @@ const TestTaking: React.FC<TestTakingProps> = ({
     
     try {
       // Gửi kết quả lên server
-      const response = await axios.post('http://localhost:5000/api/tests/submit', {
+      const submitUrl = getApiUrl('/api/tests/submit');
+      const response = await axios.post(submitUrl, {
         testType: currentTestType,
         answers,
         consentId

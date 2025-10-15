@@ -18,6 +18,7 @@ import AIInsights from './AIInsights';
 import LoadingSpinner from './LoadingSpinner';
 import { TestResult } from '../types';
 import { demographicsService } from '../services/demographicsService';
+import { getApiUrl } from '../config/api';
 
 ChartJS.register(
   CategoryScale,
@@ -289,7 +290,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
         // If no local data, try API in background
         setTimeout(async () => {
           try {
-            const response = await fetch('http://localhost:5000/api/tests/results');
+            const resultsUrl = getApiUrl('/api/tests/results');
+            const response = await fetch(resultsUrl);
             const data = await response.json();
             
             if (data.success && data.data) {
@@ -300,7 +302,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
               setTestResults(results);
               calculateStats(results);
             }
-          } catch (apiError) {
+            } catch (apiError) {
             console.log('API not available, using local data only');
           }
         }, 100);

@@ -64,6 +64,13 @@ export class DatabaseConnection {
       return;
     }
 
+    // Check if database is disabled
+    if (process.env.DISABLE_DATABASE === 'true') {
+      console.log('🔄 Database disabled - running in mock mode');
+      this.isConnected = false; // Mark as not connected but don't throw error
+      return;
+    }
+
     try {
       const config = getDatabaseConfig();
 
@@ -98,7 +105,7 @@ export class DatabaseConnection {
     } catch (error) {
       console.error('⚠️  MongoDB connection failed:', (error as Error).message);
       console.log('🔄 Running in fallback mode without database');
-      throw error;
+      this.isConnected = false; // Don't throw error, just mark as not connected
     }
   }
 

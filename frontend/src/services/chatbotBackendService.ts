@@ -8,7 +8,7 @@ import axios, { AxiosInstance } from 'axios';
 import { DialogContext, OrchestratorResponse } from './chatbotOrchestratorService';
 
 // Backend API configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-production.up.railway.app';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-backend-production.railway.app';
 const API_VERSION = 'v2';
 const CHATBOT_BASE = `${BACKEND_URL}/api/${API_VERSION}/chatbot`;
 

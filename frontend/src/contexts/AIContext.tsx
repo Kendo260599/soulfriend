@@ -3,7 +3,7 @@
  * Provides AI chatbot functionality throughout the application
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import { offlineChatService } from '../services/offlineChatService';
 
 // Types
@@ -46,7 +46,7 @@ export interface AIContextType {
   isOnline: boolean;
   lastError: string | null;
   insights: AIInsight[];
-  
+
   // Methods
   processMessage: (message: string, userProfile?: UserProfile, testResults?: TestResult[]) => Promise<AIResponse>;
   analyzeTestResults: (testResults: TestResult[]) => void;
@@ -70,8 +70,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
 
   // Process message with AI or offline fallback
   const processMessage = useCallback(async (
-    message: string, 
-    userProfile: UserProfile = {}, 
+    message: string,
+    userProfile: UserProfile = {},
     testResults: TestResult[] = []
   ): Promise<AIResponse> => {
     setIsProcessing(true);
@@ -80,7 +80,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     try {
       // ALWAYS try backend AI service first (removed isOnline check)
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-backend-production.railway.app';
         const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
           method: 'POST',
           headers: {
@@ -105,27 +105,27 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
               text: data.data.message || data.data.response,
               crisisDetected: data.data.riskLevel === 'CRITICAL' || data.data.riskLevel === 'HIGH' || data.data.crisisLevel === 'critical',
               recommendations: data.data.nextActions || [],
-              nextActions: data.data.emergencyContacts ? 
+              nextActions: data.data.emergencyContacts ?
                 data.data.emergencyContacts.map((contact: any) => `${contact.name}: ${contact.phone}`) : [],
               confidence: data.data.confidence || 0.8,
               aiGenerated: data.data.aiGenerated || false
             };
           }
         }
-        
+
         // If response not ok, throw error to trigger offline fallback
         throw new Error(`Backend returned status ${response.status}`);
-        
+
       } catch (error) {
         console.warn('Backend AI service unavailable, using offline fallback:', error);
         setIsOnline(false);
-        
+
         // Don't throw - continue to offline fallback
       }
 
       // Use offline service as fallback
       const offlineResponse = await offlineChatService.processMessage(message, testResults, userProfile);
-      
+
       return {
         text: offlineResponse.text,
         crisisDetected: offlineResponse.crisisDetected,
@@ -138,7 +138,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setLastError(errorMessage);
-      
+
       // Return safe fallback response
       return {
         text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',

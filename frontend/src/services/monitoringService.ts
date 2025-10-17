@@ -331,7 +331,7 @@ class MonitoringService {
   private async checkApiEndpoints(): Promise<void> {
     // Check if API endpoints are responding
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-backend-production.railway.app';
       const response = await fetch(`${apiUrl}/api/health`);
       if (!response.ok) {
         throw new Error(`API health check failed: ${response.status}`);

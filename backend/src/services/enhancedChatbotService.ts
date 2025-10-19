@@ -25,7 +25,7 @@ import {
 } from '../data/userSegmentationData';
 import { logger } from '../utils/logger';
 import { criticalInterventionService } from './criticalInterventionService';
-import geminiService, { GeminiService } from './geminiService';
+import cerebrasService from './cerebrasService';
 
 export interface EnhancedChatMessage {
   id: string;
@@ -100,14 +100,14 @@ export interface EnhancedResponse {
 }
 
 export class EnhancedChatbotService {
-  private geminiService: GeminiService;
+  private cerebrasService: any;
   private useAI: boolean = true;
   public sessions: Map<string, EnhancedChatSession> = new Map();
   public messages: Map<string, EnhancedChatMessage[]> = new Map();
   private interactionHistory: any[] = [];
 
   constructor() {
-    this.geminiService = geminiService;
+    this.cerebrasService = cerebrasService;
   }
 
   /**
@@ -345,7 +345,7 @@ export class EnhancedChatbotService {
           5. Uses warm, supportive tone
         `;
 
-        const aiResponse = await this.geminiService.generateResponse(context, {});
+        const aiResponse = await this.cerebrasService.generateResponse(context, {});
         return aiResponse.text;
       } catch (error) {
         logger.error('AI generation failed, using fallback:', error);

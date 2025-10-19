@@ -61,32 +61,26 @@ app.use(
   })
 );
 
-// CORS configuration
-const allowedOrigins = new Set(config.CORS_ORIGIN);
-const vercelProdRegex = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
-const vercelPreviewRegex = /^https:\/\/[a-z0-9-]+-git-[a-z0-9-]+-[^.]+\.vercel\.app$/i;
-const localhostRegex = /^http:\/\/localhost(?::\d+)?$/i;
-
+// CORS configuration - Enhanced for better compatibility
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (
-        allowedOrigins.has(origin) ||
-        vercelProdRegex.test(origin) ||
-        vercelPreviewRegex.test(origin) ||
-        localhostRegex.test(origin)
-      ) {
-        return callback(null, true);
-      }
-      return callback(new Error('CORS not allowed'), false);
-    },
+    origin: true, // Allow all origins for now
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   })
 );
+
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Version');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
 
 // Compression
 app.use(compression());
@@ -168,7 +162,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: '4.0.0',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    gemini: 'initialized',
+    cerebras: 'initialized',
     chatbot: 'ready',
   });
 });

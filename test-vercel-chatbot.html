@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🧪 Test Vercel → Railway Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Direct API Test - Vercel → Railway</h1>
+        <button onclick="testAPI()">Test Chatbot API</button>
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script>
+        function log(msg, color = 'white') {
+            const div = document.getElementById('logs');
+            const line = document.createElement('div');
+            line.style.color = color;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            div.appendChild(line);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        async function testAPI() {
+            log('🚀 Testing chatbot API...', '#00d9ff');
+
+            const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+            try {
+                const body = JSON.stringify({
+                    message: 'Xin chào, bạn có khỏe không?',
+                    userId: 'direct_test_' + Date.now(),
+                    sessionId: 'direct_session_' + Date.now()
+                });
+
+                log('📡 Sending request to: ' + BACKEND_URL + '/api/v2/chatbot/message', '#6366f1');
+                log('📝 Body: ' + body, '#6366f1');
+
+                const response = await fetch(BACKEND_URL + '/api/v2/chatbot/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'Accept': 'application/json'
+                    },
+                    body: new TextEncoder().encode(body)
+                });
+
+                log('📨 Response status: ' + response.status, response.ok ? '#10b981' : '#ef4444');
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    log('✅ SUCCESS!', '#10b981');
+                    log('📤 Response: ' + data.data.message, '#10b981');
+                    log('📊 Risk Level: ' + data.data.riskLevel, '#10b981');
+                } else {
+                    log('❌ FAILED: ' + (data.error || 'Unknown error'), '#ef4444');
+                }
+
+            } catch (error) {
+                log('❌ ERROR: ' + error.message, '#ef4444');
+                log('Stack: ' + error.stack, '#ef4444');
+            }
+        }
+    </script>
+</body>
+
+</html>
+
+
+

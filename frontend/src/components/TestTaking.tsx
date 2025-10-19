@@ -4,26 +4,26 @@
  */
 
 import React, { useState } from 'react';
-import { TestType } from './TestSelection';
 import DASS21Test from './DASS21Test';
-import GAD7Test from './GAD7Test';
-import PHQ9Test from './PHQ9Test';
 import EPDSTest from './EPDSTest';
-import SelfCompassionTest from './SelfCompassionTest';
-import MindfulnessTest from './MindfulnessTest';
-import SelfConfidenceTest from './SelfConfidenceTest';
-import RosenbergTest from './RosenbergTest';
-import PMSTest from './PMSTest';
+import GAD7Test from './GAD7Test';
 import MenopauseTest from './MenopauseTest';
+import MindfulnessTest from './MindfulnessTest';
+import PHQ9Test from './PHQ9Test';
+import PMSTest from './PMSTest';
+import RosenbergTest from './RosenbergTest';
+import SelfCompassionTest from './SelfCompassionTest';
+import SelfConfidenceTest from './SelfConfidenceTest';
+import { TestType } from './TestSelection';
 // SOULFRIEND V2.0 Family Assessment Tests
+import axios from 'axios';
+import styled from 'styled-components';
+import { getApiUrl } from '../config/api';
+import { aiCompanionService } from '../services/aiCompanionService';
+import { TestResult } from '../types';
 import FamilyAPGARTest from './FamilyAPGARTest';
 import FamilyRelationshipTest from './FamilyRelationshipTest';
 import ParentalStressTest from './ParentalStressTest';
-import axios from 'axios';
-import { getApiUrl } from '../config/api';
-import styled from 'styled-components';
-import { aiCompanionService } from '../services/aiCompanionService';
-import { TestResult } from '../types';
 
 // Helper function to get max score for each test
 const getMaxScoreForTest = (testType: TestType): number => {
@@ -142,11 +142,11 @@ interface TestTakingProps {
   onBack: () => void;
 }
 
-const TestTaking: React.FC<TestTakingProps> = ({ 
-  selectedTests, 
-  consentId, 
-  onComplete, 
-  onBack 
+const TestTaking: React.FC<TestTakingProps> = ({
+  selectedTests,
+  consentId,
+  onComplete,
+  onBack
 }) => {
   const [currentTestIndex, setCurrentTestIndex] = useState(0);
   const [completedResults, setCompletedResults] = useState<TestResult[]>([]);
@@ -161,27 +161,27 @@ const TestTaking: React.FC<TestTakingProps> = ({
   const integrateAICompanion = async (testResults: TestResult[]) => {
     try {
       console.log('🤖 Integrating AI Companion with test results...');
-      
+
       // Run AI analysis in background (completely non-blocking)
       setTimeout(async () => {
         try {
           // Analyze user profile with AI
           const userId = 'user_001'; // In real app, this would be dynamic
           const profile = await aiCompanionService.analyzeUserProfile(userId, testResults);
-          
+
           // Generate insights and interventions
           await aiCompanionService.generateInsights(userId, profile);
           await aiCompanionService.generateInterventions(userId, profile);
-          
+
           console.log('✅ AI Companion integration completed');
         } catch (error) {
           console.error('Error in background AI analysis:', error);
         }
       }, 50); // Reduced delay
-      
+
       // Show immediate notification to user (no waiting)
       alert('🎉 Chúc mừng! Bạn đã hoàn thành tất cả bài test.\n\n💡 Kết quả đã sẵn sàng! Hãy vào Dashboard để xem phân tích chi tiết!');
-      
+
     } catch (error) {
       console.error('Error integrating AI Companion:', error);
     }
@@ -193,9 +193,9 @@ const TestTaking: React.FC<TestTakingProps> = ({
   const handleTestCompleteNew = async (score: number, answers: { [key: number]: number }) => {
     // Chuyển đổi từ object answers thành array
     const answersArray = Object.keys(answers)
-      .sort((a, b) => parseInt(a) - parseInt(b))    
+      .sort((a, b) => parseInt(a) - parseInt(b))
       .map(key => answers[parseInt(key)]);
-    
+
     return handleTestComplete(answersArray);
   };
 
@@ -208,7 +208,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
     const answersArray = Object.keys(answers)
       .sort((a, b) => parseInt(a) - parseInt(b))
       .map(key => answers[parseInt(key)]);
-    
+
     return handleTestComplete(answersArray);
   };
 
@@ -219,7 +219,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
   const handleFamilyAssessmentComplete = async (results: any) => {
     // Extract answers array từ results object
     let answersArray: number[] = [];
-    
+
     if (results.answers && Array.isArray(results.answers)) {
       answersArray = results.answers;
     } else if (results.domainScores && Array.isArray(results.domainScores)) {
@@ -230,12 +230,12 @@ const TestTaking: React.FC<TestTakingProps> = ({
         .filter(value => typeof value === 'number')
         .map(value => value as number);
     }
-    
+
     // Fallback: nếu không có answers, tạo array rỗng
     if (answersArray.length === 0) {
       answersArray = [0]; // Default value
     }
-    
+
     return handleTestComplete(answersArray);
   };
 
@@ -244,7 +244,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
    */
   const handleTestComplete = async (answers: number[]) => {
     setIsSubmitting(true);
-    
+
     try {
       // Gửi kết quả lên server
       const submitUrl = getApiUrl('/api/tests/submit');
@@ -281,14 +281,14 @@ const TestTaking: React.FC<TestTakingProps> = ({
       }
     } catch (error) {
       console.error('Error submitting test:', error);
-      
+
       // Fallback: Xử lý local khi backend không hoạt động
       console.log('Backend not available, processing locally...');
-      
+
       // Tính toán score và evaluation local
       const totalScore = answers.reduce((sum, answer) => sum + answer, 0);
       let evaluation;
-      
+
       // Menopause Rating Scale scoring
       if (currentTestType === TestType.MENOPAUSE_RATING) {
         if (totalScore <= 4) {
@@ -304,7 +304,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
         // Default evaluation for other tests
         evaluation = { level: "Hoàn thành", description: "Test đã hoàn thành thành công" };
       }
-      
+
       const result: TestResult = {
         testType: currentTestType,
         answers,
@@ -356,7 +356,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.GAD_7:
         return (
           <GAD7Test
@@ -364,7 +364,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.PHQ_9:
         return (
           <PHQ9Test
@@ -372,7 +372,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.EPDS:
         return (
           <EPDSTest
@@ -380,7 +380,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.SELF_COMPASSION:
         return (
           <SelfCompassionTest
@@ -388,7 +388,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.MINDFULNESS:
         return (
           <MindfulnessTest
@@ -396,7 +396,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.SELF_CONFIDENCE:
         return (
           <SelfConfidenceTest
@@ -404,7 +404,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.ROSENBERG_SELF_ESTEEM:
         return (
           <RosenbergTest
@@ -412,7 +412,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       // 🆕 SOULFRIEND V2.0 - Women's Mental Health Tests
       case TestType.PMS:
         return (
@@ -421,7 +421,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.MENOPAUSE_RATING:
         return (
           <MenopauseTest
@@ -429,7 +429,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       // 🆕 SOULFRIEND V2.0 - Family Assessment Tests
       case TestType.FAMILY_APGAR:
         return (
@@ -438,7 +438,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.FAMILY_RELATIONSHIP_INDEX:
         return (
           <FamilyRelationshipTest
@@ -446,7 +446,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       case TestType.PARENTAL_STRESS_SCALE:
         return (
           <ParentalStressTest
@@ -454,7 +454,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
             onBack={handleBack}
           />
         );
-      
+
       default:
         return (
           <TestSelector>
@@ -492,7 +492,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
           {completedResults.length > 0 && ` • Đã hoàn thành: ${completedResults.length}`}
         </ProgressIndicator>
       )}
-      
+
       {renderCurrentTest()}
     </Container>
   );

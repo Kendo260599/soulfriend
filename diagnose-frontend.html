@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 Frontend Diagnostic</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00d9ff;
+        }
+
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .success {
+            background: #10b981;
+            color: white;
+        }
+
+        .error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .pending {
+            background: #6366f1;
+            color: white;
+        }
+
+        button {
+            background: #00d9ff;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .log {
+            background: #16213e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #00d9ff;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            margin: 5px 0;
+            padding: 5px;
+            font-family: monospace;
+        }
+
+        .issue {
+            background: #ef444420;
+            border-left: 4px solid #ef4444;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 SoulFriend Frontend Diagnostic</h1>
+        <p>Comprehensive frontend connection test</p>
+
+        <div id="status" class="status pending">
+            ⏳ Chưa test...
+        </div>
+
+        <button onclick="runDiagnostic()">🚀 RUN DIAGNOSTIC</button>
+        <button onclick="location.reload()">🔄 Reload Page</button>
+
+        <h2>📊 Diagnostic Results:</h2>
+        <div id="logs" class="log"></div>
+
+        <h2>🔧 Issues Found:</h2>
+        <div id="issues"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+        const VERCEL_URLS = [
+            'https://soulfriend-kendo260599s-projects.vercel.app',
+            'https://soulfriend-git-main-kendo260599s-projects.vercel.app'
+        ];
+
+        const issues = [];
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function log(message, color = '#eee') {
+            const logsDiv = document.getElementById('logs');
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.style.color = color;
+            item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(item);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function addIssue(title, description, solution) {
+            issues.push({ title, description, solution });
+            const issuesDiv = document.getElementById('issues');
+            const issueDiv = document.createElement('div');
+            issueDiv.className = 'issue';
+            issueDiv.innerHTML = `
+                <h3>❌ ${title}</h3>
+                <p><strong>Problem:</strong> ${description}</p>
+                <p><strong>Solution:</strong> ${solution}</p>
+            `;
+            issuesDiv.appendChild(issueDiv);
+        }
+
+        async function runDiagnostic() {
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('issues').innerHTML = '';
+            issues.length = 0;
+
+            updateStatus('🔄 Running diagnostic...', 'pending');
+            log('🚀 Starting comprehensive diagnostic...', '#00d9ff');
+            log('', '#eee');
+
+            // Test 1: Backend Health
+            log('📋 Test 1: Backend Health Check', '#00d9ff');
+            try {
+                const health = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await health.json();
+
+                if (health.ok) {
+                    log(`✅ Backend: ${data.status}`, '#10b981');
+                    log(`✅ Gemini: ${data.gemini}`, '#10b981');
+                    log(`✅ Chatbot: ${data.chatbot}`, '#10b981');
+                } else {
+                    log(`❌ Backend unhealthy: ${health.status}`, '#ef4444');
+                    addIssue('Backend Unhealthy',
+                        'Backend không response properly',
+                        'Check Railway logs và redeploy nếu cần');
+                }
+            } catch (error) {
+                log(`❌ Backend connection failed: ${error.message}`, '#ef4444');
+                addIssue('Backend Connection Failed',
+                    'Không thể kết nối với Railway backend',
+                    'Check Railway deployment status');
+            }
+
+            log('', '#eee');
+
+            // Test 2: CORS Test
+            log('📋 Test 2: CORS Check', '#00d9ff');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                    body: JSON.stringify({
+                        message: 'Test CORS',
+                        userId: 'cors_test',
+                        sessionId: 'cors_' + Date.now()
+                    })
+                });
+
+                if (response.ok) {
+                    log('✅ CORS: Working', '#10b981');
+                } else {
+                    log(`⚠️ CORS response: ${response.status}`, '#f59e0b');
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    log(`❌ CORS BLOCKED: ${error.message}`, '#ef4444');
+                    addIssue('CORS Policy Blocking',
+                        'Browser blocked request due to CORS policy',
+                        'Update CORS_ORIGIN in Railway to include this domain: ' + window.location.origin);
+                } else {
+                    log(`❌ Request failed: ${error.message}`, '#ef4444');
+                }
+            }
+
+            log('', '#eee');
+
+            // Test 3: Environment Variables
+            log('📋 Test 3: Environment Check', '#00d9ff');
+            log(`Current URL: ${window.location.href}`, '#6366f1');
+            log(`Origin: ${window.location.origin}`, '#6366f1');
+
+            const isVercel = VERCEL_URLS.some(url => window.location.href.startsWith(url));
+            if (isVercel) {
+                log('✅ Running on Vercel', '#10b981');
+            } else {
+                log('⚠️ Not running on expected Vercel domain', '#f59e0b');
+                addIssue('Wrong Domain',
+                    'Not running on expected Vercel domain',
+                    'Make sure you\'re testing on: ' + VERCEL_URLS[0]);
+            }
+
+            log('', '#eee');
+
+            // Test 4: Chatbot API
+            log('📋 Test 4: Chatbot API Test', '#00d9ff');
+            try {
+                const bodyBytes = new TextEncoder().encode(JSON.stringify({
+                    message: 'Xin chào',
+                    userId: 'diagnostic_test',
+                    sessionId: 'diagnostic_' + Date.now()
+                }));
+
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                    body: bodyBytes
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    log('✅ Chatbot API: WORKING', '#10b981');
+                    log(`✅ Response: ${data.data.message.substring(0, 50)}...`, '#10b981');
+                } else {
+                    log(`❌ Chatbot API failed: ${data.error || 'Unknown error'}`, '#ef4444');
+                    addIssue('Chatbot API Failed',
+                        data.error || 'API returned error',
+                        'Check Railway logs for backend errors');
+                }
+            } catch (error) {
+                log(`❌ Chatbot API error: ${error.message}`, '#ef4444');
+            }
+
+            log('', '#eee');
+            log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#00d9ff');
+
+            if (issues.length === 0) {
+                log('✅ ALL TESTS PASSED!', '#10b981');
+                log('✅ Frontend → Backend: WORKING!', '#10b981');
+                updateStatus('✅ ALL SYSTEMS OPERATIONAL', 'success');
+            } else {
+                log(`❌ Found ${issues.length} issue(s)`, '#ef4444');
+                log('❌ Check "Issues Found" section below', '#ef4444');
+                updateStatus(`❌ ${issues.length} ISSUE(S) FOUND`, 'error');
+            }
+
+            log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#00d9ff');
+        }
+    </script>
+</body>
+
+</html>
+

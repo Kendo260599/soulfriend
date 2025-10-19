@@ -24,8 +24,8 @@ import {
   identifyUserSegment
 } from '../data/userSegmentationData';
 import { logger } from '../utils/logger';
-import { criticalInterventionService } from './criticalInterventionService';
 import cerebrasService from './cerebrasService';
+import { criticalInterventionService } from './criticalInterventionService';
 
 export interface EnhancedChatMessage {
   id: string;
@@ -123,13 +123,13 @@ export class EnhancedChatbotService {
       // Version logging to verify deployment
       console.error(`🔍 EnhancedChatbotService v2.1 - Processing message`);
       console.error(`📝 Input: "${message}" | User: ${userId} | Session: ${sessionId}`);
-      
+
       // HEX DUMP to verify UTF-8 encoding
       const messageBytes = Buffer.from(message, 'utf8');
       const messageHex = messageBytes.toString('hex').substring(0, 100);
       console.error(`🔢 Message HEX (first 50 bytes): ${messageHex}`);
       console.error(`📏 Message byte length: ${messageBytes.length} | char length: ${message.length}`);
-      
+
       logger.info(`Processing message for session ${sessionId}`, {
         userId,
         messageLength: message.length,
@@ -154,13 +154,13 @@ export class EnhancedChatbotService {
       console.error(`📏 Message Length: ${message.length}`);
       console.error(`🔤 Message Type: ${typeof message}`);
       console.error(`📋 Message Chars: ${Array.from(message).map(c => c.charCodeAt(0)).slice(0, 20).join(',')}`);
-      
+
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
 
       // Debug logging for crisis detection result
       console.error(`🎯 detectCrisis() RETURNED: ${crisis ? 'OBJECT' : 'NULL'}`);
-      console.error(`📊 Crisis: ${crisis ? JSON.stringify({id: crisis.id, level: crisis.level, triggers: crisis.triggers}) : 'null'}`);
+      console.error(`📊 Crisis: ${crisis ? JSON.stringify({ id: crisis.id, level: crisis.level, triggers: crisis.triggers }) : 'null'}`);
       console.error(`⚠️  Crisis Level: ${crisisLevel}`);
       console.error(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
@@ -276,11 +276,11 @@ export class EnhancedChatbotService {
         qualityScore: qualityEvaluation.qualityScore,
       });
 
-      const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 
-        crisisLevel === 'critical' ? 'CRITICAL' : 
-        crisisLevel === 'high' ? 'HIGH' : 
-        crisisLevel === 'medium' ? 'MEDIUM' : 'LOW';
-      
+      const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' =
+        crisisLevel === 'critical' ? 'CRITICAL' :
+          crisisLevel === 'high' ? 'HIGH' :
+            crisisLevel === 'medium' ? 'MEDIUM' : 'LOW';
+
       const finalResponse: EnhancedResponse = {
         message: response, // Frontend expects 'message' not 'response'
         response, // Keep both for compatibility
@@ -299,10 +299,10 @@ export class EnhancedChatbotService {
         nextActions: followUpActions,
         aiGenerated: true,
       };
-      
+
       // Log final response structure for debugging
       console.error(`📤 FINAL RESPONSE: riskLevel=${finalResponse.riskLevel} | crisisLevel=${finalResponse.crisisLevel} | emergencyContacts=${finalResponse.emergencyContacts?.length || 0}`);
-      
+
       return finalResponse;
     } catch (error) {
       logger.error('Error processing message:', error);

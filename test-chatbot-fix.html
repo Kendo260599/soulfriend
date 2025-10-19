@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chatbot Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.3);
+        }
+
+        .warning {
+            background: rgba(255, 152, 0, 0.3);
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            width: 300px;
+            margin: 5px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background: rgba(33, 150, 243, 0.3);
+        }
+
+        .bot-message {
+            background: rgba(76, 175, 80, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 Test Chatbot Fix</h1>
+        <p>Testing chatbot functionality after CSP fixes</p>
+
+        <div class="test-section">
+            <h3>1. Backend Health Check</h3>
+            <button onclick="testBackendHealth()">Test Backend</button>
+            <div id="backend-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Chatbot API Test</h3>
+            <input type="text" id="test-message" placeholder="Nhập tin nhắn test..." value="Xin chào">
+            <button onclick="testChatbotAPI()">Test Chatbot</button>
+            <div id="chatbot-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. CSP Test</h3>
+            <button onclick="testCSP()">Test CSP</button>
+            <div id="csp-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Live Chat Test</h3>
+            <div id="chat-messages"></div>
+            <input type="text" id="live-message" placeholder="Nhập tin nhắn...">
+            <button onclick="sendLiveMessage()">Gửi</button>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function testBackendHealth() {
+            showStatus('backend-status', 'Đang kiểm tra...', 'warning');
+
+            try {
+                // Use chatbot endpoint instead of health endpoint for better reliability
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        message: "health_check",
+                        userId: "system",
+                        sessionId: "health_check",
+                        context: {}
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showStatus('backend-status',
+                        `✅ Backend hoạt động tốt!<br>
+                        Status: ${data.success ? 'Success' : 'Failed'}<br>
+                        Message: "${data.data.message}"<br>
+                        Intent: ${data.data.intent}<br>
+                        Risk Level: ${data.data.riskLevel}<br>
+                        CORS: ✅ Working`, 'success');
+                } else {
+                    showStatus('backend-status', `❌ Backend lỗi: ${response.status} - ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    showStatus('backend-status', `❌ Lỗi CORS: ${error.message}<br>Backend có thể chưa được deploy với CORS fix`, 'error');
+                } else {
+                    showStatus('backend-status', `❌ Lỗi kết nối: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testChatbotAPI() {
+            const message = document.getElementById('test-message').value;
+            showStatus('chatbot-status', 'Đang gửi tin nhắn...', 'warning');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        message: message,
+                        userId: 'test_user',
+                        sessionId: `test_${Date.now()}`,
+                        context: {
+                            userProfile: {},
+                            testResults: []
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showStatus('chatbot-status',
+                        `✅ Chatbot hoạt động tốt!<br>
+                        Tin nhắn: "${data.data.message}"<br>
+                        Intent: ${data.data.intent}<br>
+                        Risk Level: ${data.data.riskLevel}<br>
+                        CORS: ✅ Working`, 'success');
+                } else {
+                    showStatus('chatbot-status', `❌ Chatbot lỗi: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    showStatus('chatbot-status', `❌ Lỗi CORS: ${error.message}<br>Backend có thể chưa được deploy với CORS fix`, 'error');
+                } else {
+                    showStatus('chatbot-status', `❌ Lỗi kết nối chatbot: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function testCSP() {
+            showStatus('csp-status', 'Đang kiểm tra CSP...', 'warning');
+
+            // Test if we can make requests to external domains
+            const testUrls = [
+                'https://api.cerebras.ai',
+                'https://vercel.live'
+            ];
+
+            let cspIssues = [];
+
+            testUrls.forEach(url => {
+                try {
+                    // This will trigger CSP if blocked
+                    const testScript = document.createElement('script');
+                    testScript.src = url;
+                    testScript.onerror = () => {
+                        cspIssues.push(url);
+                        updateCSPStatus();
+                    };
+                    testScript.onload = () => {
+                        updateCSPStatus();
+                    };
+                    document.head.appendChild(testScript);
+                } catch (error) {
+                    cspIssues.push(url);
+                }
+            });
+
+            setTimeout(() => {
+                updateCSPStatus();
+            }, 2000);
+
+            function updateCSPStatus() {
+                if (cspIssues.length === 0) {
+                    showStatus('csp-status', '✅ CSP không chặn các domain cần thiết (Cerebras API)', 'success');
+                } else {
+                    showStatus('csp-status',
+                        `⚠️ CSP có thể chặn: ${cspIssues.join(', ')}<br>
+                        Kiểm tra console để xem lỗi CSP chi tiết`, 'warning');
+                }
+            }
+        }
+
+        async function sendLiveMessage() {
+            const message = document.getElementById('live-message').value;
+            if (!message.trim()) return;
+
+            const messagesDiv = document.getElementById('chat-messages');
+
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message user-message';
+            userDiv.innerHTML = `<strong>Bạn:</strong> ${message}`;
+            messagesDiv.appendChild(userDiv);
+
+            document.getElementById('live-message').value = '';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        userId: 'live_test_user',
+                        sessionId: `live_${Date.now()}`,
+                        context: {
+                            userProfile: {},
+                            testResults: []
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const botDiv = document.createElement('div');
+                    botDiv.className = 'message bot-message';
+                    botDiv.innerHTML = `<strong>CHUN:</strong> ${data.data.message}`;
+                    messagesDiv.appendChild(botDiv);
+                } else {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'message error';
+                    errorDiv.innerHTML = `<strong>Lỗi:</strong> ${data.error || 'Unknown error'}`;
+                    messagesDiv.appendChild(errorDiv);
+                }
+            } catch (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message error';
+                errorDiv.innerHTML = `<strong>Lỗi:</strong> ${error.message}`;
+                messagesDiv.appendChild(errorDiv);
+            }
+
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Auto-run tests on load
+        window.onload = function () {
+            testBackendHealth();
+            setTimeout(() => testChatbotAPI(), 1000);
+            setTimeout(() => testCSP(), 2000);
+        };
+    </script>
+</body>
+
+</html>

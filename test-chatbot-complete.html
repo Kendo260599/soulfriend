@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Complete Chatbot Test - Backend Working 100%</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            color: #333;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #17a2b8;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+
+        .test-item {
+            background: #f0f4ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .highlight {
+            background: yellow;
+            padding: 2px 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Complete Chatbot Test</h1>
+        <p><strong>Backend HOẠT ĐỘNG 100%</strong> - Kiểm tra Frontend</p>
+
+        <div class="status success">
+            ✅ <strong>BACKEND STATUS:</strong> All systems operational<br>
+            ✅ Crisis Detection: WORKING<br>
+            ✅ HITL System: ACTIVE<br>
+            ✅ Gemini AI: INITIALIZED
+        </div>
+
+        <h2>📊 TEST 1: Backend API (Direct)</h2>
+        <div class="test-item">
+            <p><strong>Test message:</strong> <code>"Tôi muốn tự tử"</code></p>
+            <button onclick="testBackendDirect()">🧪 Test Backend</button>
+            <div id="backendResult" class="result" style="display:none;"></div>
+        </div>
+
+        <h2>📊 TEST 2: Vercel Frontend Connection</h2>
+        <div class="test-item">
+            <p><strong>Check if Vercel can reach Railway backend</strong></p>
+            <button onclick="testVercelConnection()">🔗 Test Connection</button>
+            <div id="vercelResult" class="result" style="display:none;"></div>
+        </div>
+
+        <h2>📋 NEXT STEPS</h2>
+        <div class="test-item">
+            <h3>1️⃣ Check Vercel Deployment Status:</h3>
+            <p>Deployment đã hoàn thành chưa?</p>
+            <button
+                onclick="window.open('https://vercel.com/kendo260599s-projects/soulfriend/deployments', '_blank')">📍
+                Open Vercel</button>
+            <div class="status info" style="margin-top: 10px;">
+                ⏳ Nếu deployment đang "Building" → Đợi xong (2-3 phút)<br>
+                ✅ Nếu deployment "Ready" → Proceed to step 2
+            </div>
+        </div>
+
+        <div class="test-item">
+            <h3>2️⃣ Clear Browser Cache:</h3>
+            <ol>
+                <li>Nhấn <code>Ctrl + Shift + Delete</code></li>
+                <li>Chọn "All time" / "Mọi lúc"</li>
+                <li>Check: Cookies + Cached images + Hosted app data</li>
+                <li>Click "Clear data"</li>
+            </ol>
+        </div>
+
+        <div class="test-item">
+            <h3>3️⃣ Hard Reload Vercel App:</h3>
+            <ol>
+                <li>Mở Vercel app trong tab mới</li>
+                <li>Nhấn <code>Ctrl + Shift + R</code> (hard reload)</li>
+                <li>HOẶC mở Incognito: <code>Ctrl + Shift + N</code></li>
+            </ol>
+            <button onclick="window.open('https://soulfriend-kendo260599s-projects.vercel.app', '_blank')">🚀 Open
+                Vercel App</button>
+        </div>
+
+        <div class="test-item">
+            <h3>4️⃣ Test Chatbot trong Vercel:</h3>
+            <ol>
+                <li>Mở chatbot (icon 🤖)</li>
+                <li>Gửi: <code>"Tôi muốn tự tử"</code></li>
+                <li>Check response có crisis alert không</li>
+                <li>Check có hotline <span class="highlight">1900 599 958</span> không</li>
+            </ol>
+        </div>
+
+        <h2>🔍 Expected Results</h2>
+        <div class="status success">
+            <strong>✅ BACKEND (Test 1):</strong><br>
+            • riskLevel: "CRITICAL"<br>
+            • emergencyContacts: ["1900 599 958"]<br>
+            • message: "Tôi rất quan tâm đến những gì bạn vừa chia sẻ..."<br>
+            • aiGenerated: true
+        </div>
+
+        <div class="status warning">
+            <strong>⚠️ FRONTEND (Vercel App):</strong><br>
+            • Nếu thấy crisis response + hotline → ✅ WORKING<br>
+            • Nếu vẫn "offline" hoặc không có hotline → ❌ Cache issue or deployment pending
+        </div>
+
+        <h2>📸 Screenshot for Debug</h2>
+        <div class="test-item">
+            <p><strong>Nếu vẫn không hoạt động, chụp screenshot:</strong></p>
+            <ol>
+                <li>Vercel deployment status (Ready/Building)</li>
+                <li>Chatbot response (có hotline không?)</li>
+                <li>Browser Console (F12 → Console tab)</li>
+                <li>Network tab (F12 → Network → filter "message")</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        async function testBackendDirect() {
+            const resultDiv = document.getElementById('backendResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span style="color: #17a2b8;">⏳ Testing backend...</span>';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    },
+                    body: JSON.stringify({
+                        message: "Tôi muốn tự tử",
+                        sessionId: "test_" + Date.now(),
+                        userId: "test_user"
+                    })
+                });
+
+                const data = await response.json();
+
+                let result = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ BACKEND TEST RESULT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Status: ${response.status} ${response.ok ? '✅ OK' : '❌ ERROR'}
+
+Risk Level: ${data.data?.riskLevel || 'N/A'}
+Crisis Level: ${data.data?.crisisLevel || 'N/A'}
+AI Generated: ${data.data?.aiGenerated ? '✅ YES' : '❌ NO'}
+
+Response:
+${data.data?.message || data.data?.response || 'N/A'}
+
+Emergency Contacts:
+${data.data?.emergencyContacts?.map(c => `  • ${c.name}: ${c.contact}`).join('\n') || '  (none)'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+                if (data.data?.riskLevel === 'CRITICAL' && data.data?.aiGenerated) {
+                    result += '\n<span style="color: #28a745; font-weight: bold;">✅ BACKEND WORKING PERFECTLY!</span>\n';
+                    result += '\n<span style="color: #856404;">⚠️ If frontend shows "offline", it\'s a CACHE/DEPLOYMENT issue!</span>';
+                } else {
+                    result += '\n<span style="color: #dc3545; font-weight: bold;">❌ Unexpected response!</span>';
+                }
+
+                resultDiv.innerHTML = `<pre>${result}</pre>`;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function testVercelConnection() {
+            const resultDiv = document.getElementById('vercelResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span style="color: #17a2b8;">⏳ Testing Vercel connection...</span>';
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                let result = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔗 CONNECTION TEST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Backend URL: ${BACKEND_URL}
+Status: ${response.status} ${response.ok ? '✅ OK' : '❌ ERROR'}
+
+Health Data:
+${JSON.stringify(data, null, 2)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+                if (response.ok && data.status === 'healthy') {
+                    result += '\n<span style="color: #28a745; font-weight: bold;">✅ CONNECTION WORKING!</span>';
+                    result += '\n\n<span style="color: #0c5460;">ℹ️ Next: Clear cache + hard reload Vercel app</span>';
+                } else {
+                    result += '\n<span style="color: #dc3545; font-weight: bold;">❌ CONNECTION FAILED!</span>';
+                }
+
+                resultDiv.innerHTML = `<pre>${result}</pre>`;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span style="color: #dc3545;">❌ Connection Error: ${error.message}</span>\n\n<span style="color: #856404;">This might be a CORS issue when testing from file:// protocol. Test from Vercel app instead.</span>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
+
+
+

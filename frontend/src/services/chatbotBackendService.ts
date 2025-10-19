@@ -8,7 +8,7 @@ import axios, { AxiosInstance } from 'axios';
 import { DialogContext, OrchestratorResponse } from './chatbotOrchestratorService';
 
 // Backend API configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-backend-production.railway.app';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-production.up.railway.app';
 const API_VERSION = 'v2';
 const CHATBOT_BASE = `${BACKEND_URL}/api/${API_VERSION}/chatbot`;
 
@@ -104,14 +104,21 @@ export class ChatbotBackendService {
    */
   async checkBackendAvailability(): Promise<boolean> {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/health`, {
-        timeout: 5000,
+      // Use chatbot endpoint instead of health endpoint for better reliability
+      const response = await axios.post(`${BACKEND_URL}/api/v2/chatbot/message`, {
+        message: "health_check",
+        userId: "system",
+        sessionId: "health_check",
+        context: {}
+      }, {
+        timeout: 10000, // Increased timeout to 10 seconds
       });
-      this.isBackendAvailable = response.status === 200;
+
+      this.isBackendAvailable = response.status === 200 && response.data.success;
       console.log('✅ Backend is available');
       return true;
     } catch (error) {
-      console.warn('⚠️  Backend is not available, using fallback mode');
+      console.warn('⚠️  Backend is not available, using fallback mode:', error);
       this.isBackendAvailable = false;
       return false;
     }

@@ -64,7 +64,7 @@ interface AIProviderProps {
 
 export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(true); // Start as online, will be updated based on actual API calls
   const [lastError, setLastError] = useState<string | null>(null);
   const [insights, setInsights] = useState<AIInsight[]>([]);
 

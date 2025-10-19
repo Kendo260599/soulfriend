@@ -137,7 +137,9 @@ function parseEnvironment(): EnvironmentConfig {
     CORS_ORIGIN: getEnvArray('CORS_ORIGIN', [
       'http://localhost:3000',
       'https://soulfriend-kendo260599s-projects.vercel.app',
-      'https://soulfriend.vercel.app'
+      'https://soulfriend.vercel.app',
+      'https://soulfriend-kendo260599s-projects.vercel.app',
+      'file://'
     ]),
 
     // Optional services

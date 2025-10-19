@@ -22,17 +22,16 @@ export class GeminiService {
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
 
-      // Use gemini-pro as primary (more stable)
-      // gemini-1.5-flash may require different API tier
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      // Use gemini-1.5-flash for free tier (faster and more available)
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       this.isInitialized = true;
-      logger.info('✅ Gemini AI initialized successfully with gemini-pro');
+      logger.info('✅ Gemini AI initialized successfully with gemini-1.5-flash');
     } catch (error) {
       logger.error('❌ Failed to initialize Gemini AI:', error);
       logger.error('Error details:', JSON.stringify(error, null, 2));
 
-      // Try alternative model names
-      const fallbackModels = ['gemini-1.0-pro', 'gemini-1.5-pro'];
+      // Try alternative model names for free tier
+      const fallbackModels = ['gemini-pro', 'gemini-1.0-pro'];
       for (const modelName of fallbackModels) {
         try {
           logger.info(`Trying fallback model: ${modelName}`);

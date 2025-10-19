@@ -1,8 +1,8 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 import { logger } from '../utils/logger';
 
 export class CerebrasService {
-  private client: AxiosInstance;
+  private client: any;
   private isInitialized: boolean = false;
   private readonly MODEL = 'qwen-3-235b-a22b-instruct-2507';
   private readonly API_URL = 'https://api.cerebras.ai/v1/chat/completions';

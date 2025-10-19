@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../utils/logger';
-import geminiService, { GeminiService } from './geminiService';
+import cerebrasService from './cerebrasService';
 
 export interface ChatMessage {
   id: string;
@@ -55,12 +55,12 @@ export interface KnowledgeChunk {
 export class ChatbotService {
   private sessions: Map<string, ChatSession> = new Map();
   private messages: Map<string, ChatMessage[]> = new Map();
-  private geminiService: GeminiService;
+  private cerebrasService: any;
   private useAI: boolean = true; // Toggle for AI vs rule-based
 
   constructor() {
-    this.geminiService = geminiService;
-    this.useAI = geminiService.isReady();
+    this.cerebrasService = cerebrasService;
+    this.useAI = cerebrasService.isReady();
     logger.info(`Chatbot Service initialized (AI: ${this.useAI ? 'enabled' : 'disabled'})`);
   }
 
@@ -406,9 +406,9 @@ export class ChatbotService {
    */
   private async handleGeneralHelp(message: string, context?: any): Promise<any> {
     // Try AI response first if available
-    if (this.useAI && this.geminiService.isReady()) {
+    if (this.useAI && this.cerebrasService.isReady()) {
       try {
-        const aiResponse = await this.geminiService.generateResponse(message, {
+        const aiResponse = await this.cerebrasService.generateResponse(message, {
           userId: context?.userId || 'unknown',
           sessionId: context?.sessionId || 'unknown',
           history: [],

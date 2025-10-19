@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chatbot Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.3);
+        }
+
+        .warning {
+            background: rgba(255, 152, 0, 0.3);
+        }
+
+        input[type="text"] {
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            width: 300px;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-message {
+            background: rgba(33, 150, 243, 0.3);
+        }
+
+        .bot-message {
+            background: rgba(76, 175, 80, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🤖 Simple Chatbot Test</h1>
+        <p>Testing chatbot with CORS fixes</p>
+
+        <div>
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="sendMessage()">Send Test Message</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="messages"></div>
+
+        <div>
+            <input type="text" id="messageInput" placeholder="Nhập tin nhắn..." value="Xin chào">
+            <button onclick="sendCustomMessage()">Gửi</button>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function addMessage(content, isBot = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
+            messageDiv.innerHTML = `<strong>${isBot ? 'CHUN' : 'Bạn'}:</strong> ${content}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function testConnection() {
+            showStatus('Đang kiểm tra kết nối...', 'warning');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: "connection_test",
+                        userId: "test_user",
+                        sessionId: "test_session",
+                        context: {}
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showStatus('✅ Kết nối thành công! Chatbot đang hoạt động.', 'success');
+                        addMessage(data.data.message, true);
+                    } else {
+                        showStatus('❌ Chatbot trả về lỗi: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                } else {
+                    showStatus('❌ HTTP Error: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Lỗi kết nối: ' + error.message, 'error');
+                console.error('Connection error:', error);
+            }
+        }
+
+        async function sendMessage() {
+            showStatus('Đang gửi tin nhắn test...', 'warning');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: "Tôi muốn test chatbot",
+                        userId: "test_user",
+                        sessionId: "test_session",
+                        context: {}
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showStatus('✅ Tin nhắn được gửi thành công!', 'success');
+                        addMessage("Tôi muốn test chatbot", false);
+                        addMessage(data.data.message, true);
+                    } else {
+                        showStatus('❌ Chatbot trả về lỗi: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                } else {
+                    showStatus('❌ HTTP Error: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Lỗi gửi tin nhắn: ' + error.message, 'error');
+                console.error('Send message error:', error);
+            }
+        }
+
+        async function sendCustomMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (!message.trim()) return;
+
+            showStatus('Đang gửi tin nhắn...', 'warning');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        userId: "custom_user",
+                        sessionId: "custom_session",
+                        context: {}
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showStatus('✅ Tin nhắn được gửi thành công!', 'success');
+                        addMessage(message, false);
+                        addMessage(data.data.message, true);
+                        document.getElementById('messageInput').value = '';
+                    } else {
+                        showStatus('❌ Chatbot trả về lỗi: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                } else {
+                    showStatus('❌ HTTP Error: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Lỗi gửi tin nhắn: ' + error.message, 'error');
+                console.error('Send custom message error:', error);
+            }
+        }
+
+        // Auto-test on load
+        window.onload = function () {
+            setTimeout(() => testConnection(), 1000);
+        };
+    </script>
+</body>
+
+</html>

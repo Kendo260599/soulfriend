@@ -49,7 +49,7 @@ export class DatabaseConnection {
   private static instance: DatabaseConnection;
   private isConnected: boolean = false;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): DatabaseConnection {
     if (!DatabaseConnection.instance) {

@@ -1,24 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
-  PointElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
 } from 'chart.js';
-import PDFExport from './PDFExport';
-import AnimatedCard from './AnimatedCard';
-import AnimatedButton from './AnimatedButton';
-import AIInsights from './AIInsights';
-import LoadingSpinner from './LoadingSpinner';
-import { TestResult } from '../types';
-import { demographicsService } from '../services/demographicsService';
+import React, { useEffect, useState } from 'react';
+import { Line } from 'react-chartjs-2';
+import styled from 'styled-components';
 import { getApiUrl } from '../config/api';
+import { TestResult } from '../types';
+import AIInsights from './AIInsights';
+import AnimatedButton from './AnimatedButton';
+import AnimatedCard from './AnimatedCard';
+import LoadingSpinner from './LoadingSpinner';
+import PDFExport from './PDFExport';
 
 ChartJS.register(
   CategoryScale,
@@ -286,27 +285,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           setLoading(false);
           return;
         }
-        
+
         // If no local data, try API in background
         setTimeout(async () => {
           try {
             const resultsUrl = getApiUrl('/api/tests/results');
             const response = await fetch(resultsUrl);
             const data = await response.json();
-            
+
             if (data.success && data.data) {
-              const results = data.data.sort((a: any, b: any) => 
+              const results = data.data.sort((a: any, b: any) =>
                 new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
               );
-              
+
               setTestResults(results);
               calculateStats(results);
             }
-            } catch (apiError) {
+          } catch (apiError) {
             console.log('API not available, using local data only');
           }
         }, 100);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error loading test results:', error);
@@ -320,14 +319,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
   const calculateStats = (results: TestResult[]) => {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
-    const thisWeekTests = results.filter(result => 
+
+    const thisWeekTests = results.filter(result =>
       result.completedAt && new Date(result.completedAt) >= weekAgo
     );
-    
+
     const totalScore = results.reduce((sum, result) => sum + result.totalScore, 0);
     const averageScore = results.length > 0 ? Math.round(totalScore / results.length) : 0;
-    
+
     setStats({
       totalTests: results.length,
       thisWeek: thisWeekTests.length,
@@ -366,7 +365,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
 
   const prepareChartData = () => {
     const recentResults = testResults.slice(0, 10).reverse();
-    
+
     return {
       labels: recentResults.map((_, index) => `Test ${index + 1}`),
       datasets: [
@@ -416,7 +415,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
     return (
       <DashboardContainer>
         <DashboardTitle>Chào mừng đến với SoulFriend V2.0</DashboardTitle>
-        
+
         <WelcomeCard>
           <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🌸</div>
           <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>
@@ -425,7 +424,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <p style={{ color: '#7f8c8d', fontSize: '1.1rem', marginBottom: '30px', lineHeight: '1.6' }}>
             Hãy làm bài kiểm tra đầu tiên để khám phá tình trạng sức khỏe tâm lý của bạn
           </p>
-          
+
           <WelcomeButtonContainer>
             {onStartTests && (
               <WelcomeButton onClick={onStartTests}>
@@ -441,7 +440,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
   return (
     <DashboardContainer>
       <DashboardTitle>Dashboard Sức Khỏe Tâm Lý</DashboardTitle>
-      
+
       {/* AI Companion Notification */}
       {testResults.length > 0 && (
         <div style={{
@@ -465,10 +464,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           </p>
         </div>
       )}
-      
+
       <StatsGrid>
-        <AnimatedCard 
-          hoverEffect="lift" 
+        <AnimatedCard
+          hoverEffect="lift"
           animation="slideInUp"
           elevation={2}
         >
@@ -476,9 +475,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <StatLabel>Tổng số test đã làm</StatLabel>
           <StatDescription>Tất cả các bài kiểm tra từ trước đến nay</StatDescription>
         </AnimatedCard>
-        
-        <AnimatedCard 
-          hoverEffect="scale" 
+
+        <AnimatedCard
+          hoverEffect="scale"
           animation="slideInUp"
           elevation={2}
         >
@@ -486,9 +485,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <StatLabel>Test tuần này</StatLabel>
           <StatDescription>Số lượng test đã hoàn thành trong 7 ngày qua</StatDescription>
         </AnimatedCard>
-        
-        <AnimatedCard 
-          hoverEffect="glow" 
+
+        <AnimatedCard
+          hoverEffect="glow"
           animation="slideInUp"
           elevation={2}
         >
@@ -496,9 +495,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <StatLabel>Điểm trung bình</StatLabel>
           <StatDescription>Điểm số trung bình của tất cả các test</StatDescription>
         </AnimatedCard>
-        
-        <AnimatedCard 
-          hoverEffect="lift" 
+
+        <AnimatedCard
+          hoverEffect="lift"
           animation="slideInUp"
           elevation={2}
           badge={stats.mostRecentSeverity === 'high' ? { text: "Cần chú ý", color: "danger" } : undefined}
@@ -522,7 +521,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
 
       <HistoryContainer>
         <HistoryTitle>Lịch sử làm test ({testResults.length} kết quả)</HistoryTitle>
-        
+
         {testResults.length === 0 ? (
           <EmptyState>
             Bạn chưa làm test nào. Hãy bắt đầu với bài test đầu tiên!
@@ -553,8 +552,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
 
       <ActionButtons>
         {onStartTests && (
-          <AnimatedButton 
-            variant="primary" 
+          <AnimatedButton
+            variant="primary"
             onClick={onStartTests}
             icon="🚀"
             animation="bounce"
@@ -562,24 +561,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
             Bắt đầu làm test
           </AnimatedButton>
         )}
-        <AnimatedButton 
-          variant="secondary" 
+        <AnimatedButton
+          variant="secondary"
           onClick={onNewTest}
           icon="📝"
           animation="glow"
         >
           Làm test mới
         </AnimatedButton>
-        <AnimatedButton 
-          variant="outline" 
+        <AnimatedButton
+          variant="outline"
           onClick={onViewProfile}
           icon="👤"
         >
           Xem hồ sơ
         </AnimatedButton>
         {onDataBackup && (
-          <AnimatedButton 
-            variant="secondary" 
+          <AnimatedButton
+            variant="secondary"
             onClick={onDataBackup}
             icon="💾"
             animation="glow"
@@ -588,8 +587,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           </AnimatedButton>
         )}
         {onResearchDashboard && (
-          <AnimatedButton 
-            variant="primary" 
+          <AnimatedButton
+            variant="primary"
             onClick={onResearchDashboard}
             icon="🔬"
             animation="glow"
@@ -598,8 +597,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           </AnimatedButton>
         )}
         {onCommunitySupport && (
-          <AnimatedButton 
-            variant="success" 
+          <AnimatedButton
+            variant="success"
             onClick={onCommunitySupport}
             icon="🤝"
             animation="glow"
@@ -608,8 +607,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           </AnimatedButton>
         )}
         {onAICompanion && (
-          <AnimatedButton 
-            variant="primary" 
+          <AnimatedButton
+            variant="primary"
             onClick={onAICompanion}
             icon="🤖"
             animation="glow"

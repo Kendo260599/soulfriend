@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 Force Clear Vercel Cache & Test AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            color: #333;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+        }
+
+        .step {
+            background: #f0f4ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Force Clear Vercel Cache & Test AI</h1>
+        <p><strong>Mục đích:</strong> Clear toàn bộ cache frontend và test chatbot AI</p>
+
+        <h2>📋 STEP 1: Clear Browser Cache</h2>
+        <div class="step">
+            <p><strong>Làm TẤT CẢ các bước này:</strong></p>
+            <ol>
+                <li>Nhấn <code>Ctrl + Shift + Delete</code></li>
+                <li>Chọn "All time" hoặc "Mọi lúc"</li>
+                <li>Check:
+                    <ul>
+                        <li>✅ Cookies and site data</li>
+                        <li>✅ Cached images and files</li>
+                        <li>✅ Hosted app data (nếu có)</li>
+                    </ul>
+                </li>
+                <li>Click "Clear data"</li>
+            </ol>
+            <button onclick="clearServiceWorkers()">🗑️ Clear Service Workers</button>
+        </div>
+
+        <h2>📋 STEP 2: Force Reload Vercel</h2>
+        <div class="step">
+            <p><strong>Mở Vercel app và:</strong></p>
+            <ol>
+                <li>Nhấn <code>Ctrl + F5</code> (hard reload)</li>
+                <li>HOẶC nhấn <code>Ctrl + Shift + R</code></li>
+                <li>HOẶC mở Incognito: <code>Ctrl + Shift + N</code></li>
+            </ol>
+            <button onclick="window.open('https://soulfriend-kendo260599s-projects.vercel.app', '_blank')">🚀 Mở Vercel
+                App</button>
+        </div>
+
+        <h2>📋 STEP 3: Test Backend AI Trực Tiếp</h2>
+        <div class="step">
+            <button onclick="testBackendAI()">🧪 Test Backend AI</button>
+            <div id="backendResult" class="result" style="display:none;"></div>
+        </div>
+
+        <h2>📋 STEP 4: Test từ Vercel Frontend</h2>
+        <div class="step">
+            <p><strong>Sau khi clear cache & reload:</strong></p>
+            <ol>
+                <li>Mở chatbot trong Vercel app</li>
+                <li>Gửi message: <code>"Xin chào, bạn là ai?"</code></li>
+                <li>Check Network tab (F12) → filter "message"</li>
+                <li>Xem Response có <code>aiGenerated: true</code> không</li>
+            </ol>
+        </div>
+
+        <h2>🔍 Troubleshooting</h2>
+        <div class="step">
+            <p><strong>Nếu vẫn "offline":</strong></p>
+            <ol>
+                <li>Check Vercel env vars: <code>REACT_APP_API_URL</code></li>
+                <li>Redeploy Vercel (không dùng cache)</li>
+                <li>Check frontend code xử lý response</li>
+            </ol>
+            <button
+                onclick="window.open('https://vercel.com/kendo260599s-projects/soulfriend/settings/environment-variables', '_blank')">⚙️
+                Vercel Settings</button>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+
+        async function clearServiceWorkers() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service Worker unregistered:', registration);
+                }
+
+                if (registrations.length > 0) {
+                    alert(`✅ Đã xóa ${registrations.length} service worker(s)!\n\nBây giờ nhấn Ctrl+Shift+R để reload!`);
+                } else {
+                    alert('ℹ️ Không có service workers nào cần xóa.');
+                }
+            } catch (error) {
+                console.error('Error clearing service workers:', error);
+                alert('❌ Lỗi: ' + error.message);
+            }
+        }
+
+        async function testBackendAI() {
+            const resultDiv = document.getElementById('backendResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="info">⏳ Testing...</span>';
+
+            try {
+                // Test 1: Health
+                const healthRes = await fetch(`${BACKEND_URL}/api/health`);
+                const health = await healthRes.json();
+
+                // Test 2: Chatbot
+                const chatRes = await fetch(`${BACKEND_URL}/api/v2/chatbot/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    },
+                    body: JSON.stringify({
+                        message: "Xin chào, bạn là ai?",
+                        sessionId: "cache_test_" + Date.now(),
+                        userId: "cache_test"
+                    })
+                });
+                const chatData = await chatRes.json();
+
+                let result = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏥 BACKEND HEALTH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Status: ${health.status}
+Gemini: ${health.gemini || 'N/A'}
+Chatbot: ${health.chatbot || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 CHATBOT AI RESPONSE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Response: ${chatData.data?.response || 'N/A'}
+AI Generated: ${chatData.data?.aiGenerated || false}
+
+`;
+
+                if (chatData.data?.aiGenerated === true) {
+                    result += `\n<span class="success">✅ BACKEND AI ĐANG HOẠT ĐỘNG!</span>\n`;
+                    result += `\n<span class="warning">⚠️ NẾU FRONTEND VẪN "OFFLINE":</span>`;
+                    result += `\n   → Vấn đề là FRONTEND CACHE hoặc VERCEL ENV VARS`;
+                    result += `\n   → Clear cache & hard reload (Ctrl+Shift+R)`;
+                    result += `\n   → Mở Incognito mode để test`;
+                } else {
+                    result += `\n<span class="error">❌ Backend AI không response</span>\n`;
+                }
+
+                resultDiv.innerHTML = `<pre>${result}</pre>`;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Lỗi: ${error.message}</span>`;
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            console.log('🔄 Cache Clear Tool Loaded');
+        });
+    </script>
+</body>
+
+</html>
+
+
+

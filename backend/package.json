@@ -7,26 +7,28 @@
         "build": "tsc",
         "start": "node dist/index.js",
         "dev": "nodemon src/index.ts",
-        "setup": "npm run build \u0026\u0026 node dist/scripts/createDefaultAdmin.js",
+        "setup": "npm run build && node dist/scripts/createDefaultAdmin.js",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
-        "test:ci": "echo \u0027Tests temporarily disabled for CI\u0027 \u0026\u0026 exit 0",
+        "test:ci": "echo 'Tests temporarily disabled for CI' && exit 0",
         "lint": "eslint src/**/*.ts",
         "lint:fix": "eslint src/**/*.ts --fix",
         "format": "prettier --write src/**/*.ts",
         "format:check": "prettier --check src/**/*.ts",
         "type-check": "tsc --noEmit",
-        "quality": "npm run type-check \u0026\u0026 npm run lint \u0026\u0026 npm run format:check \u0026\u0026 npm run test"
+        "quality": "npm run type-check && npm run lint && npm run format:check && npm run test"
     },
     "engines": {
-        "node": "\u003e=20.0.0",
-        "npm": "\u003e=10.0.0"
+        "node": ">=20.0.0",
+        "npm": ">=10.0.0"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
         "@google/generative-ai": "^0.24.1",
+        "@types/axios": "^0.9.36",
+        "axios": "^1.12.2",
         "bcryptjs": "^3.0.2",
         "compression": "^1.8.1",
         "cors": "^2.8.5",

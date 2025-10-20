@@ -74,12 +74,24 @@ app.use(
 );
 
 // Handle preflight requests explicitly (Express 5 compatible wildcard)
-app.options('/(.*)', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
+app.options(/.*/, (req, res) => {
+  const origin = req.headers.origin as string | undefined;
+
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  } else {
+    // No origin provided, allow generic public access without credentials
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Version');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.status(200).end();
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+  res.status(204).end();
 });
 
 // Compression

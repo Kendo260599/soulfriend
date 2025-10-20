@@ -296,15 +296,16 @@ const startServer = async () => {
     await databaseConnection.connect();
     console.log('✅ Database connected');
 
-    // Start HTTP server
-    const server = app.listen(PORT, () => {
+    // Start HTTP server - use Railway's PORT or fallback to config
+    const actualPort = process.env.PORT || PORT;
+    const server = app.listen(actualPort, () => {
       console.log('╔════════════════════════════════════════════╗');
       console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
       console.log('╠════════════════════════════════════════════╣');
       console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-      console.log(`║   Port: ${PORT.toString().padEnd(35)}║`);
-      console.log(`║   API v2: http://localhost:${PORT}/api/v2     ║`);
-      console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
+      console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
+      console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
+      console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
       console.log('╚════════════════════════════════════════════╝');
     });
 
@@ -353,7 +354,8 @@ const startServer = async () => {
     if (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') {
       console.log('🔄 Starting in FALLBACK mode (no database)...');
 
-      const server = app.listen(PORT, () => {
+      const actualPort = process.env.PORT || PORT;
+      const server = app.listen(actualPort, () => {
         console.log('╔════════════════════════════════════════════╗');
         console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
         console.log('║   ⚠️  FALLBACK MODE (No Database)        ║');
@@ -380,7 +382,8 @@ const startServer = async () => {
     } else {
       console.log('🔄 Starting in FALLBACK mode (no database)...');
 
-      const server = app.listen(PORT, () => {
+      const actualPort = process.env.PORT || PORT;
+      const server = app.listen(actualPort, () => {
         console.log('╔════════════════════════════════════════════╗');
         console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
         console.log('║   ⚠️  FALLBACK MODE (No Database)        ║');

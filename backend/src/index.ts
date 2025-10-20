@@ -73,8 +73,8 @@ app.use(
   })
 );
 
-// Handle preflight requests explicitly
-app.options('*', (req, res) => {
+// Handle preflight requests explicitly (Express 5 compatible wildcard)
+app.options('/(.*)', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Version');

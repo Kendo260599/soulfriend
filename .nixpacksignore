@@ -1,0 +1,7 @@
+# Force Railway to rebuild without cached nixpacks config
+*.disabled
+Dockerfile*
+
+
+
+

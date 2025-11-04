@@ -26,6 +26,11 @@ export class RateLimiter {
   }
 
   middleware = (req: Request, res: Response, next: NextFunction): void => {
+    // Skip rate limiting for OPTIONS requests (preflight)
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     const key = this.getKey(req);
     const now = Date.now();
 

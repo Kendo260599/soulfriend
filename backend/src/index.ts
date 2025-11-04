@@ -337,7 +337,7 @@ const startServer = async () => {
     });
 
     // Start HTTP server - Railway provides PORT via environment variable
-    const actualPort = process.env.PORT || PORT || 8080;
+    const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
     console.log(`📊 Starting server on port: ${actualPort}`);
     
     const server = app.listen(actualPort, '0.0.0.0', () => {

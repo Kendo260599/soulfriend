@@ -64,7 +64,25 @@ app.use(
 // CORS configuration - Enhanced for better compatibility
 app.use(
   cors({
-    origin: true, // Allow all origins for now
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
+        return callback(null, true);
+      }
+
+      // In development, allow all origins
+      if (config.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+
+      // Reject origin
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],

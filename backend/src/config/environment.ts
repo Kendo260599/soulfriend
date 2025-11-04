@@ -226,6 +226,10 @@ function logConfiguration(config: EnvironmentConfig): void {
   console.log(`   Port: ${config.PORT}`);
   console.log(`   Database: ${config.MONGODB_URI.replace(/\/\/.*@/, '//***:***@')}`);
   console.log(`   CORS Origins: ${config.CORS_ORIGIN.join(', ')}`);
+  console.log(`   CORS Origins Count: ${config.CORS_ORIGIN.length}`);
+  if (config.CORS_ORIGIN.includes('*')) {
+    console.warn('⚠️  Warning: CORS_ORIGIN contains wildcard (*) - allowing all origins');
+  }
   console.log(`   Log Level: ${config.LOG_LEVEL}`);
   console.log(`   Redis: ${config.REDIS_URL ? 'Enabled' : 'Disabled'}`);
   console.log(`   SMTP: ${config.SMTP_HOST ? 'Enabled' : 'Disabled'}`);

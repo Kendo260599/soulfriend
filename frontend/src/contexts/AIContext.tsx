@@ -86,6 +86,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
           },
+          credentials: 'include', // Required for CORS with credentials
           body: JSON.stringify({
             message,
             userId: 'web_user',

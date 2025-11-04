@@ -140,7 +140,6 @@ function parseEnvironment(): EnvironmentConfig {
       'http://localhost:3000',
       'https://soulfriend-kendo260599s-projects.vercel.app',
       'https://soulfriend.vercel.app',
-      'https://soulfriend-kendo260599s-projects.vercel.app',
       'file://'
     ]),
 

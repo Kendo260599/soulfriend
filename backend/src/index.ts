@@ -102,10 +102,24 @@ app.use(
 app.options(/.*/, (req, res) => {
   const origin = req.headers.origin as string | undefined;
 
+  // Check if origin is allowed
   if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
+    // If CORS_ORIGIN is empty or not configured, allow all
+    if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else if (config.NODE_ENV === 'development') {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    } else {
+      // Origin not allowed
+      res.status(403).end();
+      return;
+    }
     res.header('Vary', 'Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
   } else {
     // No origin provided, allow generic public access without credentials
     res.header('Access-Control-Allow-Origin', '*');

@@ -140,7 +140,7 @@ function parseEnvironment(): EnvironmentConfig {
       'http://localhost:3000',
       'https://soulfriend-kendo260599s-projects.vercel.app',
       'https://soulfriend.vercel.app',
-      'file://'
+      'file://',
     ]),
 
     // Optional services
@@ -233,9 +233,9 @@ function logConfiguration(config: EnvironmentConfig): void {
   console.log(`   Log Level: ${config.LOG_LEVEL}`);
   console.log(`   Redis: ${config.REDIS_URL ? 'Enabled' : 'Disabled'}`);
   console.log(`   SMTP: ${config.SMTP_HOST ? 'Enabled' : 'Disabled'}`);
-    console.log(
-      `   External APIs: ${config.OPENAI_API_KEY ? 'OpenAI ✓' : ''} ${config.GEMINI_API_KEY ? 'Gemini ✓' : ''} ${config.AZURE_COGNITIVE_KEY ? 'Azure ✓' : ''}`
-    );
+  console.log(
+    `   External APIs: ${config.OPENAI_API_KEY ? 'OpenAI ✓' : ''} ${config.GEMINI_API_KEY ? 'Gemini ✓' : ''} ${config.AZURE_COGNITIVE_KEY ? 'Azure ✓' : ''}`
+  );
   console.log(`   Monitoring: ${config.SENTRY_DSN ? 'Sentry ✓' : 'Local only'}`);
 }
 

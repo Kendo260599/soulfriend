@@ -165,7 +165,7 @@ export class CriticalInterventionService {
       riskType: alert.riskType,
       keywords: alert.detectedKeywords,
     });
-    
+
     // Force console output for Railway visibility
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
@@ -251,14 +251,16 @@ export class CriticalInterventionService {
     const delayMs = this.config.escalationDelayMinutes * 60 * 1000;
 
     logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    logger.warn(`🚨 HITL ACTIVATED - CRISIS DETECTED`);
+    logger.warn('🚨 HITL ACTIVATED - CRISIS DETECTED');
     logger.warn(`Alert ID: ${alert.id}`);
     logger.warn(`User: ${alert.userId}`);
     logger.warn(`Risk Type: ${alert.riskType}`);
     logger.warn(`Message: "${alert.userMessage}"`);
     logger.warn(`⏱️  ESCALATION TIMER: ${this.config.escalationDelayMinutes} minutes`);
-    logger.warn(`📢 Clinical team has been notified`);
-    logger.warn(`⚠️  If no response in ${this.config.escalationDelayMinutes} min → Auto escalate to emergency`);
+    logger.warn('📢 Clinical team has been notified');
+    logger.warn(
+      `⚠️  If no response in ${this.config.escalationDelayMinutes} min → Auto escalate to emergency`
+    );
     logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const timer = setTimeout(async () => {
@@ -267,7 +269,9 @@ export class CriticalInterventionService {
 
       if (currentAlert && currentAlert.status === 'pending') {
         logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        logger.error(`⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`);
+        logger.error(
+          `⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`
+        );
         logger.error(`Alert ${alert.id} - Escalating to emergency services`);
         logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         await this.escalateToEmergencyServices(alert);

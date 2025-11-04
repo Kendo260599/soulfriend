@@ -43,20 +43,12 @@ const PORT = config.PORT;
 // ====================
 // Handle preflight requests BEFORE any other middleware
 // This ensures OPTIONS requests don't get blocked by other middleware
-app.options(/.*/, (req, res) => {
+app.options(/.*/, (req: Request, res: Response) => {
   // Ultra-simple OPTIONS handler - just return CORS headers immediately
   // No config access, no logic - just enough to satisfy browser preflight
-  const origin = req.headers.origin;
+  const origin = req.headers.origin as string | undefined;
 
   // Set CORS headers
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Requested-With, X-API-Version'
-  );
-  res.header('Access-Control-Max-Age', '86400');
-
-  // Always allow origin if provided (we'll do proper validation in CORS middleware)
   if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
@@ -64,6 +56,12 @@ app.options(/.*/, (req, res) => {
   } else {
     res.header('Access-Control-Allow-Origin', '*');
   }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+  res.header('Access-Control-Max-Age', '86400');
 
   res.status(204).end();
 });
@@ -106,8 +104,42 @@ app.use(
   })
 );
 
-// Compression
-app.use(compression());
+// ====================
+// CORS MIDDLEWARE - ALWAYS SET HEADERS
+// ====================
+// This middleware ensures CORS headers are ALWAYS set, even if other middleware fails
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.headers.origin as string | undefined;
+
+  // Set CORS headers on every request
+  if (origin) {
+    // Allow all origins for now (we'll restrict later)
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Vary', 'Origin');
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+  res.header(
+    'Access-Control-Expose-Headers',
+    'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset'
+  );
+  res.header('Access-Control-Max-Age', '86400');
+
+  // Handle preflight immediately
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
+  next();
+});
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -287,6 +319,21 @@ app.get('/api', (req: Request, res: Response) => {
 
 // 404 handler
 app.use((req: Request, res: Response) => {
+  // CRITICAL: Set CORS headers even on 404 errors
+  const origin = req.headers.origin as string | undefined;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Vary', 'Origin');
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+
   res.status(404).json({
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,

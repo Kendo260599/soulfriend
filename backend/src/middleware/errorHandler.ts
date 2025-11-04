@@ -210,6 +210,22 @@ function logError(error: AppError, req: Request): void {
  * Main error handling middleware
  */
 export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction): void => {
+  // CRITICAL: Set CORS headers even on errors
+  // This ensures CORS errors don't mask the actual error
+  const origin = req.headers.origin as string | undefined;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Vary', 'Origin');
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+
   // Log original error for debugging
   console.error('❌ Original error in errorHandler:', error);
   console.error('Error type:', error.constructor.name);
@@ -289,6 +305,21 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
  * Rate limit error handler
  */
 export const rateLimitHandler = (req: Request, res: Response): void => {
+  // CRITICAL: Set CORS headers even on rate limit errors
+  const origin = req.headers.origin as string | undefined;
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Vary', 'Origin');
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+
   const error = new RateLimitError('Too many requests, please try again later');
   const errorResponse = formatErrorResponse(error, req);
 

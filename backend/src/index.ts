@@ -70,6 +70,12 @@ app.use(
         return callback(null, true);
       }
 
+      // If CORS_ORIGIN is empty or not configured, allow all in production (fallback)
+      if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
+        console.warn('⚠️  CORS_ORIGIN not configured, allowing all origins');
+        return callback(null, true);
+      }
+
       // Check if origin is in allowed list
       if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
         return callback(null, true);
@@ -81,6 +87,7 @@ app.use(
       }
 
       // Reject origin
+      console.warn(`⚠️  CORS: Origin ${origin} not allowed`);
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,

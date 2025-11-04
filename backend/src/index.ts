@@ -39,67 +39,10 @@ const app = express();
 const PORT = config.PORT;
 
 // ====================
-// SECURITY MIDDLEWARE
+// PREFLIGHT HANDLER - MUST BE FIRST
 // ====================
-
-// Helmet - Security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-      },
-    },
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-  })
-);
-
-// CORS configuration - Enhanced for better compatibility
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, etc.)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      // If CORS_ORIGIN is empty or not configured, allow all in production (fallback)
-      if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
-        console.warn('⚠️  CORS_ORIGIN not configured, allowing all origins');
-        return callback(null, true);
-      }
-
-      // Check if origin is in allowed list
-      if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
-        return callback(null, true);
-      }
-
-      // In development, allow all origins
-      if (config.NODE_ENV === 'development') {
-        return callback(null, true);
-      }
-
-      // Reject origin
-      console.warn(`⚠️  CORS: Origin ${origin} not allowed`);
-      callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
-    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
-    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
-  })
-);
-
-// Handle preflight requests explicitly (Express 5 compatible wildcard)
-// MUST be before other middleware to avoid interference
+// Handle preflight requests BEFORE any other middleware
+// This ensures OPTIONS requests don't get blocked by other middleware
 app.options(/.*/, (req, res) => {
   try {
     const origin = req.headers.origin as string | undefined;
@@ -160,6 +103,66 @@ app.options(/.*/, (req, res) => {
     res.status(204).end();
   }
 });
+
+// ====================
+// SECURITY MIDDLEWARE
+// ====================
+
+// Helmet - Security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
+
+// CORS configuration - Enhanced for better compatibility
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // If CORS_ORIGIN is empty or not configured, allow all in production (fallback)
+      if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
+        console.warn('⚠️  CORS_ORIGIN not configured, allowing all origins');
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
+        return callback(null, true);
+      }
+
+      // In development, allow all origins
+      if (config.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+
+      // Reject origin
+      console.warn(`⚠️  CORS: Origin ${origin} not allowed`);
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
+    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+  })
+);
 
 // Compression
 app.use(compression());

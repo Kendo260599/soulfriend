@@ -47,12 +47,15 @@ app.options(/.*/, (req, res) => {
   // Ultra-simple OPTIONS handler - just return CORS headers immediately
   // No config access, no logic - just enough to satisfy browser preflight
   const origin = req.headers.origin;
-  
+
   // Set CORS headers
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Version');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
   res.header('Access-Control-Max-Age', '86400');
-  
+
   // Always allow origin if provided (we'll do proper validation in CORS middleware)
   if (origin) {
     res.header('Access-Control-Allow-Origin', origin);
@@ -61,7 +64,7 @@ app.options(/.*/, (req, res) => {
   } else {
     res.header('Access-Control-Allow-Origin', '*');
   }
-  
+
   res.status(204).end();
 });
 
@@ -322,14 +325,22 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    // Connect to database
+    console.log('📊 Starting server...');
+    console.log(`📊 Environment: ${config.NODE_ENV}`);
+    console.log(`📊 Config PORT: ${PORT}`);
+    console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
+    
+    // Connect to database (non-blocking - allow server to start even if DB fails)
     console.log('📊 Connecting to database...');
-    await databaseConnection.connect();
-    console.log('✅ Database connected');
+    databaseConnection.connect().catch(err => {
+      console.warn('⚠️  Database connection failed, continuing without database:', err.message);
+    });
 
-    // Start HTTP server - use Railway's PORT or fallback to config
-    const actualPort = process.env.PORT || PORT;
-    const server = app.listen(actualPort, () => {
+    // Start HTTP server - Railway provides PORT via environment variable
+    const actualPort = process.env.PORT || PORT || 8080;
+    console.log(`📊 Starting server on port: ${actualPort}`);
+    
+    const server = app.listen(actualPort, '0.0.0.0', () => {
       console.log('╔════════════════════════════════════════════╗');
       console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
       console.log('╠════════════════════════════════════════════╣');

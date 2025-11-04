@@ -1,22 +1,26 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
 
-export class CerebrasService {
+/**
+ * OpenAI Service
+ * Uses GPT-4o-mini model for chatbot responses
+ */
+export class OpenAIService {
     private client: any;
     private isInitialized: boolean = false;
-    private readonly MODEL = 'qwen-3-235b-a22b-instruct-2507';
-    private readonly API_URL = 'https://api.cerebras.ai/v1/chat/completions';
+    private readonly MODEL = 'gpt-4o-mini';
+    private readonly API_URL = 'https://api.openai.com/v1';
 
     constructor() {
-        const apiKey = process.env.CEREBRAS_API_KEY;
+        const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
-            logger.warn('CEREBRAS_API_KEY is not set. CerebrasService will not be initialized.');
+            logger.warn('OPENAI_API_KEY is not set. OpenAIService will not be initialized.');
             return;
         }
 
         try {
             this.client = axios.create({
-                baseURL: 'https://api.cerebras.ai/v1',
+                baseURL: this.API_URL,
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
@@ -25,9 +29,9 @@ export class CerebrasService {
             });
 
             this.isInitialized = true;
-            logger.info('✅ Cerebras AI initialized successfully with Qwen 3 235B');
+            logger.info('✅ OpenAI AI initialized successfully with GPT-4o-mini');
         } catch (error) {
-            logger.error('❌ Failed to initialize Cerebras AI:', error);
+            logger.error('❌ Failed to initialize OpenAI AI:', error);
         }
     }
 
@@ -35,12 +39,15 @@ export class CerebrasService {
         return this.isInitialized;
     }
 
+    /**
+     * Generate response using OpenAI API
+     */
     async generateResponse(
         userMessage: string,
         context: any
     ): Promise<{ text: string; confidence: number }> {
         if (!this.isReady()) {
-            logger.warn('CerebrasService not ready, returning fallback response');
+            logger.warn('OpenAIService not ready, returning fallback response');
             return {
                 text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
                 confidence: 0.1,
@@ -81,17 +88,17 @@ export class CerebrasService {
                         content: userMessage
                     }
                 ],
-                max_tokens: 300,
+                max_tokens: 1000,
                 temperature: 0.7,
                 top_p: 0.9,
                 frequency_penalty: 0.1,
                 presence_penalty: 0.1
             });
 
-            const aiResponse = response.data.choices[0]?.message?.content;
+            const aiResponse = response.data?.choices?.[0]?.message?.content;
 
             if (!aiResponse || aiResponse.trim().length === 0) {
-                throw new Error('Empty response from Cerebras');
+                throw new Error('Empty response from OpenAI');
             }
 
             // Validate response
@@ -104,26 +111,26 @@ export class CerebrasService {
                 };
             }
 
-            logger.info('✅ Cerebras AI response generated successfully');
-            return { text: aiResponse, confidence: 0.95 };
+            logger.info('✅ OpenAI AI response generated successfully');
+            return { text: aiResponse.trim(), confidence: 0.95 };
 
         } catch (error: any) {
-            logger.error('❌ Cerebras API error:', error.message);
+            logger.error('❌ OpenAI API error:', error.message);
 
-            if (error.response?.status === 401) {
-                logger.error('❌ Cerebras API key invalid or expired');
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                logger.error('❌ OpenAI API key invalid or expired');
                 return {
                     text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
                     confidence: 0.1,
                 };
             } else if (error.response?.status === 429) {
-                logger.warn('⚠️ Cerebras API rate limit exceeded');
+                logger.warn('⚠️ OpenAI API rate limit exceeded');
                 return {
                     text: 'Mình hiểu bạn đang cần hỗ trợ. Do giới hạn dịch vụ, mình sẽ lắng nghe và cố gắng giúp bạn với những gì mình có thể. Bạn muốn chia sẻ gì với mình? 💙',
                     confidence: 0.5,
                 };
             } else {
-                logger.error('❌ Cerebras API error:', error.message);
+                logger.error('❌ OpenAI API error:', error.message);
                 return {
                     text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
                     confidence: 0.1,
@@ -132,12 +139,15 @@ export class CerebrasService {
         }
     }
 
+    /**
+     * Chat with conversation history
+     */
     async chat(
         userMessage: string,
         history: any[] = []
     ): Promise<{ text: string; confidence: number }> {
         if (!this.isReady()) {
-            logger.warn('CerebrasService not ready for chat, returning fallback response');
+            logger.warn('OpenAIService not ready for chat, returning fallback response');
             return {
                 text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
                 confidence: 0.1,
@@ -147,6 +157,7 @@ export class CerebrasService {
         try {
             const systemPrompt = `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam. Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt và xưng hô "Mình" (CHUN) - "Bạn" (User).`;
 
+            // Build conversation history
             const messages = [
                 {
                     role: 'system',
@@ -165,15 +176,17 @@ export class CerebrasService {
             const response = await this.client.post('/chat/completions', {
                 model: this.MODEL,
                 messages: messages,
-                max_tokens: 300,
+                max_tokens: 1000,
                 temperature: 0.7,
-                top_p: 0.9
+                top_p: 0.9,
+                frequency_penalty: 0.1,
+                presence_penalty: 0.1
             });
 
-            const aiResponse = response.data.choices[0]?.message?.content;
+            const aiResponse = response.data?.choices?.[0]?.message?.content;
 
             if (!aiResponse || aiResponse.trim().length === 0) {
-                throw new Error('Empty response from Cerebras chat');
+                throw new Error('Empty response from OpenAI chat');
             }
 
             // Validate response
@@ -188,9 +201,9 @@ export class CerebrasService {
                 };
             }
 
-            return { text: aiResponse, confidence: 0.95 };
+            return { text: aiResponse.trim(), confidence: 0.95 };
         } catch (error) {
-            logger.error('Error in chat with Cerebras:', error);
+            logger.error('Error in chat with OpenAI:', error);
             return {
                 text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
                 confidence: 0.1,
@@ -236,7 +249,7 @@ export class CerebrasService {
         }
 
         // Check response length
-        if (text.length > 1000) {
+        if (text.length > 2000) {
             issues.push('Response too long');
         }
 
@@ -262,6 +275,6 @@ export class CerebrasService {
     }
 }
 
-// DEPRECATED: CerebrasService has been replaced by OpenAIService
-// Export commented out to prevent initialization warning
-// export default new CerebrasService();
+export default new OpenAIService();
+
+

@@ -1,11 +1,11 @@
 /**
  * Chatbot Service
  * Core chatbot business logic for backend
- * Phase 2: Enhanced with Gemini AI
+ * Enhanced with OpenAI AI (GPT-4o-mini)
  */
 
 import { logger } from '../utils/logger';
-import cerebrasService from './cerebrasService';
+import openAIService from './openAIService';
 
 export interface ChatMessage {
   id: string;
@@ -55,12 +55,12 @@ export interface KnowledgeChunk {
 export class ChatbotService {
   private sessions: Map<string, ChatSession> = new Map();
   private messages: Map<string, ChatMessage[]> = new Map();
-  private cerebrasService: any;
+  private openAIService: any;
   private useAI: boolean = true; // Toggle for AI vs rule-based
 
   constructor() {
-    this.cerebrasService = cerebrasService;
-    this.useAI = cerebrasService.isReady();
+    this.openAIService = openAIService;
+    this.useAI = openAIService.isReady();
     logger.info(`Chatbot Service initialized (AI: ${this.useAI ? 'enabled' : 'disabled'})`);
   }
 
@@ -406,9 +406,9 @@ export class ChatbotService {
    */
   private async handleGeneralHelp(message: string, context?: any): Promise<any> {
     // Try AI response first if available
-    if (this.useAI && this.cerebrasService.isReady()) {
+    if (this.useAI && this.openAIService.isReady()) {
       try {
-        const aiResponse = await this.cerebrasService.generateResponse(message, {
+        const aiResponse = await this.openAIService.generateResponse(message, {
           userId: context?.userId || 'unknown',
           sessionId: context?.sessionId || 'unknown',
           history: [],

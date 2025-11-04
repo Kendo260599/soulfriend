@@ -174,7 +174,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: '4.0.0',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    cerebras: 'initialized',
+    openai: 'initialized',
     chatbot: 'ready',
   });
 });

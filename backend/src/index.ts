@@ -44,64 +44,25 @@ const PORT = config.PORT;
 // Handle preflight requests BEFORE any other middleware
 // This ensures OPTIONS requests don't get blocked by other middleware
 app.options(/.*/, (req, res) => {
-  try {
-    const origin = req.headers.origin as string | undefined;
-
-    // Always set CORS headers first (even for rejected origins, browser needs them)
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, X-API-Version'
-    );
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
-
-    // Check if origin is allowed
-    if (origin) {
-      // If CORS_ORIGIN is empty or not configured, allow all
-      if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Vary', 'Origin');
-        res.status(204).end();
-        return;
-      }
-
-      // Check if origin is in allowed list
-      if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Vary', 'Origin');
-        res.status(204).end();
-        return;
-      }
-
-      // Development mode: allow all origins
-      if (config.NODE_ENV === 'development') {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Vary', 'Origin');
-        res.status(204).end();
-        return;
-      }
-
-      // Origin not allowed - but still return CORS headers for browser
-      console.warn(`⚠️  CORS Preflight: Origin ${origin} not allowed. Allowed origins: ${config.CORS_ORIGIN.join(', ')}`);
-      res.header('Access-Control-Allow-Origin', 'null'); // Explicit rejection
-      res.status(403).end();
-      return;
-    }
-
-    // No origin provided, allow generic public access without credentials
+  // Ultra-simple OPTIONS handler - just return CORS headers immediately
+  // No config access, no logic - just enough to satisfy browser preflight
+  const origin = req.headers.origin;
+  
+  // Set CORS headers
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Version');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  // Always allow origin if provided (we'll do proper validation in CORS middleware)
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Vary', 'Origin');
+  } else {
     res.header('Access-Control-Allow-Origin', '*');
-    res.status(204).end();
-  } catch (error) {
-    // If anything goes wrong, at least return CORS headers
-    console.error('❌ Error in OPTIONS handler:', error);
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Version');
-    res.status(204).end();
   }
+  
+  res.status(204).end();
 });
 
 // ====================

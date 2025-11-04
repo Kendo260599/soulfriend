@@ -37,6 +37,28 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+backend/coverage/
+
+# Test files (keep locally but don't commit)
+backend/test-*.js
+backend/*-test.js
+backend/test-*.ts
+backend/*-test.ts
+backend/simple-*.js
+backend/minimal-*.js
+backend/debug-*.js
+backend/emergency-*.js
+backend/working-*.js
+backend/perfect-*.js
+backend/ultimate-*.js
+backend/pure-*.js
+backend/check-*.js
+backend/list-*.js
+backend/internal-*.js
+
+# Docker files (only keep if needed)
+backend/Dockerfile.dev
+backend/Dockerfile.disabled
 
 # Vercel
 .vercel

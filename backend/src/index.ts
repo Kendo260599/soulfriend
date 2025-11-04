@@ -4,7 +4,6 @@
  * Version: 1.0.1 - Crisis Detection & HITL System Enhanced
  */
 
-import compression from 'compression';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
@@ -376,6 +375,18 @@ const startServer = async () => {
       console.log('╚════════════════════════════════════════════╝');
     });
 
+    // Handle server errors
+    server.on('error', (error: any) => {
+      console.error('❌ Server error:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${actualPort} is already in use`);
+        process.exit(1);
+      } else {
+        console.error('❌ Server failed to start:', error.message);
+        process.exit(1);
+      }
+    });
+
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
       console.log(`\n⚠️  Received ${signal}. Starting graceful shutdown...`);
@@ -416,26 +427,39 @@ const startServer = async () => {
       gracefulShutdown('unhandledRejection');
     });
   } catch (error) {
-    console.error('⚠️  Database connection failed:', (error as Error).message);
+    console.error('❌ Failed to start server:', error);
+    console.error('Error details:', error instanceof Error ? error.stack : error);
 
-    if (config.NODE_ENV === 'development' || config.NODE_ENV === 'test') {
-      console.log('🔄 Starting in FALLBACK mode (no database)...');
+    // Even if there's an error, try to start the server in fallback mode
+    console.log('🔄 Attempting to start server in FALLBACK mode...');
 
-      const actualPort = process.env.PORT || PORT;
-      const server = app.listen(actualPort, () => {
+    try {
+      const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
+      console.log(`📊 Starting fallback server on port: ${actualPort}`);
+
+      const server = app.listen(actualPort, '0.0.0.0', () => {
         console.log('╔════════════════════════════════════════════╗');
         console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
-        console.log('║   ⚠️  FALLBACK MODE (No Database)        ║');
+        console.log('║   ⚠️  FALLBACK MODE (Error Recovery)     ║');
         console.log('╠════════════════════════════════════════════╣');
         console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-        console.log(`║   Port: ${PORT.toString().padEnd(35)}║`);
-        console.log(`║   API v2: http://localhost:${PORT}/api/v2     ║`);
-        console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
-        console.log('║   ⚠️  Chatbot works, Database disabled   ║');
+        console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
+        console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
+        console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
+        console.log('║   ⚠️  Server running in fallback mode    ║');
         console.log('╚════════════════════════════════════════════╝');
       });
 
-      // Graceful shutdown for fallback mode too
+      // Handle server errors in fallback mode
+      server.on('error', (error: any) => {
+        console.error('❌ Fallback server error:', error);
+        if (error.code === 'EADDRINUSE') {
+          console.error(`❌ Port ${actualPort} is already in use`);
+        }
+        process.exit(1);
+      });
+
+      // Graceful shutdown for fallback mode
       const gracefulShutdown = async (signal: string) => {
         console.log(`\n⚠️  Received ${signal}. Shutting down...`);
         server.close(() => {
@@ -446,34 +470,9 @@ const startServer = async () => {
 
       process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
       process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    } else {
-      console.log('🔄 Starting in FALLBACK mode (no database)...');
-
-      const actualPort = process.env.PORT || PORT;
-      const server = app.listen(actualPort, () => {
-        console.log('╔════════════════════════════════════════════╗');
-        console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
-        console.log('║   ⚠️  FALLBACK MODE (No Database)        ║');
-        console.log('╠════════════════════════════════════════════╣');
-        console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-        console.log(`║   Port: ${PORT.toString().padEnd(35)}║`);
-        console.log(`║   API v2: http://localhost:${PORT}/api/v2     ║`);
-        console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
-        console.log('║   ⚠️  Chatbot works, Database disabled   ║');
-        console.log('╚════════════════════════════════════════════╝');
-      });
-
-      // Graceful shutdown for fallback mode too
-      const gracefulShutdown = async (signal: string) => {
-        console.log(`\n⚠️  Received ${signal}. Shutting down...`);
-        server.close(() => {
-          console.log('👋 Server closed');
-          process.exit(0);
-        });
-      };
-
-      process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-      process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    } catch (fallbackError) {
+      console.error('❌ Failed to start fallback server:', fallbackError);
+      process.exit(1);
     }
   }
 };

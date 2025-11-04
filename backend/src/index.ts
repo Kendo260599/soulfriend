@@ -72,7 +72,7 @@ app.options(/.*/, (req, res) => {
 // SECURITY MIDDLEWARE
 // ====================
 
-// Helmet - Security headers
+// Helmet - Security headers (configured to not interfere with CORS)
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -88,43 +88,21 @@ app.use(
       includeSubDomains: true,
       preload: true,
     },
+    crossOriginResourcePolicy: false, // Allow CORS
+    crossOriginEmbedderPolicy: false, // Allow CORS
   })
 );
 
-// CORS configuration - Enhanced for better compatibility
+// CORS configuration - MUST be before other middleware
+// Use simple origin allow all for now to debug
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, etc.)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      // If CORS_ORIGIN is empty or not configured, allow all in production (fallback)
-      if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
-        console.warn('⚠️  CORS_ORIGIN not configured, allowing all origins');
-        return callback(null, true);
-      }
-
-      // Check if origin is in allowed list
-      if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
-        return callback(null, true);
-      }
-
-      // In development, allow all origins
-      if (config.NODE_ENV === 'development') {
-        return callback(null, true);
-      }
-
-      // Reject origin
-      console.warn(`⚠️  CORS: Origin ${origin} not allowed`);
-      callback(new Error('Not allowed by CORS'));
-    },
+    origin: true, // Allow all origins temporarily to debug
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
-    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -329,7 +307,7 @@ const startServer = async () => {
     console.log(`📊 Environment: ${config.NODE_ENV}`);
     console.log(`📊 Config PORT: ${PORT}`);
     console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
-    
+
     // Connect to database (non-blocking - allow server to start even if DB fails)
     console.log('📊 Connecting to database...');
     databaseConnection.connect().catch(err => {
@@ -339,7 +317,7 @@ const startServer = async () => {
     // Start HTTP server - Railway provides PORT via environment variable
     const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
     console.log(`📊 Starting server on port: ${actualPort}`);
-    
+
     const server = app.listen(actualPort, '0.0.0.0', () => {
       console.log('╔════════════════════════════════════════════╗');
       console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');

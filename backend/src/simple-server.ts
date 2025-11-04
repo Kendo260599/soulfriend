@@ -1,15 +1,15 @@
 /**
  * Simple Server - NO COMPLEX MIDDLEWARE
  * Focus on AI + Database testing
+ * Using OpenAI AI (GPT-4o-mini)
  */
 
-import express, { Request, Response } from 'express';
+import axios from 'axios';
 import cors from 'cors';
-
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import config from './config/environment';
 
-import mongoose from 'mongoose';
 const app = express();
 const PORT = config.PORT;
 
@@ -17,17 +17,23 @@ const PORT = config.PORT;
 app.use(cors());
 app.use(express.json());
 
-// Gemini AI Setup
-const API_KEY = config.GEMINI_API_KEY;
-if (!API_KEY) {
-  console.error('❌ GEMINI_API_KEY not found');
+// OpenAI AI Setup
+const OPENAI_API_KEY = config.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+  console.error('❌ OPENAI_API_KEY not found');
   process.exit(1);
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+const openAIClient = axios.create({
+  baseURL: 'https://api.openai.com/v1',
+  headers: {
+    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  timeout: 30000,
+});
 
-console.log('✅ Gemini AI initialized successfully');
+console.log('✅ OpenAI AI initialized successfully');
 
 // MongoDB Connection
 const MONGODB_URI = config.MONGODB_URI;
@@ -58,7 +64,8 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    gemini: 'initialized',
+    openai: 'initialized',
+    ai_model: 'gpt-4o-mini',
     database: {
       status: dbConnected ? 'connected' : 'disconnected',
       state: dbStatus,
@@ -80,13 +87,36 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
 
     console.log(`📨 User (${userId}): ${message}`);
 
-    // Generate AI response
-    const result = await model.generateContent(
-      `Bạn là trợ lý tâm lý CHUN. User nói: "${message}". Hãy trả lời đồng cảm bằng tiếng Việt, ngắn gọn và hỗ trợ.`
-    );
+    // Generate AI response using OpenAI
+    const systemPrompt = `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+    
+⚠️ QUAN TRỌNG:
+- Bạn KHÔNG phải chuyên gia y tế/tâm lý
+- Bạn là công cụ hỗ trợ sàng lọc sơ bộ
+- KHÔNG chẩn đoán bệnh lý hoặc kê đơn thuốc
+- Mọi lời khuyên chỉ mang tính tham khảo
 
-    const response = await result.response;
-    const aiResponse = response.text();
+🌸 TÍNH CÁCH:
+- Ấm áp, đồng cảm, không phán xét
+- Chuyên nghiệp nhưng gần gũi
+- Xưng hô: "Mình" (CHUN) - "Bạn" (User)`;
+
+    const response = await openAIClient.post<any>('/chat/completions', {
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message }
+      ],
+      max_tokens: 1000,
+      temperature: 0.7,
+      top_p: 0.9,
+    });
+
+    const aiResponse = response.data?.choices?.[0]?.message?.content;
+
+    if (!aiResponse) {
+      throw new Error('Empty response from OpenAI');
+    }
 
     console.log(`🤖 AI Response: ${aiResponse}`);
 
@@ -95,7 +125,7 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
       data: {
         message: aiResponse,
         aiGenerated: true,
-        confidence: 0.85,
+        confidence: 0.95,
         intent: 'general_help',
         timestamp: new Date().toISOString(),
       },
@@ -115,7 +145,8 @@ app.get('/api/test', (req: Request, res: Response) => {
   const dbStatus = mongoose.connection.readyState;
   res.json({
     message: 'Simple server is working!',
-    gemini: 'ready',
+    openai: 'ready',
+    ai_model: 'gpt-4o-mini',
     database: dbStatus === 1 ? 'connected' : 'disconnected',
     mongodb_state: dbStatus,
   });
@@ -128,7 +159,7 @@ async function startServer() {
   app.listen(PORT, () => {
     console.log('╔════════════════════════════════════════════╗');
     console.log('║   🚀 SIMPLE SERVER STARTED!               ║');
-    console.log('║   ✅ Gemini AI Ready                       ║');
+    console.log('║   ✅ OpenAI AI Ready (GPT-4o-mini)      ║');
     console.log(
       `║   ${dbConnected ? '✅' : '❌'} Database ${dbConnected ? 'Connected' : 'Disconnected'}                    ║`
     );

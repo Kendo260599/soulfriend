@@ -7,24 +7,22 @@
 import {
   analyzeMultiIntent,
   analyzeSentimentIntensity,
-  generateEmpatheticResponse
+  generateEmpatheticResponse,
 } from '../data/advancedNLPData';
 import {
   assessRisk,
   detectCrisis,
   generateDisclaimer,
-  getRelevantReferral
+  getRelevantReferral,
 } from '../data/crisisManagementData';
-import {
-  evaluateInteractionQuality
-} from '../data/feedbackImprovementData';
+import { evaluateInteractionQuality } from '../data/feedbackImprovementData';
 import {
   analyzeNuancedEmotion,
   getResponseTemplate,
-  identifyUserSegment
+  identifyUserSegment,
 } from '../data/userSegmentationData';
 import { logger } from '../utils/logger';
-import cerebrasService from './cerebrasService';
+import openAIService from './openAIService';
 import { criticalInterventionService } from './criticalInterventionService';
 
 export interface EnhancedChatMessage {
@@ -100,42 +98,86 @@ export interface EnhancedResponse {
 }
 
 export class EnhancedChatbotService {
-  private cerebrasService: any;
+  private openAIService: any;
   private useAI: boolean = true;
   public sessions: Map<string, EnhancedChatSession> = new Map();
   public messages: Map<string, EnhancedChatMessage[]> = new Map();
   private interactionHistory: any[] = [];
 
   constructor() {
-    this.cerebrasService = cerebrasService;
+    this.openAIService = openAIService;
   }
 
   /**
    * Xử lý tin nhắn với hệ thống nâng cao
+   * @param mode - Optional: 'em_style' để dùng EM-style Reasoner
    */
   async processMessage(
     message: string,
     sessionId: string,
     userId: string,
-    userProfile?: any
+    userProfile?: any,
+    mode?: 'default' | 'em_style'
   ): Promise<EnhancedResponse> {
     try {
       // Version logging to verify deployment
-      console.error(`🔍 EnhancedChatbotService v2.1 - Processing message`);
+      console.error('🔍 EnhancedChatbotService v2.1 - Processing message');
       console.error(`📝 Input: "${message}" | User: ${userId} | Session: ${sessionId}`);
 
       // HEX DUMP to verify UTF-8 encoding
       const messageBytes = Buffer.from(message, 'utf8');
       const messageHex = messageBytes.toString('hex').substring(0, 100);
       console.error(`🔢 Message HEX (first 50 bytes): ${messageHex}`);
-      console.error(`📏 Message byte length: ${messageBytes.length} | char length: ${message.length}`);
+      console.error(
+        `📏 Message byte length: ${messageBytes.length} | char length: ${message.length}`
+      );
 
       logger.info(`Processing message for session ${sessionId}`, {
         userId,
         messageLength: message.length,
+        mode: mode || 'default',
       });
 
-      // 1. Phân tích phân đoạn người dùng
+      // 0. EM-style mode check
+      if (mode === 'em_style') {
+        try {
+          const { emStyleReasoner } = await import('./emStyleReasoner');
+          const emResult = await emStyleReasoner.reason(message, {
+            userId,
+            sessionId,
+            userProfile,
+          });
+
+          // Save messages
+          await this.saveMessage(sessionId, userId, message, 'user');
+          await this.saveMessage(sessionId, userId, emResult.message, 'bot', {
+            intent: 'em_style_reasoning',
+            emStyle: true,
+          });
+
+          // Convert to EnhancedResponse
+          return {
+            message: emResult.message,
+            response: emResult.message,
+            intent: 'em_style_reasoning',
+            confidence: 0.8,
+            suggestions: emResult.options?.map(opt => opt.label) || [],
+            riskLevel: 'LOW',
+            crisisLevel: 'low',
+            qualityScore: 0.8,
+            disclaimer: 'Đây là mô phỏng phong cách tư duy, không thay thế chuyên gia.',
+            followUpActions: [],
+            emergencyContacts: [],
+            nextActions: [],
+            aiGenerated: true,
+          };
+        } catch (error) {
+          logger.error('EM-style processing failed, falling back to default:', error);
+          // Fall through to default mode
+        }
+      }
+
+      // 1. Phân tích phân đoạn người dùng (default mode)
       const userSegment = identifyUserSegment(message, this.getUserHistory(sessionId));
 
       // 2. Phân tích cảm xúc đa sắc thái
@@ -148,21 +190,28 @@ export class EnhancedChatbotService {
       const sentimentIntensity = analyzeSentimentIntensity(message);
 
       // 5. Phát hiện khủng hoảng - EXTENSIVE DEBUG
-      console.error(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.error(`🔍 ABOUT TO CALL detectCrisis()`);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('🔍 ABOUT TO CALL detectCrisis()');
       console.error(`📝 Original Message: "${message}"`);
       console.error(`📏 Message Length: ${message.length}`);
       console.error(`🔤 Message Type: ${typeof message}`);
-      console.error(`📋 Message Chars: ${Array.from(message).map(c => c.charCodeAt(0)).slice(0, 20).join(',')}`);
+      console.error(
+        `📋 Message Chars: ${Array.from(message)
+          .map(c => c.charCodeAt(0))
+          .slice(0, 20)
+          .join(',')}`
+      );
 
       const crisis = detectCrisis(message);
       const crisisLevel = crisis ? crisis.level : 'low';
 
       // Debug logging for crisis detection result
       console.error(`🎯 detectCrisis() RETURNED: ${crisis ? 'OBJECT' : 'NULL'}`);
-      console.error(`📊 Crisis: ${crisis ? JSON.stringify({ id: crisis.id, level: crisis.level, triggers: crisis.triggers }) : 'null'}`);
+      console.error(
+        `📊 Crisis: ${crisis ? JSON.stringify({ id: crisis.id, level: crisis.level, triggers: crisis.triggers }) : 'null'}`
+      );
       console.error(`⚠️  Crisis Level: ${crisisLevel}`);
-      console.error(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       if (crisis) {
         logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {
@@ -219,7 +268,9 @@ export class EnhancedChatbotService {
           logger.error(
             `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
           );
-          console.error(`🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`);
+          console.error(
+            `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
+          );
 
           // Thêm thông tin về HITL vào response
           response +=
@@ -277,9 +328,13 @@ export class EnhancedChatbotService {
       });
 
       const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' =
-        crisisLevel === 'critical' ? 'CRITICAL' :
-          crisisLevel === 'high' ? 'HIGH' :
-            crisisLevel === 'medium' ? 'MEDIUM' : 'LOW';
+        crisisLevel === 'critical'
+          ? 'CRITICAL'
+          : crisisLevel === 'high'
+            ? 'HIGH'
+            : crisisLevel === 'medium'
+              ? 'MEDIUM'
+              : 'LOW';
 
       const finalResponse: EnhancedResponse = {
         message: response, // Frontend expects 'message' not 'response'
@@ -301,7 +356,9 @@ export class EnhancedChatbotService {
       };
 
       // Log final response structure for debugging
-      console.error(`📤 FINAL RESPONSE: riskLevel=${finalResponse.riskLevel} | crisisLevel=${finalResponse.crisisLevel} | emergencyContacts=${finalResponse.emergencyContacts?.length || 0}`);
+      console.error(
+        `📤 FINAL RESPONSE: riskLevel=${finalResponse.riskLevel} | crisisLevel=${finalResponse.crisisLevel} | emergencyContacts=${finalResponse.emergencyContacts?.length || 0}`
+      );
 
       return finalResponse;
     } catch (error) {
@@ -345,7 +402,7 @@ export class EnhancedChatbotService {
           5. Uses warm, supportive tone
         `;
 
-        const aiResponse = await this.cerebrasService.generateResponse(context, {});
+        const aiResponse = await openAIService.generateResponse(context, {});
         return aiResponse.text;
       } catch (error) {
         logger.error('AI generation failed, using fallback:', error);

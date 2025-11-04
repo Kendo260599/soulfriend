@@ -88,9 +88,9 @@ router.get('/debug/version', (req, res) => {
     features: {
       crisisDetection: 'enhanced-v2',
       hitlSystem: 'active',
-      debugLogging: 'enabled'
+      debugLogging: 'enabled',
     },
-    message: 'If you see version 1.0.1, crisis detection fixes are deployed'
+    message: 'If you see version 1.0.1, crisis detection fixes are deployed',
   });
 });
 
@@ -104,7 +104,7 @@ router.get('/debug/crisis-test', async (req, res) => {
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
-        error: 'Message query parameter required'
+        error: 'Message query parameter required',
       });
     }
 
@@ -118,19 +118,21 @@ router.get('/debug/crisis-test', async (req, res) => {
       success: true,
       input: message,
       crisisDetected: crisis !== null,
-      crisis: crisis ? {
-        id: crisis.id,
-        level: crisis.level,
-        triggers: crisis.triggers,
-      } : null,
+      crisis: crisis
+        ? {
+            id: crisis.id,
+            level: crisis.level,
+            triggers: crisis.triggers,
+          }
+        : null,
       crisisLevel,
       riskLevel: crisisLevel === 'critical' ? 'CRITICAL' : crisisLevel === 'high' ? 'HIGH' : 'LOW',
-      message: 'This is a debug endpoint to test crisis detection function directly'
+      message: 'This is a debug endpoint to test crisis detection function directly',
     });
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   }
 });

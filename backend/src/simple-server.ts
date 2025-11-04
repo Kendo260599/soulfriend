@@ -27,7 +27,7 @@ if (!OPENAI_API_KEY) {
 const openAIClient = axios.create({
   baseURL: 'https://api.openai.com/v1',
   headers: {
-    'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    Authorization: `Bearer ${OPENAI_API_KEY}`,
     'Content-Type': 'application/json',
   },
   timeout: 30000,
@@ -105,7 +105,7 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: message }
+        { role: 'user', content: message },
       ],
       max_tokens: 1000,
       temperature: 0.7,

@@ -23,7 +23,7 @@ export class ChatbotController {
    */
   processMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { message, userId, sessionId, context } = req.body;
+      const { message, userId, sessionId, context, mode } = req.body;
 
       // Validation
       if (!message || typeof message !== 'string') {
@@ -41,11 +41,13 @@ export class ChatbotController {
       });
 
       // Process message with Enhanced Chatbot Service (với HITL crisis detection)
+      const chatbotMode = mode === 'em_style' ? 'em_style' : 'default';
       const response = await this.enhancedChatbotService.processMessage(
         message,
         sessionId || this.generateSessionId(),
         userId || 'anonymous',
-        context?.userProfile
+        context?.userProfile,
+        chatbotMode
       );
 
       res.json({

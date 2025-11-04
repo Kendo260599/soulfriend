@@ -84,37 +84,40 @@ router.post(
         message: 'Lỗi server khi lưu thông tin đồng ý',
       });
     }
-  }
-));
+  })
+);
 
 /**
  * GET /api/consent/stats
  * Lấy thống kê về số lượng đồng ý tham gia
  */
-router.get('/stats', asyncHandler(async (req, res) => {
-  try {
-    const totalConsents = await Consent.countDocuments({ agreed: true });
-    const todayConsents = await Consent.countDocuments({
-      agreed: true,
-      timestamp: {
-        $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      },
-    });
+router.get(
+  '/stats',
+  asyncHandler(async (req, res) => {
+    try {
+      const totalConsents = await Consent.countDocuments({ agreed: true });
+      const todayConsents = await Consent.countDocuments({
+        agreed: true,
+        timestamp: {
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        },
+      });
 
-    res.json({
-      success: true,
-      data: {
-        totalConsents,
-        todayConsents,
-      },
-    });
-  } catch (error) {
-    console.error('Error getting consent stats:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy thống kê',
-    });
-  }
-}));
+      res.json({
+        success: true,
+        data: {
+          totalConsents,
+          todayConsents,
+        },
+      });
+    } catch (error) {
+      console.error('Error getting consent stats:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi server khi lấy thống kê',
+      });
+    }
+  })
+);
 
 export default router;

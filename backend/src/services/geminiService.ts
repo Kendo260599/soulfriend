@@ -1,16 +1,15 @@
-import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 import { logger } from '../utils/logger';
 
+/**
+ * Gemini AI Service
+ * Replaces CerebrasService with Google Gemini API
+ */
 export class GeminiService {
-  private genAI!: GoogleGenerativeAI;
-  private model!: GenerativeModel;
+  private client: any;
   private isInitialized: boolean = false;
-
-  // Rate limiting for free tier (15 RPM)
-  private requestCount: number = 0;
-  private requestWindowStart: number = Date.now();
-  private readonly MAX_REQUESTS_PER_MINUTE = 12; // Conservative limit for free tier
-  private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute in ms
+  private readonly MODEL = 'gemini-1.5-pro';
+  private readonly API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -20,29 +19,21 @@ export class GeminiService {
     }
 
     try {
-      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.client = axios.create({
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta',
+        params: {
+          key: apiKey,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000, // 30 seconds
+      });
 
-      // Use gemini-1.5-flash for free tier (faster and more available)
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       this.isInitialized = true;
-      logger.info('✅ Gemini AI initialized successfully with gemini-1.5-flash');
+      logger.info('✅ Gemini AI initialized successfully with Gemini 1.5 Pro');
     } catch (error) {
       logger.error('❌ Failed to initialize Gemini AI:', error);
-      logger.error('Error details:', JSON.stringify(error, null, 2));
-
-      // Try alternative model names for free tier
-      const fallbackModels = ['gemini-pro', 'gemini-1.0-pro'];
-      for (const modelName of fallbackModels) {
-        try {
-          logger.info(`Trying fallback model: ${modelName}`);
-          this.model = this.genAI.getGenerativeModel({ model: modelName });
-          this.isInitialized = true;
-          logger.info(`✅ Gemini AI initialized successfully with ${modelName} (fallback)`);
-          break;
-        } catch (fallbackError) {
-          logger.error(`❌ Fallback ${modelName} also failed:`, fallbackError);
-        }
-      }
     }
   }
 
@@ -51,37 +42,8 @@ export class GeminiService {
   }
 
   /**
-   * Check if we're within rate limits (FREE tier: 15 RPM)
-   * Returns true if OK to proceed, false if rate limited
+   * Generate response using Gemini API
    */
-  private checkRateLimit(): boolean {
-    const now = Date.now();
-    const elapsed = now - this.requestWindowStart;
-
-    // Reset counter if window expired
-    if (elapsed >= this.RATE_LIMIT_WINDOW) {
-      this.requestCount = 0;
-      this.requestWindowStart = now;
-    }
-
-    // Check if we're over limit
-    if (this.requestCount >= this.MAX_REQUESTS_PER_MINUTE) {
-      const waitTime = this.RATE_LIMIT_WINDOW - elapsed;
-      logger.warn(`⚠️ Gemini FREE tier rate limit reached (${this.requestCount}/${this.MAX_REQUESTS_PER_MINUTE} RPM). Wait ${Math.ceil(waitTime / 1000)}s`);
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Increment request counter
-   */
-  private incrementRequestCount(): void {
-    this.requestCount++;
-    logger.debug(`📊 Gemini requests: ${this.requestCount}/${this.MAX_REQUESTS_PER_MINUTE} in current minute`);
-  }
-
   async generateResponse(
     userMessage: string,
     context: any
@@ -94,20 +56,11 @@ export class GeminiService {
       };
     }
 
-    // Check rate limit for FREE tier
-    if (!this.checkRateLimit()) {
-      logger.warn('🆓 FREE tier rate limit - using offline response');
-      return {
-        text: 'Mình đang xử lý nhiều yêu cầu cùng lúc. Bạn có thể chia sẻ thêm về tình huống của mình không? Mình sẽ cố gắng hỗ trợ bạn tốt nhất có thể. 💙',
-        confidence: 0.5,
-      };
-    }
-
     try {
-      // Increment counter before API call
-      this.incrementRequestCount();
-      // Enhanced prompt with safety guidelines
-      const prompt = `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+      // Use custom system prompt if provided, otherwise use default CHUN prompt
+      const systemPrompt =
+        context?.systemPrompt ||
+        `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý
@@ -125,23 +78,66 @@ export class GeminiService {
 🚨 CRISIS PROTOCOL:
 - Nếu phát hiện ý định tự tử: Hotline NGAY 1900 599 958
 - Nếu phát hiện bạo hành: Gọi 113 ngay lập tức
-- Luôn khuyến nghị gặp chuyên gia cho vấn đề nghiêm trọng
+- Luôn khuyến nghị gặp chuyên gia cho vấn đề nghiêm trọng`;
 
-Người dùng: ${userMessage}
+      // Gemini API format
+      const prompt = `${systemPrompt}\n\nNgười dùng: ${userMessage}\n\nCHUN:`;
 
-Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
+      const response = await this.client.post(`/models/${this.MODEL}:generateContent`, {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+          topP: 0.9,
+          topK: 40,
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+        ],
+      });
 
-      const result = await this.model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+      const aiResponse = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      // Validate response
-      if (!text || text.trim().length === 0) {
+      if (!aiResponse || aiResponse.trim().length === 0) {
+        // Check if blocked by safety settings
+        if (response.data.promptFeedback?.blockReason) {
+          logger.warn(
+            'Response blocked by safety settings:',
+            response.data.promptFeedback.blockReason
+          );
+          return {
+            text: 'Xin lỗi, tôi cần thời gian để suy nghĩ về câu trả lời phù hợp. Bạn có thể chia sẻ thêm về tình huống của mình không?',
+            confidence: 0.3,
+          };
+        }
         throw new Error('Empty response from Gemini');
       }
 
-      // Check for safety issues in response
-      const safetyCheck = this.validateResponse(text);
+      // Validate response
+      const safetyCheck = this.validateResponse(aiResponse);
       if (!safetyCheck.safe) {
         logger.warn('Unsafe response detected, using fallback', { issues: safetyCheck.issues });
         return {
@@ -150,25 +146,25 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
         };
       }
 
-      return { text, confidence: 0.9 };
+      logger.info('✅ Gemini AI response generated successfully');
+      return { text: aiResponse.trim(), confidence: 0.95 };
     } catch (error: any) {
-      // Enhanced error logging for FREE tier issues
-      const errorMsg = error?.message || String(error);
+      logger.error('❌ Gemini API error:', error.message);
 
-      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota')) {
-        logger.warn('🆓 Gemini FREE tier quota exceeded:', errorMsg);
-        return {
-          text: 'Mình hiểu bạn đang cần hỗ trợ. Do giới hạn dịch vụ miễn phí, mình sẽ lắng nghe và cố gắng giúp bạn với những gì mình có thể. Bạn muốn chia sẻ gì với mình? 💙',
-          confidence: 0.5,
-        };
-      } else if (errorMsg.includes('API key') || errorMsg.includes('INVALID') || errorMsg.includes('403')) {
-        logger.error('❌ Gemini API key invalid or expired:', errorMsg);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        logger.error('❌ Gemini API key invalid or expired');
         return {
           text: 'Xin lỗi, dịch vụ AI tạm thời không khả dụng. Tôi vẫn có thể hỗ trợ bạn với các tính năng cơ bản.',
           confidence: 0.1,
         };
+      } else if (error.response?.status === 429) {
+        logger.warn('⚠️ Gemini API rate limit exceeded');
+        return {
+          text: 'Mình hiểu bạn đang cần hỗ trợ. Do giới hạn dịch vụ, mình sẽ lắng nghe và cố gắng giúp bạn với những gì mình có thể. Bạn muốn chia sẻ gì với mình? 💙',
+          confidence: 0.5,
+        };
       } else {
-        logger.error('❌ Gemini API error:', errorMsg);
+        logger.error('❌ Gemini API error:', error.message);
         return {
           text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
           confidence: 0.1,
@@ -177,6 +173,9 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
     }
   }
 
+  /**
+   * Chat with conversation history
+   */
   async chat(
     userMessage: string,
     history: any[] = []
@@ -190,28 +189,77 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
     }
 
     try {
-      const chat = this.model.startChat({
-        history: history.map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }],
-        })),
-        generationConfig: {
-          maxOutputTokens: 500,
-          temperature: 0.7,
+      const systemPrompt =
+        'Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam. Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt và xưng hô "Mình" (CHUN) - "Bạn" (User).';
+
+      // Build conversation history
+      const contents = [
+        {
+          parts: [{ text: systemPrompt }],
+          role: 'user',
         },
+      ];
+
+      // Add history
+      history.forEach(msg => {
+        contents.push({
+          parts: [{ text: msg.content }],
+          role: msg.sender === 'user' ? 'user' : 'model',
+        });
       });
 
-      const result = await chat.sendMessage(userMessage);
-      const response = result.response;
-      const text = response.text();
+      // Add current message
+      contents.push({
+        parts: [{ text: userMessage }],
+        role: 'user',
+      });
 
-      // Validate response
-      if (!text || text.trim().length === 0) {
+      const response = await this.client.post(`/models/${this.MODEL}:generateContent`, {
+        contents: contents,
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+          topP: 0.9,
+          topK: 40,
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+        ],
+      });
+
+      const aiResponse = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!aiResponse || aiResponse.trim().length === 0) {
+        if (response.data.promptFeedback?.blockReason) {
+          logger.warn(
+            'Chat response blocked by safety settings:',
+            response.data.promptFeedback.blockReason
+          );
+          return {
+            text: 'Xin lỗi, tôi cần thời gian để suy nghĩ về câu trả lời phù hợp. Bạn có thể chia sẻ thêm về tình huống của mình không?',
+            confidence: 0.3,
+          };
+        }
         throw new Error('Empty response from Gemini chat');
       }
 
-      // Check for safety issues in response
-      const safetyCheck = this.validateResponse(text);
+      // Validate response
+      const safetyCheck = this.validateResponse(aiResponse);
       if (!safetyCheck.safe) {
         logger.warn('Unsafe chat response detected, using fallback', {
           issues: safetyCheck.issues,
@@ -222,11 +270,9 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
         };
       }
 
-      return { text, confidence: 0.9 };
+      return { text: aiResponse.trim(), confidence: 0.95 };
     } catch (error) {
       logger.error('Error in chat with Gemini:', error);
-
-      // Return fallback response instead of throwing
       return {
         text: 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Bạn có thể thử lại sau hoặc liên hệ với chuyên gia tâm lý để được hỗ trợ.',
         confidence: 0.1,
@@ -272,7 +318,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
     }
 
     // Check response length
-    if (text.length > 1000) {
+    if (text.length > 2000) {
       issues.push('Response too long');
     }
 
@@ -292,7 +338,7 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn và thân thiện.`;
   getStatus(): { ready: boolean; model: string; initialized: boolean } {
     return {
       ready: this.isReady(),
-      model: this.isReady() ? 'gemini-1.5-flash' : 'none',
+      model: this.isReady() ? this.MODEL : 'none',
       initialized: this.isInitialized,
     };
   }

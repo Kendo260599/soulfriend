@@ -15,188 +15,206 @@ const router = Router();
  * POST /api/hitl-feedback/:alertId
  * Submit feedback for a resolved alert
  */
-router.post('/:alertId', asyncHandler(async (req, res) => {
-  try {
-    const { alertId } = req.params;
-    const feedbackData = req.body;
+router.post(
+  '/:alertId',
+  asyncHandler(async (req, res) => {
+    try {
+      const { alertId } = req.params;
+      const feedbackData = req.body;
 
-    // Validate required fields
-    if (typeof feedbackData.wasActualCrisis !== 'boolean') {
-      return res.status(400).json({
+      // Validate required fields
+      if (typeof feedbackData.wasActualCrisis !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required field: wasActualCrisis',
+        });
+      }
+
+      // Mock alert data (in production, fetch from database)
+      const alert = {
+        id: alertId,
+        timestamp: new Date(),
+        userId: 'user_123',
+        sessionId: 'session_456',
+        riskLevel: 'CRITICAL' as const,
+        riskType: 'suicidal' as const,
+        userMessage: feedbackData.userMessage || 'Message content',
+        detectedKeywords: feedbackData.detectedKeywords || [],
+        status: 'resolved' as const,
+      };
+
+      const feedback = await hitlFeedbackService.collectFeedback(alert, feedbackData);
+
+      res.json({
+        success: true,
+        message: 'Feedback collected successfully',
+        feedback,
+        trainingDataCreated: true,
+      });
+    } catch (error: any) {
+      logger.error('Error collecting HITL feedback:', error);
+      res.status(500).json({
         success: false,
-        error: 'Missing required field: wasActualCrisis',
+        error: error.message,
       });
     }
-
-    // Mock alert data (in production, fetch from database)
-    const alert = {
-      id: alertId,
-      timestamp: new Date(),
-      userId: 'user_123',
-      sessionId: 'session_456',
-      riskLevel: 'CRITICAL' as const,
-      riskType: 'suicidal' as const,
-      userMessage: feedbackData.userMessage || 'Message content',
-      detectedKeywords: feedbackData.detectedKeywords || [],
-      status: 'resolved' as const,
-    };
-
-    const feedback = await hitlFeedbackService.collectFeedback(alert, feedbackData);
-
-    res.json({
-      success: true,
-      message: 'Feedback collected successfully',
-      feedback,
-      trainingDataCreated: true,
-    });
-  } catch (error: any) {
-    logger.error('Error collecting HITL feedback:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}));
+  })
+);
 
 /**
  * GET /api/hitl-feedback/metrics
  * Get model performance metrics
  */
-router.get('/metrics', asyncHandler(async (req, res) => {
-  try {
-    const periodDays = parseInt(req.query.days as string) || 30;
+router.get(
+  '/metrics',
+  asyncHandler(async (req, res) => {
+    try {
+      const periodDays = parseInt(req.query.days as string) || 30;
 
-    const metrics = await hitlFeedbackService.calculatePerformanceMetrics(periodDays);
+      const metrics = await hitlFeedbackService.calculatePerformanceMetrics(periodDays);
 
-    res.json({
-      success: true,
-      metrics,
-      analysis: {
-        summary: generateMetricsSummary(metrics),
-        recommendations: generateRecommendations(metrics),
-      },
-    });
-  } catch (error: any) {
-    logger.error('Error calculating metrics:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}));
+      res.json({
+        success: true,
+        metrics,
+        analysis: {
+          summary: generateMetricsSummary(metrics),
+          recommendations: generateRecommendations(metrics),
+        },
+      });
+    } catch (error: any) {
+      logger.error('Error calculating metrics:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  })
+);
 
 /**
  * GET /api/hitl-feedback/improvements
  * Get model improvement suggestions
  */
-router.get('/improvements', asyncHandler(async (req, res) => {
-  try {
-    const suggestions = await hitlFeedbackService.generateModelImprovements();
+router.get(
+  '/improvements',
+  asyncHandler(async (req, res) => {
+    try {
+      const suggestions = await hitlFeedbackService.generateModelImprovements();
 
-    res.json({
-      success: true,
-      suggestions,
-      readyToApply: true,
-      impact: {
-        description: 'Expected improvements based on HITL feedback analysis',
-        ...suggestions.expectedImprovements,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Error generating improvements:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}));
+      res.json({
+        success: true,
+        suggestions,
+        readyToApply: true,
+        impact: {
+          description: 'Expected improvements based on HITL feedback analysis',
+          ...suggestions.expectedImprovements,
+        },
+      });
+    } catch (error: any) {
+      logger.error('Error generating improvements:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  })
+);
 
 /**
  * GET /api/hitl-feedback/keywords
  * Get keyword statistics and analysis
  */
-router.get('/keywords', asyncHandler(async (req, res) => {
-  try {
-    const keywordStats = hitlFeedbackService.getKeywordStatistics();
+router.get(
+  '/keywords',
+  asyncHandler(async (req, res) => {
+    try {
+      const keywordStats = hitlFeedbackService.getKeywordStatistics();
 
-    res.json({
-      success: true,
-      keywords: keywordStats,
-      summary: {
-        total: keywordStats.length,
-        highAccuracy: keywordStats.filter(k => k.accuracy > 0.8).length,
-        needsAdjustment: keywordStats.filter(k => k.recommendation === 'adjust_weight').length,
-        shouldRemove: keywordStats.filter(k => k.recommendation === 'remove').length,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Error getting keyword statistics:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}));
+      res.json({
+        success: true,
+        keywords: keywordStats,
+        summary: {
+          total: keywordStats.length,
+          highAccuracy: keywordStats.filter(k => k.accuracy > 0.8).length,
+          needsAdjustment: keywordStats.filter(k => k.recommendation === 'adjust_weight').length,
+          shouldRemove: keywordStats.filter(k => k.recommendation === 'remove').length,
+        },
+      });
+    } catch (error: any) {
+      logger.error('Error getting keyword statistics:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  })
+);
 
 /**
  * GET /api/hitl-feedback/training-data
  * Get training data for model fine-tuning
  */
-router.get('/training-data', asyncHandler(async (req, res) => {
-  try {
-    const format = (req.query.format as 'jsonl' | 'csv') || 'jsonl';
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+router.get(
+  '/training-data',
+  asyncHandler(async (req, res) => {
+    try {
+      const format = (req.query.format as 'jsonl' | 'csv') || 'jsonl';
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
 
-    if (format === 'jsonl' || format === 'csv') {
-      const exportedData = await hitlFeedbackService.exportTrainingDataForFineTuning(format);
+      if (format === 'jsonl' || format === 'csv') {
+        const exportedData = await hitlFeedbackService.exportTrainingDataForFineTuning(format);
 
-      res.setHeader('Content-Type', format === 'jsonl' ? 'application/jsonl' : 'text/csv');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="crisis-detection-training-${Date.now()}.${format}"`
-      );
-      res.send(exportedData);
-    } else {
-      // JSON format
-      const trainingData = hitlFeedbackService.getTrainingData(limit);
+        res.setHeader('Content-Type', format === 'jsonl' ? 'application/jsonl' : 'text/csv');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="crisis-detection-training-${Date.now()}.${format}"`
+        );
+        res.send(exportedData);
+      } else {
+        // JSON format
+        const trainingData = hitlFeedbackService.getTrainingData(limit);
 
-      res.json({
-        success: true,
-        count: trainingData.length,
-        data: trainingData,
-        format: 'json',
+        res.json({
+          success: true,
+          count: trainingData.length,
+          data: trainingData,
+          format: 'json',
+        });
+      }
+    } catch (error: any) {
+      logger.error('Error exporting training data:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
       });
     }
-  } catch (error: any) {
-    logger.error('Error exporting training data:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}));
+  })
+);
 
 /**
  * GET /api/hitl-feedback/all
  * Get all feedback entries
  */
-router.get('/all', asyncHandler(async (req, res) => {
-  try {
-    const allFeedback = hitlFeedbackService.getAllFeedback();
+router.get(
+  '/all',
+  asyncHandler(async (req, res) => {
+    try {
+      const allFeedback = hitlFeedbackService.getAllFeedback();
 
-    res.json({
-      success: true,
-      count: allFeedback.length,
-      feedback: allFeedback,
-    });
-  } catch (error: any) {
-    logger.error('Error getting all feedback:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-}));
+      res.json({
+        success: true,
+        count: allFeedback.length,
+        feedback: allFeedback,
+      });
+    } catch (error: any) {
+      logger.error('Error getting all feedback:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  })
+);
 
 // =============================================================================
 // HELPER FUNCTIONS

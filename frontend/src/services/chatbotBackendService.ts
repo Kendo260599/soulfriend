@@ -83,6 +83,7 @@ export class ChatbotBackendService {
         'Content-Type': 'application/json; charset=utf-8',
         'Accept-Charset': 'utf-8'
       },
+      withCredentials: true, // Required for CORS with credentials
     });
 
     // Add response interceptor for error handling

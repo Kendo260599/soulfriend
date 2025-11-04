@@ -102,34 +102,52 @@ app.use(
 app.options(/.*/, (req, res) => {
   const origin = req.headers.origin as string | undefined;
 
+  // Always set CORS headers first (even for rejected origins, browser needs them)
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, X-API-Version'
+  );
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
+
   // Check if origin is allowed
   if (origin) {
     // If CORS_ORIGIN is empty or not configured, allow all
     if (!config.CORS_ORIGIN || config.CORS_ORIGIN.length === 0) {
       res.header('Access-Control-Allow-Origin', origin);
       res.header('Access-Control-Allow-Credentials', 'true');
-    } else if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    } else if (config.NODE_ENV === 'development') {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-    } else {
-      // Origin not allowed
-      res.status(403).end();
+      res.header('Vary', 'Origin');
+      res.status(204).end();
       return;
     }
-    res.header('Vary', 'Origin');
-  } else {
-    // No origin provided, allow generic public access without credentials
-    res.header('Access-Control-Allow-Origin', '*');
+
+    // Check if origin is in allowed list
+    if (config.CORS_ORIGIN.includes(origin) || config.CORS_ORIGIN.includes('*')) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Vary', 'Origin');
+      res.status(204).end();
+      return;
+    }
+
+    // Development mode: allow all origins
+    if (config.NODE_ENV === 'development') {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Vary', 'Origin');
+      res.status(204).end();
+      return;
+    }
+
+    // Origin not allowed - but still return CORS headers for browser
+    console.warn(`⚠️  CORS Preflight: Origin ${origin} not allowed. Allowed origins: ${config.CORS_ORIGIN.join(', ')}`);
+    res.header('Access-Control-Allow-Origin', 'null'); // Explicit rejection
+    res.status(403).end();
+    return;
   }
 
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Requested-With, X-API-Version'
-  );
+  // No origin provided, allow generic public access without credentials
+  res.header('Access-Control-Allow-Origin', '*');
   res.status(204).end();
 });
 

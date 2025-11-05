@@ -356,7 +356,7 @@ const ValidationWarning: React.FC<ValidationWarningProps> = ({
                         <Text>
                             Để một thang đo tâm lý được coi là <strong>hợp lệ</strong> cho người Việt Nam,
                             nó cần trải qua quy trình chuẩn hóa theo tiêu chuẩn quốc tế (WHO, APA) bao gồm:
-                            dịch xuôi, dịch ngược, thử nghiệm sơ bộ, khảo sát chính thức (≥300 người), 
+                            dịch xuôi, dịch ngược, thử nghiệm sơ bộ, khảo sát chính thức ({'≥'}300 người), 
               phân tích tâm lý trắc nghiệm (Cronbach's α {'≥'} 0.7, KMO {'>'} 0.6, EFA/CFA),
                             và công bố khoa học có phản biện.
                         </Text>

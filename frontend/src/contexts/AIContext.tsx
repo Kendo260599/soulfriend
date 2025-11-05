@@ -77,11 +77,18 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     setIsProcessing(true);
     setLastError(null);
 
+    // Log user message
+    console.log('📤 User message:', message);
+    console.log('📤 Message length:', message.length);
+    console.log('📤 Message type:', typeof message);
+
     try {
       // ALWAYS try backend AI service first (removed isOnline check)
       try {
         // Ensure no trailing slash in API URL
         const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
+        console.log('🌐 Sending to backend:', `${apiUrl}/api/v2/chatbot/message`);
+        
         const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
           method: 'POST',
           headers: {
@@ -99,20 +106,42 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
           })
         });
 
+        console.log('📥 Response status:', response.status, response.statusText);
+
         if (response.ok) {
           const data = await response.json();
+          console.log('📥 Response data:', {
+            success: data.success,
+            riskLevel: data.data?.riskLevel,
+            crisisLevel: data.data?.crisisLevel,
+            emergencyContacts: data.data?.emergencyContacts?.length || 0
+          });
+          
           if (data.success) {
+            const crisisDetected = data.data.riskLevel === 'CRITICAL' || data.data.riskLevel === 'HIGH' || data.data.crisisLevel === 'critical';
+            
+            if (crisisDetected) {
+              console.error('🚨 CRISIS DETECTED!', {
+                riskLevel: data.data.riskLevel,
+                crisisLevel: data.data.crisisLevel,
+                emergencyContacts: data.data.emergencyContacts,
+                message: message
+              });
+            }
+            
             setIsOnline(true); // ✅ Backend working!
             return {
               text: data.data.message || data.data.response,
-              crisisDetected: data.data.riskLevel === 'CRITICAL' || data.data.riskLevel === 'HIGH' || data.data.crisisLevel === 'critical',
+              crisisDetected,
               recommendations: data.data.nextActions || [],
               nextActions: data.data.emergencyContacts ?
-                data.data.emergencyContacts.map((contact: any) => `${contact.name}: ${contact.phone}`) : [],
+                data.data.emergencyContacts.map((contact: any) => `${contact.name}: ${contact.phone || contact.contact}`) : [],
               confidence: data.data.confidence || 0.8,
               aiGenerated: data.data.aiGenerated || false
             };
           }
+        } else {
+          console.error('❌ Backend error:', response.status, response.statusText);
         }
 
         // If response not ok, throw error to trigger offline fallback

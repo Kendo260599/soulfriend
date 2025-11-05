@@ -331,7 +331,8 @@ class MonitoringService {
   private async checkApiEndpoints(): Promise<void> {
     // Check if API endpoints are responding
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
+      // Ensure no trailing slash to prevent double slashes
+      const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
       // Use chatbot endpoint instead of health endpoint for better reliability
       const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
         method: 'POST',

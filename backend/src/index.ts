@@ -354,13 +354,8 @@ const startServer = async () => {
     console.log(`📊 Config PORT: ${PORT}`);
     console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
 
-    // Connect to database (non-blocking - allow server to start even if DB fails)
-    console.log('📊 Connecting to database...');
-    databaseConnection.connect().catch(err => {
-      console.warn('⚠️  Database connection failed, continuing without database:', err.message);
-    });
-
-    // Start HTTP server - Railway provides PORT via environment variable
+    // Start HTTP server FIRST - before database connection
+    // This ensures Railway health check can reach server immediately
     const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
     console.log(`📊 Starting server on port: ${actualPort}`);
 
@@ -373,6 +368,12 @@ const startServer = async () => {
       console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
       console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
       console.log('╚════════════════════════════════════════════╝');
+      
+      // Connect to database AFTER server starts (non-blocking)
+      console.log('📊 Connecting to database (non-blocking)...');
+      databaseConnection.connect().catch(err => {
+        console.warn('⚠️  Database connection failed, continuing without database:', err.message);
+      });
     });
 
     // Handle server errors

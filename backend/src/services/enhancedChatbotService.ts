@@ -211,6 +211,8 @@ export class EnhancedChatbotService {
         `📊 Crisis: ${crisis ? JSON.stringify({ id: crisis.id, level: crisis.level, triggers: crisis.triggers }) : 'null'}`
       );
       console.error(`⚠️  Crisis Level: ${crisisLevel}`);
+      console.error(`🔍 Crisis object exists: ${crisis !== null}`);
+      console.error(`🔍 crisisLevel === 'critical': ${crisisLevel === 'critical'}`);
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       if (crisis) {
@@ -219,6 +221,7 @@ export class EnhancedChatbotService {
           message: message.substring(0, 100),
         });
         console.error(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel}) - Message: "${message}"`);
+        console.error(`🚨 Checking if crisisLevel === 'critical': ${crisisLevel === 'critical'}`);
       } else {
         console.error(`❌ NO CRISIS DETECTED for message: "${message}"`);
       }
@@ -237,7 +240,9 @@ export class EnhancedChatbotService {
       let disclaimer: string = '';
       let followUpActions: string[] = [];
 
+      console.error(`🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, crisis?.level="${crisis?.level}"`);
       if (crisisLevel === 'critical') {
+        console.error(`✅ ENTERING CRISIS BLOCK - crisis is ${crisis ? 'not null' : 'NULL'}`);
         response = crisis!.immediateResponse;
         suggestions = crisis!.followUpActions;
         followUpActions = crisis!.escalationProtocol;

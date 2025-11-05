@@ -106,17 +106,12 @@ export class ChatbotBackendService {
    */
   async checkBackendAvailability(): Promise<boolean> {
     try {
-      // Use chatbot endpoint instead of health endpoint for better reliability
-      const response = await axios.post(`${BACKEND_URL}/api/v2/chatbot/message`, {
-        message: "health_check",
-        userId: "system",
-        sessionId: "health_check",
-        context: {}
-      }, {
+      // Use dedicated health endpoint instead of chatbot endpoint to avoid spam in logs
+      const response = await axios.get(`${BACKEND_URL}/api/health`, {
         timeout: 10000, // Increased timeout to 10 seconds
       });
 
-      this.isBackendAvailable = response.status === 200 && response.data.success;
+      this.isBackendAvailable = response.status === 200 && response.data.status === 'ok';
       console.log('✅ Backend is available');
       return true;
     } catch (error) {

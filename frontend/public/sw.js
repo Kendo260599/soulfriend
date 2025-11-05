@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soulfriend-v1';
+const CACHE_NAME = 'soulfriend-v2-double-slash-fix';
 const urlsToCache = [
     '/',
     '/manifest.json'

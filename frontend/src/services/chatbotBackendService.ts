@@ -8,7 +8,8 @@ import axios, { AxiosInstance } from 'axios';
 import { DialogContext, OrchestratorResponse } from './chatbotOrchestratorService';
 
 // Backend API configuration
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-production.up.railway.app';
+// Remove trailing slash to prevent double slashes
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
 const API_VERSION = 'v2';
 const CHATBOT_BASE = `${BACKEND_URL}/api/${API_VERSION}/chatbot`;
 

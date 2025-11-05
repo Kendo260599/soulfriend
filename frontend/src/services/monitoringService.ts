@@ -333,18 +333,12 @@ class MonitoringService {
     try {
       // Ensure no trailing slash to prevent double slashes
       const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
-      // Use chatbot endpoint instead of health endpoint for better reliability
-      const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
-        method: 'POST',
+      // Use dedicated health endpoint instead of chatbot endpoint to avoid spam in logs
+      const response = await fetch(`${apiUrl}/api/health`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: "health_check",
-          userId: "system",
-          sessionId: "health_check",
-          context: {}
-        })
       });
 
       if (!response.ok) {
@@ -352,8 +346,8 @@ class MonitoringService {
       }
 
       const data = await response.json();
-      if (!data.success) {
-        throw new Error('API returned unsuccessful response');
+      if (!data.status || data.status !== 'ok') {
+        throw new Error('API health check returned unhealthy status');
       }
     } catch (error) {
       throw new Error(`API endpoints not accessible: ${error}`);

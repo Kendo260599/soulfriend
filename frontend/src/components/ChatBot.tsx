@@ -682,6 +682,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     };
 
     const originalInput = inputValue;
+    
+    // Log user message
+    console.log('💬 User sent message:', originalInput);
+    console.log('💬 Message length:', originalInput.length);
+    
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
@@ -689,6 +694,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
     try {
       const botResponse = await generateBotResponse(originalInput);
+      
+      // Log bot response
+      console.log('🤖 Bot response:', {
+        text: botResponse.text?.substring(0, 100),
+        crisisDetected: botResponse.crisisDetected,
+        riskLevel: botResponse.crisisDetected ? 'CRITICAL' : 'NORMAL'
+      });
+      
+      if (botResponse.crisisDetected) {
+        console.error('🚨 CRISIS DETECTED in frontend!', {
+          message: originalInput,
+          response: botResponse.text?.substring(0, 100),
+          recommendations: botResponse.recommendations,
+          emergencyContacts: botResponse.nextActions
+        });
+      }
       
       // Thêm tin nhắn phản hồi chính
       const botMessage: ChatMessage = {

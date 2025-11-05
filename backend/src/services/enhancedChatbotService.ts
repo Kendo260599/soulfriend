@@ -123,6 +123,8 @@ export class EnhancedChatbotService {
       // Version logging to verify deployment
       console.error('🔍 EnhancedChatbotService v2.1 - Processing message');
       console.error(`📝 Input: "${message}" | User: ${userId} | Session: ${sessionId}`);
+      console.error(`📝 Message type: ${typeof message}, length: ${message.length}`);
+      console.error(`📝 Message bytes: ${Buffer.from(message, 'utf8').toString('hex').substring(0, 100)}`);
 
       // HEX DUMP to verify UTF-8 encoding
       const messageBytes = Buffer.from(message, 'utf8');

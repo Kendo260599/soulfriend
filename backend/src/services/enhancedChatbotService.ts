@@ -203,35 +203,51 @@ export class EnhancedChatbotService {
       );
 
       const crisis = detectCrisis(message);
-      const crisisLevel = crisis ? crisis.level : 'low';
+      let crisisLevel = crisis ? crisis.level : 'low';
 
       // Debug logging for crisis detection result
       console.error(`🎯 detectCrisis() RETURNED: ${crisis ? 'OBJECT' : 'NULL'}`);
       console.error(
         `📊 Crisis: ${crisis ? JSON.stringify({ id: crisis.id, level: crisis.level, triggers: crisis.triggers }) : 'null'}`
       );
-      console.error(`⚠️  Crisis Level: ${crisisLevel}`);
+      console.error(`⚠️  Crisis Level (initial): ${crisisLevel}`);
       console.error(`🔍 Crisis object exists: ${crisis !== null}`);
       console.error(`🔍 crisisLevel === 'critical': ${crisisLevel === 'critical'}`);
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      if (crisis) {
-        logger.warn(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel})`, {
-          triggers: crisis.triggers,
+      // CRITICAL: Store crisis in a const to prevent it from being overwritten
+      const detectedCrisis = crisis;
+      const detectedCrisisLevel = crisisLevel;
+
+      if (detectedCrisis) {
+        logger.warn(`🚨 CRISIS DETECTED: ${detectedCrisis.id} (${detectedCrisisLevel})`, {
+          triggers: detectedCrisis.triggers,
           message: message.substring(0, 100),
         });
-        console.error(`🚨 CRISIS DETECTED: ${crisis.id} (${crisisLevel}) - Message: "${message}"`);
-        console.error(`🚨 Checking if crisisLevel === 'critical': ${crisisLevel === 'critical'}`);
+        console.error(`🚨 CRISIS DETECTED: ${detectedCrisis.id} (${detectedCrisisLevel}) - Message: "${message}"`);
+        console.error(`🚨 Checking if detectedCrisisLevel === 'critical': ${detectedCrisisLevel === 'critical'}`);
       } else {
         console.error(`❌ NO CRISIS DETECTED for message: "${message}"`);
       }
 
-      // 6. Đánh giá rủi ro
+      // 6. Đánh giá rủi ro (NOTE: assessRisk() calls detectCrisis() again internally)
+      // We already have crisis and crisisLevel from step 5, so we don't need to rely on assessRisk()
+      // But we'll still call it for compatibility, but we'll use our crisisLevel instead
       const riskAssessment = assessRisk(
         message,
         this.getUserHistory(sessionId),
         nuancedEmotion.emotion
       );
+      
+      // CRITICAL FIX: Restore crisis and crisisLevel after assessRisk() might have called detectCrisis() again
+      // Use the originally detected crisis, not what assessRisk() might have returned
+      if (detectedCrisis) {
+        console.error(`🔧 RESTORING crisis and crisisLevel from original detection`);
+        console.error(`🔧 Before restore: crisis=${crisis ? 'exists' : 'null'}, crisisLevel="${crisisLevel}"`);
+        // crisis is a const, but we can reassign crisisLevel
+        crisisLevel = detectedCrisisLevel;
+        console.error(`🔧 After restore: crisisLevel="${crisisLevel}"`);
+      }
 
       // 7. Tạo phản hồi cá nhân hóa
       let response: string;
@@ -240,12 +256,12 @@ export class EnhancedChatbotService {
       let disclaimer: string = '';
       let followUpActions: string[] = [];
 
-      console.error(`🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, crisis?.level="${crisis?.level}"`);
-      if (crisisLevel === 'critical') {
-        console.error(`✅ ENTERING CRISIS BLOCK - crisis is ${crisis ? 'not null' : 'NULL'}`);
-        response = crisis!.immediateResponse;
-        suggestions = crisis!.followUpActions;
-        followUpActions = crisis!.escalationProtocol;
+      console.error(`🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, detectedCrisis?.level="${detectedCrisis?.level}"`);
+      if (crisisLevel === 'critical' && detectedCrisis) {
+        console.error(`✅ ENTERING CRISIS BLOCK - detectedCrisis is ${detectedCrisis ? 'not null' : 'NULL'}`);
+        response = detectedCrisis.immediateResponse;
+        suggestions = detectedCrisis.followUpActions;
+        followUpActions = detectedCrisis.escalationProtocol;
         disclaimer = generateDisclaimer('crisis', true);
 
         // Lấy thông tin referral khẩn cấp

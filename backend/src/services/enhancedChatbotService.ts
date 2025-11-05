@@ -292,12 +292,55 @@ export class EnhancedChatbotService {
         // Lấy referral phù hợp với segment
         referralInfo = getRelevantReferral('Toàn quốc', userSegment.commonIssues, 'medium');
       } else {
-        // Phản hồi đồng cảm thông thường
-        response = generateEmpatheticResponse(
-          message,
-          nuancedEmotion.emotion,
-          sentimentIntensity.intensity
-        );
+        // ALWAYS use OpenAI API for personalized responses instead of template
+        if (this.openAIService && this.openAIService.isReady()) {
+          try {
+            const aiContext = {
+              systemPrompt: `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+
+⚠️ QUAN TRỌNG:
+- Bạn KHÔNG phải chuyên gia y tế/tâm lý
+- Bạn là công cụ hỗ trợ sàng lọc sơ bộ
+- KHÔNG chẩn đoán bệnh lý hoặc kê đơn thuốc
+- Mọi lời khuyên chỉ mang tính tham khảo
+- Với vấn đề nghiêm trọng, hãy gặp chuyên gia ngay
+
+🌸 TÍNH CÁCH:
+- Ấm áp, đồng cảm, không phán xét
+- Chuyên nghiệp nhưng gần gũi
+- Sử dụng emoji phù hợp (💙 🌸 ⚠️)
+- Xưng hô: "Mình" (CHUN) - "Bạn" (User)
+
+🚨 CRISIS PROTOCOL:
+- Nếu phát hiện ý định tự tử: Hotline NGAY 1900 599 958
+- Nếu phát hiện bạo hành: Gọi 113 ngay lập tức
+- Luôn khuyến nghị gặp chuyên gia cho vấn đề nghiêm trọng
+
+User's emotional state: ${nuancedEmotion.emotion} (${sentimentIntensity.intensity} intensity)
+User's message: ${message}
+
+Please provide a warm, empathetic, and personalized response in Vietnamese.`,
+            };
+            const aiResponse = await this.openAIService.generateResponse(message, aiContext);
+            response = aiResponse.text;
+            logger.info('✅ Generated AI response using OpenAI');
+          } catch (error) {
+            logger.error('AI generation failed, using fallback template:', error);
+            // Fallback to template only if AI fails
+            response = generateEmpatheticResponse(
+              message,
+              nuancedEmotion.emotion === 'neutral' ? 'khó khăn' : nuancedEmotion.emotion,
+              sentimentIntensity.intensity
+            );
+          }
+        } else {
+          // Fallback if OpenAI not available
+          response = generateEmpatheticResponse(
+            message,
+            nuancedEmotion.emotion === 'neutral' ? 'khó khăn' : nuancedEmotion.emotion,
+            sentimentIntensity.intensity
+          );
+        }
         suggestions = this.getGeneralSuggestions();
       }
 

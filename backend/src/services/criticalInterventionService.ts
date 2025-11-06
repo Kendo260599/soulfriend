@@ -9,6 +9,7 @@
  */
 
 import logger from '../utils/logger';
+import emailService from './emailService';
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -87,6 +88,14 @@ const DEFAULT_CONFIG: InterventionConfig = {
       name: 'Crisis Response Team',
       role: 'crisis_counselor',
       email: 'crisis@soulfriend.vn',
+      phone: '+84-xxx-xxx-xxx',
+      availability: 'available',
+    },
+    {
+      id: 'admin_team_1',
+      name: 'System Administrator',
+      role: 'admin',
+      email: 'le3221374@gmail.com', // Personal email for HITL alerts
       phone: '+84-xxx-xxx-xxx',
       availability: 'available',
     },
@@ -311,35 +320,32 @@ export class CriticalInterventionService {
    * Email Alert
    */
   private async sendEmailAlert(alert: CriticalAlert): Promise<void> {
-    // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-    const emailContent = {
-      to: this.config.clinicalTeam.map(member => member.email),
-      subject: `🚨 CRITICAL ALERT: ${alert.riskType.toUpperCase()} - ${alert.id}`,
-      body: `
-        CRITICAL INTERVENTION REQUIRED
-        
-        Alert ID: ${alert.id}
-        Timestamp: ${alert.timestamp.toISOString()}
-        User ID: ${alert.userId}
-        Risk Type: ${alert.riskType}
-        Risk Level: ${alert.riskLevel}
-        
-        Detected Keywords: ${alert.detectedKeywords.join(', ')}
-        
-        User Message: "${alert.userMessage}"
-        
-        IMMEDIATE ACTION REQUIRED
-        Please acknowledge this alert within 5 minutes.
-        
-        Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
-      `,
-    };
+    try {
+      // Get all clinical team email addresses
+      const recipients = this.config.clinicalTeam.map(member => member.email);
 
-    logger.info(`📧 Email alert sent to clinical team for ${alert.id}`);
-    console.log('Email Alert:', emailContent);
+      // Send email using email service
+      await emailService.sendCriticalAlert(
+        {
+          id: alert.id,
+          timestamp: alert.timestamp,
+          userId: alert.userId,
+          sessionId: alert.sessionId,
+          riskType: alert.riskType,
+          riskLevel: alert.riskLevel,
+          userMessage: alert.userMessage,
+          detectedKeywords: alert.detectedKeywords,
+        },
+        recipients
+      );
 
-    // TODO: Actual email sending
-    // await emailService.send(emailContent);
+      logger.info(`📧 Email alert sent to ${recipients.length} recipient(s) for alert ${alert.id}`);
+      console.log(`✅ Email sent to: ${recipients.join(', ')}`);
+    } catch (error) {
+      logger.error('❌ Failed to send email alert:', error);
+      console.error('Email sending failed:', error);
+      // Don't throw - continue with other notifications
+    }
   }
 
   /**
@@ -423,26 +429,57 @@ export class CriticalInterventionService {
    * Send Urgent Notifications (Escalated)
    */
   private async sendUrgentNotifications(alert: CriticalAlert): Promise<void> {
-    // Send to ALL available team members, not just primary on-call
-    const urgentEmail = {
-      to: this.config.clinicalTeam.filter(m => m.availability !== 'offline').map(m => m.email),
-      subject: `🚑 URGENT ESCALATION: ${alert.riskType.toUpperCase()} - NO RESPONSE FOR 5 MIN`,
-      body: `
-        URGENT ESCALATION - IMMEDIATE INTERVENTION REQUIRED
-        
-        No response received for 5 minutes.
-        Alert has been escalated to emergency services.
-        
-        Alert ID: ${alert.id}
-        Risk Type: ${alert.riskType}
-        User ID: ${alert.userId}
-        
-        This case requires IMMEDIATE attention.
-      `,
-    };
+    try {
+      // Send to ALL available team members, not just primary on-call
+      const recipients = this.config.clinicalTeam
+        .filter(m => m.availability !== 'offline')
+        .map(m => m.email);
 
-    logger.error(`🚨 Urgent notifications sent for escalated alert ${alert.id}`);
-    console.log('Urgent Email:', urgentEmail);
+      await emailService.send({
+        to: recipients,
+        subject: `🚑 URGENT ESCALATION: ${alert.riskType.toUpperCase()} - NO RESPONSE FOR 5 MIN`,
+        html: `
+          <h2>🚑 URGENT ESCALATION - IMMEDIATE INTERVENTION REQUIRED</h2>
+          <p><strong>No response received for 5 minutes.</strong></p>
+          <p>Alert has been escalated to emergency services.</p>
+          
+          <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 15px 0;">
+            <p><strong>Alert ID:</strong> ${alert.id}</p>
+            <p><strong>Risk Type:</strong> ${alert.riskType}</p>
+            <p><strong>User ID:</strong> ${alert.userId}</p>
+            <p><strong>User Message:</strong> "${alert.userMessage}"</p>
+          </div>
+          
+          <p><strong>This case requires IMMEDIATE attention.</strong></p>
+          
+          <a href="https://soulfriend-admin.vercel.app/alerts/${alert.id}" 
+             style="display: inline-block; padding: 10px 20px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">
+            View Alert Dashboard
+          </a>
+        `,
+        text: `
+URGENT ESCALATION - IMMEDIATE INTERVENTION REQUIRED
+
+No response received for 5 minutes.
+Alert has been escalated to emergency services.
+
+Alert ID: ${alert.id}
+Risk Type: ${alert.riskType}
+User ID: ${alert.userId}
+User Message: "${alert.userMessage}"
+
+This case requires IMMEDIATE attention.
+
+Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
+        `.trim(),
+      });
+
+      logger.error(`🚨 Urgent email notifications sent to ${recipients.length} recipient(s) for escalated alert ${alert.id}`);
+      console.log(`✅ Urgent email sent to: ${recipients.join(', ')}`);
+    } catch (error) {
+      logger.error('❌ Failed to send urgent email notifications:', error);
+      console.error('Urgent email sending failed:', error);
+    }
   }
 
   /**

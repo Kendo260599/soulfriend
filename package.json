@@ -1,15 +1,16 @@
 {
-  "name": "soulfriend",
+  "name": "soulfriend-monorepo",
   "version": "1.0.0",
+  "description": "SoulFriend - Mental Health Support Platform",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm run build"
+    "postinstall": "cd backend && npm install",
+    "build": "cd backend && npm run build",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
-  },
-  "devDependencies": {
-    "@google/generative-ai": "^0.24.1"
   }
 }

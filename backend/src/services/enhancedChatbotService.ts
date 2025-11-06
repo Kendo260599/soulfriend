@@ -455,7 +455,7 @@ export class EnhancedChatbotService {
                   riskType,
                   userMessage: message,
                   detectedKeywords,
-                  timestamp: new Date()
+                  timestamp: new Date(),
                 });
                 logger.info('📡 HITL alert broadcasted to experts via Socket.io');
               } else {

@@ -43,6 +43,12 @@ describe('EnhancedChatbotService with Moderation', () => {
         // Clean up sessions
         service.sessions.clear();
         service.messages.clear();
+
+        // Clear intervention service mock
+        const {
+            criticalInterventionService,
+        } = require('../../src/services/criticalInterventionService');
+        criticalInterventionService.createCriticalAlert.mockClear();
     });
 
     describe('Normal Message Processing', () => {
@@ -200,6 +206,9 @@ describe('EnhancedChatbotService with Moderation', () => {
             const {
                 criticalInterventionService,
             } = require('../../src/services/criticalInterventionService');
+
+            // Clear previous mock calls
+            criticalInterventionService.createCriticalAlert.mockClear();
 
             await service.processMessage('Tôi muốn chết', sessionId, userId);
 

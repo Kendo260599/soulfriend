@@ -143,9 +143,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
+// Body parsing with UTF-8 support
+app.use(express.json({ limit: '10mb', type: 'application/json' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.text({ type: 'text/plain' }));
 
 // Sanitize user input against NoSQL injection
 // Note: Disabled for Express v5 compatibility - implementing manual sanitization in validators

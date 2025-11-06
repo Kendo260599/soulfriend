@@ -24,6 +24,7 @@ import consentRoutes from './routes/consent';
 import conversationLearningRoutes from './routes/conversationLearning';
 import criticalAlertsRoutes from './routes/criticalAlerts';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
+import hitlInterventionRoutes from './routes/hitlIntervention';
 import researchRoutes from './routes/research';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
@@ -198,6 +199,9 @@ app.use('/api/v2/chatbot', chatbotRoutes);
 
 // ✨ NEW: HITL Feedback Loop & Conversation Learning
 app.use('/api/hitl-feedback', hitlFeedbackRoutes);
+
+// ✨ NEW: HITL Intervention - Clinical Team Direct Chat
+app.use('/api/hitl', hitlInterventionRoutes);
 app.use('/api/conversation-learning', conversationLearningRoutes);
 app.use('/api/alerts', criticalAlertsRoutes);
 

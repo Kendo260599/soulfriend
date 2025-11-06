@@ -415,7 +415,11 @@ export class EnhancedChatbotService {
         })(); // IIFE - Immediately Invoked Function Expression for async fire-and-forget
         
         // URGENT FIX: Return immediately to prevent override
-        const hitlMessage = crisisResponse + '\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.';
+        const hitlMessage = crisisResponse + '\n\n⚠️ **HỆ THỐNG CAN THIỆP KHỦNG HOẢNG ĐÃ ĐƯỢC KÍCH HOẠT**\n\n' +
+          '👨‍⚕️ Chuyên gia tâm lý CHUN đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.\n\n' +
+          '📧 Email: kendo2605@gmail.com\n' +
+          '📞 Hotline: 0938021111\n\n' +
+          'Bạn không đơn độc. Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7.';
         
         // Save messages asynchronously (non-blocking)
         // Don't await - save in background to return response immediately

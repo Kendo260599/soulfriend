@@ -248,3 +248,12 @@ Vercel Team ID: ...
 
 **Chọn option nào bạn muốn?** Tôi recommend **Option 2 (CLI)** vì an toàn hơn!
 
+
+
+
+
+
+
+
+
+

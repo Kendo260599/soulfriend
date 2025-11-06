@@ -165,3 +165,12 @@ Nếu có requests nhưng fail → Check error messages và status codes
 
 **Next**: Click vào tab **"HTTP Logs"** và screenshot để tôi có thể debug tiếp!
 
+
+
+
+
+
+
+
+
+

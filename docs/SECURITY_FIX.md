@@ -64,3 +64,12 @@ Railway will use:
 
 **Status**: ✅ Files removed from Git tracking. Remember to set environment variables in Railway Dashboard!
 
+
+
+
+
+
+
+
+
+

@@ -35,12 +35,27 @@ export interface CriticalAlert {
   acknowledgedBy?: string;
   acknowledgedAt?: Date;
   interventionNotes?: string;
+  metadata?: {
+    moderation?: {
+      riskLevel: string;
+      riskScore: number;
+      messageHash: string;
+      signalCount: number;
+      signals?: Array<{
+        source: string;
+        category: string;
+        confidence: number;
+        matchedCount?: number;
+      }>;
+    };
+    [key: string]: any;
+  };
 }
 
 export interface ClinicalTeamMember {
   id: string;
   name: string;
-  role: 'psychiatrist' | 'psychologist' | 'crisis_counselor' | 'social_worker';
+  role: 'psychiatrist' | 'psychologist' | 'crisis_counselor' | 'social_worker' | 'admin';
   email: string;
   phone: string;
   availability: 'available' | 'busy' | 'offline';
@@ -156,6 +171,21 @@ export class CriticalInterventionService {
       detectedKeywords: string[];
       userProfile?: any;
       testResults?: any[];
+      metadata?: {
+        moderation?: {
+          riskLevel: string;
+          riskScore: number;
+          messageHash: string;
+          signalCount: number;
+          signals?: Array<{
+            source: string;
+            category: string;
+            confidence: number;
+            matchedCount?: number;
+          }>;
+        };
+        [key: string]: any;
+      };
     }
   ): Promise<CriticalAlert> {
     const alert: CriticalAlert = {

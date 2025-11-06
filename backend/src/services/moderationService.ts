@@ -112,6 +112,7 @@ const VIETNAMESE_LEXICON = {
     'mua day thung', 'nho cao', 'tim dia diem', 'nhay cau',
     'viet thu tuyet menh', 'soan thu', 'dem nay', 'ngay mai luc',
     'len ke hoach', 'toi se lam', 'da chuẩn bị', 'da san sang',
+    'se lam dem nay', 'se lam toi nay', 'se lam ngay mai', 'se lam',
   ],
 
   // Means/methods
@@ -126,7 +127,7 @@ const VIETNAMESE_LEXICON = {
   timeframe: [
     'dem nay', 'toi nay', 'ngay mai', 'cuoi tuan nay', 'tuan toi',
     'sang mai', 'chieu nay', 'khi nao', 'luc nao', 'ngay nao',
-    'sau khi', 'truoc khi', 'khi nao xong',
+    'sau khi', 'truoc khi', 'khi nao xong', 'lam dem nay', 'lam toi nay',
   ],
 
   // Farewell/goodbye messages
@@ -366,15 +367,18 @@ function aggregateSignals(signals: ModerationSignal[]): {
   const hasTimeframe = categories.has('timeframe');
   const hasFarewell = categories.has('farewell');
 
-  // Critical: Direct intent + (plan OR means OR timeframe)
+  // Critical: Direct intent (suicidal ideation is always critical) OR 
+  // Direct intent + (plan OR means OR timeframe) OR very high score
   const isCritical =
-    (hasDirectIntent && (hasPlan || hasMeans || hasTimeframe)) ||
+    hasDirectIntent ||
+    (hasPlan && hasMeans) ||
+    (hasTimeframe && hasMeans) ||
     totalScore >= 60;
 
-  // High: Direct intent alone OR high score without critical combo
+  // High: Plan/means/farewell alone OR high score without critical combo
   const isHigh =
     !isCritical &&
-    (hasDirectIntent || hasFarewell || totalScore >= 45);
+    (hasPlan || hasMeans || hasTimeframe || hasFarewell || totalScore >= 45);
 
   // Moderate: Some signals but not high
   const isModerate = !isCritical && !isHigh && totalScore >= 25;

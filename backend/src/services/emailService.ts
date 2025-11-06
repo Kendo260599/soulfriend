@@ -170,6 +170,15 @@ class EmailService {
 
         // SendGrid returns [response, body] array or just response
         const response = Array.isArray(result) ? result[0] : result;
+        const body = Array.isArray(result) ? result[1] : null;
+
+        // Log full response for debugging
+        logger.info('📧 SendGrid API Response:', {
+          statusCode: response?.statusCode,
+          headers: response?.headers,
+          body: body,
+          fullResponse: JSON.stringify(result).substring(0, 500),
+        });
 
         // SendGrid returns response with statusCode
         if (response && (response.statusCode === 200 || response.statusCode === 202)) {
@@ -177,18 +186,33 @@ class EmailService {
                            response.headers?.['X-Message-Id'] || 
                            'N/A';
 
+          // Check for warnings in response body
+          if (body && typeof body === 'object') {
+            if (body.errors && body.errors.length > 0) {
+              logger.warn('⚠️  SendGrid returned warnings:', {
+                errors: body.errors,
+                messageId: messageId,
+              });
+            }
+          }
+
           logger.info(`📧 ✅ EMAIL SENT SUCCESSFULLY (SendGrid) to ${recipients.join(', ')}`, {
             statusCode: response.statusCode,
             subject: options.subject,
             attempt: attempt + 1,
             messageId: messageId,
+            from: fromEmail,
+            recipients: recipients,
+            responseBody: body ? JSON.stringify(body).substring(0, 200) : 'N/A',
           });
 
           console.log('📧 ✅ EMAIL SENT SUCCESSFULLY (SendGrid):', {
             to: recipients.join(', '),
+            from: fromEmail,
             subject: options.subject,
             statusCode: response.statusCode,
             messageId: messageId,
+            responseBody: body,
           });
 
           return; // Success

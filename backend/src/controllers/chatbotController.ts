@@ -23,7 +23,7 @@ export class ChatbotController {
    */
   processMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { message, userId, sessionId, context, mode } = req.body;
+      let { message, userId, sessionId, context, mode } = req.body;
 
       // Validation
       if (!message || typeof message !== 'string') {
@@ -33,6 +33,11 @@ export class ChatbotController {
         });
         return;
       }
+
+      // UTF-8 Normalization to fix encoding issues
+      // Ensure string is properly normalized for Vietnamese characters
+      message = Buffer.from(message, 'utf8').toString('utf8');
+      message = message.normalize('NFC'); // Canonical composition normalization
 
       logger.info('Processing chatbot message', {
         userId,

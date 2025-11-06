@@ -1,0 +1,16 @@
+# Nixpacks Nix configuration
+# Override auto-generated config to fix 'undefined variable npm' error
+
+{ pkgs ? import <nixpkgs> {} }:
+
+let
+  nodejs = pkgs.nodejs_20;
+  npm = pkgs.npm;
+in
+{
+  buildInputs = [ nodejs npm ];
+  shellHook = ''
+    export PATH="${nodejs}/bin:${npm}/bin:$PATH"
+  '';
+}
+

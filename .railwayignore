@@ -1,0 +1,6 @@
+# Force Railway to use Dockerfile instead of auto-detecting Node.js
+# This prevents Railway from using Nixpacks when it detects package.json
+
+# Ignore backend package.json for auto-detection (but still use it in Dockerfile)
+backend/package.json
+

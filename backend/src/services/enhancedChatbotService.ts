@@ -316,15 +316,52 @@ export class EnhancedChatbotService {
       let followUpActions: string[] = [];
 
       console.error(`🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, detectedCrisis?.level="${detectedCrisis?.level}"`);
-      if (crisisLevel === 'critical' && detectedCrisis) {
-        console.error(`✅ ENTERING CRISIS BLOCK - detectedCrisis is ${detectedCrisis ? 'not null' : 'NULL'}`);
+      console.error(`🔍 Moderation riskLevel: "${moderationResult.riskLevel}", riskScore: ${moderationResult.riskScore}`);
+      
+      // FIX: Activate HITL if crisisLevel is critical OR moderation detects critical
+      // This ensures HITL works even if detectCrisis() returns null but moderation detects critical risk
+      const shouldActivateHITL = crisisLevel === 'critical' || moderationResult.riskLevel === 'critical';
+      
+      if (shouldActivateHITL) {
+        console.error(`✅ ENTERING CRISIS BLOCK - crisisLevel="${crisisLevel}", moderation="${moderationResult.riskLevel}", detectedCrisis=${detectedCrisis ? 'exists' : 'null'}`);
         
-        // URGENT FIX: Use early return to prevent crisis level from being overridden
-        const crisisResponse = detectedCrisis.immediateResponse;
-        const crisisSuggestions = detectedCrisis.followUpActions;
-        const crisisActions = detectedCrisis.escalationProtocol;
+        // Use detectedCrisis if available, otherwise create default crisis response
+        const crisisResponse = detectedCrisis 
+          ? detectedCrisis.immediateResponse
+          : 'Tôi rất quan tâm đến những gì bạn vừa chia sẻ. Những suy nghĩ này cho thấy bạn đang trải qua một giai đoạn rất khó khăn. Bạn không cần phải đối mặt một mình.';
+        
+        const crisisSuggestions = detectedCrisis 
+          ? detectedCrisis.followUpActions
+          : ['Liên hệ chuyên gia tâm lý khẩn cấp', 'Gọi hotline tư vấn', 'Tìm kiếm hỗ trợ từ người thân'];
+        
+        const crisisActions = detectedCrisis 
+          ? detectedCrisis.escalationProtocol
+          : ['Kích hoạt crisis intervention ngay lập tức', 'Liên hệ emergency services (113)'];
+        
         const crisisDisclaimer = generateDisclaimer('crisis', true);
         const crisisReferrals = getRelevantReferral('Toàn quốc', ['crisis_intervention'], 'critical');
+        
+        // Determine risk type from detectedCrisis or moderation signals
+        let riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence' = 'suicidal';
+        if (detectedCrisis) {
+          if (detectedCrisis.id === 'suicidal_ideation') riskType = 'suicidal';
+          else if (detectedCrisis.id === 'self_harm') riskType = 'self_harm';
+          else if (detectedCrisis.id === 'psychosis') riskType = 'psychosis';
+          else if (detectedCrisis.id === 'violence') riskType = 'violence';
+        } else {
+          // Infer from moderation signals
+          const hasSuicidal = moderationResult.signals.some(s => 
+            s.category === 'plan' || s.category === 'direct_intent' || s.category === 'ideation'
+          );
+          const hasSelfHarm = moderationResult.signals.some(s => s.category === 'nssi');
+          if (hasSuicidal) riskType = 'suicidal';
+          else if (hasSelfHarm) riskType = 'self_harm';
+        }
+        
+        // Get detected keywords from crisis or moderation
+        const detectedKeywords = detectedCrisis 
+          ? detectedCrisis.triggers
+          : moderationResult.signals.flatMap(s => s.matched || []).filter((v, i, a) => a.indexOf(v) === i);
         
         // Ghi log khủng hoảng
         this.logCrisisEvent(sessionId, crisisLevel, message, crisisResponse);
@@ -334,16 +371,16 @@ export class EnhancedChatbotService {
         // User gets immediate response while alert is processed asynchronously
         (async () => {
           try {
-            console.error(`🚨 ACTIVATING HITL for crisis: ${crisis!.id}`);
+            console.error(`🚨 ACTIVATING HITL - crisisLevel="${crisisLevel}", moderation="${moderationResult.riskLevel}", riskType="${riskType}"`);
 
             const criticalAlert = await criticalInterventionService.createCriticalAlert(
               userId,
               sessionId,
               {
                 riskLevel: 'CRITICAL',
-                riskType: crisis!.id as 'suicidal' | 'psychosis' | 'self_harm' | 'violence',
+                riskType: riskType,
                 userMessage: process.env.LOG_REDACT === 'true' ? '[redacted]' : message,
-                detectedKeywords: crisis!.triggers,
+                detectedKeywords: detectedKeywords,
                 userProfile: userProfile,
                 // Add moderation metadata for enhanced HITL
                 metadata: {
@@ -397,7 +434,7 @@ export class EnhancedChatbotService {
         
         // Return crisis response IMMEDIATELY - don't continue processing
         logger.warn(`🚨 CRISIS RESPONSE - Returning early to preserve crisis level`, {
-          crisisId: detectedCrisis.id,
+          crisisId: detectedCrisis?.id || 'moderation_detected',
           crisisLevel: 'critical',
           riskLevel: 'CRITICAL',
           earlyReturn: true

@@ -102,7 +102,7 @@ const DEFAULT_CONFIG: InterventionConfig = {
       id: 'crisis_team_1',
       name: 'Crisis Response Team',
       role: 'crisis_counselor',
-      email: 'crisis@soulfriend.vn',
+      email: 'le3221374@gmail.com', // Real email for HITL alerts
       phone: '+84-xxx-xxx-xxx',
       availability: 'available',
     },
@@ -110,7 +110,7 @@ const DEFAULT_CONFIG: InterventionConfig = {
       id: 'admin_team_1',
       name: 'System Administrator',
       role: 'admin',
-      email: 'le3221374@gmail.com', // Personal email for HITL alerts
+      email: 'kendo2605@gmail.com', // Verified SendGrid sender email
       phone: '+84-xxx-xxx-xxx',
       availability: 'available',
     },

@@ -363,6 +363,8 @@ export class CriticalInterventionService {
       // Get all clinical team email addresses
       const recipients = this.config.clinicalTeam.map(member => member.email);
 
+      logger.info(`📧 Attempting to send email alert to ${recipients.length} recipient(s) for alert ${alert.id}`);
+
       // Send email using email service
       await emailService.sendCriticalAlert(
         {
@@ -378,8 +380,10 @@ export class CriticalInterventionService {
         recipients
       );
 
-      logger.info(`📧 Email alert sent to ${recipients.length} recipient(s) for alert ${alert.id}`);
-      console.log(`✅ Email sent to: ${recipients.join(', ')}`);
+      // Note: emailService.sendCriticalAlert() will log success with messageId if email was actually sent
+      // This log is just for tracking that we attempted to send
+      logger.info(`📧 Email send attempt completed for alert ${alert.id}`);
+      console.log(`📧 Email send attempt for alert ${alert.id} - check logs for messageId to confirm delivery`);
     } catch (error) {
       logger.error('❌ Failed to send email alert:', error);
       console.error('Email sending failed:', error);

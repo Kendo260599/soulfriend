@@ -47,10 +47,10 @@ class EmailService {
         tls: {
           rejectUnauthorized: false, // For self-signed certificates
         },
-        // Connection timeout settings
-        connectionTimeout: 10000, // 10 seconds for initial connection
-        socketTimeout: 10000, // 10 seconds for socket operations
-        greetingTimeout: 10000, // 10 seconds for SMTP greeting
+        // Connection timeout settings (increased for Railway/production)
+        connectionTimeout: 20000, // 20 seconds for initial connection (Railway may be slower)
+        socketTimeout: 20000, // 20 seconds for socket operations
+        greetingTimeout: 15000, // 15 seconds for SMTP greeting
         // Retry settings
         pool: true, // Use connection pooling
         maxConnections: 5, // Maximum number of connections in pool
@@ -103,47 +103,87 @@ class EmailService {
           html: options.html || options.text?.replace(/\n/g, '<br>'),
         };
 
-        // Add timeout to sendMail operation
+        // Add timeout to sendMail operation (increased for Railway)
         const sendPromise = this.transporter!.sendMail(mailOptions);
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Email send timeout')), 15000); // 15 second timeout
+          setTimeout(() => reject(new Error('Email send timeout')), 25000); // 25 second timeout (Railway may be slower)
         });
 
         const info = await Promise.race([sendPromise, timeoutPromise]);
 
-        logger.info(`📧 Email sent successfully to ${recipients}`, {
-          messageId: info.messageId,
-          subject: options.subject,
-          attempt: attempt + 1,
-        });
+        // CRITICAL: Only log success if we have messageId (proves SMTP server accepted the email)
+        if (info.messageId) {
+          logger.info(`📧 ✅ EMAIL SENT SUCCESSFULLY to ${recipients}`, {
+            messageId: info.messageId,
+            subject: options.subject,
+            attempt: attempt + 1,
+            response: info.response,
+          });
 
-        console.log('📧 Email sent:', {
-          to: recipients,
-          subject: options.subject,
-          messageId: info.messageId,
-        });
+          console.log('📧 ✅ EMAIL SENT SUCCESSFULLY:', {
+            to: recipients,
+            subject: options.subject,
+            messageId: info.messageId,
+            response: info.response,
+          });
+        } else {
+          logger.warn(`⚠️  Email send completed but no messageId received for ${recipients}`);
+          console.warn('⚠️  Email send completed but no messageId - email may not have been delivered');
+        }
 
         return; // Success - exit retry loop
       } catch (error: any) {
         const isLastAttempt = attempt === retries;
         
-        if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
+        // Detailed error logging for debugging
+        logger.error(`❌ Email send error (attempt ${attempt + 1}/${retries + 1}):`, {
+          to: recipients,
+          subject: options.subject,
+          errorCode: error.code,
+          errorMessage: error.message,
+          errorCommand: error.command,
+          errorResponse: error.response,
+          errorResponseCode: error.responseCode,
+          stack: error.stack?.substring(0, 200),
+        });
+        
+        if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
           logger.warn(`⚠️  Email send timeout (attempt ${attempt + 1}/${retries + 1})`);
+          console.error(`⚠️  Email timeout details:`, {
+            code: error.code,
+            command: error.command,
+            message: error.message,
+          });
           
           if (isLastAttempt) {
             logger.error('❌ Failed to send email after retries (timeout):', {
               to: recipients,
               subject: options.subject,
               error: error.message,
+              errorCode: error.code,
+              smtpHost: config.SMTP_HOST,
+              smtpPort: config.SMTP_PORT,
             });
+            console.error('❌ Email send failed after all retries. Check SMTP configuration and network connectivity.');
             // Don't throw - email failures shouldn't break the app
-            // Log for monitoring but continue execution
             return;
           }
           
           // Wait before retry (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1))); // Increased backoff
           continue;
+        }
+
+        // Authentication errors
+        if (error.code === 'EAUTH' || error.responseCode === 535) {
+          logger.error('❌ SMTP Authentication failed:', {
+            to: recipients,
+            error: error.message,
+            smtpUser: config.SMTP_USER,
+          });
+          console.error('❌ SMTP AUTH ERROR - Check SMTP_USER and SMTP_PASS credentials');
+          // Don't retry on auth errors
+          return;
         }
 
         // Other errors
@@ -152,13 +192,16 @@ class EmailService {
             to: recipients,
             subject: options.subject,
             error: error.message || error,
+            errorCode: error.code,
+            errorResponse: error.response,
           });
+          console.error('❌ Email send failed:', error);
           // Don't throw - email failures shouldn't break the app
           return;
         }
 
         // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
       }
     }
   }

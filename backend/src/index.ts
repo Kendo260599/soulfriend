@@ -24,6 +24,7 @@ import chatbotRoutes from './routes/chatbot';
 import consentRoutes from './routes/consent';
 import conversationLearningRoutes from './routes/conversationLearning';
 import criticalAlertsRoutes from './routes/criticalAlerts';
+import expertAuthRoutes from './routes/expertAuth';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
 import hitlInterventionRoutes from './routes/hitlIntervention';
 import researchRoutes from './routes/research';
@@ -32,7 +33,9 @@ import userRoutes from './routes/user';
 
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
+import './models/Expert';
 import './models/HITLFeedback';
+import './models/InterventionMessage';
 import './models/TrainingDataPoint';
 
 // Services
@@ -211,6 +214,9 @@ app.use('/api/hitl-feedback', hitlFeedbackRoutes);
 app.use('/api/hitl', hitlInterventionRoutes);
 app.use('/api/conversation-learning', conversationLearningRoutes);
 app.use('/api/alerts', criticalAlertsRoutes);
+
+// ✨ NEW: Expert Authentication & Dashboard
+app.use('/api/v2/expert', expertAuthRoutes);
 
 // API v1 routes (legacy - deprecated)
 app.use('/api/consent', consentRoutes);

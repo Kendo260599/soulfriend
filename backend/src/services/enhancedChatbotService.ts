@@ -329,48 +329,53 @@ export class EnhancedChatbotService {
         // Ghi log khủng hoảng
         this.logCrisisEvent(sessionId, crisisLevel, message, crisisResponse);
 
-        // 🚨 HITL: Kích hoạt can thiệp của con người
-        try {
-          console.error(`🚨 ACTIVATING HITL for crisis: ${crisis!.id}`);
+        // 🚨 HITL: Kích hoạt can thiệp của con người (ASYNC - Non-blocking)
+        // Process HITL alert in background to prevent API timeout
+        // User gets immediate response while alert is processed asynchronously
+        (async () => {
+          try {
+            console.error(`🚨 ACTIVATING HITL for crisis: ${crisis!.id}`);
 
-          const criticalAlert = await criticalInterventionService.createCriticalAlert(
-            userId,
-            sessionId,
-            {
-              riskLevel: 'CRITICAL',
-              riskType: crisis!.id as 'suicidal' | 'psychosis' | 'self_harm' | 'violence',
-              userMessage: process.env.LOG_REDACT === 'true' ? '[redacted]' : message,
-              detectedKeywords: crisis!.triggers,
-              userProfile: userProfile,
-              // Add moderation metadata for enhanced HITL
-              metadata: {
-                moderation: {
-                  riskLevel: moderationResult.riskLevel,
-                  riskScore: moderationResult.riskScore,
-                  messageHash: moderationResult.messageHash,
-                  signalCount: moderationResult.signals.length,
-                  signals: moderationResult.signals.map(s => ({
-                    source: s.source,
-                    category: s.category,
-                    confidence: s.confidence,
-                    matchedCount: s.matched?.length || 0,
-                  })),
+            const criticalAlert = await criticalInterventionService.createCriticalAlert(
+              userId,
+              sessionId,
+              {
+                riskLevel: 'CRITICAL',
+                riskType: crisis!.id as 'suicidal' | 'psychosis' | 'self_harm' | 'violence',
+                userMessage: process.env.LOG_REDACT === 'true' ? '[redacted]' : message,
+                detectedKeywords: crisis!.triggers,
+                userProfile: userProfile,
+                // Add moderation metadata for enhanced HITL
+                metadata: {
+                  moderation: {
+                    riskLevel: moderationResult.riskLevel,
+                    riskScore: moderationResult.riskScore,
+                    messageHash: moderationResult.messageHash,
+                    signalCount: moderationResult.signals.length,
+                    signals: moderationResult.signals.map(s => ({
+                      source: s.source,
+                      category: s.category,
+                      confidence: s.confidence,
+                      matchedCount: s.matched?.length || 0,
+                    })),
+                  },
                 },
-              },
-            }
-          );
+              }
+            );
 
-          logger.error(
-            `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
-          );
-          console.error(
-            `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
-          );
+            logger.error(
+              `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
+            );
+            console.error(
+              `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
+            );
 
-        } catch (error) {
-          logger.error('Error creating HITL alert:', error);
-          console.error('❌ HITL Error:', error);
-        }
+          } catch (error) {
+            logger.error('Error creating HITL alert:', error);
+            console.error('❌ HITL Error:', error);
+            // Don't throw - HITL processing failure shouldn't block user response
+          }
+        })(); // IIFE - Immediately Invoked Function Expression for async fire-and-forget
         
         // URGENT FIX: Return immediately to prevent override
         const hitlMessage = crisisResponse + '\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.';

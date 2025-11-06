@@ -395,10 +395,9 @@ class EmailService {
             </div>
           </div>
 
-          <div style="margin-top: 20px;">
-            <a href="https://soulfriend-admin.vercel.app/alerts/${alert.id}" class="button">
-              View Alert Dashboard
-            </a>
+          <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107;">
+            <p><strong>⚠️ Action Required:</strong></p>
+            <p>Please contact the user immediately or acknowledge this alert to stop further escalation emails.</p>
           </div>
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
@@ -426,7 +425,7 @@ User Message: "${alert.userMessage}"
 IMMEDIATE ACTION REQUIRED
 Please acknowledge this alert within 5 minutes.
 
-Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
+⚠️ Action Required: Please contact the user immediately or acknowledge this alert to stop further escalation emails.
     `.trim();
 
     await this.send({

@@ -31,10 +31,12 @@ export interface CriticalAlert {
     city?: string;
     country?: string;
   };
-  status: 'pending' | 'acknowledged' | 'intervened' | 'resolved';
+  status: 'pending' | 'acknowledged' | 'intervened' | 'resolved' | 'escalated';
   acknowledgedBy?: string;
   acknowledgedAt?: Date;
   interventionNotes?: string;
+  escalatedAt?: Date; // Track when escalation email was sent
+  escalationEmailSent?: boolean; // Prevent duplicate escalation emails
   metadata?: {
     moderation?: {
       riskLevel: string;
@@ -315,7 +317,8 @@ export class CriticalInterventionService {
       // Kiểm tra xem alert đã được xử lý chưa
       const currentAlert = this.activeAlerts.get(alert.id);
 
-      if (currentAlert && currentAlert.status === 'pending') {
+      // FIX: Check if alert is still pending AND escalation email hasn't been sent
+      if (currentAlert && currentAlert.status === 'pending' && !currentAlert.escalationEmailSent) {
         logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         logger.error(
           `⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`
@@ -323,6 +326,8 @@ export class CriticalInterventionService {
         logger.error(`Alert ${alert.id} - Escalating to emergency services`);
         logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         await this.escalateToEmergencyServices(alert);
+      } else if (currentAlert && currentAlert.escalationEmailSent) {
+        logger.info(`⚠️  Alert ${alert.id} escalation email already sent. Skipping duplicate.`);
       } else {
         logger.info(`✅ Alert ${alert.id} was handled before escalation`);
       }
@@ -335,10 +340,18 @@ export class CriticalInterventionService {
    * STEP 5: Leo thang đến dịch vụ khẩn cấp (sau 5 phút không phản hồi)
    */
   private async escalateToEmergencyServices(alert: CriticalAlert): Promise<void> {
+    // FIX: Prevent duplicate escalation emails
+    if (alert.escalationEmailSent) {
+      logger.warn(`⚠️  Escalation email already sent for alert ${alert.id}. Skipping duplicate.`);
+      return;
+    }
+
     logger.error(`🚑 ESCALATING TO EMERGENCY SERVICES: Alert ${alert.id}`);
 
-    // Update alert status
-    alert.status = 'intervened';
+    // Mark escalation email as sent BEFORE sending to prevent race conditions
+    alert.escalationEmailSent = true;
+    alert.escalatedAt = new Date();
+    alert.status = 'escalated';
     this.activeAlerts.set(alert.id, alert);
 
     // Notify emergency hotlines
@@ -346,7 +359,7 @@ export class CriticalInterventionService {
       await this.notifyEmergencyHotline(alert);
     }
 
-    // Send high-priority notifications to all available team members
+    // Send high-priority notifications to all available team members (only once)
     await this.sendUrgentNotifications(alert);
 
     // Document escalation
@@ -495,10 +508,10 @@ export class CriticalInterventionService {
           
           <p><strong>This case requires IMMEDIATE attention.</strong></p>
           
-          <a href="https://soulfriend-admin.vercel.app/alerts/${alert.id}" 
-             style="display: inline-block; padding: 10px 20px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">
-            View Alert Dashboard
-          </a>
+          <p style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545;">
+            <strong>⚠️ Action Required:</strong><br>
+            Please contact the user immediately or acknowledge this alert to stop further escalation emails.
+          </p>
         `,
         text: `
 URGENT ESCALATION - IMMEDIATE INTERVENTION REQUIRED
@@ -513,7 +526,7 @@ User Message: "${alert.userMessage}"
 
 This case requires IMMEDIATE attention.
 
-Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
+⚠️ Action Required: Please contact the user immediately or acknowledge this alert to stop further escalation emails.
         `.trim(),
       });
 

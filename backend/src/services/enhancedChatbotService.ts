@@ -11,10 +11,10 @@ import {
 } from '../data/advancedNLPData';
 import {
   assessRisk,
+  crisisScenarios,
   detectCrisis,
   generateDisclaimer,
   getRelevantReferral,
-  crisisScenarios,
 } from '../data/crisisManagementData';
 import { evaluateInteractionQuality } from '../data/feedbackImprovementData';
 import {
@@ -23,9 +23,9 @@ import {
   identifyUserSegment,
 } from '../data/userSegmentationData';
 import { logger } from '../utils/logger';
-import openAIService from './openAIService';
 import { criticalInterventionService } from './criticalInterventionService';
 import moderationService from './moderationService';
+import openAIService from './openAIService';
 
 export interface EnhancedChatMessage {
   id: string;
@@ -126,7 +126,9 @@ export class EnhancedChatbotService {
       console.error('🔍 EnhancedChatbotService v2.1 - Processing message');
       console.error(`📝 Input: "${message}" | User: ${userId} | Session: ${sessionId}`);
       console.error(`📝 Message type: ${typeof message}, length: ${message.length}`);
-      console.error(`📝 Message bytes: ${Buffer.from(message, 'utf8').toString('hex').substring(0, 100)}`);
+      console.error(
+        `📝 Message bytes: ${Buffer.from(message, 'utf8').toString('hex').substring(0, 100)}`
+      );
 
       // HEX DUMP to verify UTF-8 encoding
       const messageBytes = Buffer.from(message, 'utf8');
@@ -237,12 +239,12 @@ export class EnhancedChatbotService {
         logger.warn('✅ CRISIS DETECTED IN MESSAGE FLOW!', {
           id: crisis.id,
           level: crisis.level,
-          triggers: crisis.triggers.slice(0, 5)
+          triggers: crisis.triggers.slice(0, 5),
         });
       } else {
         logger.error('❌ NO CRISIS DETECTED - This is the bug!', {
           message,
-          messageLength: message.length
+          messageLength: message.length,
         });
       }
 
@@ -283,8 +285,12 @@ export class EnhancedChatbotService {
           triggers: detectedCrisis.triggers,
           message: message.substring(0, 100),
         });
-        console.error(`🚨 CRISIS DETECTED: ${detectedCrisis.id} (${detectedCrisisLevel}) - Message: "${message}"`);
-        console.error(`🚨 Checking if detectedCrisisLevel === 'critical': ${detectedCrisisLevel === 'critical'}`);
+        console.error(
+          `🚨 CRISIS DETECTED: ${detectedCrisis.id} (${detectedCrisisLevel}) - Message: "${message}"`
+        );
+        console.error(
+          `🚨 Checking if detectedCrisisLevel === 'critical': ${detectedCrisisLevel === 'critical'}`
+        );
       } else {
         console.error(`❌ NO CRISIS DETECTED for message: "${message}"`);
       }
@@ -297,12 +303,14 @@ export class EnhancedChatbotService {
         this.getUserHistory(sessionId),
         nuancedEmotion.emotion
       );
-      
+
       // CRITICAL FIX: Restore crisis and crisisLevel after assessRisk() might have called detectCrisis() again
       // Use the originally detected crisis, not what assessRisk() might have returned
       if (detectedCrisis) {
-        console.error(`🔧 RESTORING crisis and crisisLevel from original detection`);
-        console.error(`🔧 Before restore: crisis=${crisis ? 'exists' : 'null'}, crisisLevel="${crisisLevel}"`);
+        console.error('🔧 RESTORING crisis and crisisLevel from original detection');
+        console.error(
+          `🔧 Before restore: crisis=${crisis ? 'exists' : 'null'}, crisisLevel="${crisisLevel}"`
+        );
         // crisis is a const, but we can reassign crisisLevel
         crisisLevel = detectedCrisisLevel;
         console.error(`🔧 After restore: crisisLevel="${crisisLevel}"`);
@@ -312,57 +320,83 @@ export class EnhancedChatbotService {
       let response: string;
       let suggestions: string[] = [];
       let referralInfo: any[] = [];
-      let disclaimer: string = '';
-      let followUpActions: string[] = [];
+      const disclaimer: string = '';
+      const followUpActions: string[] = [];
 
-      console.error(`🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, detectedCrisis?.level="${detectedCrisis?.level}"`);
-      console.error(`🔍 Moderation riskLevel: "${moderationResult.riskLevel}", riskScore: ${moderationResult.riskScore}`);
-      
+      console.error(
+        `🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, detectedCrisis?.level="${detectedCrisis?.level}"`
+      );
+      console.error(
+        `🔍 Moderation riskLevel: "${moderationResult.riskLevel}", riskScore: ${moderationResult.riskScore}`
+      );
+
       // FIX: Activate HITL if crisisLevel is critical OR moderation detects critical
       // This ensures HITL works even if detectCrisis() returns null but moderation detects critical risk
-      const shouldActivateHITL = crisisLevel === 'critical' || moderationResult.riskLevel === 'critical';
-      
+      const shouldActivateHITL =
+        crisisLevel === 'critical' || moderationResult.riskLevel === 'critical';
+
       if (shouldActivateHITL) {
-        console.error(`✅ ENTERING CRISIS BLOCK - crisisLevel="${crisisLevel}", moderation="${moderationResult.riskLevel}", detectedCrisis=${detectedCrisis ? 'exists' : 'null'}`);
-        
+        console.error(
+          `✅ ENTERING CRISIS BLOCK - crisisLevel="${crisisLevel}", moderation="${moderationResult.riskLevel}", detectedCrisis=${detectedCrisis ? 'exists' : 'null'}`
+        );
+
         // Use detectedCrisis if available, otherwise create default crisis response
-        const crisisResponse = detectedCrisis 
+        const crisisResponse = detectedCrisis
           ? detectedCrisis.immediateResponse
           : 'Tôi rất quan tâm đến những gì bạn vừa chia sẻ. Những suy nghĩ này cho thấy bạn đang trải qua một giai đoạn rất khó khăn. Bạn không cần phải đối mặt một mình.';
-        
-        const crisisSuggestions = detectedCrisis 
+
+        const crisisSuggestions = detectedCrisis
           ? detectedCrisis.followUpActions
-          : ['Liên hệ chuyên gia tâm lý khẩn cấp', 'Gọi hotline tư vấn', 'Tìm kiếm hỗ trợ từ người thân'];
-        
-        const crisisActions = detectedCrisis 
+          : [
+            'Liên hệ chuyên gia tâm lý khẩn cấp',
+            'Gọi hotline tư vấn',
+            'Tìm kiếm hỗ trợ từ người thân',
+          ];
+
+        const crisisActions = detectedCrisis
           ? detectedCrisis.escalationProtocol
           : ['Kích hoạt crisis intervention ngay lập tức', 'Liên hệ emergency services (113)'];
-        
+
         const crisisDisclaimer = generateDisclaimer('crisis', true);
-        const crisisReferrals = getRelevantReferral('Toàn quốc', ['crisis_intervention'], 'critical');
-        
+        const crisisReferrals = getRelevantReferral(
+          'Toàn quốc',
+          ['crisis_intervention'],
+          'critical'
+        );
+
         // Determine risk type from detectedCrisis or moderation signals
         let riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence' = 'suicidal';
         if (detectedCrisis) {
-          if (detectedCrisis.id === 'suicidal_ideation') riskType = 'suicidal';
-          else if (detectedCrisis.id === 'self_harm') riskType = 'self_harm';
-          else if (detectedCrisis.id === 'psychosis') riskType = 'psychosis';
-          else if (detectedCrisis.id === 'violence') riskType = 'violence';
+          if (detectedCrisis.id === 'suicidal_ideation') {
+            riskType = 'suicidal';
+          } else if (detectedCrisis.id === 'self_harm') {
+            riskType = 'self_harm';
+          } else if (detectedCrisis.id === 'psychosis') {
+            riskType = 'psychosis';
+          } else if (detectedCrisis.id === 'violence') {
+            riskType = 'violence';
+          }
         } else {
           // Infer from moderation signals
-          const hasSuicidal = moderationResult.signals.some(s => 
-            s.category === 'plan' || s.category === 'direct_intent' || s.category === 'ideation'
+          const hasSuicidal = moderationResult.signals.some(
+            s =>
+              s.category === 'plan' || s.category === 'direct_intent' || s.category === 'ideation'
           );
           const hasSelfHarm = moderationResult.signals.some(s => s.category === 'nssi');
-          if (hasSuicidal) riskType = 'suicidal';
-          else if (hasSelfHarm) riskType = 'self_harm';
+          if (hasSuicidal) {
+            riskType = 'suicidal';
+          } else if (hasSelfHarm) {
+            riskType = 'self_harm';
+          }
         }
-        
+
         // Get detected keywords from crisis or moderation
-        const detectedKeywords = detectedCrisis 
+        const detectedKeywords = detectedCrisis
           ? detectedCrisis.triggers
-          : moderationResult.signals.flatMap(s => s.matched || []).filter((v, i, a) => a.indexOf(v) === i);
-        
+          : moderationResult.signals
+            .flatMap(s => s.matched || [])
+            .filter((v, i, a) => a.indexOf(v) === i);
+
         // Ghi log khủng hoảng
         this.logCrisisEvent(sessionId, crisisLevel, message, crisisResponse);
 
@@ -371,7 +405,9 @@ export class EnhancedChatbotService {
         // User gets immediate response while alert is processed asynchronously
         (async () => {
           try {
-            console.error(`🚨 ACTIVATING HITL - crisisLevel="${crisisLevel}", moderation="${moderationResult.riskLevel}", riskType="${riskType}"`);
+            console.error(
+              `🚨 ACTIVATING HITL - crisisLevel="${crisisLevel}", moderation="${moderationResult.riskLevel}", riskType="${riskType}"`
+            );
 
             const criticalAlert = await criticalInterventionService.createCriticalAlert(
               userId,
@@ -407,20 +443,44 @@ export class EnhancedChatbotService {
               `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
             );
 
+            // 🆕 BROADCAST TO EXPERTS VIA SOCKET.IO
+            try {
+              const io = (global as any).io;
+              if (io && typeof io.broadcastHITLAlert === 'function') {
+                io.broadcastHITLAlert({
+                  id: criticalAlert.id,
+                  userId,
+                  sessionId,
+                  riskLevel: 'CRITICAL',
+                  riskType,
+                  userMessage: message,
+                  detectedKeywords,
+                  timestamp: new Date()
+                });
+                logger.info('📡 HITL alert broadcasted to experts via Socket.io');
+              } else {
+                logger.warn('⚠️  Socket.io not available for broadcasting');
+              }
+            } catch (broadcastError) {
+              logger.error('Error broadcasting HITL alert:', broadcastError);
+              // Don't throw - broadcasting failure shouldn't block HITL
+            }
           } catch (error) {
             logger.error('Error creating HITL alert:', error);
             console.error('❌ HITL Error:', error);
             // Don't throw - HITL processing failure shouldn't block user response
           }
         })(); // IIFE - Immediately Invoked Function Expression for async fire-and-forget
-        
+
         // URGENT FIX: Return immediately to prevent override
-        const hitlMessage = crisisResponse + '\n\n⚠️ **HỆ THỐNG CAN THIỆP KHỦNG HOẢNG ĐÃ ĐƯỢC KÍCH HOẠT**\n\n' +
+        const hitlMessage =
+          crisisResponse +
+          '\n\n⚠️ **HỆ THỐNG CAN THIỆP KHỦNG HOẢNG ĐÃ ĐƯỢC KÍCH HOẠT**\n\n' +
           '👨‍⚕️ Chuyên gia tâm lý CHUN đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.\n\n' +
           '📧 Email: kendo2605@gmail.com\n' +
           '📞 Hotline: 0938021111\n\n' +
           'Bạn không đơn độc. Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7.';
-        
+
         // Save messages asynchronously (non-blocking)
         // Don't await - save in background to return response immediately
         this.saveMessage(sessionId, userId, message, 'user').catch(error => {
@@ -435,15 +495,15 @@ export class EnhancedChatbotService {
         }).catch(error => {
           logger.error('Error saving bot message (non-blocking):', error);
         });
-        
+
         // Return crisis response IMMEDIATELY - don't continue processing
-        logger.warn(`🚨 CRISIS RESPONSE - Returning early to preserve crisis level`, {
+        logger.warn('🚨 CRISIS RESPONSE - Returning early to preserve crisis level', {
           crisisId: detectedCrisis?.id || 'moderation_detected',
           crisisLevel: 'critical',
           riskLevel: 'CRITICAL',
-          earlyReturn: true
+          earlyReturn: true,
         });
-        
+
         return {
           message: hitlMessage,
           response: hitlMessage,
@@ -557,10 +617,10 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
       console.error(`🔍 FINAL CRISIS LEVEL CHECK: crisisLevel="${crisisLevel}"`);
       console.error(`🔍 detectedCrisis exists: ${detectedCrisis !== null}`);
       console.error(`🔍 detectedCrisisLevel: "${detectedCrisisLevel}"`);
-      
+
       // Use detectedCrisisLevel if it was set (to prevent overrides)
       const finalCrisisLevel = detectedCrisis ? detectedCrisisLevel : crisisLevel;
-      
+
       const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' =
         finalCrisisLevel === 'critical'
           ? 'CRITICAL'
@@ -820,7 +880,7 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
   ): Promise<void> {
     // Format message to indicate it's from clinical team
     const clinicalMessage = `[Chuyên gia tư vấn] ${message}`;
-    
+
     // Save as bot message so it appears in user's chat
     await this.saveMessage(sessionId, userId, clinicalMessage, 'bot', {
       intent: 'clinical_intervention',

@@ -99,7 +99,7 @@ const ExpertSchema: Schema = new Schema(
 
 // Hash password before saving
 ExpertSchema.pre('save', async function (next) {
-  const expert = this as IExpert;
+  const expert = this as unknown as IExpert;
 
   // Only hash if password is modified
   if (!expert.isModified('password')) {

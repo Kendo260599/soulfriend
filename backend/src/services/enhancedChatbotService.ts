@@ -380,14 +380,19 @@ export class EnhancedChatbotService {
         // URGENT FIX: Return immediately to prevent override
         const hitlMessage = crisisResponse + '\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.';
         
-        // Save messages
-        await this.saveMessage(sessionId, userId, message, 'user');
-        await this.saveMessage(sessionId, userId, hitlMessage, 'bot', {
+        // Save messages asynchronously (non-blocking)
+        // Don't await - save in background to return response immediately
+        this.saveMessage(sessionId, userId, message, 'user').catch(error => {
+          logger.error('Error saving user message (non-blocking):', error);
+        });
+        this.saveMessage(sessionId, userId, hitlMessage, 'bot', {
           intent: 'crisis',
           userSegment: 'crisis',
           emotionalState: 'crisis',
           crisisLevel: 'critical',
           qualityScore: 1.0,
+        }).catch(error => {
+          logger.error('Error saving bot message (non-blocking):', error);
         });
         
         // Return crisis response IMMEDIATELY - don't continue processing

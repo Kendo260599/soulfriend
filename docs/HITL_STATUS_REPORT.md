@@ -250,3 +250,4 @@ railway logs --tail 100 | grep "HITL\|CRITICAL ALERT"
 
 
 
+

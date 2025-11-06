@@ -102,17 +102,18 @@ const DEFAULT_CONFIG: InterventionConfig = {
   clinicalTeam: [
     {
       id: 'crisis_team_1',
-      name: 'Crisis Response Team',
+      name: 'Chuyên Gia Tâm Lý CHUN',
       role: 'crisis_counselor',
-      email: 'le3221374@gmail.com', // Real email for HITL alerts
-      phone: '+84-xxx-xxx-xxx',
+      email: 'kendo2605@gmail.com', // Chuyên gia tâm lý chính
+      phone: '+84-938021111', // 0938021111
       availability: 'available',
+      specialty: ['crisis_intervention', 'mental_health', 'counseling']
     },
     {
       id: 'admin_team_1',
       name: 'System Administrator',
       role: 'admin',
-      email: 'kendo2605@gmail.com', // Verified SendGrid sender email
+      email: 'le3221374@gmail.com', // Backup admin email
       phone: '+84-xxx-xxx-xxx',
       availability: 'available',
     },

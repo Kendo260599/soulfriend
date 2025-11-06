@@ -95,6 +95,51 @@ router.get('/debug/version', (req, res) => {
 });
 
 /**
+ * DEBUG ENDPOINT - Verify crisis detection in production
+ * GET /api/v2/chatbot/debug/crisis-check
+ */
+router.get('/debug/crisis-check', async (req, res) => {
+  try {
+    const { detectCrisis } = await import('../data/crisisManagementData');
+    
+    const tests = [
+      "Tôi muốn tự tử",
+      "Tôi muốn chết",
+      "Tôi sẽ kết thúc mọi chuyện",
+      "I want to die",
+      "Xin chào"
+    ];
+    
+    const results = tests.map(msg => {
+      const crisis = detectCrisis(msg);
+      return {
+        message: msg,
+        detected: crisis !== null,
+        crisisId: crisis?.id || null,
+        level: crisis?.level || 'low',
+        triggers: crisis?.triggers?.slice(0, 3) || []
+      };
+    });
+    
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      buildInfo: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        env: process.env.NODE_ENV
+      },
+      results
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+/**
  * DEBUG ENDPOINT - Test crisis detection directly
  * GET /api/v2/chatbot/debug/crisis-test?message=xxx
  */

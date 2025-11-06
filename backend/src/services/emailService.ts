@@ -111,7 +111,12 @@ class EmailService {
     }
 
     const recipients = Array.isArray(options.to) ? options.to : [options.to];
-    const fromEmail = options.from || config.SMTP_USER || 'noreply@soulfriend.vn';
+    // For SendGrid, prefer SENDGRID_FROM_EMAIL (must be verified), fallback to SMTP_USER or default
+    // For SMTP, use SMTP_USER or default
+    const fromEmail = options.from || 
+                     (this.provider === 'sendgrid' && config.SENDGRID_FROM_EMAIL ? config.SENDGRID_FROM_EMAIL : null) ||
+                     config.SMTP_USER || 
+                     'noreply@soulfriend.vn';
 
     // Use SendGrid if available
     if (this.provider === 'sendgrid') {

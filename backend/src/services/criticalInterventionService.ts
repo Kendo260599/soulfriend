@@ -376,7 +376,9 @@ export class CriticalInterventionService {
       // Get all clinical team email addresses
       const recipients = this.config.clinicalTeam.map(member => member.email);
 
-      logger.info(`📧 Attempting to send email alert to ${recipients.length} recipient(s) for alert ${alert.id}`);
+      logger.info(
+        `📧 Attempting to send email alert to ${recipients.length} recipient(s) for alert ${alert.id}`
+      );
 
       // Send email using email service
       await emailService.sendCriticalAlert(
@@ -396,7 +398,9 @@ export class CriticalInterventionService {
       // Note: emailService.sendCriticalAlert() will log success with messageId if email was actually sent
       // This log is just for tracking that we attempted to send
       logger.info(`📧 Email send attempt completed for alert ${alert.id}`);
-      console.log(`📧 Email send attempt for alert ${alert.id} - check logs for messageId to confirm delivery`);
+      console.log(
+        `📧 Email send attempt for alert ${alert.id} - check logs for messageId to confirm delivery`
+      );
     } catch (error) {
       logger.error('❌ Failed to send email alert:', error);
       console.error('Email sending failed:', error);
@@ -530,7 +534,9 @@ This case requires IMMEDIATE attention.
         `.trim(),
       });
 
-      logger.error(`🚨 Urgent email notifications sent to ${recipients.length} recipient(s) for escalated alert ${alert.id}`);
+      logger.error(
+        `🚨 Urgent email notifications sent to ${recipients.length} recipient(s) for escalated alert ${alert.id}`
+      );
       console.log(`✅ Urgent email sent to: ${recipients.join(', ')}`);
     } catch (error) {
       logger.error('❌ Failed to send urgent email notifications:', error);
@@ -607,18 +613,25 @@ This case requires IMMEDIATE attention.
   }
 
   /**
-   * Get active alerts
+   * Get active alerts (pending, acknowledged, or escalated)
    */
   getActiveAlerts(): CriticalAlert[] {
     return Array.from(this.activeAlerts.values()).filter(
-      alert => alert.status === 'pending' || alert.status === 'acknowledged'
+      alert => alert.status === 'pending' || alert.status === 'acknowledged' || alert.status === 'escalated'
     );
+  }
+
+  /**
+   * Get alert by ID
+   */
+  getAlert(alertId: string): CriticalAlert | undefined {
+    return this.activeAlerts.get(alertId);
   }
 
   /**
    * Resolve alert (crisis resolved)
    */
-  async resolveAlert(alertId: string, resolution: string): Promise<void> {
+  async resolveAlert(alertId: string, resolution: string, clinicalMemberId?: string): Promise<void> {
     const alert = this.activeAlerts.get(alertId);
 
     if (!alert) {
@@ -626,6 +639,9 @@ This case requires IMMEDIATE attention.
     }
 
     alert.status = 'resolved';
+    if (clinicalMemberId) {
+      alert.acknowledgedBy = clinicalMemberId;
+    }
     this.activeAlerts.set(alertId, alert);
 
     logger.info(`✅ Alert ${alertId} resolved: ${resolution}`);

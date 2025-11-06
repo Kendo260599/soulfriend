@@ -797,6 +797,42 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
   }
 
   /**
+   * Get conversation history for a session
+   * Used by clinical team to view user conversation
+   */
+  getConversationHistory(sessionId: string): EnhancedChatMessage[] {
+    return this.messages.get(sessionId) || [];
+  }
+
+  /**
+   * Send message from clinical team directly to user
+   * This message will appear in user's chat as a bot message
+   */
+  async sendClinicalMessage(
+    sessionId: string,
+    userId: string,
+    message: string,
+    clinicalMemberId: string
+  ): Promise<void> {
+    // Format message to indicate it's from clinical team
+    const clinicalMessage = `[Chuyên gia tư vấn] ${message}`;
+    
+    // Save as bot message so it appears in user's chat
+    await this.saveMessage(sessionId, userId, clinicalMessage, 'bot', {
+      intent: 'clinical_intervention',
+      clinicalMemberId,
+      isClinicalMessage: true,
+      timestamp: new Date(),
+    });
+
+    logger.info(`📧 Clinical team message sent to user ${userId}`, {
+      sessionId,
+      clinicalMemberId,
+      messageLength: message.length,
+    });
+  }
+
+  /**
    * Lấy thống kê chất lượng
    */
   getQualityStats(): any {

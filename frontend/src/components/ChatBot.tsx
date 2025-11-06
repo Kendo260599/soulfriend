@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
+import { io, Socket } from 'socket.io-client';
 import AnimatedButton from './AnimatedButton';
 import { useAI } from '../contexts/AIContext';
+
+const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
 
 const fadeIn = keyframes`
   from {
@@ -419,8 +422,104 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [expertConnected, setExpertConnected] = useState(false); // Track if expert is in intervention
+  const [expertName, setExpertName] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const userIdRef = useRef<string>(localStorage.getItem('userId') || `user_${Date.now()}`);
+  const sessionIdRef = useRef<string>(localStorage.getItem('sessionId') || `session_${Date.now()}`);
   const { processMessage, isProcessing } = useAI();
+  
+  // Save userId and sessionId to localStorage
+  useEffect(() => {
+    localStorage.setItem('userId', userIdRef.current);
+    localStorage.setItem('sessionId', sessionIdRef.current);
+  }, []);
+
+  // Socket.io connection for real-time expert intervention
+  useEffect(() => {
+    if (!isOpen) return; // Only connect when chatbot is open
+
+    console.log('🔌 Connecting to Socket.io (user namespace)...');
+
+    const socket = io(API_URL + '/user', {
+      query: {
+        userId: userIdRef.current,
+        sessionId: sessionIdRef.current,
+      },
+      transports: ['websocket', 'polling'],
+    });
+
+    socketRef.current = socket;
+
+    // Connection events
+    socket.on('connect', () => {
+      console.log('✅ Socket.io connected (user)');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Socket.io disconnected (user)');
+    });
+
+    socket.on('connected', (data: any) => {
+      console.log('👤 User connected:', data);
+    });
+
+    // Expert joined the conversation
+    socket.on('expert_joined', (data: { expertName: string; message: string; timestamp: Date }) => {
+      console.log('👨‍⚕️ Expert joined:', data);
+      setExpertConnected(true);
+      setExpertName(data.expertName);
+
+      // Add system message
+      const systemMessage: ChatMessage = {
+        id: `system_${Date.now()}`,
+        text: data.message,
+        isBot: true,
+        timestamp: new Date(data.timestamp),
+      };
+      setMessages((prev) => [...prev, systemMessage]);
+    });
+
+    // Expert message received
+    socket.on('expert_message', (data: { from: string; expertName: string; message: string; timestamp: Date }) => {
+      console.log('💬 Expert message:', data);
+
+      const expertMessage: ChatMessage = {
+        id: `expert_${Date.now()}`,
+        text: `👨‍⚕️ **${data.expertName}**: ${data.message}`,
+        isBot: true,
+        timestamp: new Date(data.timestamp),
+      };
+      setMessages((prev) => [...prev, expertMessage]);
+    });
+
+    // Intervention ended
+    socket.on('intervention_ended', (data: { message: string; timestamp: Date }) => {
+      console.log('🔒 Intervention ended:', data);
+      setExpertConnected(false);
+      setExpertName(null);
+
+      const systemMessage: ChatMessage = {
+        id: `system_${Date.now()}`,
+        text: data.message,
+        isBot: true,
+        timestamp: new Date(data.timestamp),
+      };
+      setMessages((prev) => [...prev, systemMessage]);
+    });
+
+    // Message received confirmation
+    socket.on('message_received', (data: any) => {
+      console.log('✅ Message received by server:', data);
+    });
+
+    // Cleanup
+    return () => {
+      console.log('🔌 Disconnecting Socket.io...');
+      socket.disconnect();
+    };
+  }, [isOpen]);
 
   // Load conversation history from localStorage
   useEffect(() => {
@@ -692,6 +791,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     setIsTyping(true);
     setLastError(null);
 
+    // Send message via Socket.io (for expert to see in real-time)
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('user_message', {
+        message: originalInput,
+        timestamp: new Date(),
+      });
+      console.log('📤 Message sent via Socket.io');
+    }
+
     try {
       const botResponse = await generateBotResponse(originalInput);
       
@@ -800,12 +908,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       </ChatToggle>
 
       <ChatHeader isOpen={isOpen}>
-        <BotAvatar>🌸</BotAvatar>
+        <BotAvatar>{expertConnected ? '👨‍⚕️' : '🌸'}</BotAvatar>
         <BotInfo>
-          <BotName>CHUN - AI Companion</BotName>
+          <BotName>
+            {expertConnected ? `Chuyên gia ${expertName}` : 'CHUN - AI Companion'}
+          </BotName>
           <BotStatus>
             <StatusDot online={isOnline} />
-            {isOnline ? 'Luôn sẵn sàng lắng nghe bạn 💙' : 'Đang kết nối lại...'}
+            {expertConnected
+              ? `👨‍⚕️ Đang được hỗ trợ bởi chuyên gia`
+              : isOnline
+              ? 'Luôn sẵn sàng lắng nghe bạn 💙'
+              : 'Đang kết nối lại...'}
           </BotStatus>
         </BotInfo>
       </ChatHeader>

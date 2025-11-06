@@ -1,0 +1,15 @@
+# Nixpacks configuration for Railway
+# Railway auto-detects from backend/package.json, so config must be in backend/
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "node dist/index.js"
+

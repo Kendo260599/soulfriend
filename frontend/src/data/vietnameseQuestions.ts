@@ -27,8 +27,8 @@ export interface VietnameseTest {
   vietnameseNorms: {
     population: string;
     sampleSize: number;
-    reliability: number;
-    validity: number;
+    reliability: number | null;
+    validity: number | null;
   };
 }
 

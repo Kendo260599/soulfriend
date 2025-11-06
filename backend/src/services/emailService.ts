@@ -36,21 +36,26 @@ class EmailService {
     }
 
     try {
+      // Use port 465 (SSL) if port 587 (TLS) fails - more reliable for Railway
+      const smtpPort = config.SMTP_PORT || 587;
+      const useSecure = smtpPort === 465;
+      
       this.transporter = nodemailer.createTransport({
         host: config.SMTP_HOST,
-        port: config.SMTP_PORT || 587,
-        secure: config.SMTP_PORT === 465, // true for 465, false for other ports
+        port: smtpPort,
+        secure: useSecure, // true for 465 (SSL), false for 587 (TLS/STARTTLS)
         auth: {
           user: config.SMTP_USER,
           pass: config.SMTP_PASS,
         },
         tls: {
           rejectUnauthorized: false, // For self-signed certificates
+          ciphers: 'SSLv3', // Try different cipher for Railway compatibility
         },
         // Connection timeout settings (increased for Railway/production)
-        connectionTimeout: 20000, // 20 seconds for initial connection (Railway may be slower)
-        socketTimeout: 20000, // 20 seconds for socket operations
-        greetingTimeout: 15000, // 15 seconds for SMTP greeting
+        connectionTimeout: 30000, // 30 seconds for initial connection (Railway may be slower)
+        socketTimeout: 30000, // 30 seconds for socket operations
+        greetingTimeout: 20000, // 20 seconds for SMTP greeting
         // Retry settings
         pool: true, // Use connection pooling
         maxConnections: 5, // Maximum number of connections in pool

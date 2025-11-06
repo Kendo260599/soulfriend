@@ -37,6 +37,7 @@ interface EnvironmentConfig {
   SMTP_PORT?: number;
   SMTP_USER?: string;
   SMTP_PASS?: string;
+  SENDGRID_API_KEY?: string;
 
   // Logging
   LOG_LEVEL: 'error' | 'warn' | 'info' | 'debug';
@@ -149,6 +150,7 @@ function parseEnvironment(): EnvironmentConfig {
     SMTP_PORT: process.env.SMTP_PORT ? getEnvNumber('SMTP_PORT') : undefined,
     SMTP_USER: getEnvOptional('SMTP_USER'),
     SMTP_PASS: getEnvOptional('SMTP_PASS'),
+    SENDGRID_API_KEY: getEnvOptional('SENDGRID_API_KEY'),
 
     // Logging
     LOG_LEVEL: logLevel,

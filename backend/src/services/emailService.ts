@@ -1,10 +1,11 @@
 /**
  * Email Service
  * Handles email sending for HITL alerts and notifications
- * Uses nodemailer with SMTP
+ * Supports SendGrid API (preferred) and SMTP fallback
  */
 
 import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import logger from '../utils/logger';
 import config from '../config/environment';
 
@@ -16,78 +17,91 @@ export interface EmailOptions {
   from?: string;
 }
 
+type EmailProvider = 'sendgrid' | 'smtp' | 'none';
+
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private isConfigured: boolean = false;
+  private provider: EmailProvider = 'none';
 
   constructor() {
     this.initialize();
   }
 
   /**
-   * Initialize email transporter
+   * Initialize email service - prefer SendGrid, fallback to SMTP
    */
   private initialize(): void {
-    // Check if SMTP is configured
-    if (!config.SMTP_HOST || !config.SMTP_USER || !config.SMTP_PASS) {
-      logger.warn('⚠️  SMTP not configured. Email service disabled.');
-      logger.warn('   Set SMTP_HOST, SMTP_USER, SMTP_PASS in environment variables');
-      return;
+    // Priority 1: SendGrid (most reliable for Railway)
+    if (config.SENDGRID_API_KEY) {
+      try {
+        sgMail.setApiKey(config.SENDGRID_API_KEY);
+        this.provider = 'sendgrid';
+        this.isConfigured = true;
+        logger.info('✅ Email service initialized with SendGrid API');
+        return;
+      } catch (error) {
+        logger.error('❌ Failed to initialize SendGrid:', error);
+      }
     }
 
-    try {
-      // Use port 465 (SSL) if port 587 (TLS) fails - more reliable for Railway
-      const smtpPort = config.SMTP_PORT || 587;
-      const useSecure = smtpPort === 465;
-      
-      this.transporter = nodemailer.createTransport({
-        host: config.SMTP_HOST,
-        port: smtpPort,
-        secure: useSecure, // true for 465 (SSL), false for 587 (TLS/STARTTLS)
-        auth: {
-          user: config.SMTP_USER,
-          pass: config.SMTP_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false, // For self-signed certificates
-          ciphers: 'SSLv3', // Try different cipher for Railway compatibility
-        },
-        // Connection timeout settings (increased for Railway/production)
-        connectionTimeout: 30000, // 30 seconds for initial connection (Railway may be slower)
-        socketTimeout: 30000, // 30 seconds for socket operations
-        greetingTimeout: 20000, // 20 seconds for SMTP greeting
-        // Retry settings
-        pool: true, // Use connection pooling
-        maxConnections: 5, // Maximum number of connections in pool
-        maxMessages: 100, // Maximum messages per connection
-        // Rate limiting
-        rateDelta: 1000, // Time window for rate limiting (1 second)
-        rateLimit: 5, // Maximum messages per rateDelta
-      });
+    // Priority 2: SMTP fallback
+    if (config.SMTP_HOST && config.SMTP_USER && config.SMTP_PASS) {
+      try {
+        const smtpPort = config.SMTP_PORT || 587;
+        const useSecure = smtpPort === 465;
+        
+        this.transporter = nodemailer.createTransport({
+          host: config.SMTP_HOST,
+          port: smtpPort,
+          secure: useSecure,
+          auth: {
+            user: config.SMTP_USER,
+            pass: config.SMTP_PASS,
+          },
+          tls: {
+            rejectUnauthorized: false,
+            ciphers: 'SSLv3',
+          },
+          connectionTimeout: 30000,
+          socketTimeout: 30000,
+          greetingTimeout: 20000,
+          pool: true,
+          maxConnections: 5,
+          maxMessages: 100,
+          rateDelta: 1000,
+          rateLimit: 5,
+        });
 
-      this.isConfigured = true;
-      logger.info('✅ Email service initialized');
-      
-      // Test connection asynchronously (non-blocking)
-      // Don't await - let it test in background
-      this.testConnection().catch(error => {
-        logger.warn('⚠️  Email service connection test failed (non-blocking):', error);
-        // Don't fail initialization - email will retry on send
-      });
-    } catch (error) {
-      logger.error('❌ Failed to initialize email service:', error);
+        this.provider = 'smtp';
+        this.isConfigured = true;
+        logger.info('✅ Email service initialized with SMTP');
+        
+        // Test connection asynchronously (non-blocking)
+        this.testConnection().catch(error => {
+          logger.warn('⚠️  Email service connection test failed (non-blocking):', error);
+        });
+        return;
+      } catch (error) {
+        logger.error('❌ Failed to initialize SMTP:', error);
+      }
     }
+
+    // No email service configured
+    logger.warn('⚠️  Email service not configured.');
+    logger.warn('   Set SENDGRID_API_KEY (recommended) or SMTP_HOST, SMTP_USER, SMTP_PASS');
+    this.provider = 'none';
   }
 
   /**
    * Check if email service is ready
    */
   isReady(): boolean {
-    return this.isConfigured && this.transporter !== null;
+    return this.isConfigured && this.provider !== 'none';
   }
 
   /**
-   * Send email with retry logic and timeout handling
+   * Send email with retry logic - uses SendGrid or SMTP based on configuration
    */
   async send(options: EmailOptions, retries: number = 2): Promise<void> {
     if (!this.isReady()) {
@@ -96,36 +110,148 @@ class EmailService {
       return;
     }
 
-    const recipients = Array.isArray(options.to) ? options.to.join(', ') : options.to;
+    const recipients = Array.isArray(options.to) ? options.to : [options.to];
+    const fromEmail = options.from || config.SMTP_USER || 'noreply@soulfriend.vn';
 
+    // Use SendGrid if available
+    if (this.provider === 'sendgrid') {
+      await this.sendWithSendGrid(recipients, fromEmail, options, retries);
+      return;
+    }
+
+    // Fallback to SMTP
+    if (this.provider === 'smtp') {
+      await this.sendWithSMTP(recipients.join(', '), fromEmail, options, retries);
+      return;
+    }
+  }
+
+  /**
+   * Send email using SendGrid API
+   */
+  private async sendWithSendGrid(
+    recipients: string[],
+    fromEmail: string,
+    options: EmailOptions,
+    retries: number
+  ): Promise<void> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        // SendGrid requires content array or text/html directly
+        const msg: any = {
+          to: recipients,
+          from: fromEmail,
+          subject: options.subject,
+        };
+
+        // Add text and html content
+        if (options.html) {
+          msg.html = options.html;
+        }
+        if (options.text) {
+          msg.text = options.text;
+        } else if (options.html) {
+          // Convert HTML to text if no text provided
+          msg.text = options.html.replace(/<[^>]*>/g, '').replace(/\n/g, ' ').trim();
+        }
+
+        // SendGrid API call with timeout
+        const sendPromise = sgMail.send(msg);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('SendGrid API timeout')), 15000); // 15 second timeout
+        });
+
+        const result = await Promise.race([sendPromise, timeoutPromise]) as any;
+
+        // SendGrid returns [response, body] array or just response
+        const response = Array.isArray(result) ? result[0] : result;
+
+        // SendGrid returns response with statusCode
+        if (response && (response.statusCode === 200 || response.statusCode === 202)) {
+          const messageId = response.headers?.['x-message-id'] || 
+                           response.headers?.['X-Message-Id'] || 
+                           'N/A';
+
+          logger.info(`📧 ✅ EMAIL SENT SUCCESSFULLY (SendGrid) to ${recipients.join(', ')}`, {
+            statusCode: response.statusCode,
+            subject: options.subject,
+            attempt: attempt + 1,
+            messageId: messageId,
+          });
+
+          console.log('📧 ✅ EMAIL SENT SUCCESSFULLY (SendGrid):', {
+            to: recipients.join(', '),
+            subject: options.subject,
+            statusCode: response.statusCode,
+            messageId: messageId,
+          });
+
+          return; // Success
+        } else {
+          throw new Error(`SendGrid returned status ${response?.statusCode || 'unknown'}`);
+        }
+      } catch (error: any) {
+        const isLastAttempt = attempt === retries;
+
+        logger.error(`❌ SendGrid email error (attempt ${attempt + 1}/${retries + 1}):`, {
+          to: recipients.join(', '),
+          subject: options.subject,
+          errorCode: error.code,
+          errorMessage: error.message,
+          response: error.response?.body,
+        });
+
+        if (isLastAttempt) {
+          logger.error('❌ Failed to send email via SendGrid after retries:', {
+            to: recipients.join(', '),
+            subject: options.subject,
+            error: error.message,
+          });
+          console.error('❌ SendGrid email send failed after all retries');
+          return;
+        }
+
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+    }
+  }
+
+  /**
+   * Send email using SMTP (fallback)
+   */
+  private async sendWithSMTP(
+    recipients: string,
+    fromEmail: string,
+    options: EmailOptions,
+    retries: number
+  ): Promise<void> {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const mailOptions = {
-          from: options.from || config.SMTP_USER || 'noreply@soulfriend.vn',
+          from: fromEmail,
           to: recipients,
           subject: options.subject,
           text: options.text,
           html: options.html || options.text?.replace(/\n/g, '<br>'),
         };
 
-        // Add timeout to sendMail operation (increased for Railway)
         const sendPromise = this.transporter!.sendMail(mailOptions);
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Email send timeout')), 25000); // 25 second timeout (Railway may be slower)
+          setTimeout(() => reject(new Error('Email send timeout')), 25000);
         });
 
         const info = await Promise.race([sendPromise, timeoutPromise]);
 
-        // CRITICAL: Only log success if we have messageId (proves SMTP server accepted the email)
         if (info.messageId) {
-          logger.info(`📧 ✅ EMAIL SENT SUCCESSFULLY to ${recipients}`, {
+          logger.info(`📧 ✅ EMAIL SENT SUCCESSFULLY (SMTP) to ${recipients}`, {
             messageId: info.messageId,
             subject: options.subject,
             attempt: attempt + 1,
             response: info.response,
           });
 
-          console.log('📧 ✅ EMAIL SENT SUCCESSFULLY:', {
+          console.log('📧 ✅ EMAIL SENT SUCCESSFULLY (SMTP):', {
             to: recipients,
             subject: options.subject,
             messageId: info.messageId,
@@ -133,79 +259,48 @@ class EmailService {
           });
         } else {
           logger.warn(`⚠️  Email send completed but no messageId received for ${recipients}`);
-          console.warn('⚠️  Email send completed but no messageId - email may not have been delivered');
         }
 
-        return; // Success - exit retry loop
+        return; // Success
       } catch (error: any) {
         const isLastAttempt = attempt === retries;
         
-        // Detailed error logging for debugging
-        logger.error(`❌ Email send error (attempt ${attempt + 1}/${retries + 1}):`, {
+        logger.error(`❌ SMTP email error (attempt ${attempt + 1}/${retries + 1}):`, {
           to: recipients,
           subject: options.subject,
           errorCode: error.code,
           errorMessage: error.message,
           errorCommand: error.command,
-          errorResponse: error.response,
-          errorResponseCode: error.responseCode,
-          stack: error.stack?.substring(0, 200),
         });
         
         if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
-          logger.warn(`⚠️  Email send timeout (attempt ${attempt + 1}/${retries + 1})`);
-          console.error(`⚠️  Email timeout details:`, {
-            code: error.code,
-            command: error.command,
-            message: error.message,
-          });
-          
           if (isLastAttempt) {
-            logger.error('❌ Failed to send email after retries (timeout):', {
+            logger.error('❌ Failed to send email via SMTP after retries (timeout):', {
               to: recipients,
               subject: options.subject,
               error: error.message,
-              errorCode: error.code,
-              smtpHost: config.SMTP_HOST,
-              smtpPort: config.SMTP_PORT,
             });
-            console.error('❌ Email send failed after all retries. Check SMTP configuration and network connectivity.');
-            // Don't throw - email failures shouldn't break the app
+            console.error('❌ SMTP email send failed - consider using SendGrid instead');
             return;
           }
-          
-          // Wait before retry (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1))); // Increased backoff
+          await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
           continue;
         }
 
-        // Authentication errors
         if (error.code === 'EAUTH' || error.responseCode === 535) {
-          logger.error('❌ SMTP Authentication failed:', {
-            to: recipients,
-            error: error.message,
-            smtpUser: config.SMTP_USER,
-          });
-          console.error('❌ SMTP AUTH ERROR - Check SMTP_USER and SMTP_PASS credentials');
-          // Don't retry on auth errors
+          logger.error('❌ SMTP Authentication failed');
           return;
         }
 
-        // Other errors
         if (isLastAttempt) {
-          logger.error('❌ Failed to send email after retries:', {
+          logger.error('❌ Failed to send email via SMTP after retries:', {
             to: recipients,
             subject: options.subject,
             error: error.message || error,
-            errorCode: error.code,
-            errorResponse: error.response,
           });
-          console.error('❌ Email send failed:', error);
-          // Don't throw - email failures shouldn't break the app
           return;
         }
 
-        // Wait before retry
         await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
       }
     }
@@ -314,39 +409,42 @@ Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
   }
 
   /**
-   * Test email connection with timeout
+   * Test email connection
    */
   async testConnection(): Promise<boolean> {
     if (!this.isReady()) {
       return false;
     }
 
-    try {
-      // Use Promise.race to add timeout to verify()
-      const verifyPromise = this.transporter!.verify();
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Connection test timeout')), 5000); // 5 second timeout
-      });
-
-      await Promise.race([verifyPromise, timeoutPromise]);
-      logger.info('✅ Email service connection verified');
-      console.log('✅ Email service connection verified');
+    if (this.provider === 'sendgrid') {
+      // SendGrid doesn't need connection test - API is stateless
       return true;
-    } catch (error: any) {
-      // Don't log as error - connection test failures are expected in some environments
-      if (error.message?.includes('timeout')) {
-        logger.warn('⚠️  Email service connection test timeout (will retry on send)');
-      } else {
-        logger.warn('⚠️  Email service connection test failed (will retry on send):', error.code || error.message);
-      }
-      // Don't throw - allow email service to work even if test fails
-      // Connection will be established on first actual send
-      return false;
     }
+
+    if (this.provider === 'smtp') {
+      try {
+        const verifyPromise = this.transporter!.verify();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Connection test timeout')), 5000);
+        });
+
+        await Promise.race([verifyPromise, timeoutPromise]);
+        logger.info('✅ Email service connection verified (SMTP)');
+        return true;
+      } catch (error: any) {
+        if (error.message?.includes('timeout')) {
+          logger.warn('⚠️  Email service connection test timeout (will retry on send)');
+        } else {
+          logger.warn('⚠️  Email service connection test failed (will retry on send):', error.code || error.message);
+        }
+        return false;
+      }
+    }
+
+    return false;
   }
 }
 
 // Export singleton instance
 export const emailService = new EmailService();
 export default emailService;
-

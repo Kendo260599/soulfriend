@@ -214,13 +214,17 @@ export class CriticalInterventionService {
     console.error(`Message: "${alert.userMessage}"`);
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // STEP 2: Immediate documentation
+    // STEP 2: Immediate documentation (non-blocking)
     if (this.config.autoDocumentation) {
-      await this.documentAlert(alert);
+      this.documentAlert(alert).catch(error => {
+        logger.error('Documentation failed (non-blocking):', error);
+      });
     }
 
-    // STEP 3: Notify clinical team immediately
-    await this.notifyClinicalTeam(alert);
+    // STEP 3: Notify clinical team immediately (non-blocking)
+    this.notifyClinicalTeam(alert).catch(error => {
+      logger.error('Clinical team notification failed (non-blocking):', error);
+    });
 
     // STEP 4: Start escalation timer (5 minutes)
     if (this.config.autoEscalationEnabled) {
@@ -259,28 +263,33 @@ export class CriticalInterventionService {
 
   /**
    * STEP 3: Thông báo đội lâm sàng ngay lập tức
+   * Optimized: Fire-and-forget notifications to prevent blocking
    */
   private async notifyClinicalTeam(alert: CriticalAlert): Promise<void> {
     logger.warn(`📢 Notifying clinical team for alert: ${alert.id}`);
 
-    const notifications: Promise<void>[] = [];
-
-    // Email notification
+    // Fire-and-forget: Start all notifications but don't wait for completion
+    // This prevents email/SMS delays from blocking alert creation
     if (this.config.emailEnabled) {
-      notifications.push(this.sendEmailAlert(alert));
+      this.sendEmailAlert(alert).catch(error => {
+        logger.error('Email notification failed (non-blocking):', error);
+      });
     }
 
-    // SMS notification
     if (this.config.smsEnabled) {
-      notifications.push(this.sendSMSAlert(alert));
+      this.sendSMSAlert(alert).catch(error => {
+        logger.error('SMS notification failed (non-blocking):', error);
+      });
     }
 
-    // Slack notification (for real-time team coordination)
     if (this.config.slackEnabled) {
-      notifications.push(this.sendSlackAlert(alert));
+      this.sendSlackAlert(alert).catch(error => {
+        logger.error('Slack notification failed (non-blocking):', error);
+      });
     }
 
-    await Promise.all(notifications);
+    // Return immediately - notifications will complete in background
+    // This ensures alert is created and escalation timer starts without delay
   }
 
   /**

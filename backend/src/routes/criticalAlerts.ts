@@ -119,46 +119,6 @@ router.post(
 );
 
 /**
- * GET /api/alerts/stats
- * Lấy thống kê alerts
- */
-router.get(
-  '/stats',
-  asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const activeAlerts = criticalInterventionService.getActiveAlerts();
-
-      const stats = {
-        total: activeAlerts.length,
-        byStatus: {
-          pending: activeAlerts.filter(a => a.status === 'pending').length,
-          acknowledged: activeAlerts.filter(a => a.status === 'acknowledged').length,
-          intervened: activeAlerts.filter(a => a.status === 'intervened').length,
-        },
-        byRiskType: {
-          suicidal: activeAlerts.filter(a => a.riskType === 'suicidal').length,
-          psychosis: activeAlerts.filter(a => a.riskType === 'psychosis').length,
-          self_harm: activeAlerts.filter(a => a.riskType === 'self_harm').length,
-          violence: activeAlerts.filter(a => a.riskType === 'violence').length,
-        },
-      };
-
-      res.json({
-        success: true,
-        stats,
-      });
-    } catch (error) {
-      logger.error('Error fetching alert stats:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching alert stats',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  })
-);
-
-/**
  * GET /api/alerts/:id
  * Lấy chi tiết một alert
  */

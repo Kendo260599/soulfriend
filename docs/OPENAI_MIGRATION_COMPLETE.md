@@ -174,3 +174,12 @@ POST /chat/completions
 **API:** OpenAI Chat Completions API
 
 
+
+
+
+
+
+
+
+
+

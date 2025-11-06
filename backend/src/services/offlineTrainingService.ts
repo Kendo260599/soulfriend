@@ -470,3 +470,12 @@ Phương án B: Theo dõi nhật ký cảm xúc
 
 export const offlineTrainingService = new OfflineTrainingService();
 export default offlineTrainingService;
+
+
+
+
+
+
+
+
+

@@ -33,6 +33,9 @@ import './models/ConversationLog';
 import './models/HITLFeedback';
 import './models/TrainingDataPoint';
 
+// Services
+import emailService from './services/emailService';
+
 // Initialize Express
 const app = express();
 const PORT = config.PORT;
@@ -368,12 +371,27 @@ const startServer = async () => {
       console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
       console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
       console.log('╚════════════════════════════════════════════╝');
-      
+
       // Connect to database AFTER server starts (non-blocking)
       console.log('📊 Connecting to database (non-blocking)...');
       databaseConnection.connect().catch(err => {
         console.warn('⚠️  Database connection failed, continuing without database:', err.message);
       });
+
+  // Test email service connection
+  if (emailService.isReady()) {
+    emailService.testConnection().then((success: boolean) => {
+      if (success) {
+        console.log('✅ Email service ready for HITL alerts');
+      } else {
+        console.warn('⚠️  Email service connection test failed');
+      }
+    }).catch((err: Error) => {
+      console.warn('⚠️  Email service connection test error:', err.message);
+    });
+  } else {
+    console.warn('⚠️  Email service not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)');
+  }
     });
 
     // Handle server errors

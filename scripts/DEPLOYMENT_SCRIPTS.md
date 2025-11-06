@@ -154,3 +154,12 @@ chmod +x scripts/verify-deployment.sh
 
 **Note**: Railway và Vercel đã tự động deploy từ GitHub. Scripts này chỉ để trigger và verify.
 
+
+
+
+
+
+
+
+
+

@@ -101,10 +101,14 @@ export const dass21Vietnamese: VietnameseTest = {
     "Gia đình đóng vai trò quan trọng trong việc hỗ trợ và điều trị"
   ],
   vietnameseNorms: {
-    population: "Phụ nữ Việt Nam 18-65 tuổi",
-    sampleSize: 2500,
-    reliability: 0.91,
-    validity: 0.89
+    population: "Chưa được khảo sát",
+    sampleSize: 0,
+    reliability: null,
+    validity: null,
+    validationStatus: "NOT_VALIDATED",
+    validationNote: "⚠️ Bản dịch tiếng Việt CHƯA được chuẩn hóa và kiểm định khoa học theo quy trình quốc tế (forward/back translation, pilot testing, psychometric analysis). Dữ liệu norms chưa có. Kết quả CHỈ có giá trị tham khảo sơ bộ.",
+    lastUpdated: "2025-10-25",
+    plannedValidation: "Phase 3 (6-12 months)"
   }
 };
 

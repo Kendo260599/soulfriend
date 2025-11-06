@@ -24,6 +24,7 @@ import {
 import { logger } from '../utils/logger';
 import openAIService from './openAIService';
 import { criticalInterventionService } from './criticalInterventionService';
+import moderationService from './moderationService';
 
 export interface EnhancedChatMessage {
   id: string;
@@ -191,6 +192,15 @@ export class EnhancedChatbotService {
       // 4. Phân tích cường độ cảm xúc
       const sentimentIntensity = analyzeSentimentIntensity(message);
 
+      // 4.5. Multi-layer Moderation Assessment (NEW HITL UPGRADE)
+      const moderationResult = await moderationService.assess(message);
+      logger.info('Moderation assessment completed', {
+        riskLevel: moderationResult.riskLevel,
+        riskScore: moderationResult.riskScore,
+        signalCount: moderationResult.signals.length,
+        messageHash: moderationResult.messageHash,
+      });
+
       // 5. Phát hiện khủng hoảng - EXTENSIVE DEBUG
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('🔍 ABOUT TO CALL detectCrisis()');
@@ -206,6 +216,24 @@ export class EnhancedChatbotService {
 
       const crisis = detectCrisis(message);
       let crisisLevel = crisis ? crisis.level : 'low';
+
+      // UPGRADE: Enhance crisisLevel with moderation results
+      // Moderation has higher sensitivity and can catch patterns missed by detectCrisis
+      if (moderationResult.riskLevel === 'critical') {
+        crisisLevel = 'critical';
+        logger.warn('Moderation detected CRITICAL risk, upgrading crisisLevel', {
+          originalCrisisLevel: crisis?.level,
+          moderationRiskScore: moderationResult.riskScore,
+        });
+      } else if (moderationResult.riskLevel === 'high' && crisisLevel !== 'critical') {
+        crisisLevel = 'high';
+        logger.info('Moderation detected HIGH risk, upgrading crisisLevel', {
+          originalCrisisLevel: crisis?.level,
+          moderationRiskScore: moderationResult.riskScore,
+        });
+      } else if (moderationResult.riskLevel === 'moderate' && crisisLevel === 'low') {
+        crisisLevel = 'medium';
+      }
 
       // Debug logging for crisis detection result
       console.error(`🎯 detectCrisis() RETURNED: ${crisis ? 'OBJECT' : 'NULL'}`);
@@ -282,9 +310,24 @@ export class EnhancedChatbotService {
             {
               riskLevel: 'CRITICAL',
               riskType: crisis!.id as 'suicidal' | 'psychosis' | 'self_harm' | 'violence',
-              userMessage: message,
+              userMessage: process.env.LOG_REDACT === 'true' ? '[redacted]' : message,
               detectedKeywords: crisis!.triggers,
               userProfile: userProfile,
+              // Add moderation metadata for enhanced HITL
+              metadata: {
+                moderation: {
+                  riskLevel: moderationResult.riskLevel,
+                  riskScore: moderationResult.riskScore,
+                  messageHash: moderationResult.messageHash,
+                  signalCount: moderationResult.signals.length,
+                  signals: moderationResult.signals.map(s => ({
+                    source: s.source,
+                    category: s.category,
+                    confidence: s.confidence,
+                    matchedCount: s.matched?.length || 0,
+                  })),
+                },
+              },
             }
           );
 
@@ -393,14 +436,24 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
         qualityScore: qualityEvaluation.qualityScore,
       });
 
+      // CRITICAL FIX: Ensure crisisLevel is preserved
+      console.error(`🔍 FINAL CRISIS LEVEL CHECK: crisisLevel="${crisisLevel}"`);
+      console.error(`🔍 detectedCrisis exists: ${detectedCrisis !== null}`);
+      console.error(`🔍 detectedCrisisLevel: "${detectedCrisisLevel}"`);
+      
+      // Use detectedCrisisLevel if it was set (to prevent overrides)
+      const finalCrisisLevel = detectedCrisis ? detectedCrisisLevel : crisisLevel;
+      
       const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' =
-        crisisLevel === 'critical'
+        finalCrisisLevel === 'critical'
           ? 'CRITICAL'
-          : crisisLevel === 'high'
+          : finalCrisisLevel === 'high'
             ? 'HIGH'
-            : crisisLevel === 'medium'
+            : finalCrisisLevel === 'medium'
               ? 'MEDIUM'
               : 'LOW';
+
+      console.error(`🔍 MAPPED RISK LEVEL: ${riskLevel} (from crisisLevel: ${finalCrisisLevel})`);
 
       const finalResponse: EnhancedResponse = {
         message: response, // Frontend expects 'message' not 'response'
@@ -410,7 +463,7 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
         userSegment: userSegment?.id,
         emotionalState: nuancedEmotion.emotion,
         riskLevel, // Frontend expects 'riskLevel'
-        crisisLevel, // Keep both for compatibility
+        crisisLevel: finalCrisisLevel, // Use finalCrisisLevel to preserve detected crisis
         suggestions,
         qualityScore: qualityEvaluation.qualityScore,
         referralInfo,

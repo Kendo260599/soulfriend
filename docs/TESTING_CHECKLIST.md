@@ -77,3 +77,12 @@ chmod +x .git/hooks/pre-push
 
 **Lưu ý**: Tôi sẽ **LUÔN** chạy các tests này trước khi push từ bây giờ!
 
+
+
+
+
+
+
+
+
+

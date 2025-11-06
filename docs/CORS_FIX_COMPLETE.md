@@ -186,3 +186,12 @@ curl -X OPTIONS https://soulfriend-production.up.railway.app/api/v2/chatbot/mess
 
 **Status**: ✅ **CORS headers are now set at EVERY point in the request lifecycle**
 
+
+
+
+
+
+
+
+
+

@@ -7,22 +7,28 @@ WORKDIR /app
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for TypeScript build)
+RUN npm ci
 
 # Copy backend source
 COPY backend/ ./
 
-# Build if needed (TypeScript compilation)
-RUN if [ -f "tsconfig.json" ]; then npm run build; fi
+# Build TypeScript
+RUN npm run build
 
 # Production image
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy from builder
-COPY --from=builder /app ./
+# Copy package files
+COPY backend/package*.json ./
+
+# Install ONLY production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built files from builder
+COPY --from=builder /app/dist ./dist
 
 # Expose port (Railway will override with PORT env var)
 EXPOSE 8080

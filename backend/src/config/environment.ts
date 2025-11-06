@@ -38,6 +38,7 @@ interface EnvironmentConfig {
   SMTP_USER?: string;
   SMTP_PASS?: string;
   SENDGRID_API_KEY?: string;
+  SENDGRID_FROM_EMAIL?: string;
 
   // Logging
   LOG_LEVEL: 'error' | 'warn' | 'info' | 'debug';
@@ -151,6 +152,7 @@ function parseEnvironment(): EnvironmentConfig {
     SMTP_USER: getEnvOptional('SMTP_USER'),
     SMTP_PASS: getEnvOptional('SMTP_PASS'),
     SENDGRID_API_KEY: getEnvOptional('SENDGRID_API_KEY'),
+    SENDGRID_FROM_EMAIL: getEnvOptional('SENDGRID_FROM_EMAIL'),
 
     // Logging
     LOG_LEVEL: logLevel,

@@ -187,3 +187,5 @@ Write-Host "✅ Debug complete! Copy output above and share with assistant." -Fo
 
 
 
+
+

@@ -617,7 +617,10 @@ This case requires IMMEDIATE attention.
    */
   getActiveAlerts(): CriticalAlert[] {
     return Array.from(this.activeAlerts.values()).filter(
-      alert => alert.status === 'pending' || alert.status === 'acknowledged' || alert.status === 'escalated'
+      alert =>
+        alert.status === 'pending' ||
+        alert.status === 'acknowledged' ||
+        alert.status === 'escalated'
     );
   }
 
@@ -631,7 +634,11 @@ This case requires IMMEDIATE attention.
   /**
    * Resolve alert (crisis resolved)
    */
-  async resolveAlert(alertId: string, resolution: string, clinicalMemberId?: string): Promise<void> {
+  async resolveAlert(
+    alertId: string,
+    resolution: string,
+    clinicalMemberId?: string
+  ): Promise<void> {
     const alert = this.activeAlerts.get(alertId);
 
     if (!alert) {

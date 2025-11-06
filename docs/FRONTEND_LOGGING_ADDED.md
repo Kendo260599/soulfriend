@@ -96,3 +96,4 @@ console.error('🚨 CRISIS DETECTED in frontend!', {
 
 
 
+

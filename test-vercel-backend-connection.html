@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vercel → Railway Backend Connection</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .test-section h2 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-success {
+            background: #28a745;
+            color: white;
+        }
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+        .status-pending {
+            background: #ffc107;
+            color: #333;
+        }
+        .urls {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .urls a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .urls a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Test Vercel ↔️ Railway Backend Connection</h1>
+        
+        <div class="urls">
+            <h3>📍 URLs:</h3>
+            <p><strong>Frontend (Vercel):</strong> <a href="https://soulfriend-kendo260599s-projects.vercel.app/" target="_blank">https://soulfriend-kendo260599s-projects.vercel.app/</a></p>
+            <p><strong>Backend (Railway):</strong> <a href="https://soulfriend-production.up.railway.app" target="_blank">https://soulfriend-production.up.railway.app</a></p>
+        </div>
+
+        <div class="test-section">
+            <h2>🏥 Test 1: Backend Health Check</h2>
+            <button onclick="testBackendHealth()">Run Health Check</button>
+            <div id="health-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔐 Test 2: CORS Configuration</h2>
+            <button onclick="testCORS()">Test CORS</button>
+            <div id="cors-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>💬 Test 3: Chatbot API</h2>
+            <button onclick="testChatbot()">Test Chatbot</button>
+            <div id="chatbot-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Test 4: Consent API</h2>
+            <button onclick="testConsent()">Test Consent</button>
+            <div id="consent-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test 5: Test Results API</h2>
+            <button onclick="testResultsAPI()">Test Results API</button>
+            <div id="results-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Run All Tests</h2>
+            <button onclick="runAllTests()" style="font-size: 18px; padding: 15px 40px;">🔥 Run All Tests</button>
+            <div id="all-tests-summary"></div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://soulfriend-production.up.railway.app';
+        let testResults = [];
+
+        // Test 1: Backend Health Check
+        async function testBackendHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing backend health...</div>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Backend is healthy!
+                            <span class="status-badge status-success">ONLINE</span>
+                            
+                            Status: ${response.status}
+                            Response: ${JSON.stringify(data, null, 2)}
+                        </div>
+                    `;
+                    testResults.push({ test: 'Health Check', status: 'PASS' });
+                    return true;
+                } else {
+                    throw new Error(`Status ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Backend health check failed!
+                        <span class="status-badge status-error">OFFLINE</span>
+                        
+                        Error: ${error.message}
+                    </div>
+                `;
+                testResults.push({ test: 'Health Check', status: 'FAIL', error: error.message });
+                return false;
+            }
+        }
+
+        // Test 2: CORS Configuration
+        async function testCORS() {
+            const resultDiv = document.getElementById('cors-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing CORS configuration...</div>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://soulfriend-kendo260599s-projects.vercel.app'
+                    }
+                });
+                
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                
+                if (corsHeader) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ CORS is properly configured!
+                            <span class="status-badge status-success">CONFIGURED</span>
+                            
+                            Access-Control-Allow-Origin: ${corsHeader}
+                            Status: ${response.status}
+                        </div>
+                    `;
+                    testResults.push({ test: 'CORS', status: 'PASS' });
+                    return true;
+                } else {
+                    throw new Error('CORS header not found');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ CORS test failed!
+                        <span class="status-badge status-error">FAILED</span>
+                        
+                        Error: ${error.message}
+                        
+                        ⚠️ This might cause issues with frontend-backend communication.
+                    </div>
+                `;
+                testResults.push({ test: 'CORS', status: 'FAIL', error: error.message });
+                return false;
+            }
+        }
+
+        // Test 3: Chatbot API
+        async function testChatbot() {
+            const resultDiv = document.getElementById('chatbot-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing chatbot API...</div>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/chatbot/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Hello, this is a test message',
+                        conversationId: 'test-' + Date.now()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.response) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Chatbot API is working!
+                            <span class="status-badge status-success">ONLINE</span>
+                            
+                            Status: ${response.status}
+                            Response: ${JSON.stringify(data, null, 2)}
+                        </div>
+                    `;
+                    testResults.push({ test: 'Chatbot API', status: 'PASS' });
+                    return true;
+                } else {
+                    throw new Error(`Status ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Chatbot API test failed!
+                        <span class="status-badge status-error">FAILED</span>
+                        
+                        Error: ${error.message}
+                    </div>
+                `;
+                testResults.push({ test: 'Chatbot API', status: 'FAIL', error: error.message });
+                return false;
+            }
+        }
+
+        // Test 4: Consent API
+        async function testConsent() {
+            const resultDiv = document.getElementById('consent-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing consent API...</div>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/consent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        participantId: 'test-' + Date.now(),
+                        agreedToTerms: true,
+                        agreedToDataCollection: true,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Consent API is working!
+                            <span class="status-badge status-success">ONLINE</span>
+                            
+                            Status: ${response.status}
+                            Consent ID: ${data.consentId || 'N/A'}
+                        </div>
+                    `;
+                    testResults.push({ test: 'Consent API', status: 'PASS' });
+                    return true;
+                } else {
+                    throw new Error(`Status ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Consent API test failed!
+                        <span class="status-badge status-error">FAILED</span>
+                        
+                        Error: ${error.message}
+                    </div>
+                `;
+                testResults.push({ test: 'Consent API', status: 'FAIL', error: error.message });
+                return false;
+            }
+        }
+
+        // Test 5: Test Results API
+        async function testResultsAPI() {
+            const resultDiv = document.getElementById('results-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing results API...</div>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/tests/results`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        testType: 'PHQ9',
+                        participantId: 'test-' + Date.now(),
+                        score: 10,
+                        answers: [1, 2, 1, 2, 1, 2, 1, 2, 1],
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Results API is working!
+                            <span class="status-badge status-success">ONLINE</span>
+                            
+                            Status: ${response.status}
+                            Result ID: ${data.resultId || 'N/A'}
+                        </div>
+                    `;
+                    testResults.push({ test: 'Results API', status: 'PASS' });
+                    return true;
+                } else {
+                    throw new Error(`Status ${response.status}: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Results API test failed!
+                        <span class="status-badge status-error">FAILED</span>
+                        
+                        Error: ${error.message}
+                    </div>
+                `;
+                testResults.push({ test: 'Results API', status: 'FAIL', error: error.message });
+                return false;
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            testResults = [];
+            const summaryDiv = document.getElementById('all-tests-summary');
+            summaryDiv.innerHTML = '<div class="result info">⏳ Running all tests...</div>';
+            
+            await testBackendHealth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testChatbot();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testConsent();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testResultsAPI();
+            
+            // Summary
+            const passed = testResults.filter(t => t.status === 'PASS').length;
+            const failed = testResults.filter(t => t.status === 'FAIL').length;
+            const total = testResults.length;
+            
+            const summaryClass = failed === 0 ? 'success' : (passed > 0 ? 'warning' : 'error');
+            
+            summaryDiv.innerHTML = `
+                <div class="result ${summaryClass}">
+                    <h3>📊 Test Summary</h3>
+                    Total Tests: ${total}
+                    Passed: ✅ ${passed}
+                    Failed: ❌ ${failed}
+                    
+                    ${failed === 0 ? 
+                        '🎉 All tests passed! Backend is fully functional.' : 
+                        '⚠️ Some tests failed. Check individual test results above.'}
+                    
+                    <h4>Details:</h4>
+                    ${testResults.map(t => `${t.status === 'PASS' ? '✅' : '❌'} ${t.test}: ${t.status}${t.error ? ' - ' + t.error : ''}`).join('\n')}
+                </div>
+            `;
+        }
+
+        // Auto-run health check on load
+        window.addEventListener('load', () => {
+            testBackendHealth();
+        });
+    </script>
+</body>
+</html>
+

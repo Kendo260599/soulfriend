@@ -47,10 +47,28 @@ class EmailService {
         tls: {
           rejectUnauthorized: false, // For self-signed certificates
         },
+        // Connection timeout settings
+        connectionTimeout: 10000, // 10 seconds for initial connection
+        socketTimeout: 10000, // 10 seconds for socket operations
+        greetingTimeout: 10000, // 10 seconds for SMTP greeting
+        // Retry settings
+        pool: true, // Use connection pooling
+        maxConnections: 5, // Maximum number of connections in pool
+        maxMessages: 100, // Maximum messages per connection
+        // Rate limiting
+        rateDelta: 1000, // Time window for rate limiting (1 second)
+        rateLimit: 5, // Maximum messages per rateDelta
       });
 
       this.isConfigured = true;
       logger.info('✅ Email service initialized');
+      
+      // Test connection asynchronously (non-blocking)
+      // Don't await - let it test in background
+      this.testConnection().catch(error => {
+        logger.warn('⚠️  Email service connection test failed (non-blocking):', error);
+        // Don't fail initialization - email will retry on send
+      });
     } catch (error) {
       logger.error('❌ Failed to initialize email service:', error);
     }
@@ -64,42 +82,84 @@ class EmailService {
   }
 
   /**
-   * Send email
+   * Send email with retry logic and timeout handling
    */
-  async send(options: EmailOptions): Promise<void> {
+  async send(options: EmailOptions, retries: number = 2): Promise<void> {
     if (!this.isReady()) {
       logger.warn('⚠️  Email service not configured. Email not sent.');
       logger.warn('   Email content:', options);
       return;
     }
 
-    try {
-      const recipients = Array.isArray(options.to) ? options.to.join(', ') : options.to;
+    const recipients = Array.isArray(options.to) ? options.to.join(', ') : options.to;
 
-      const mailOptions = {
-        from: options.from || config.SMTP_USER || 'noreply@soulfriend.vn',
-        to: recipients,
-        subject: options.subject,
-        text: options.text,
-        html: options.html || options.text?.replace(/\n/g, '<br>'),
-      };
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const mailOptions = {
+          from: options.from || config.SMTP_USER || 'noreply@soulfriend.vn',
+          to: recipients,
+          subject: options.subject,
+          text: options.text,
+          html: options.html || options.text?.replace(/\n/g, '<br>'),
+        };
 
-      const info = await this.transporter!.sendMail(mailOptions);
+        // Add timeout to sendMail operation
+        const sendPromise = this.transporter!.sendMail(mailOptions);
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Email send timeout')), 15000); // 15 second timeout
+        });
 
-      logger.info(`📧 Email sent successfully to ${recipients}`, {
-        messageId: info.messageId,
-        subject: options.subject,
-      });
+        const info = await Promise.race([sendPromise, timeoutPromise]);
 
-      console.log('📧 Email sent:', {
-        to: recipients,
-        subject: options.subject,
-        messageId: info.messageId,
-      });
-    } catch (error) {
-      logger.error('❌ Failed to send email:', error);
-      console.error('Email error:', error);
-      throw error;
+        logger.info(`📧 Email sent successfully to ${recipients}`, {
+          messageId: info.messageId,
+          subject: options.subject,
+          attempt: attempt + 1,
+        });
+
+        console.log('📧 Email sent:', {
+          to: recipients,
+          subject: options.subject,
+          messageId: info.messageId,
+        });
+
+        return; // Success - exit retry loop
+      } catch (error: any) {
+        const isLastAttempt = attempt === retries;
+        
+        if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
+          logger.warn(`⚠️  Email send timeout (attempt ${attempt + 1}/${retries + 1})`);
+          
+          if (isLastAttempt) {
+            logger.error('❌ Failed to send email after retries (timeout):', {
+              to: recipients,
+              subject: options.subject,
+              error: error.message,
+            });
+            // Don't throw - email failures shouldn't break the app
+            // Log for monitoring but continue execution
+            return;
+          }
+          
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        }
+
+        // Other errors
+        if (isLastAttempt) {
+          logger.error('❌ Failed to send email after retries:', {
+            to: recipients,
+            subject: options.subject,
+            error: error.message || error,
+          });
+          // Don't throw - email failures shouldn't break the app
+          return;
+        }
+
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
     }
   }
 
@@ -206,7 +266,7 @@ Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
   }
 
   /**
-   * Test email connection
+   * Test email connection with timeout
    */
   async testConnection(): Promise<boolean> {
     if (!this.isReady()) {
@@ -214,11 +274,25 @@ Dashboard: https://soulfriend-admin.vercel.app/alerts/${alert.id}
     }
 
     try {
-      await this.transporter!.verify();
+      // Use Promise.race to add timeout to verify()
+      const verifyPromise = this.transporter!.verify();
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Connection test timeout')), 5000); // 5 second timeout
+      });
+
+      await Promise.race([verifyPromise, timeoutPromise]);
       logger.info('✅ Email service connection verified');
+      console.log('✅ Email service connection verified');
       return true;
-    } catch (error) {
-      logger.error('❌ Email service connection failed:', error);
+    } catch (error: any) {
+      // Don't log as error - connection test failures are expected in some environments
+      if (error.message?.includes('timeout')) {
+        logger.warn('⚠️  Email service connection test timeout (will retry on send)');
+      } else {
+        logger.warn('⚠️  Email service connection test failed (will retry on send):', error.code || error.message);
+      }
+      // Don't throw - allow email service to work even if test fails
+      // Connection will be established on first actual send
       return false;
     }
   }

@@ -29,6 +29,10 @@ export interface VietnameseTest {
     sampleSize: number;
     reliability: number | null;
     validity: number | null;
+    validationStatus?: string;
+    validationNote?: string;
+    lastUpdated?: string;
+    plannedValidation?: string;
   };
 }
 

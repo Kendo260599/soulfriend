@@ -289,16 +289,16 @@ export class EnhancedChatbotService {
       console.error(`🔍 About to check crisisLevel === 'critical': crisisLevel="${crisisLevel}", type=${typeof crisisLevel}, detectedCrisis?.level="${detectedCrisis?.level}"`);
       if (crisisLevel === 'critical' && detectedCrisis) {
         console.error(`✅ ENTERING CRISIS BLOCK - detectedCrisis is ${detectedCrisis ? 'not null' : 'NULL'}`);
-        response = detectedCrisis.immediateResponse;
-        suggestions = detectedCrisis.followUpActions;
-        followUpActions = detectedCrisis.escalationProtocol;
-        disclaimer = generateDisclaimer('crisis', true);
-
-        // Lấy thông tin referral khẩn cấp
-        referralInfo = getRelevantReferral('Toàn quốc', ['crisis_intervention'], 'critical');
-
+        
+        // URGENT FIX: Use early return to prevent crisis level from being overridden
+        const crisisResponse = detectedCrisis.immediateResponse;
+        const crisisSuggestions = detectedCrisis.followUpActions;
+        const crisisActions = detectedCrisis.escalationProtocol;
+        const crisisDisclaimer = generateDisclaimer('crisis', true);
+        const crisisReferrals = getRelevantReferral('Toàn quốc', ['crisis_intervention'], 'critical');
+        
         // Ghi log khủng hoảng
-        this.logCrisisEvent(sessionId, crisisLevel, message, response);
+        this.logCrisisEvent(sessionId, crisisLevel, message, crisisResponse);
 
         // 🚨 HITL: Kích hoạt can thiệp của con người
         try {
@@ -338,13 +338,44 @@ export class EnhancedChatbotService {
             `🚨 HITL Alert created: ${criticalAlert.id} - 5-minute escalation timer started`
           );
 
-          // Thêm thông tin về HITL vào response
-          response +=
-            '\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.';
         } catch (error) {
           logger.error('Error creating HITL alert:', error);
           console.error('❌ HITL Error:', error);
         }
+        
+        // URGENT FIX: Return immediately to prevent override
+        const hitlMessage = crisisResponse + '\n\n⚠️ Hệ thống đã tự động thông báo cho đội phản ứng khủng hoảng của chúng tôi. Một chuyên gia sẽ liên hệ với bạn trong thời gian sớm nhất.';
+        
+        // Save messages
+        await this.saveMessage(sessionId, userId, message, 'user');
+        await this.saveMessage(sessionId, userId, hitlMessage, 'bot', {
+          intent: 'crisis',
+          userSegment: 'crisis',
+          emotionalState: 'crisis',
+          crisisLevel: 'critical',
+          qualityScore: 1.0,
+        });
+        
+        // Return crisis response IMMEDIATELY - don't continue processing
+        logger.warn(`🚨 CRISIS RESPONSE - Returning early to preserve crisis level`);
+        return {
+          message: hitlMessage,
+          response: hitlMessage,
+          intent: 'crisis',
+          confidence: 1.0,
+          riskLevel: 'CRITICAL',
+          crisisLevel: 'critical',
+          userSegment: 'crisis',
+          emotionalState: 'crisis',
+          suggestions: crisisSuggestions,
+          qualityScore: 1.0,
+          referralInfo: crisisReferrals,
+          disclaimer: crisisDisclaimer,
+          followUpActions: crisisActions,
+          emergencyContacts: crisisReferrals,
+          nextActions: crisisActions,
+          aiGenerated: false,
+        };
       } else if (userSegment) {
         // Sử dụng response template cho segment
         const template = getResponseTemplate(userSegment, message, nuancedEmotion.emotion);

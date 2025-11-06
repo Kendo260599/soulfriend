@@ -14,6 +14,7 @@ import {
   detectCrisis,
   generateDisclaimer,
   getRelevantReferral,
+  crisisScenarios,
 } from '../data/crisisManagementData';
 import { evaluateInteractionQuality } from '../data/feedbackImprovementData';
 import {
@@ -217,6 +218,34 @@ export class EnhancedChatbotService {
       const crisis = detectCrisis(message);
       let crisisLevel = crisis ? crisis.level : 'low';
 
+      // 🔍 DETAILED DEBUG LOGGING
+      logger.warn('🔍 CRISIS DETECTION DETAILED DEBUG', {
+        messageOriginal: message,
+        messageLength: message.length,
+        messageTrimmed: message.trim(),
+        messageFirstChars: message.substring(0, 50),
+        messageBytes: Buffer.from(message).toString('hex').substring(0, 100),
+        crisisResult: crisis,
+        crisisIsNull: crisis === null,
+        crisisLevel: crisisLevel,
+        crisisId: crisis ? crisis.id : 'NULL',
+        crisisTriggers: crisis ? crisis.triggers.slice(0, 3) : [],
+        crisisScenariosAvailable: crisisScenarios ? crisisScenarios.length : 0,
+      });
+
+      if (crisis) {
+        logger.warn('✅ CRISIS DETECTED IN MESSAGE FLOW!', {
+          id: crisis.id,
+          level: crisis.level,
+          triggers: crisis.triggers.slice(0, 5)
+        });
+      } else {
+        logger.error('❌ NO CRISIS DETECTED - This is the bug!', {
+          message,
+          messageLength: message.length
+        });
+      }
+
       // UPGRADE: Enhance crisisLevel with moderation results
       // Moderation has higher sensitivity and can catch patterns missed by detectCrisis
       if (moderationResult.riskLevel === 'critical') {
@@ -357,7 +386,13 @@ export class EnhancedChatbotService {
         });
         
         // Return crisis response IMMEDIATELY - don't continue processing
-        logger.warn(`🚨 CRISIS RESPONSE - Returning early to preserve crisis level`);
+        logger.warn(`🚨 CRISIS RESPONSE - Returning early to preserve crisis level`, {
+          crisisId: detectedCrisis.id,
+          crisisLevel: 'critical',
+          riskLevel: 'CRITICAL',
+          earlyReturn: true
+        });
+        
         return {
           message: hitlMessage,
           response: hitlMessage,

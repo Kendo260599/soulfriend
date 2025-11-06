@@ -1,12 +1,13 @@
 /**
  * SoulFriend V4.0 - Server chính
  * Production-Grade Server with Security, Monitoring & Performance
- * Version: 1.0.1 - Crisis Detection & HITL System Enhanced
+ * Version: 1.0.2 - Real-Time Expert Intervention with Socket.io
  */
 
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import { createServer } from 'http';
 
 // Configuration
 import databaseConnection from './config/database';
@@ -37,9 +38,15 @@ import './models/TrainingDataPoint';
 // Services
 import emailService from './services/emailService';
 
+// Socket.io
+import { initializeSocketServer } from './socket/socketServer';
+
 // Initialize Express
 const app = express();
 const PORT = config.PORT;
+
+// Create HTTP Server for Socket.io
+const httpServer = createServer(app);
 
 // ====================
 // PREFLIGHT HANDLER - MUST BE FIRST
@@ -362,12 +369,22 @@ const startServer = async () => {
     console.log(`📊 Config PORT: ${PORT}`);
     console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
 
+    // Initialize Socket.io BEFORE starting server
+    console.log('🔌 Initializing Socket.io for real-time communication...');
+    const io = initializeSocketServer(httpServer);
+    
+    // Make io available to the app
+    app.set('io', io);
+    (global as any).io = io;
+    
+    console.log('✅ Socket.io initialized successfully');
+
     // Start HTTP server FIRST - before database connection
     // This ensures Railway health check can reach server immediately
     const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
     console.log(`📊 Starting server on port: ${actualPort}`);
 
-    const server = app.listen(actualPort, '0.0.0.0', () => {
+    const server = httpServer.listen(actualPort, '0.0.0.0', () => {
       console.log('╔════════════════════════════════════════════╗');
       console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
       console.log('╠════════════════════════════════════════════╣');
@@ -375,6 +392,7 @@ const startServer = async () => {
       console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
       console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
       console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
+      console.log(`║   Socket.io: ENABLED (real-time chat)    ║`);
       console.log('╚════════════════════════════════════════════╝');
 
       // Connect to database AFTER server starts (non-blocking)
@@ -461,7 +479,7 @@ const startServer = async () => {
       const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
       console.log(`📊 Starting fallback server on port: ${actualPort}`);
 
-      const server = app.listen(actualPort, '0.0.0.0', () => {
+      const server = httpServer.listen(actualPort, '0.0.0.0', () => {
         console.log('╔════════════════════════════════════════════╗');
         console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
         console.log('║   ⚠️  FALLBACK MODE (Error Recovery)     ║');

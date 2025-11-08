@@ -1,8 +1,6 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
-buildCommand = "docker build -t soulfriend ."
-watchPatterns = ["backend/**", "Dockerfile"]
 
 [deploy]
 startCommand = "node dist/index.js"

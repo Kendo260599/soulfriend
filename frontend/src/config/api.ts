@@ -6,7 +6,7 @@ export const API_CONFIG = {
   // ⚠️ IMPORTANT: Set REACT_APP_API_URL in Vercel Environment Variables
   // Railway Backend URL: https://your-project-name.up.railway.app
   // Remove trailing slash to prevent double slashes
-  BASE_URL: (process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, ''),
+  BASE_URL: (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, ''),
   ENDPOINTS: {
     HEALTH: '/api/health',
     CONSENT: '/api/consent',
@@ -21,3 +21,4 @@ export const API_CONFIG = {
 export const getApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
+

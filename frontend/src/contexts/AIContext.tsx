@@ -86,7 +86,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       // ALWAYS try backend AI service first (removed isOnline check)
       try {
         // Ensure no trailing slash in API URL
-        const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
+        const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
         console.log('🌐 Sending to backend:', `${apiUrl}/api/v2/chatbot/message`);
         
         const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {

@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import AnimatedButton from './AnimatedButton';
 import { useAI } from '../contexts/AIContext';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
 
 const fadeIn = keyframes`
   from {

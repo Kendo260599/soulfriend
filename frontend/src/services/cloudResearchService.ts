@@ -6,7 +6,7 @@
 import axios from 'axios';
 
 // Ensure no trailing slash to prevent double slashes
-const API_BASE_URL = ((process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '') + '/api');
+const API_BASE_URL = ((process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '') + '/api');
 
 export interface CloudResearchData {
   participantId?: string;
@@ -359,4 +359,5 @@ class CloudResearchService {
 export const cloudResearchService = new CloudResearchService();
 
 export default cloudResearchService;
+
 

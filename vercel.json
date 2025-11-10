@@ -1,41 +1,41 @@
 {
-  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
-  "outputDirectory": "frontend/build",
-  "installCommand": "npm --version",
-  "env": {
-    "NODE_VERSION": "20",
-    "DISABLE_ESLINT_PLUGIN": "true",
-    "GENERATE_SOURCEMAP": "false",
-    "SKIP_PREFLIGHT_CHECK": "true"
-  },
-  "framework": null,
-  "rewrites": [
-    {
-      "source": "/((?!static|favicon\\.ico|logo.*\\.png|manifest\\.json|robots\\.txt|sw\\.js).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.app; style-src 'self' 'unsafe-inline' https://*.vercel.app; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https://soulfriend-production.up.railway.app https://soulfriend-kendo260599s-projects.vercel.app https://*.vercel.app https://api.railway.app https://api.cerebras.ai https://vercel.live wss://*.vercel.app; frame-src 'self' https://vercel.live https://*.vercel.app; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    }
-  ]
+    "buildCommand":  "cd frontend \u0026\u0026 npm install --legacy-peer-deps \u0026\u0026 npm run build",
+    "outputDirectory":  "frontend/build",
+    "installCommand":  "npm --version",
+    "env":  {
+                "NODE_VERSION":  "20",
+                "DISABLE_ESLINT_PLUGIN":  "true",
+                "GENERATE_SOURCEMAP":  "false",
+                "SKIP_PREFLIGHT_CHECK":  "true"
+            },
+    "framework":  null,
+    "rewrites":  [
+                     {
+                         "source":  "/((?!static|favicon\\.ico|logo.*\\.png|manifest\\.json|robots\\.txt|sw\\.js).*)",
+                         "destination":  "/index.html"
+                     }
+                 ],
+    "headers":  [
+                    {
+                        "source":  "/(.*)",
+                        "headers":  [
+                                        {
+                                            "key":  "Content-Security-Policy",
+                                            "value":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-eval\u0027 \u0027unsafe-inline\u0027 https://vercel.live https://*.vercel.app; style-src \u0027self\u0027 \u0027unsafe-inline\u0027 https://*.vercel.app; img-src \u0027self\u0027 data: https: blob:; font-src \u0027self\u0027 data: https:; connect-src \u0027self\u0027 https://soulfriend-api.onrender.com wss://soulfriend-api.onrender.com  https://soulfriend-kendo260599s-projects.vercel.app https://*.vercel.app   https://vercel.live wss://*.vercel.app; frame-src \u0027self\u0027 https://vercel.live https://*.vercel.app; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027self\u0027; worker-src \u0027self\u0027 blob:;"
+                                        },
+                                        {
+                                            "key":  "X-Content-Type-Options",
+                                            "value":  "nosniff"
+                                        },
+                                        {
+                                            "key":  "X-Frame-Options",
+                                            "value":  "DENY"
+                                        },
+                                        {
+                                            "key":  "Referrer-Policy",
+                                            "value":  "strict-origin-when-cross-origin"
+                                        }
+                                    ]
+                    }
+                ]
 }

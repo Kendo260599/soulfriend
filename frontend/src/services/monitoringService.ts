@@ -332,7 +332,7 @@ class MonitoringService {
     // Check if API endpoints are responding
     try {
       // Ensure no trailing slash to prevent double slashes
-      const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
+      const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
       // Use dedicated health endpoint instead of chatbot endpoint to avoid spam in logs
       const response = await fetch(`${apiUrl}/api/health`, {
         method: 'GET',
@@ -647,6 +647,7 @@ class MonitoringService {
 
 export const monitoringService = new MonitoringService();
 export default monitoringService;
+
 
 
 

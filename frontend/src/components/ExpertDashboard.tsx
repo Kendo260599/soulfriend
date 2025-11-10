@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import '../styles/ExpertDashboard.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
+const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
 
 interface ExpertInfo {
   id: string;
@@ -417,4 +417,8 @@ const ExpertDashboard: React.FC = () => {
 };
 
 export default ExpertDashboard;
+
+
+
+
 

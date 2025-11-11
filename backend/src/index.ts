@@ -12,6 +12,8 @@ import { createServer } from 'http';
 // Configuration
 import databaseConnection from './config/database';
 import config from './config/environment';
+import { qstashService } from './config/qstash';
+import { redisConnection } from './config/redis';
 
 // Middleware
 import { auditLogger } from './middleware/auditLogger';
@@ -27,6 +29,8 @@ import criticalAlertsRoutes from './routes/criticalAlerts';
 import expertAuthRoutes from './routes/expertAuth';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
 import hitlInterventionRoutes from './routes/hitlIntervention';
+import qstashTestRoutes from './routes/qstashTest';
+import qstashWebhookRoutes from './routes/qstashWebhooks';
 import researchRoutes from './routes/research';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
@@ -218,6 +222,15 @@ app.use('/api/alerts', criticalAlertsRoutes);
 // ✨ NEW: Expert Authentication & Dashboard
 app.use('/api/v2/expert', expertAuthRoutes);
 
+// ✨ NEW: QStash Webhooks for Scheduled Tasks
+app.use('/api/webhooks/qstash', qstashWebhookRoutes);
+
+// 🧪 TEST: QStash Testing Endpoints (Development)
+if (config.NODE_ENV === 'development' || process.env.ENABLE_TEST_ROUTES === 'true') {
+  app.use('/api/test/qstash', qstashTestRoutes);
+  console.log('🧪 QStash test routes enabled at /api/test/qstash');
+}
+
 // API v1 routes (legacy - deprecated)
 app.use('/api/consent', consentRoutes);
 app.use('/api/tests', testRoutes);
@@ -261,7 +274,14 @@ app.get('/api/health/detailed', async (req: Request, res: Response) => {
           state: dbStatus,
           message: getDbStatusMessage(dbStatus),
         },
-        cache: config.REDIS_URL ? 'configured' : 'not configured',
+        cache: {
+          status: redisConnection.isHealthy() ? 'connected' : 'disconnected',
+          configured: config.REDIS_URL ? 'yes' : 'no',
+        },
+        qstash: {
+          status: qstashService.isReady() ? 'enabled' : 'disabled',
+          configured: process.env.QSTASH_TOKEN ? 'yes' : 'no',
+        },
       },
       system: {
         memory: {
@@ -407,8 +427,14 @@ const startServer = async () => {
         console.warn('⚠️  Database connection failed, continuing without database:', err.message);
       });
 
-  // Test email service connection
-  if (emailService.isReady()) {
+      // Connect to Redis AFTER server starts (non-blocking)
+      console.log('🔴 Connecting to Redis (non-blocking)...');
+      redisConnection.connect().catch(err => {
+        console.warn('⚠️  Redis connection failed, continuing without cache:', err instanceof Error ? err.message : err);
+      });
+
+      // Test email service connection
+      if (emailService.isReady()) {
     emailService.testConnection().then((success: boolean) => {
       if (success) {
         console.log('✅ Email service ready for HITL alerts');

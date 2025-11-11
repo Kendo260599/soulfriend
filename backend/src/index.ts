@@ -8,12 +8,14 @@ import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { createServer } from 'http';
+import * as Sentry from '@sentry/node';
 
 // Configuration
 import databaseConnection from './config/database';
 import config from './config/environment';
 import { qstashService } from './config/qstash';
 import { redisConnection } from './config/redis';
+import { initSentry } from './config/sentry';
 
 // Middleware
 import { auditLogger } from './middleware/auditLogger';
@@ -32,6 +34,7 @@ import hitlInterventionRoutes from './routes/hitlIntervention';
 import qstashTestRoutes from './routes/qstashTest';
 import qstashWebhookRoutes from './routes/qstashWebhooks';
 import researchRoutes from './routes/research';
+import sentryTestRoutes from './routes/sentryTest';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
 
@@ -54,6 +57,11 @@ const PORT = config.PORT;
 
 // Create HTTP Server for Socket.io
 const httpServer = createServer(app);
+
+// ====================
+// SENTRY INITIALIZATION
+// ====================
+initSentry();
 
 // ====================
 // PREFLIGHT HANDLER - MUST BE FIRST
@@ -229,6 +237,9 @@ app.use('/api/webhooks/qstash', qstashWebhookRoutes);
 if (config.NODE_ENV === 'development' || process.env.ENABLE_TEST_ROUTES === 'true') {
   app.use('/api/test/qstash', qstashTestRoutes);
   console.log('🧪 QStash test routes enabled at /api/test/qstash');
+  
+  app.use('/api/test/sentry', sentryTestRoutes);
+  console.log('🧪 Sentry test routes enabled at /api/test/sentry');
 }
 
 // API v1 routes (legacy - deprecated)
@@ -380,6 +391,9 @@ app.use((req: Request, res: Response) => {
     suggestion: 'Check the API documentation at /api',
   });
 });
+
+// Sentry error handler - automatically adds error middleware
+Sentry.setupExpressErrorHandler(app);
 
 // Global error handler
 app.use(errorHandler);

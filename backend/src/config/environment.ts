@@ -61,6 +61,7 @@ interface EnvironmentConfig {
 
   // Monitoring
   SENTRY_DSN?: string;
+  SENTRY_ENABLED?: boolean;
   HEALTH_CHECK_INTERVAL: number;
 
   // Backup
@@ -175,6 +176,7 @@ function parseEnvironment(): EnvironmentConfig {
 
     // Monitoring
     SENTRY_DSN: getEnvOptional('SENTRY_DSN'),
+    SENTRY_ENABLED: process.env.SENTRY_ENABLED === 'true',
     HEALTH_CHECK_INTERVAL: getEnvNumber('HEALTH_CHECK_INTERVAL', 30000), // 30 seconds
 
     // Backup

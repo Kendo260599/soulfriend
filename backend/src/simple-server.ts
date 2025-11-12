@@ -4,6 +4,13 @@
  * Using OpenAI AI (GPT-4o-mini)
  */
 
+// ============================================================================
+// IMPORTANT: Initialize Sentry FIRST (before any other imports)
+// ============================================================================
+import { initSentry } from './config/sentry';
+import { setupExpressErrorHandler, expressErrorHandler } from '@sentry/node';
+initSentry();
+
 import axios from 'axios';
 import cors from 'cors';
 import express, { Request, Response } from 'express';
@@ -12,6 +19,11 @@ import config from './config/environment';
 
 const app = express();
 const PORT = config.PORT;
+
+// ============================================================================
+// SENTRY MIDDLEWARE - Must be added BEFORE other middleware
+// ============================================================================
+setupExpressErrorHandler(app);
 
 // Simple middleware
 app.use(cors());
@@ -165,22 +177,71 @@ app.get('/api/test', (req: Request, res: Response) => {
   });
 });
 
+// Sentry test routes (for testing error monitoring)
+app.get('/api/test/sentry/error', (req: Request, res: Response) => {
+  const testError = new Error('Test error from Sentry - Server is working!');
+  throw testError;
+});
+
+app.get('/api/test/sentry/capture', async (req: Request, res: Response) => {
+  const { captureException, logger } = await import('./config/sentry');
+  
+  try {
+    throw new Error('Manually captured test error');
+  } catch (error) {
+    if (error instanceof Error) {
+      captureException(error, {
+        action: 'test_sentry',
+        endpoint: '/api/test/sentry/capture'
+      });
+    }
+  }
+  
+  logger.info('Sentry test completed', { test: true });
+  
+  res.json({
+    success: true,
+    message: 'Error captured! Check your Sentry dashboard at: https://sentry.io'
+  });
+});
+
+// ============================================================================
+// SENTRY ERROR HANDLER - Must be AFTER routes, BEFORE custom error handlers
+// ============================================================================
+app.use(expressErrorHandler());
+
+// Custom error handler (after Sentry)
+app.use((err: Error, req: Request, res: Response, next: any) => {
+  console.error('❌ Error:', err.message);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: err.message
+  });
+});
+
 // Start server
 async function startServer() {
   const dbConnected = await connectToDatabase();
 
   app.listen(PORT, () => {
+    const sentryEnabled = config.SENTRY_DSN && config.NODE_ENV === 'production';
+    
     console.log('╔════════════════════════════════════════════╗');
     console.log('║   🚀 SIMPLE SERVER STARTED!               ║');
     console.log('║   ✅ OpenAI AI Ready (GPT-4o-mini)      ║');
     console.log(
       `║   ${dbConnected ? '✅' : '❌'} Database ${dbConnected ? 'Connected' : 'Disconnected'}                    ║`
     );
+    console.log(
+      `║   ${sentryEnabled ? '✅' : '🔧'} Sentry ${sentryEnabled ? 'Enabled' : 'Dev Mode'}                   ║`
+    );
     console.log('╠════════════════════════════════════════════╣');
     console.log(`║   Port: ${PORT}                               ║`);
     console.log(`║   Health: http://localhost:${PORT}/api/health ║`);
     console.log(`║   Chat: http://localhost:${PORT}/api/chatbot/message ║`);
     console.log(`║   Test: http://localhost:${PORT}/api/test     ║`);
+    console.log(`║   Sentry Test: http://localhost:${PORT}/api/test/sentry/error ║`);
     console.log('╚════════════════════════════════════════════╝');
   });
 }

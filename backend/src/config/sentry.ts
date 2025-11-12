@@ -195,6 +195,44 @@ export function logToSentry(
 }
 
 /**
+ * Sentry Logger - Structured logging interface
+ * Mimics Sentry.logger API for easier migration
+ */
+export const logger = {
+  /**
+   * Log debug message
+   * @example logger.debug('Variable value:', { value: 123 });
+   */
+  debug(message: string, context?: Record<string, any>): void {
+    logToSentry(message, 'debug', context);
+  },
+
+  /**
+   * Log info message
+   * @example logger.info('User triggered test log', { action: 'test_log' });
+   */
+  info(message: string, context?: Record<string, any>): void {
+    logToSentry(message, 'info', context);
+  },
+
+  /**
+   * Log warning message
+   * @example logger.warn('Rate limit approaching', { current: 90, limit: 100 });
+   */
+  warn(message: string, context?: Record<string, any>): void {
+    logToSentry(message, 'warning', context);
+  },
+
+  /**
+   * Log error message
+   * @example logger.error('Failed to process', { errorCode: 'TIMEOUT' });
+   */
+  error(message: string, context?: Record<string, any>): void {
+    logToSentry(message, 'error', context);
+  },
+};
+
+/**
  * Set user context for error tracking
  * Attaches user info to all subsequent errors
  * @param userId - Unique user identifier

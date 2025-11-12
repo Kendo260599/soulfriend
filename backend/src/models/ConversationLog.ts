@@ -230,12 +230,7 @@ ConversationLogSchema.statics.getQualityMetrics = async function (periodDays: nu
   ]);
 };
 
-// Indexes for performance optimization
-ConversationLogSchema.index({ sessionId: 1, timestamp: -1 });
-ConversationLogSchema.index({ userId: 1, timestamp: -1 });
-ConversationLogSchema.index({ conversationId: 1 });
-ConversationLogSchema.index({ timestamp: -1 });
-ConversationLogSchema.index({ needsReview: 1, approvedForTraining: 1 });
+// Indexes already defined above (removed duplicate declarations)
 
 export const ConversationLog = mongoose.model<IConversationLog, IConversationLogModel>(
   'ConversationLog',

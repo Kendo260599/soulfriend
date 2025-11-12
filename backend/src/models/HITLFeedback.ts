@@ -263,14 +263,7 @@ export interface IHITLFeedbackModel extends mongoose.Model<IHITLFeedback> {
   getKeywordStatistics(): Promise<any[]>;
 }
 
-// =============================================================================
-// INDEXES
-// =============================================================================
-
-HITLFeedbackSchema.index({ alertId: 1, status: 1 });
-HITLFeedbackSchema.index({ expertId: 1, createdAt: -1 });
-HITLFeedbackSchema.index({ wasActualCrisis: 1, timestamp: -1 });
-HITLFeedbackSchema.index({ status: 1, reviewedAt: -1 });
+// Indexes already defined above (removed duplicate declarations)
 
 // =============================================================================
 // EXPORT

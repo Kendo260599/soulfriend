@@ -4,7 +4,7 @@
 
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin';
 import TestResult from '../models/TestResult';

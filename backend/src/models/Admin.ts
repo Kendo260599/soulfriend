@@ -3,7 +3,7 @@
  */
 
 import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 // Interface định nghĩa cấu trúc dữ liệu Admin
 export interface IAdmin extends Document {

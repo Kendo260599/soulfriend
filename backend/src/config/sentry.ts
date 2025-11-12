@@ -62,6 +62,11 @@ export function initSentry(): void {
       integrations: [
         // Node.js profiling for performance insights
         nodeProfilingIntegration(),
+        
+        // Console logging integration - captures console.log, console.error, etc.
+        Sentry.consoleIntegration({
+          levels: ['log', 'warn', 'error'], // Capture these console levels
+        }),
       ],
       
       // Enable debug mode in development
@@ -154,6 +159,39 @@ export function captureException(error: Error, context?: Record<string, any>): s
  */
 export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): string {
   return Sentry.captureMessage(message, level);
+}
+
+/**
+ * Log a message to Sentry (will appear in Logs view)
+ * Unlike captureMessage, this is for general logging not just errors
+ * @param message - Log message
+ * @param level - Log level (debug, info, warning, error)
+ * @param context - Additional context data
+ * @example
+ * logToSentry('User logged in successfully', 'info', { userId: '123' });
+ */
+export function logToSentry(
+  message: string,
+  level: 'debug' | 'info' | 'warning' | 'error' = 'info',
+  context?: Record<string, any>
+): void {
+  // Use console methods which are captured by consoleIntegration
+  const logData = context ? `${message} ${JSON.stringify(context)}` : message;
+  
+  switch (level) {
+    case 'debug':
+      console.debug(`[Sentry] ${logData}`);
+      break;
+    case 'info':
+      console.log(`[Sentry] ${logData}`);
+      break;
+    case 'warning':
+      console.warn(`[Sentry] ${logData}`);
+      break;
+    case 'error':
+      console.error(`[Sentry] ${logData}`);
+      break;
+  }
 }
 
 /**

@@ -39,7 +39,6 @@ const ExpertSchema: Schema = new Schema(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Invalid email format'],
-      index: true,
     },
     password: {
       type: String,

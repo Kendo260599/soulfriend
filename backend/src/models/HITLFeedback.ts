@@ -65,13 +65,11 @@ const HITLFeedbackSchema = new Schema<IHITLFeedback>(
     alertId: {
       type: String,
       required: true,
-      index: true,
       unique: true,
     },
     userId: {
       type: String,
       required: true,
-      index: true,
     },
     sessionId: {
       type: String,
@@ -81,14 +79,12 @@ const HITLFeedbackSchema = new Schema<IHITLFeedback>(
       type: Date,
       required: true,
       default: Date.now,
-      index: true,
     },
 
     // Ground truth
     wasActualCrisis: {
       type: Boolean,
       required: true,
-      index: true,
     },
     crisisConfidenceScore: {
       type: Number,
@@ -100,7 +96,6 @@ const HITLFeedbackSchema = new Schema<IHITLFeedback>(
       type: String,
       required: true,
       enum: ['NONE', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL', 'EXTREME'],
-      index: true,
     },
     actualRiskType: {
       type: String,
@@ -151,7 +146,6 @@ const HITLFeedbackSchema = new Schema<IHITLFeedback>(
     reviewedBy: {
       type: String,
       required: true,
-      index: true,
     },
     reviewedAt: {
       type: Date,
@@ -169,10 +163,11 @@ const HITLFeedbackSchema = new Schema<IHITLFeedback>(
 // INDEXES
 // =============================================================================
 
-// Compound indexes for common queries
-HITLFeedbackSchema.index({ timestamp: -1, wasActualCrisis: 1 });
-HITLFeedbackSchema.index({ reviewedBy: 1, timestamp: -1 });
-HITLFeedbackSchema.index({ actualRiskLevel: 1, wasActualCrisis: 1 });
+// Composite indexes for common queries (alertId unique index auto-created)
+HITLFeedbackSchema.index({ alertId: 1, status: 1 });
+HITLFeedbackSchema.index({ expertId: 1, createdAt: -1 });
+HITLFeedbackSchema.index({ wasActualCrisis: 1, timestamp: -1 });
+HITLFeedbackSchema.index({ status: 1, reviewedAt: -1 });
 
 // =============================================================================
 // METHODS

@@ -74,23 +74,19 @@ const ConversationLogSchema = new Schema<IConversationLog>(
     conversationId: {
       type: String,
       required: true,
-      index: true,
     },
     userId: {
       type: String,
       required: true,
-      index: true,
     },
     sessionId: {
       type: String,
       required: true,
-      index: true,
     },
     timestamp: {
       type: Date,
       required: true,
       default: Date.now,
-      index: true,
     },
 
     // User input
@@ -147,14 +143,12 @@ const ConversationLogSchema = new Schema<IConversationLog>(
     needsReview: {
       type: Boolean,
       default: false,
-      index: true,
     },
     reviewedBy: String,
     reviewedAt: Date,
     approvedForTraining: {
       type: Boolean,
       default: false,
-      index: true,
     },
 
     // Metadata
@@ -170,10 +164,12 @@ const ConversationLogSchema = new Schema<IConversationLog>(
   }
 );
 
-// Indexes for performance
-ConversationLogSchema.index({ timestamp: -1, userId: 1 });
+// Composite indexes for performance (removes duplicate single-field indexes)
+ConversationLogSchema.index({ sessionId: 1, timestamp: -1 });
+ConversationLogSchema.index({ userId: 1, timestamp: -1 });
+ConversationLogSchema.index({ conversationId: 1 });
+ConversationLogSchema.index({ timestamp: -1 });
 ConversationLogSchema.index({ needsReview: 1, approvedForTraining: 1 });
-ConversationLogSchema.index({ userRating: -1, wasHelpful: 1 });
 
 // Methods
 ConversationLogSchema.methods.markAsHelpful = function (rating?: number, feedback?: string) {

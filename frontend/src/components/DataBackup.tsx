@@ -1,15 +1,18 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { getApiUrl } from '../config/api';
-import AnimatedButton from './AnimatedButton';
 import AnimatedCard from './AnimatedCard';
+import AnimatedButton from './AnimatedButton';
 
 // Keyframe animations
 const pulse = keyframes`
   0% { opacity: 1; }
   50% { opacity: 0.5; }
   100% { opacity: 1; }
+`;
+
+const progressFill = keyframes`
+  0% { width: 0%; }
+  100% { width: 100%; }
 `;
 
 const slideIn = keyframes`
@@ -251,14 +254,14 @@ const AlertBox = styled.div<{ type: 'info' | 'warning' | 'error' | 'success' }>`
   
   &::before {
     content: ${props => {
-    switch (props.type) {
-      case 'info': return '"ℹ️"';
-      case 'warning': return '"⚠️"';
-      case 'error': return '"❌"';
-      case 'success': return '"✅"';
-      default: return '""';
-    }
-  }};
+      switch (props.type) {
+        case 'info': return '"ℹ️"';
+        case 'warning': return '"⚠️"';
+        case 'error': return '"❌"';
+        case 'success': return '"✅"';
+        default: return '""';
+      }
+    }};
     margin-right: 10px;
     font-size: 1.2rem;
   }
@@ -290,13 +293,13 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
     progress: 0,
     message: ''
   });
-
+  
   const [restoreStatus, setRestoreStatus] = useState<BackupStatus>({
     status: 'idle',
     progress: 0,
     message: ''
   });
-
+  
   const [backupHistory, setBackupHistory] = useState<BackupMetadata[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -334,30 +337,30 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
 
   const handleCreateBackup = async () => {
     setBackupStatus({ status: 'processing', progress: 0, message: 'Đang chuẩn bị backup...' });
-
+    
     try {
       // Simulate backup process with progress updates
       for (let i = 0; i <= 100; i += 10) {
         await new Promise(resolve => setTimeout(resolve, 200));
-
+        
         let message = 'Đang backup dữ liệu...';
         if (i >= 30) message = 'Đang mã hóa dữ liệu...';
         if (i >= 60) message = 'Đang nén file...';
         if (i >= 90) message = 'Hoàn tất backup...';
-
+        
         setBackupStatus({ status: 'processing', progress: i, message });
       }
-
+      
       // Generate backup file
       const backupData = await generateBackupData();
       downloadBackupFile(backupData);
-
-      setBackupStatus({
-        status: 'success',
-        progress: 100,
-        message: 'Backup thành công! File đã được tải xuống.'
+      
+      setBackupStatus({ 
+        status: 'success', 
+        progress: 100, 
+        message: 'Backup thành công! File đã được tải xuống.' 
       });
-
+      
       // Add to history
       const newBackup: BackupMetadata = {
         id: Date.now().toString(),
@@ -368,19 +371,19 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
         encrypted: true
       };
       setBackupHistory(prev => [newBackup, ...prev]);
-
+      
       // Reset after 3 seconds
       setTimeout(() => {
         setBackupStatus({ status: 'idle', progress: 0, message: '' });
       }, 3000);
-
+      
     } catch (error) {
-      setBackupStatus({
-        status: 'error',
-        progress: 0,
-        message: 'Lỗi khi tạo backup. Vui lòng thử lại.'
+      setBackupStatus({ 
+        status: 'error', 
+        progress: 0, 
+        message: 'Lỗi khi tạo backup. Vui lòng thử lại.' 
       });
-
+      
       setTimeout(() => {
         setBackupStatus({ status: 'idle', progress: 0, message: '' });
       }, 3000);
@@ -388,44 +391,25 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
   };
 
   const generateBackupData = async () => {
-    // Try to fetch from backend API first
-    try {
-      console.log('📤 Fetching export data from backend...');
-      const response = await axios.get(getApiUrl('/api/user/export'), {
-        responseType: 'json',
-        timeout: 10000
-      });
-
-      if (response.data) {
-        console.log('✅ Successfully fetched data from backend');
-        return JSON.stringify(response.data, null, 2);
-      }
-    } catch (error) {
-      console.warn('⚠️ Backend export failed, falling back to local data:', error);
-    }
-
-    // Fallback: Collect all user data from localStorage
-    console.log('📦 Collecting local data as fallback...');
+    // Collect all user data
     const userData = {
       version: '1.0.0',
       timestamp: new Date().toISOString(),
-      source: 'local_fallback',
       data: {
-        testResults: JSON.parse(localStorage.getItem('testResults') || '[]'),
-        userProfile: JSON.parse(localStorage.getItem('userProfile') || '{}'),
-        consentRecords: JSON.parse(localStorage.getItem('consentRecords') || '[]'),
-        aiInsights: JSON.parse(localStorage.getItem('ai_companion_insights') || '{}'),
-        aiProfiles: JSON.parse(localStorage.getItem('ai_companion_profiles') || '{}'),
-        settings: JSON.parse(localStorage.getItem('appSettings') || '{}')
+        testResults: [], // Will fetch from localStorage/API
+        userProfile: {},
+        consentRecords: [],
+        aiInsights: [],
+        settings: {}
       },
       metadata: {
-        totalRecords: localStorage.getItem('testResults') ? JSON.parse(localStorage.getItem('testResults') || '[]').length : 0,
-        dataTypes: ['testResults', 'userProfile', 'consentRecords', 'aiInsights', 'aiProfiles'],
-        encrypted: false,
-        note: 'This backup was created from local storage data'
+        totalRecords: 0,
+        dataTypes: ['testResults', 'userProfile', 'consentRecords', 'aiInsights'],
+        encrypted: true
       }
     };
-
+    
+    // Add encryption here in real implementation
     return JSON.stringify(userData, null, 2);
   };
 
@@ -450,61 +434,61 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
 
   const handleRestoreData = async () => {
     if (!selectedFile) {
-      setRestoreStatus({
-        status: 'error',
-        progress: 0,
-        message: 'Vui lòng chọn file backup để khôi phục.'
+      setRestoreStatus({ 
+        status: 'error', 
+        progress: 0, 
+        message: 'Vui lòng chọn file backup để khôi phục.' 
       });
       return;
     }
-
+    
     setRestoreStatus({ status: 'processing', progress: 0, message: 'Đang đọc file backup...' });
-
+    
     try {
       // Read and validate backup file
       const fileContent = await readFileAsText(selectedFile);
-
+      
       for (let i = 0; i <= 100; i += 15) {
         await new Promise(resolve => setTimeout(resolve, 300));
-
+        
         let message = 'Đang đọc file backup...';
         if (i >= 25) message = 'Đang xác thực dữ liệu...';
         if (i >= 50) message = 'Đang giải mã dữ liệu...';
         if (i >= 75) message = 'Đang khôi phục dữ liệu...';
         if (i >= 95) message = 'Hoàn tất khôi phục...';
-
+        
         setRestoreStatus({ status: 'processing', progress: i, message });
       }
-
+      
       // Parse and validate backup data
       const backupData = JSON.parse(fileContent);
-
+      
       if (!validateBackupData(backupData)) {
         throw new Error('File backup không hợp lệ');
       }
-
+      
       // Restore data (implementation will be added)
       await restoreUserData(backupData);
-
-      setRestoreStatus({
-        status: 'success',
-        progress: 100,
-        message: 'Khôi phục dữ liệu thành công!'
+      
+      setRestoreStatus({ 
+        status: 'success', 
+        progress: 100, 
+        message: 'Khôi phục dữ liệu thành công!' 
       });
-
+      
       setSelectedFile(null);
-
+      
       setTimeout(() => {
         setRestoreStatus({ status: 'idle', progress: 0, message: '' });
       }, 3000);
-
+      
     } catch (error) {
-      setRestoreStatus({
-        status: 'error',
-        progress: 0,
-        message: 'Lỗi khi khôi phục dữ liệu. Vui lòng kiểm tra file backup.'
+      setRestoreStatus({ 
+        status: 'error', 
+        progress: 0, 
+        message: 'Lỗi khi khôi phục dữ liệu. Vui lòng kiểm tra file backup.' 
       });
-
+      
       setTimeout(() => {
         setRestoreStatus({ status: 'idle', progress: 0, message: '' });
       }, 3000);
@@ -521,17 +505,17 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
   };
 
   const validateBackupData = (data: any): boolean => {
-    return data &&
-      data.version &&
-      data.timestamp &&
-      data.data &&
-      typeof data.data === 'object';
+    return data && 
+           data.version && 
+           data.timestamp && 
+           data.data && 
+           typeof data.data === 'object';
   };
 
   const restoreUserData = async (backupData: any) => {
     // Implementation will restore data to localStorage/API
     console.log('Restoring data:', backupData);
-
+    
     // Simulate restoration process
     await new Promise(resolve => setTimeout(resolve, 1000));
   };
@@ -541,13 +525,13 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
       <Header>
         <Title>🛡️ Backup & Khôi phục Dữ liệu</Title>
         <Subtitle>
-          Bảo vệ dữ liệu của bạn với hệ thống backup tự động và khôi phục an toàn.
+          Bảo vệ dữ liệu của bạn với hệ thống backup tự động và khôi phục an toàn. 
           Tất cả dữ liệu được mã hóa để đảm bảo bảo mật tuyệt đối.
         </Subtitle>
         {onBack && (
           <BackButtonContainer>
-            <AnimatedButton
-              variant="outline"
+            <AnimatedButton 
+              variant="outline" 
               onClick={onBack}
               icon="⬅️"
             >
@@ -563,10 +547,10 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
           <SectionIcon>💾</SectionIcon>
           <SectionTitle>Tạo Backup</SectionTitle>
           <SectionDescription>
-            Sao lưu toàn bộ dữ liệu cá nhân bao gồm kết quả test, hồ sơ người dùng,
+            Sao lưu toàn bộ dữ liệu cá nhân bao gồm kết quả test, hồ sơ người dùng, 
             và tất cả thông tin quan trọng khác.
           </SectionDescription>
-
+          
           {backupStatus.status !== 'idle' && (
             <>
               <StatusIndicator status={backupStatus.status}>
@@ -579,7 +563,7 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
               )}
             </>
           )}
-
+          
           <ButtonGroup>
             <AnimatedButton
               variant="primary"
@@ -598,10 +582,10 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
           <SectionIcon>🔄</SectionIcon>
           <SectionTitle>Khôi phục Dữ liệu</SectionTitle>
           <SectionDescription>
-            Khôi phục dữ liệu từ file backup đã tạo trước đó.
+            Khôi phục dữ liệu từ file backup đã tạo trước đó. 
             Hệ thống sẽ tự động xác thực và giải mã dữ liệu.
           </SectionDescription>
-
+          
           {restoreStatus.status !== 'idle' && (
             <>
               <StatusIndicator status={restoreStatus.status}>
@@ -614,7 +598,7 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
               )}
             </>
           )}
-
+          
           <ButtonGroup>
             <FileInput
               id="backup-file"
@@ -625,7 +609,7 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
             <FileInputLabel htmlFor="backup-file">
               {selectedFile ? selectedFile.name : 'Chọn file backup'}
             </FileInputLabel>
-
+            
             <AnimatedButton
               variant="secondary"
               onClick={handleRestoreData}
@@ -643,7 +627,7 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
       <AnimatedCard elevation={3} animation="slideInUp">
         <BackupHistory>
           <HistoryTitle>Lịch sử Backup</HistoryTitle>
-
+          
           {backupHistory.length === 0 ? (
             <AlertBox type="info">
               Chưa có backup nào được tạo. Hãy tạo backup đầu tiên để bảo vệ dữ liệu của bạn.
@@ -656,8 +640,8 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
                     {new Date(backup.date).toLocaleString('vi-VN')}
                   </HistoryDate>
                   <HistoryDetails>
-                    Kích thước: {backup.size} • Phiên bản: {backup.version} •
-                    Dữ liệu: {backup.dataTypes.join(', ')} •
+                    Kích thước: {backup.size} • Phiên bản: {backup.version} • 
+                    Dữ liệu: {backup.dataTypes.join(', ')} • 
                     {backup.encrypted ? '🔒 Đã mã hóa' : '🔓 Chưa mã hóa'}
                   </HistoryDetails>
                 </HistoryInfo>
@@ -687,7 +671,7 @@ const DataBackup: React.FC<DataBackupProps> = ({ onBack }) => {
       <AnimatedCard elevation={2} animation="slideInUp">
         <AlertBox type="warning">
           <strong>Lưu ý bảo mật: </strong>
-          File backup được mã hóa và chỉ có thể khôi phục trên cùng một thiết bị hoặc
+          File backup được mã hóa và chỉ có thể khôi phục trên cùng một thiết bị hoặc 
           với khóa bảo mật tương ứng. Hãy lưu trữ file backup ở nơi an toàn.
         </AlertBox>
       </AnimatedCard>

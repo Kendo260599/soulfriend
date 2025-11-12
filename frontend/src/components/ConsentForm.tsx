@@ -5,19 +5,9 @@
 
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { apiService } from '../services/apiService';
-import { demographicsService } from '../services/demographicsService';
+import axios from 'axios';
 
 // Styled Components với thiết kế thân thiện cho phụ nữ
-
-const SecurityList = styled.ul`
-  margin-top: 10px;
-  padding-left: 20px;
-`;
-
-const ContentList = styled.ul`
-  padding-left: 20px;
-`;
 const ConsentContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
@@ -176,11 +166,6 @@ interface ConsentFormProps {
 
 const ConsentForm: React.FC<ConsentFormProps> = ({ onConsentGiven }) => {
   const [agreed, setAgreed] = useState(false);
-  const [demographics, setDemographics] = useState({
-    ageRange: '',
-    gender: '',
-    location: ''
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -206,7 +191,7 @@ const ConsentForm: React.FC<ConsentFormProps> = ({ onConsentGiven }) => {
     setError(null);
 
     try {
-      const response = await apiService.submitConsent({
+      const response = await axios.post('http://localhost:5000/api/consent', {
         agreed: true,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent
@@ -258,118 +243,37 @@ const ConsentForm: React.FC<ConsentFormProps> = ({ onConsentGiven }) => {
           <InfoText style={{ marginBottom: 0 }}>
             <strong>Chúng tôi cam kết:</strong>
           </InfoText>
-          <SecurityList>
+          <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
             <li>Hoàn toàn ẩn danh - không thu thập thông tin cá nhân định danh</li>
             <li>Dữ liệu được mã hóa và bảo mật theo tiêu chuẩn quốc tế</li>
             <li>Chỉ sử dụng cho mục đích nghiên cứu và cải thiện dịch vụ</li>
             <li>Không chia sẻ thông tin với bên thứ ba</li>
             <li>Bạn có quyền rút khỏi nghiên cứu bất cứ lúc nào</li>
-          </SecurityList>
+          </ul>
         </HighlightBox>
 
         <SectionTitle>📋 Nội dung khảo sát</SectionTitle>
         <InfoText>
-          Khảo sát bao gồm các bài đánh giá tâm lý được chuẩn hóa quốc tế, được thiết kế đặc biệt cho phụ nữ:
+          Khảo sát bao gồm các bài đánh giá tâm lý được chuẩn hóa quốc tế:
         </InfoText>
-        
-        <InfoText>
-          <strong>🌸 Đánh giá Tâm trạng & Cảm xúc:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>DASS-21:</strong> Đánh giá toàn diện mức độ lo âu, trầm cảm và stress (21 câu, 5-7 phút)</li>
-          <li><strong>PHQ-9:</strong> Sàng lọc trầm cảm theo tiêu chuẩn DSM-5 (9 câu, 3-4 phút)</li>
-          <li><strong>EPDS:</strong> Đánh giá trầm cảm sau sinh chuyên biệt (10 câu, 3-4 phút)</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>😰 Đánh giá Lo âu & Căng thẳng:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>GAD-7:</strong> Sàng lọc rối loạn lo âu tổng quát (7 câu, 2-3 phút)</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>💝 Đánh giá Tự nhận thức & Lòng tự trọng:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>Thang đo tự yêu thương:</strong> Đánh giá khả năng tự chăm sóc và yêu thương bản thân (10 câu, 4-5 phút)</li>
-          <li><strong>Thang đo tự tin:</strong> Đánh giá lòng tự tin dành riêng cho phụ nữ (10 câu, 4-5 phút)</li>
-          <li><strong>Thang đo lòng tự trọng Rosenberg:</strong> Đánh giá lòng tự trọng tổng thể (10 câu, 3-4 phút)</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>🧘‍♀️ Đánh giá Chánh niệm & Tỉnh thức:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>Thang đo chánh niệm:</strong> Đánh giá khả năng sống tỉnh thức và nhận thức hiện tại (20 câu, 6-8 phút)</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>👩‍⚕️ Đánh giá Sức khỏe Tâm lý Phụ nữ:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>Thang đo Hội chứng Tiền kinh nguyệt:</strong> Đánh giá triệu chứng thể chất, cảm xúc và hành vi (15 câu, 5-7 phút)</li>
-          <li><strong>Thang đo Triệu chứng Mãn kinh:</strong> Đánh giá triệu chứng giai đoạn mãn kinh (11 câu, 4-6 phút)</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>👨‍👩‍👧‍👦 Đánh giá Gia đình:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>Thang đo Chức năng Gia đình APGAR:</strong> Đánh giá 5 chức năng cơ bản của gia đình (5 câu, 5-10 phút)</li>
-          <li><strong>Chỉ số Mối quan hệ Gia đình:</strong> Đánh giá chất lượng mối quan hệ gia đình (20 câu, 10-15 phút)</li>
-          <li><strong>Thang đo Stress Làm Cha Mẹ:</strong> Đánh giá căng thẳng trong vai trò làm cha mẹ (18 câu, 8-12 phút)</li>
-        </ContentList>
+        <ul style={{ paddingLeft: '20px' }}>
+          <li><strong>DASS-21:</strong> Đánh giá mức độ lo âu, trầm cảm và stress</li>
+          <li><strong>GAD-7:</strong> Thang đo rối loạn lo âu tổng quát</li>
+          <li><strong>PHQ-9:</strong> Đánh giá mức độ trầm cảm</li>
+          <li><strong>EPDS:</strong> Đánh giá trầm cảm sau sinh (dành cho mẹ bỉm sữa)</li>
+          <li><strong>Thang đo tự yêu thương:</strong> Đánh giá khả năng tự chăm sóc bản thân</li>
+          <li><strong>Thang đo chánh niệm:</strong> Đánh giá khả năng sống tỉnh thức</li>
+          <li><strong>Thang đo tự tin dành cho phụ nữ:</strong> Đánh giá lòng tự tin</li>
+          <li><strong>Thang đo lòng tự trọng Rosenberg:</strong> Đánh giá lòng tự trọng</li>
+        </ul>
 
         <SectionTitle>⏱️ Thời gian và cách thức</SectionTitle>
         <InfoText>
-          <strong>Thời gian tham gia:</strong> Bạn có thể chọn từ 1 đến tất cả các bài test. 
-          Thời gian ước tính từ <strong>2-3 phút</strong> (cho 1 test) đến <strong>60-90 phút</strong> (cho tất cả test).
+          Việc hoàn thành toàn bộ khảo sát sẽ mất khoảng <strong>15-20 phút</strong>. 
+          Bạn có thể dừng lại và tiếp tục sau, hoặc hoàn thành một lần duy nhất. 
+          Kết quả sẽ được hiển thị ngay sau khi bạn hoàn thành, kèm theo những 
+          gợi ý chăm sóc sức khỏe tâm lý phù hợp.
         </InfoText>
-        
-        <InfoText>
-          <strong>Cách thức thực hiện:</strong>
-        </InfoText>
-        <ContentList>
-          <li>Trả lời các câu hỏi trực tuyến trên thiết bị của bạn</li>
-          <li>Bạn có thể dừng lại và tiếp tục sau bất kỳ lúc nào</li>
-          <li>Kết quả được hiển thị ngay sau khi hoàn thành mỗi test</li>
-          <li>Nhận được gợi ý chăm sóc sức khỏe tâm lý cá nhân hóa</li>
-          <li>Dữ liệu được mã hóa và bảo mật tuyệt đối</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>Lợi ích tham gia:</strong>
-        </InfoText>
-        <ContentList>
-          <li>Hiểu rõ hơn về tình trạng sức khỏe tâm lý của bản thân</li>
-          <li>Nhận được đánh giá khoa học và khách quan</li>
-          <li>Gợi ý các kỹ thuật tự chăm sóc phù hợp</li>
-          <li>Hỗ trợ nghiên cứu khoa học về sức khỏe tâm lý phụ nữ</li>
-          <li>Góp phần phát triển các công cụ hỗ trợ tốt hơn</li>
-        </ContentList>
-        
-        <SectionTitle>📊 Kết quả và cách hiểu</SectionTitle>
-        <InfoText>
-          <strong>Sau khi hoàn thành test, bạn sẽ nhận được:</strong>
-        </InfoText>
-        <ContentList>
-          <li><strong>Điểm số chuẩn hóa:</strong> Được tính toán theo tiêu chuẩn quốc tế</li>
-          <li><strong>Mức độ đánh giá:</strong> Từ bình thường đến cần quan tâm</li>
-          <li><strong>Giải thích chi tiết:</strong> Ý nghĩa của kết quả và tác động đến cuộc sống</li>
-          <li><strong>Gợi ý can thiệp:</strong> Các kỹ thuật tự chăm sóc phù hợp</li>
-          <li><strong>Khuyến nghị chuyên môn:</strong> Khi nào nên tìm kiếm sự hỗ trợ chuyên nghiệp</li>
-        </ContentList>
-        
-        <InfoText>
-          <strong>⚠️ Lưu ý quan trọng:</strong>
-        </InfoText>
-        <ContentList>
-          <li>Kết quả chỉ mang tính tham khảo và không thay thế chẩn đoán chuyên môn</li>
-          <li>Nếu có dấu hiệu nghiêm trọng, hãy tìm kiếm sự hỗ trợ từ chuyên gia y tế</li>
-          <li>Kết quả có thể thay đổi theo thời gian và hoàn cảnh</li>
-          <li>Bạn có thể làm lại test sau 3-6 tháng để theo dõi tiến triển</li>
-        </ContentList>
       </ContentCard>
 
       <ConsentCheckboxContainer className={agreed ? 'checked' : ''}>

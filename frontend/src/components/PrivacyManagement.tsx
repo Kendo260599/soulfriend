@@ -1,7 +1,6 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { getApiUrl } from '../config/api';
+import axios from 'axios';
 
 const PrivacyContainer = styled.div`
   max-width: 800px;
@@ -17,10 +16,6 @@ const SectionTitle = styled.h2`
   margin-bottom: 20px;
   font-size: 24px;
   font-weight: 600;
-`;
-
-const TestResultsTitle = styled.h4`
-  margin-top: 25px;
 `;
 
 const SubSectionTitle = styled.h3`
@@ -201,11 +196,7 @@ interface UserData {
   }>;
 }
 
-interface PrivacyManagementProps {
-  onBack?: () => void;
-}
-
-const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
+const PrivacyManagement: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -215,9 +206,8 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
   const fetchUserData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(getApiUrl('/api/user/data'));
-      const payload = response.data && response.data.data ? response.data.data : response.data;
-      setUserData(payload);
+      const response = await axios.get('/api/user/data');
+      setUserData(response.data);
       setMessage({ type: 'success', text: 'Đã tải dữ liệu cá nhân thành công' });
     } catch (error) {
       setMessage({ type: 'error', text: 'Không thể tải dữ liệu. Vui lòng thử lại.' });
@@ -228,7 +218,7 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
   const exportUserData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(getApiUrl('/api/user/export'), { responseType: 'blob' });
+      const response = await axios.get('/api/user/export', { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -251,13 +241,13 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
 
     setLoading(true);
     try {
-      await axios.delete(getApiUrl('/api/user/data'));
+      await axios.delete('/api/user/data');
       setUserData(null);
       setShowDeleteDialog(false);
       setDeleteConfirmed(false);
-      setMessage({
-        type: 'success',
-        text: 'Đã xóa tất cả dữ liệu thành công. Tài khoản của bạn đã được hủy.'
+      setMessage({ 
+        type: 'success', 
+        text: 'Đã xóa tất cả dữ liệu thành công. Tài khoản của bạn đã được hủy.' 
       });
     } catch (error) {
       setMessage({ type: 'error', text: 'Không thể xóa dữ liệu. Vui lòng liên hệ hỗ trợ.' });
@@ -268,10 +258,10 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
   const withdrawConsent = async () => {
     setLoading(true);
     try {
-      await axios.post(getApiUrl('/api/user/withdraw-consent'));
-      setMessage({
-        type: 'success',
-        text: 'Đã rút lại sự đồng ý. Dữ liệu của bạn sẽ chỉ được lưu trữ theo yêu cầu pháp lý.'
+      await axios.post('/api/user/withdraw-consent');
+      setMessage({ 
+        type: 'success', 
+        text: 'Đã rút lại sự đồng ý. Dữ liệu của bạn sẽ chỉ được lưu trữ theo yêu cầu pháp lý.' 
       });
     } catch (error) {
       setMessage({ type: 'error', text: 'Không thể rút lại đồng ý. Vui lòng thử lại.' });
@@ -282,7 +272,7 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
   return (
     <PrivacyContainer>
       <SectionTitle>🔒 Quản lý Quyền riêng tư & Dữ liệu</SectionTitle>
-
+      
       {message && (
         <StatusMessage type={message.type}>
           {message.text}
@@ -322,7 +312,7 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
             </tbody>
           </DataTable>
 
-          <TestResultsTitle>Kết quả test ({userData.testResults.length})</TestResultsTitle>
+          <h4 style={{ marginTop: '25px' }}>Kết quả test ({userData.testResults.length})</h4>
           {userData.testResults.length > 0 ? (
             <DataTable>
               <thead>
@@ -372,12 +362,12 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
       <ActionCard>
         <h4>⚠️ Xóa tất cả dữ liệu</h4>
         <p>
-          <strong>Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tất cả dữ liệu cá nhân,
+          <strong>Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tất cả dữ liệu cá nhân, 
           kết quả test và tài khoản của bạn. Không thể hoàn tác!
         </p>
-        <ActionButton
-          variant="danger"
-          onClick={() => setShowDeleteDialog(true)}
+        <ActionButton 
+          variant="danger" 
+          onClick={() => setShowDeleteDialog(true)} 
           disabled={loading}
         >
           Xóa tất cả dữ liệu
@@ -389,7 +379,7 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
           <DialogContent>
             <h3>⚠️ Xác nhận xóa dữ liệu</h3>
             <p>
-              Bạn có chắc chắn muốn xóa <strong>tất cả</strong> dữ liệu cá nhân?
+              Bạn có chắc chắn muốn xóa <strong>tất cả</strong> dữ liệu cá nhân? 
               Hành động này sẽ:
             </p>
             <ul>
@@ -398,7 +388,7 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
               <li>Hủy tài khoản của bạn</li>
               <li>Không thể khôi phục</li>
             </ul>
-
+            
             <div className="checkbox-container">
               <label>
                 <input
@@ -410,15 +400,15 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
               </label>
             </div>
 
-            <ActionButton
-              variant="danger"
-              onClick={deleteAllData}
+            <ActionButton 
+              variant="danger" 
+              onClick={deleteAllData} 
               disabled={!deleteConfirmed || loading}
             >
               {loading ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
             </ActionButton>
-            <ActionButton
-              variant="secondary"
+            <ActionButton 
+              variant="secondary" 
               onClick={() => {
                 setShowDeleteDialog(false);
                 setDeleteConfirmed(false);
@@ -429,17 +419,6 @@ const PrivacyManagement: React.FC<PrivacyManagementProps> = ({ onBack }) => {
             </ActionButton>
           </DialogContent>
         </ConfirmDialog>
-      )}
-
-      {onBack && (
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <ActionButton
-            variant="secondary"
-            onClick={onBack}
-          >
-            ← Quay lại Dashboard
-          </ActionButton>
-        </div>
       )}
     </PrivacyContainer>
   );

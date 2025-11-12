@@ -21,9 +21,10 @@ const getDatabaseConfig = (): DatabaseConfig => {
     maxPoolSize: 10,
     minPoolSize: 5,
 
-    // Timeouts
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
+    // Timeouts (increased for stability)
+    serverSelectionTimeoutMS: 30000, // 30 seconds instead of 5
+    socketTimeoutMS: 60000, // 60 seconds instead of 45
+    connectTimeoutMS: 30000,
 
     // Retry logic
     retryWrites: true,
@@ -86,15 +87,22 @@ export class DatabaseConnection {
       });
 
       mongoose.connection.on('disconnected', () => {
-        console.log('⚠️  MongoDB disconnected');
+        console.log('⚠️  MongoDB disconnected unexpectedly');
         this.isConnected = false;
       });
 
-      // Graceful shutdown
-      process.on('SIGINT', async () => {
-        await this.disconnect();
-        process.exit(0);
+      mongoose.connection.on('disconnected', () => {
+        console.log('⚠️  MongoDB disconnected unexpectedly');
+        this.isConnected = false;
       });
+
+      mongoose.connection.on('reconnected', () => {
+        console.log('✅ MongoDB reconnected successfully');
+        this.isConnected = true;
+      });
+
+      // ❌ REMOVED: Graceful shutdown handler moved to simple-server.ts to avoid duplicate
+      // This prevents multiple SIGINT handlers from closing the connection twice
 
       await mongoose.connect(config.uri, config.options);
 
@@ -110,17 +118,19 @@ export class DatabaseConnection {
   }
 
   async disconnect(): Promise<void> {
-    if (!this.isConnected) {
+    if (!this.isConnected && mongoose.connection.readyState === 0) {
+      console.log('ℹ️  MongoDB already disconnected');
       return;
     }
 
     try {
-      await mongoose.connection.close();
-      console.log('👋 MongoDB connection closed');
+      // Force close all connections in the pool
+      await mongoose.connection.close(true); // true = force close
+      console.log('👋 MongoDB connection closed gracefully');
       this.isConnected = false;
     } catch (error) {
       console.error('❌ Error closing MongoDB connection:', error);
-      throw error;
+      // Don't throw - just log the error during shutdown
     }
   }
 

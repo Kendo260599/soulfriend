@@ -116,11 +116,9 @@ const TestResultSchema: Schema = new Schema({
   collection: 'test_results'
 });
 
-// Tạo index để tối ưu query
-TestResultSchema.index({ completedAt: -1 }); // Index giảm dần theo thời gian
-TestResultSchema.index({ testType: 1 }); // Index theo loại test
-TestResultSchema.index({ consentId: 1 }); // Index theo consent ID
-TestResultSchema.index({ 'evaluation.level': 1 }); // Index theo mức độ đánh giá
+// Indexes for query optimization
+TestResultSchema.index({ testType: 1 }); // Index by test type
+TestResultSchema.index({ 'evaluation.level': 1 }); // Index by evaluation level
 
 // Virtual field để hiển thị thời gian hoàn thành theo múi giờ Việt Nam
 TestResultSchema.virtual('completedAtVN').get(function(this: ITestResult) {
@@ -159,11 +157,10 @@ TestResultSchema.pre('save', function(this: ITestResult, next) {
   next();
 });
 
-// Indexes for performance optimization
+// Composite indexes for performance optimization  
 TestResultSchema.index({ userId: 1, createdAt: -1 });
 TestResultSchema.index({ testType: 1, userId: 1 });
-TestResultSchema.index({ consentId: 1 });
-TestResultSchema.index({ completedAt: -1 });
+TestResultSchema.index({ consentId: 1, completedAt: -1 });
 
 // Export model
 const TestResult = mongoose.model<ITestResult>('TestResult', TestResultSchema);

@@ -83,9 +83,7 @@ AdminSchema.virtual('isLocked').get(function(this: IAdmin) {
   return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
 });
 
-// Tạo index
-AdminSchema.index({ username: 1 });
-AdminSchema.index({ email: 1 });
+// Index for active admins query (username & email already indexed via unique: true)
 AdminSchema.index({ isActive: 1 });
 
 // Middleware để hash password trước khi lưu

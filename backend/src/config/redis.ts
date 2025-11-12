@@ -206,6 +206,7 @@ export class RedisConnection {
 
   /**
    * Delete multiple keys matching a pattern
+   * Uses SCAN for better performance (non-blocking)
    * @param pattern - Key pattern (e.g., 'user:*')
    */
   async deletePattern(pattern: string): Promise<number> {
@@ -215,12 +216,25 @@ export class RedisConnection {
     }
 
     try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length === 0) {
-        return 0;
-      }
-      await this.client.del(keys);
-      return keys.length;
+      let cursor: any = 0; // Redis SCAN cursor type compatibility
+      let count = 0;
+
+      do {
+        // Use SCAN instead of KEYS for non-blocking iteration
+        const result = await this.client.scan(cursor, {
+          MATCH: pattern,
+          COUNT: 100,
+        });
+
+        cursor = result.cursor;
+
+        if (result.keys.length > 0) {
+          await this.client.del(result.keys);
+          count += result.keys.length;
+        }
+      } while (Number(cursor) !== 0);
+
+      return count;
     } catch (error) {
       console.error('❌ Redis DELETE PATTERN error:', error);
       return 0;

@@ -4,6 +4,17 @@ import { useAI } from '../contexts/AIContext';
 import AnimatedCard from './AnimatedCard';
 import { TestResult } from '../types';
 
+const fadeInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
 const pulse = keyframes`
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }

@@ -274,7 +274,7 @@ const App: React.FC = () => {
         <AppContainer>
           <Router>
             <Routes>
-              <Route path="/" element={<WelcomePage onGetStarted={() => {}} />} />
+              <Route path="/" element={<WelcomePage />} />
               <Route path="/dashboard" element={<ProfessionalDashboard testResults={testResults} />} />
             <Route path="/test/:testType" element={<TestTaking 
               selectedTests={[]} 

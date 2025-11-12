@@ -1,23 +1,21 @@
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { Line } from 'react-chartjs-2';
 import {
-  CategoryScale,
   Chart as ChartJS,
-  Legend,
+  CategoryScale,
   LinearScale,
-  LineElement,
   PointElement,
+  LineElement,
   Title,
   Tooltip,
+  Legend,
 } from 'chart.js';
-import React, { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import styled from 'styled-components';
-import { getApiUrl } from '../config/api';
-import { TestResult } from '../types';
-import AIInsights from './AIInsights';
-import AnimatedButton from './AnimatedButton';
-import AnimatedCard from './AnimatedCard';
-import LoadingSpinner from './LoadingSpinner';
 import PDFExport from './PDFExport';
+import AnimatedCard from './AnimatedCard';
+import AnimatedButton from './AnimatedButton';
+import AIInsights from './AIInsights';
+import { TestResult } from '../types';
 
 ChartJS.register(
   CategoryScale,
@@ -44,10 +42,6 @@ const DashboardTitle = styled.h1`
   font-weight: 300;
   margin: 0 0 40px 0;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-`;
-
-const LoadingContainer = styled.div`
-  text-align: center;
 `;
 
 const StatsGrid = styled.div`
@@ -159,80 +153,26 @@ const TestScore = styled.div<{ severity: string }>`
   }};
 `;
 
+const LoadingSpinner = styled.div`
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #d63384;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 40px;
   color: #666;
-`;
-
-const WelcomeCard = styled.div`
-  text-align: center;
-  padding: 60px 40px;
-  margin: 40px 0;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  animation: slideInUp 0.6s ease-out;
-  
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const WelcomeButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
-`;
-
-const WelcomeButton = styled.button`
-  background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  font-size: 1.2rem;
-  font-weight: 600;
-  border-radius: 50px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 25px rgba(46, 125, 50, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-  }
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 35px rgba(46, 125, 50, 0.4);
-    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
-    
-    &::before {
-      left: 100%;
-    }
-  }
-  
-  &:active {
-    transform: translateY(-1px);
-  }
 `;
 
 const ScoreContainer = styled.div`
@@ -257,13 +197,9 @@ interface DashboardProps {
   onNewTest: () => void;
   onViewProfile: () => void;
   onDataBackup?: () => void;
-  onResearchDashboard?: () => void;
-  onCommunitySupport?: () => void;
-  onAICompanion?: () => void;
-  onStartTests?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataBackup, onResearchDashboard, onCommunitySupport, onAICompanion, onStartTests }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataBackup }) => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -274,41 +210,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
   });
 
   useEffect(() => {
-    const loadResults = () => {
+    const loadResults = async () => {
       try {
-        // Load from localStorage immediately (synchronous)
-        const localResults = localStorage.getItem('testResults');
-        if (localResults) {
-          const results = JSON.parse(localResults);
+        const response = await fetch('http://localhost:5000/api/tests/results');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          const results = data.data.sort((a: any, b: any) => 
+            new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+          );
+          
           setTestResults(results);
           calculateStats(results);
-          setLoading(false);
-          return;
         }
-
-        // If no local data, try API in background
-        setTimeout(async () => {
-          try {
-            const resultsUrl = getApiUrl('/api/tests/results');
-            const response = await fetch(resultsUrl);
-            const data = await response.json();
-
-            if (data.success && data.data) {
-              const results = data.data.sort((a: any, b: any) =>
-                new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
-              );
-
-              setTestResults(results);
-              calculateStats(results);
-            }
-          } catch (apiError) {
-            console.log('API not available, using local data only');
-          }
-        }, 100);
-
-        setLoading(false);
       } catch (error) {
-        console.error('Error loading test results:', error);
+        console.error('Error fetching test results:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -319,14 +236,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
   const calculateStats = (results: TestResult[]) => {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    const thisWeekTests = results.filter(result =>
+    
+    const thisWeekTests = results.filter(result => 
       result.completedAt && new Date(result.completedAt) >= weekAgo
     );
-
+    
     const totalScore = results.reduce((sum, result) => sum + result.totalScore, 0);
     const averageScore = results.length > 0 ? Math.round(totalScore / results.length) : 0;
-
+    
     setStats({
       totalTests: results.length,
       thisWeek: thisWeekTests.length,
@@ -365,7 +282,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
 
   const prepareChartData = () => {
     const recentResults = testResults.slice(0, 10).reverse();
-
+    
     return {
       labels: recentResults.map((_, index) => `Test ${index + 1}`),
       datasets: [
@@ -402,37 +319,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
     return (
       <DashboardContainer>
         <DashboardTitle>Dashboard Sức Khỏe Tâm Lý</DashboardTitle>
-        <LoadingContainer>
+        <div style={{ textAlign: 'center' }}>
           <LoadingSpinner />
           <p>Đang tải dữ liệu...</p>
-        </LoadingContainer>
-      </DashboardContainer>
-    );
-  }
-
-  // Hiển thị màn hình chào mừng nếu chưa có test nào
-  if (testResults.length === 0) {
-    return (
-      <DashboardContainer>
-        <DashboardTitle>Chào mừng đến với SoulFriend V2.0</DashboardTitle>
-
-        <WelcomeCard>
-          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🌸</div>
-          <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>
-            Bắt đầu hành trình chăm sóc sức khỏe tâm lý
-          </h2>
-          <p style={{ color: '#7f8c8d', fontSize: '1.1rem', marginBottom: '30px', lineHeight: '1.6' }}>
-            Hãy làm bài kiểm tra đầu tiên để khám phá tình trạng sức khỏe tâm lý của bạn
-          </p>
-
-          <WelcomeButtonContainer>
-            {onStartTests && (
-              <WelcomeButton onClick={onStartTests}>
-                🚀 Bắt đầu làm test ngay
-              </WelcomeButton>
-            )}
-          </WelcomeButtonContainer>
-        </WelcomeCard>
+        </div>
       </DashboardContainer>
     );
   }
@@ -440,34 +330,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
   return (
     <DashboardContainer>
       <DashboardTitle>Dashboard Sức Khỏe Tâm Lý</DashboardTitle>
-
-      {/* AI Companion Notification */}
-      {testResults.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '1rem 2rem',
-          borderRadius: '15px',
-          marginBottom: '2rem',
-          textAlign: 'center',
-          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🤖</div>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.3rem' }}>
-            AI Companion đã sẵn sàng!
-          </h3>
-          <p style={{ margin: '0', opacity: 0.9 }}>
-            Dựa trên kết quả test của bạn, AI đã tạo ra những insights và gợi ý cá nhân hóa.
-            <br />
-            <strong>Nhấn nút "AI Companion" bên dưới để khám phá!</strong>
-          </p>
-        </div>
-      )}
-
+      
       <StatsGrid>
-        <AnimatedCard
-          hoverEffect="lift"
+        <AnimatedCard 
+          hoverEffect="lift" 
           animation="slideInUp"
           elevation={2}
         >
@@ -475,9 +341,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <StatLabel>Tổng số test đã làm</StatLabel>
           <StatDescription>Tất cả các bài kiểm tra từ trước đến nay</StatDescription>
         </AnimatedCard>
-
-        <AnimatedCard
-          hoverEffect="scale"
+        
+        <AnimatedCard 
+          hoverEffect="scale" 
           animation="slideInUp"
           elevation={2}
         >
@@ -485,9 +351,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <StatLabel>Test tuần này</StatLabel>
           <StatDescription>Số lượng test đã hoàn thành trong 7 ngày qua</StatDescription>
         </AnimatedCard>
-
-        <AnimatedCard
-          hoverEffect="glow"
+        
+        <AnimatedCard 
+          hoverEffect="glow" 
           animation="slideInUp"
           elevation={2}
         >
@@ -495,9 +361,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
           <StatLabel>Điểm trung bình</StatLabel>
           <StatDescription>Điểm số trung bình của tất cả các test</StatDescription>
         </AnimatedCard>
-
-        <AnimatedCard
-          hoverEffect="lift"
+        
+        <AnimatedCard 
+          hoverEffect="lift" 
           animation="slideInUp"
           elevation={2}
           badge={stats.mostRecentSeverity === 'high' ? { text: "Cần chú ý", color: "danger" } : undefined}
@@ -521,7 +387,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
 
       <HistoryContainer>
         <HistoryTitle>Lịch sử làm test ({testResults.length} kết quả)</HistoryTitle>
-
+        
         {testResults.length === 0 ? (
           <EmptyState>
             Bạn chưa làm test nào. Hãy bắt đầu với bài test đầu tiên!
@@ -551,69 +417,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
       <PDFExport testResults={testResults} />
 
       <ActionButtons>
-        {onStartTests && (
-          <AnimatedButton
-            variant="primary"
-            onClick={onStartTests}
-            icon="🚀"
-            animation="bounce"
-          >
-            Bắt đầu làm test
-          </AnimatedButton>
-        )}
-        <AnimatedButton
-          variant="secondary"
+        <AnimatedButton 
+          variant="primary" 
           onClick={onNewTest}
           icon="📝"
-          animation="glow"
+          animation="bounce"
         >
           Làm test mới
         </AnimatedButton>
-        <AnimatedButton
-          variant="outline"
+        <AnimatedButton 
+          variant="outline" 
           onClick={onViewProfile}
           icon="👤"
         >
           Xem hồ sơ
         </AnimatedButton>
         {onDataBackup && (
-          <AnimatedButton
-            variant="secondary"
+          <AnimatedButton 
+            variant="secondary" 
             onClick={onDataBackup}
             icon="💾"
             animation="glow"
           >
             Sao lưu dữ liệu
-          </AnimatedButton>
-        )}
-        {onResearchDashboard && (
-          <AnimatedButton
-            variant="primary"
-            onClick={onResearchDashboard}
-            icon="🔬"
-            animation="glow"
-          >
-            Research Dashboard
-          </AnimatedButton>
-        )}
-        {onCommunitySupport && (
-          <AnimatedButton
-            variant="success"
-            onClick={onCommunitySupport}
-            icon="🤝"
-            animation="glow"
-          >
-            Community Support
-          </AnimatedButton>
-        )}
-        {onAICompanion && (
-          <AnimatedButton
-            variant="primary"
-            onClick={onAICompanion}
-            icon="🤖"
-            animation="glow"
-          >
-            AI Companion
           </AnimatedButton>
         )}
       </ActionButtons>

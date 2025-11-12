@@ -101,20 +101,31 @@ const PageTransition: React.FC<PageTransitionProps> = ({
   animationType = 'fade',
   duration = 300,
   delay = 0
-  }) => {
+}) => {
   const [shouldRender, setShouldRender] = useState(isVisible);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (isVisible) {
       setShouldRender(true);
+      setIsAnimating(true);
+      
+      const timer = setTimeout(() => {
+        setIsAnimating(false);
+      }, duration + delay);
+      
+      return () => clearTimeout(timer);
     } else {
+      setIsAnimating(true);
+      
       const timer = setTimeout(() => {
         setShouldRender(false);
+        setIsAnimating(false);
       }, duration);
       
       return () => clearTimeout(timer);
     }
-  }, [isVisible, duration]);
+  }, [isVisible, duration, delay]);
 
   if (!shouldRender) {
     return null;

@@ -9,11 +9,15 @@ import config from '../config/environment';
 
 export interface VectorMetadata {
   userId: string;
-  type: 'insight' | 'pattern' | 'preference' | 'milestone' | 'conversation';
+  type: 'insight' | 'pattern' | 'preference' | 'milestone' | 'conversation' | 'trigger' | 'coping_strategy' | 'progress' | 'behavior';
   content: string;
   timestamp: number;
   category?: string;
   confidence?: number;
+  intensity?: number;
+  frequency?: number;
+  relatedTopics?: string[];
+  timePattern?: string;
   [key: string]: any;
 }
 

@@ -249,7 +249,7 @@ export class MemoryAwareChatbotService {
           type: 'pattern',
           content: `User shows signs of crisis when discussing: ${userMessage.substring(0, 100)}`,
           metadata: {
-            confidence: 0.8,
+            confidence: 0.9,
             source: 'crisis_detection',
             category: 'crisis_trigger',
           },
@@ -278,6 +278,34 @@ export class MemoryAwareChatbotService {
             confidence: 0.6,
             source: 'quality_feedback',
             category: 'response_preference',
+          },
+        });
+      }
+
+      // 4. ALWAYS create a pattern from conversation topic (NEW!)
+      // Extract key topics from user message
+      const topics = this.extractTopics(userMessage);
+      if (topics.length > 0) {
+        insights.push({
+          type: 'pattern',
+          content: `User discusses topics related to: ${topics.join(', ')}`,
+          metadata: {
+            confidence: 0.6,
+            source: 'conversation_analysis',
+            category: 'discussion_topic',
+          },
+        });
+      }
+
+      // 5. Track intent patterns (NEW!)
+      if (botResponse.intent && botResponse.intent !== 'general') {
+        insights.push({
+          type: 'preference',
+          content: `User seeks ${botResponse.intent} type support in conversations`,
+          metadata: {
+            confidence: 0.5,
+            source: 'intent_tracking',
+            category: 'support_preference',
           },
         });
       }
@@ -360,6 +388,32 @@ export class MemoryAwareChatbotService {
         },
       };
     }
+  }
+
+  /**
+   * Extract key topics from message
+   */
+  private extractTopics(message: string): string[] {
+    const topics: string[] = [];
+    const lowerMessage = message.toLowerCase();
+
+    // Common topic keywords
+    const topicMap: { [key: string]: string[] } = {
+      'work': ['công việc', 'làm việc', 'deadline', 'dự án', 'project', 'work', 'job'],
+      'stress': ['lo lắng', 'stress', 'áp lực', 'căng thẳng', 'anxiety', 'worried'],
+      'sleep': ['ngủ', 'thức khuya', 'mất ngủ', 'sleep', 'insomnia'],
+      'relationship': ['quan hệ', 'bạn bè', 'gia đình', 'tình cảm', 'relationship', 'family'],
+      'health': ['sức khỏe', 'bệnh', 'đau', 'health', 'sick', 'pain'],
+      'emotion': ['cảm xúc', 'tâm trạng', 'buồn', 'vui', 'emotion', 'mood', 'feeling'],
+    };
+
+    for (const [topic, keywords] of Object.entries(topicMap)) {
+      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+        topics.push(topic);
+      }
+    }
+
+    return topics;
   }
 
   /**

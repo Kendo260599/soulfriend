@@ -27,13 +27,22 @@ export interface ShortTermMemoryData {
 }
 
 export interface LongTermMemoryData {
-  type: 'insight' | 'pattern' | 'preference' | 'milestone';
+  type: 'insight' | 'pattern' | 'preference' | 'milestone' | 'trigger' | 'coping_strategy' | 'progress' | 'behavior';
   content: string;
   metadata: {
     confidence: number;
     source: string;
     category?: string;
     extractedAt?: Date;
+    intensity?: number;
+    frequency?: number;
+    lastSeen?: Date;
+    relatedTopics?: string[];
+    timeContext?: {
+      hour?: number;
+      dayOfWeek?: number;
+      timePattern?: string;
+    };
     [key: string]: any;
   };
 }

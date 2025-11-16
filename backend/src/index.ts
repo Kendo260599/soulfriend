@@ -34,7 +34,7 @@ import hitlInterventionRoutes from './routes/hitlIntervention';
 import qstashTestRoutes from './routes/qstashTest';
 import qstashWebhookRoutes from './routes/qstashWebhooks';
 import researchRoutes from './routes/research';
-import sentryTestRoutes from './routes/sentryTest';
+import sentryTestRoutes from './routes/sentryTestRoutes';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
 

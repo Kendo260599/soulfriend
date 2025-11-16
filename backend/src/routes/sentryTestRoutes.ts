@@ -20,7 +20,7 @@ const router = Router();
 // TEST 1: Basic Error Tracking
 // ============================================================================
 
-router.get('/test/sentry/error', (req: Request, res: Response) => {
+router.get('/error', (req: Request, res: Response) => {
   try {
     // Simulate an error
     throw new Error('Test error from Sentry test route');
@@ -28,7 +28,7 @@ router.get('/test/sentry/error', (req: Request, res: Response) => {
     if (error instanceof Error) {
       captureException(error, {
         action: 'test_error',
-        endpoint: '/test/sentry/error',
+        endpoint: '/api/test/sentry/error',
         timestamp: new Date().toISOString()
       });
     }
@@ -44,7 +44,7 @@ router.get('/test/sentry/error', (req: Request, res: Response) => {
 // TEST 2: Logging Levels
 // ============================================================================
 
-router.get('/test/sentry/logs', (req: Request, res: Response) => {
+router.get('/logs', (req: Request, res: Response) => {
   // Test different log levels
   logger.debug('This is a debug log', { testId: 1 });
   logger.info('This is an info log', { testId: 2 });
@@ -61,7 +61,7 @@ router.get('/test/sentry/logs', (req: Request, res: Response) => {
 // TEST 3: User Context
 // ============================================================================
 
-router.get('/test/sentry/user-context', (req: Request, res: Response) => {
+router.get('/user-context', (req: Request, res: Response) => {
   // Set user context
   setUserContext('test-user-123', 'test@example.com', 'Test User');
   
@@ -88,7 +88,7 @@ router.get('/test/sentry/user-context', (req: Request, res: Response) => {
 // TEST 4: Breadcrumbs
 // ============================================================================
 
-router.get('/test/sentry/breadcrumbs', (req: Request, res: Response) => {
+router.get('/breadcrumbs', (req: Request, res: Response) => {
   // Add breadcrumbs
   addBreadcrumb('User started action', 'user', 'info', {
     action: 'test_breadcrumbs'
@@ -118,7 +118,7 @@ router.get('/test/sentry/breadcrumbs', (req: Request, res: Response) => {
 // TEST 5: Performance Tracking
 // ============================================================================
 
-router.get('/test/sentry/performance', async (req: Request, res: Response) => {
+router.get('/performance', async (req: Request, res: Response) => {
   try {
     // Track slow operation
     const result = await withSpan('test.slow_operation', async () => {
@@ -150,7 +150,7 @@ router.get('/test/sentry/performance', async (req: Request, res: Response) => {
 // TEST 6: Message Capture (Non-Error Events)
 // ============================================================================
 
-router.get('/test/sentry/message', (req: Request, res: Response) => {
+router.get('/message', (req: Request, res: Response) => {
   // Capture important messages
   captureMessage('Important: User completed onboarding', 'info');
   logger.info('User completed onboarding', {
@@ -176,7 +176,7 @@ router.get('/test/sentry/message', (req: Request, res: Response) => {
 // TEST 7: Async Error in Database Operation
 // ============================================================================
 
-router.get('/test/sentry/db-error', async (req: Request, res: Response) => {
+router.get('/db-error', async (req: Request, res: Response) => {
   try {
     addBreadcrumb('Starting database query', 'database', 'info');
     
@@ -206,7 +206,7 @@ router.get('/test/sentry/db-error', async (req: Request, res: Response) => {
 // TEST 8: Multiple Errors in Sequence
 // ============================================================================
 
-router.get('/test/sentry/multiple-errors', (req: Request, res: Response) => {
+router.get('/multiple-errors', (req: Request, res: Response) => {
   // Simulate multiple errors
   const errors = [
     { type: 'ValidationError', message: 'Invalid email format' },
@@ -235,7 +235,7 @@ router.get('/test/sentry/multiple-errors', (req: Request, res: Response) => {
 // TEST 9: Complete Workflow Test
 // ============================================================================
 
-router.post('/test/sentry/complete-workflow', async (req: Request, res: Response) => {
+router.post('/complete-workflow', async (req: Request, res: Response) => {
   try {
     // 1. Set user context
     const userId = req.body.userId || 'test-user-123';
@@ -290,7 +290,7 @@ router.post('/test/sentry/complete-workflow', async (req: Request, res: Response
 // TEST 10: Intentional Crash (Use with caution!)
 // ============================================================================
 
-router.get('/test/sentry/crash', (req: Request, res: Response) => {
+router.get('/crash', (req: Request, res: Response) => {
   logger.warn('Intentional crash test initiated');
   
   // This will crash the server - use only in development!

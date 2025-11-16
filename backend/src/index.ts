@@ -37,6 +37,7 @@ import researchRoutes from './routes/research';
 import sentryTestRoutes from './routes/sentryTestRoutes';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
+import memoryTestRoutes from './routes/memoryTest';
 
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
@@ -240,6 +241,9 @@ if (config.NODE_ENV === 'development' || process.env.ENABLE_TEST_ROUTES === 'tru
   
   app.use('/api/test/sentry', sentryTestRoutes);
   console.log('🧪 Sentry test routes enabled at /api/test/sentry');
+  
+  app.use('/api/test/memory', memoryTestRoutes);
+  console.log('🧪 Memory test routes enabled at /api/test/memory');
 }
 
 // API v1 routes (legacy - deprecated)
@@ -288,6 +292,11 @@ app.get('/api/health/detailed', async (req: Request, res: Response) => {
         cache: {
           status: redisConnection.isHealthy() ? 'connected' : 'disconnected',
           configured: config.REDIS_URL ? 'yes' : 'no',
+        },
+        vectorDb: {
+          status: 'checking',
+          configured: config.PINECONE_API_KEY ? 'yes' : 'no',
+          indexName: config.PINECONE_INDEX_NAME,
         },
         qstash: {
           status: qstashService.isReady() ? 'enabled' : 'disabled',
@@ -445,6 +454,18 @@ const startServer = async () => {
       console.log('🔴 Connecting to Redis (non-blocking)...');
       redisConnection.connect().catch(err => {
         console.warn('⚠️  Redis connection failed, continuing without cache:', err instanceof Error ? err.message : err);
+      });
+
+      // Initialize Pinecone Vector Store AFTER server starts (non-blocking)
+      console.log('🧠 Initializing Pinecone Vector Store (non-blocking)...');
+      import('./services/vectorStore').then(({ vectorStore }) => {
+        vectorStore.initialize().then(() => {
+          console.log('✅ Pinecone Vector Store ready for memory system');
+        }).catch(err => {
+          console.warn('⚠️  Pinecone initialization failed, continuing without vector memory:', err instanceof Error ? err.message : err);
+        });
+      }).catch(err => {
+        console.warn('⚠️  Failed to import vectorStore:', err);
       });
 
       // Test email service connection

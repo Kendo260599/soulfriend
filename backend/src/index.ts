@@ -45,6 +45,7 @@ import './models/Expert';
 import './models/HITLFeedback';
 import './models/InterventionMessage';
 import './models/TrainingDataPoint';
+import './models/LongTermMemory';
 
 // Services
 import emailService from './services/emailService';

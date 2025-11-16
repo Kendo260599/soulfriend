@@ -77,6 +77,38 @@ router.post('/session/:sessionId/end', chatbotController.endSession);
  */
 router.get('/stats', chatbotController.getStats);
 
+// ====================
+// 🧠 MEMORY-AWARE ENDPOINTS
+// ====================
+
+/**
+ * @route   POST /api/v2/chatbot/chat-with-memory
+ * @desc    Process message with 3-tier memory context
+ * @access  Public
+ */
+router.post('/chat-with-memory', chatbotController.chatWithMemory);
+
+/**
+ * @route   GET /api/v2/chatbot/history-with-memory/:userId/:sessionId
+ * @desc    Get conversation history with memory context
+ * @access  Public
+ */
+router.get('/history-with-memory/:userId/:sessionId', chatbotController.getHistoryWithMemory);
+
+/**
+ * @route   GET /api/v2/chatbot/memory-profile/:userId
+ * @desc    Get user's memory profile (patterns, preferences, insights)
+ * @access  Public
+ */
+router.get('/memory-profile/:userId', chatbotController.getMemoryProfile);
+
+/**
+ * @route   DELETE /api/v2/chatbot/session-memory/:sessionId
+ * @desc    Clear working memory for session
+ * @access  Public
+ */
+router.delete('/session-memory/:sessionId', chatbotController.clearSessionMemory);
+
 /**
  * DEBUG ENDPOINT - Version check
  * GET /api/v2/chatbot/debug/version

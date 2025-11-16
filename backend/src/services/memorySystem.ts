@@ -7,7 +7,7 @@
 
 import { Redis } from 'ioredis';
 import { vectorStore, VectorMetadata } from './vectorStore';
-import { ConversationLog } from '../models/ConversationLog';
+import LongTermMemory from '../models/LongTermMemory';
 import config from '../config/environment';
 
 export interface WorkingMemoryData {
@@ -204,13 +204,12 @@ export class MemorySystem {
    */
   async saveLongTermMemory(userId: string, memory: LongTermMemoryData): Promise<void> {
     try {
-      // 1. Save structured data to MongoDB
-      const conversationLog = await ConversationLog.create({
+      // 1. Save structured data to MongoDB using LongTermMemory model
+      const longTermMemory = await LongTermMemory.create({
         userId,
-        memoryType: memory.type,
+        type: memory.type,
         content: memory.content,
         metadata: memory.metadata,
-        timestamp: new Date(),
       });
 
       // 2. Create embedding and save to Pinecone (if enabled)
@@ -218,7 +217,7 @@ export class MemorySystem {
         try {
           const embedding = await vectorStore.createEmbedding(memory.content);
           
-          const vectorId = `${userId}_${Date.now()}_${conversationLog._id}`;
+          const vectorId = `${userId}_${Date.now()}_${longTermMemory._id}`;
           
           await vectorStore.upsert({
             id: vectorId,
@@ -230,10 +229,15 @@ export class MemorySystem {
               timestamp: Date.now(),
               category: memory.metadata.category,
               confidence: memory.metadata.confidence,
-              mongoId: String(conversationLog._id),
+              mongoId: String(longTermMemory._id),
               source: memory.metadata.source,
             } as VectorMetadata,
           });
+
+          // Update MongoDB with vector ID
+          longTermMemory.vectorId = vectorId;
+          longTermMemory.embeddingGenerated = true;
+          await longTermMemory.save();
 
           console.log(`✅ Long-term memory saved for user: ${userId} (Vector ID: ${vectorId})`);
         } catch (error) {
@@ -305,21 +309,21 @@ export class MemorySystem {
     timestamp: number;
   }>> {
     try {
-      const results = await ConversationLog.find({
+      const results = await LongTermMemory.find({
         userId,
         $or: [
           { content: { $regex: query, $options: 'i' } },
           { 'metadata.category': { $regex: query, $options: 'i' } },
         ],
       })
-        .sort({ timestamp: -1 })
+        .sort({ createdAt: -1 })
         .limit(limit);
 
       return results.map(result => ({
-        content: (result as any).content || '',
-        type: (result as any).memoryType || 'conversation',
+        content: result.content,
+        type: result.type,
         confidence: 0.5, // Lower confidence for text match
-        timestamp: result.timestamp ? result.timestamp.getTime() : Date.now(),
+        timestamp: result.createdAt.getTime(),
       }));
     } catch (error) {
       console.error('❌ Fallback text search failed:', error);
@@ -346,8 +350,8 @@ export class MemorySystem {
         await vectorStore.deleteByUser(userId);
       }
 
-      // 3. Delete from MongoDB (structured data)
-      await ConversationLog.deleteMany({ userId });
+      // 3. Delete from MongoDB (long-term memory structured data)
+      await LongTermMemory.deleteMany({ userId });
 
       console.log(`✅ All memories deleted for user: ${userId}`);
     } catch (error) {
@@ -374,7 +378,7 @@ export class MemorySystem {
         shortTermCount = await this.redis!.zcard(`shortterm:${userId}`);
       }
 
-      const longTermCount = await ConversationLog.countDocuments({ userId });
+      const longTermCount = await LongTermMemory.countDocuments({ userId });
 
       return {
         workingMemoryExists: workingExists,

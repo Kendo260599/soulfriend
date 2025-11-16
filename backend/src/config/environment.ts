@@ -68,6 +68,11 @@ interface EnvironmentConfig {
   BACKUP_SCHEDULE?: string;
   BACKUP_RETENTION_DAYS: number;
   BACKUP_PATH: string;
+
+  // Pinecone Vector Database
+  PINECONE_API_KEY?: string;
+  PINECONE_ENVIRONMENT?: string;
+  PINECONE_INDEX_NAME?: string;
 }
 
 /**
@@ -183,6 +188,11 @@ function parseEnvironment(): EnvironmentConfig {
     BACKUP_SCHEDULE: getEnvOptional('BACKUP_SCHEDULE'),
     BACKUP_RETENTION_DAYS: getEnvNumber('BACKUP_RETENTION_DAYS', 30),
     BACKUP_PATH: getEnv('BACKUP_PATH', '/backups'),
+
+    // Pinecone Vector Database
+    PINECONE_API_KEY: getEnvOptional('PINECONE_API_KEY'),
+    PINECONE_ENVIRONMENT: getEnv('PINECONE_ENVIRONMENT', 'us-east-1'),
+    PINECONE_INDEX_NAME: getEnv('PINECONE_INDEX_NAME', 'soulfriend-memories'),
   };
 }
 
@@ -300,4 +310,7 @@ export const {
   BACKUP_SCHEDULE,
   BACKUP_RETENTION_DAYS,
   BACKUP_PATH,
+  PINECONE_API_KEY,
+  PINECONE_ENVIRONMENT,
+  PINECONE_INDEX_NAME,
 } = config;

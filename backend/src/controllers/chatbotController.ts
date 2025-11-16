@@ -6,6 +6,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ChatbotService } from '../services/chatbotService';
 import { EnhancedChatbotService } from '../services/enhancedChatbotService';
+import { memoryAwareChatbotService } from '../services/memoryAwareChatbotService';
 import { logger } from '../utils/logger';
 
 export class ChatbotController {
@@ -285,6 +286,133 @@ export class ChatbotController {
       });
     } catch (error) {
       logger.error('Error fetching chatbot statistics:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * 🧠 Process message with memory context
+   * POST /api/v2/chatbot/chat-with-memory
+   */
+  chatWithMemory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      let { message, userId, sessionId, context, mode } = req.body;
+
+      // Validation
+      if (!message || typeof message !== 'string') {
+        res.status(400).json({
+          error: 'Invalid request',
+          message: 'Message is required and must be a string',
+        });
+        return;
+      }
+
+      if (!userId) {
+        res.status(400).json({
+          error: 'Invalid request',
+          message: 'userId is required for memory-aware chat',
+        });
+        return;
+      }
+
+      // UTF-8 Normalization
+      message = Buffer.from(message, 'utf8').toString('utf8');
+      message = message.normalize('NFC');
+
+      logger.info('Processing memory-aware chatbot message', {
+        userId,
+        sessionId,
+        messageLength: message.length,
+      });
+
+      // Process with memory-aware service
+      const chatbotMode = mode === 'em_style' ? 'em_style' : 'default';
+      const response = await memoryAwareChatbotService.chat(
+        message,
+        sessionId || this.generateSessionId(),
+        userId,
+        context?.userProfile,
+        chatbotMode
+      );
+
+      res.json({
+        success: true,
+        data: response,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error('Error processing memory-aware chatbot message:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * 🧠 Get conversation history with memory context
+   * GET /api/v2/chatbot/history-with-memory/:userId/:sessionId
+   */
+  getHistoryWithMemory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { userId, sessionId } = req.params;
+      const { limit = 20 } = req.query;
+
+      logger.info('Fetching conversation history with memory', { userId, sessionId, limit });
+
+      const history = await memoryAwareChatbotService.getConversationHistory(
+        userId,
+        sessionId,
+        parseInt(limit as string, 10)
+      );
+
+      res.json({
+        success: true,
+        data: history,
+      });
+    } catch (error) {
+      logger.error('Error fetching conversation history with memory:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * 🧠 Get user memory profile
+   * GET /api/v2/chatbot/memory-profile/:userId
+   */
+  getMemoryProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { userId } = req.params;
+
+      logger.info('Fetching user memory profile', { userId });
+
+      const profile = await memoryAwareChatbotService.getUserMemoryProfile(userId);
+
+      res.json({
+        success: true,
+        data: profile,
+      });
+    } catch (error) {
+      logger.error('Error fetching user memory profile:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * 🧠 Clear session memory
+   * DELETE /api/v2/chatbot/session-memory/:sessionId
+   */
+  clearSessionMemory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { sessionId } = req.params;
+
+      logger.info('Clearing session memory', { sessionId });
+
+      await memoryAwareChatbotService.clearSessionMemory(sessionId);
+
+      res.json({
+        success: true,
+        message: 'Session memory cleared successfully',
+      });
+    } catch (error) {
+      logger.error('Error clearing session memory:', error);
       next(error);
     }
   };

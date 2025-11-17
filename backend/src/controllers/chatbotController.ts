@@ -46,9 +46,9 @@ export class ChatbotController {
         messageLength: message.length,
       });
 
-      // Process message with Enhanced Chatbot Service (với HITL crisis detection)
+      // Process message with Memory-Aware Chatbot Service (WITH LEARNING!)
       const chatbotMode = mode === 'em_style' ? 'em_style' : 'default';
-      const response = await this.enhancedChatbotService.processMessage(
+      const response = await memoryAwareChatbotService.chat(
         message,
         sessionId || this.generateSessionId(),
         userId || 'anonymous',

@@ -6,11 +6,13 @@
 import express from 'express';
 import chatbotController from '../controllers/chatbotController';
 import { rateLimiter } from '../middleware/rateLimiter';
+import { chatbotRateLimiter } from '../middleware/redisRateLimiter';
 
 const router = express.Router();
 
-// Apply rate limiting to chatbot endpoints
-router.use(rateLimiter.middleware);
+// Apply Redis-based rate limiting to chatbot endpoints
+// 20 messages per minute per user
+router.use(chatbotRateLimiter);
 
 /**
  * @route   POST /api/v2/chatbot/message

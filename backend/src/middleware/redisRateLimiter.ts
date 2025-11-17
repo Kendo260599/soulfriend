@@ -34,15 +34,17 @@ export function createRateLimiter(config: RateLimitConfig) {
 
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Check if Redis is ready, if not try to connect
+      // Wait a bit for Redis to connect (max 2 seconds)
+      let retries = 10;
+      while (!redisService.isReady() && retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 200)); // Wait 200ms
+        retries--;
+      }
+
+      // If Redis still not ready after waiting, skip rate limiting
       if (!redisService.isReady()) {
-        try {
-          await redisService.connect();
-        } catch (error) {
-          // If Redis connection fails, skip rate limiting but log it
-          console.warn('⚠️ Redis not available, skipping rate limiting');
-          return next();
-        }
+        console.warn('⚠️ Redis not ready after waiting, skipping rate limiting');
+        return next();
       }
 
       // Generate unique key for this request

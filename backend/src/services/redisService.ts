@@ -63,6 +63,20 @@ class RedisService {
       });
 
       await this.client.connect();
+      
+      // Wait for 'ready' event to ensure connection is fully established
+      if (!this.isConnected) {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Redis connection timeout'));
+          }, 5000); // 5 second timeout
+
+          this.client!.once('ready', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
+      }
     } catch (error) {
       console.error('❌ Failed to connect to Redis:', error);
       this.isConnected = false;

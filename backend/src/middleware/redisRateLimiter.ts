@@ -34,11 +34,15 @@ export function createRateLimiter(config: RateLimitConfig) {
 
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Check if Redis is ready
+      // Check if Redis is ready, if not try to connect
       if (!redisService.isReady()) {
-        // If Redis is not available, skip rate limiting
-        console.warn('⚠️ Redis not ready, skipping rate limiting');
-        return next();
+        try {
+          await redisService.connect();
+        } catch (error) {
+          // If Redis connection fails, skip rate limiting but log it
+          console.warn('⚠️ Redis not available, skipping rate limiting');
+          return next();
+        }
       }
 
       // Generate unique key for this request

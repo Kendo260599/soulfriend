@@ -24,6 +24,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/ioredis": "^4.28.10",
     "@types/nodemailer": "^7.0.3",
+    "@types/redis": "^4.0.10",
     "@upstash/qstash": "^2.8.4",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",

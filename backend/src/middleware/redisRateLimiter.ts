@@ -32,8 +32,16 @@ export function createRateLimiter(config: RateLimitConfig) {
     },
   } = config;
 
+  // Memory-based fallback for when Redis is unavailable
+  const memoryStore = new Map<string, { count: number; resetTime: number }>();
+
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Generate unique key for this request
+      const identifier = keyGenerator(req);
+      const key = `ratelimit:${req.path}:${identifier}`;
+      const windowSeconds = Math.ceil(windowMs / 1000);
+
       // Wait a bit for Redis to connect (max 2 seconds)
       let retries = 10;
       while (!redisService.isReady() && retries > 0) {
@@ -41,16 +49,64 @@ export function createRateLimiter(config: RateLimitConfig) {
         retries--;
       }
 
-      // If Redis still not ready after waiting, skip rate limiting
+      // If Redis still not ready after waiting, use memory-based fallback
       if (!redisService.isReady()) {
-        console.warn('⚠️ Redis not ready after waiting, skipping rate limiting');
+        console.warn('⚠️ Redis not ready, using memory-based rate limiting fallback');
+        
+        // Clean up expired entries
+        const now = Date.now();
+        for (const [k, v] of memoryStore.entries()) {
+          if (v.resetTime < now) {
+            memoryStore.delete(k);
+          }
+        }
+
+        // Check memory store
+        const record = memoryStore.get(key);
+        if (record && record.resetTime > now) {
+          if (record.count >= maxRequests) {
+            const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+            res.set({
+              'X-RateLimit-Limit': maxRequests.toString(),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': record.resetTime.toString(),
+              'Retry-After': retryAfter.toString(),
+            });
+            return res.status(429).json({
+              error: 'Too Many Requests',
+              message: message + ' (memory fallback)',
+              retryAfter,
+            });
+          }
+          // Increment count
+          record.count++;
+          res.set({
+            'X-RateLimit-Limit': maxRequests.toString(),
+            'X-RateLimit-Remaining': Math.max(0, maxRequests - record.count).toString(),
+            'X-RateLimit-Reset': record.resetTime.toString(),
+          });
+        } else {
+          // Create new record
+          memoryStore.set(key, {
+            count: 1,
+            resetTime: now + windowMs,
+          });
+          res.set({
+            'X-RateLimit-Limit': maxRequests.toString(),
+            'X-RateLimit-Remaining': (maxRequests - 1).toString(),
+            'X-RateLimit-Reset': (now + windowMs).toString(),
+          });
+        }
         return next();
       }
 
-      // Generate unique key for this request
-      const identifier = keyGenerator(req);
-      const key = `ratelimit:${req.path}:${identifier}`;
-      const windowSeconds = Math.ceil(windowMs / 1000);
+      // Redis is ready - use Redis-based rate limiting
+      console.log('✅ Rate limiter check:', {
+        path: req.path,
+        identifier,
+        key,
+        redisReady: redisService.isReady(),
+      });
 
       // Check rate limit
       const isLimited = await redisService.isRateLimited(key, maxRequests, windowSeconds);
@@ -59,6 +115,12 @@ export function createRateLimiter(config: RateLimitConfig) {
         // Get remaining TTL
         const ttl = await redisService.ttl(key);
         
+        console.log('🚫 Rate limit exceeded:', {
+          key,
+          maxRequests,
+          ttl,
+        });
+
         // Set rate limit headers
         res.set({
           'X-RateLimit-Limit': maxRequests.toString(),
@@ -79,6 +141,12 @@ export function createRateLimiter(config: RateLimitConfig) {
       const currentCount = await client.get(key);
       const count = currentCount ? parseInt(currentCount) : 0;
 
+      console.log('✅ Rate limit OK:', {
+        key,
+        currentCount: count,
+        remaining: Math.max(0, maxRequests - count),
+      });
+
       res.set({
         'X-RateLimit-Limit': maxRequests.toString(),
         'X-RateLimit-Remaining': Math.max(0, maxRequests - count).toString(),
@@ -88,7 +156,7 @@ export function createRateLimiter(config: RateLimitConfig) {
       next();
     } catch (error) {
       // If rate limiting fails, log error but don't block request
-      console.error('Rate limiter error:', error);
+      console.error('❌ Rate limiter error:', error);
       next();
     }
   };

@@ -247,6 +247,7 @@ export class MemoryAwareChatbotService {
 
   /**
    * Extract insights for long-term memory (IMPROVED - background task)
+   * NOW SUPPORTS SHORT MESSAGES - Learn from ALL chats!
    */
   private async extractInsightsBackground(
     userId: string,
@@ -255,18 +256,86 @@ export class MemoryAwareChatbotService {
     botResponse: EnhancedResponse
   ): Promise<void> {
     try {
-      // Only extract insights from meaningful conversations
-      if (userMessage.length < 15) {
-        return; // Skip very short messages
-      }
-
+      // FIXED: Removed 15-char threshold - learn from ALL messages!
       // Extract patterns from user behavior
       const insights: LongTermMemoryData[] = [];
       const timeContext = this.getTimeContext();
       const topics = this.extractTopics(userMessage);
 
       // Calculate base confidence based on message quality
-      const baseConfidence = Math.min(0.5 + (userMessage.length / 200), 0.9);
+      // Short messages get lower confidence but still valuable
+      const baseConfidence = Math.min(0.3 + (userMessage.length / 200), 0.9);
+
+      // ====================
+      // MICRO-INSIGHTS FOR SHORT MESSAGES (1-15 chars)
+      // ====================
+      if (userMessage.length < 15) {
+        // Extract emotion from single words
+        const shortMsgLower = userMessage.toLowerCase().trim();
+        const emotionMap: Record<string, { emotion: string; intensity: number }> = {
+          'buồn': { emotion: 'sad', intensity: 0.8 },
+          'vui': { emotion: 'happy', intensity: 0.8 },
+          'lo': { emotion: 'anxious', intensity: 0.7 },
+          'sợ': { emotion: 'fearful', intensity: 0.8 },
+          'giận': { emotion: 'angry', intensity: 0.8 },
+          'mệt': { emotion: 'tired', intensity: 0.7 },
+          'stress': { emotion: 'stressed', intensity: 0.8 },
+          'ok': { emotion: 'neutral', intensity: 0.5 },
+          'không': { emotion: 'negative', intensity: 0.6 },
+          'có': { emotion: 'positive', intensity: 0.6 },
+          'cảm ơn': { emotion: 'grateful', intensity: 0.7 },
+          'xin lỗi': { emotion: 'apologetic', intensity: 0.6 },
+        };
+
+        // Check for emotion keywords
+        for (const [keyword, data] of Object.entries(emotionMap)) {
+          if (shortMsgLower.includes(keyword)) {
+            insights.push({
+              type: 'pattern',
+              content: `Micro-insight: User expressed ${data.emotion} feeling (short message: "${userMessage}")`,
+              metadata: {
+                confidence: 0.6, // Lower confidence for short messages
+                source: 'micro_insight',
+                category: 'short_message_emotion',
+                intensity: data.intensity,
+                relatedTopics: [data.emotion],
+                timeContext,
+                originalMessage: userMessage,
+              },
+            });
+
+            // Track time patterns for emotions
+            insights.push({
+              type: 'pattern',
+              content: `User tends to feel ${data.emotion} during ${timeContext.timePattern}`,
+              metadata: {
+                confidence: 0.5,
+                source: 'time_pattern',
+                category: 'temporal_emotion',
+                intensity: data.intensity * 0.7,
+                relatedTopics: [data.emotion, timeContext.timePattern],
+                timeContext,
+              },
+            });
+
+            break; // Only extract first matching emotion
+          }
+        }
+
+        // Save micro-insights and return early
+        if (insights.length > 0) {
+          for (const insight of insights) {
+            await memorySystem.saveLongTermMemory(userId, insight);
+            logger.info('🔬 Micro-insight saved from short message', {
+              userId,
+              messageLength: userMessage.length,
+              message: userMessage,
+              insightType: insight.type,
+            });
+          }
+        }
+        return; // Skip full extraction for short messages
+      }
 
       // ====================
       // 1. CRISIS TRIGGERS (High Priority)

@@ -101,22 +101,26 @@ export function createRateLimiter(config: RateLimitConfig) {
       }
 
       // Redis is ready - use Redis-based rate limiting
+      // NOTE: redisService.isRateLimited already adds 'ratelimit:' prefix
+      // So we pass the key WITHOUT the prefix
+      const keyWithoutPrefix = `${req.path}:${identifier}`;
+      
       console.log('✅ Rate limiter check:', {
         path: req.path,
         identifier,
-        key,
+        keyWithoutPrefix,
         redisReady: redisService.isReady(),
       });
 
-      // Check rate limit
-      const isLimited = await redisService.isRateLimited(key, maxRequests, windowSeconds);
+      // Check rate limit (redisService adds 'ratelimit:' prefix internally)
+      const isLimited = await redisService.isRateLimited(keyWithoutPrefix, maxRequests, windowSeconds);
 
       if (isLimited) {
-        // Get remaining TTL
-        const ttl = await redisService.ttl(key);
+        // Get remaining TTL (add prefix for TTL check)
+        const ttl = await redisService.ttl(`ratelimit:${keyWithoutPrefix}`);
         
         console.log('🚫 Rate limit exceeded:', {
-          key,
+          key: `ratelimit:${keyWithoutPrefix}`,
           maxRequests,
           ttl,
         });
@@ -138,11 +142,12 @@ export function createRateLimiter(config: RateLimitConfig) {
 
       // Set rate limit headers for successful requests
       const client = redisService.getClient();
-      const currentCount = await client.get(key);
+      const fullKey = `ratelimit:${keyWithoutPrefix}`;
+      const currentCount = await client.get(fullKey);
       const count = currentCount ? parseInt(currentCount) : 0;
 
       console.log('✅ Rate limit OK:', {
-        key,
+        key: fullKey,
         currentCount: count,
         remaining: Math.max(0, maxRequests - count),
       });

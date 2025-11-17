@@ -116,6 +116,11 @@ export const chatbotRateLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   maxRequests: 20,
   message: 'Too many chat messages, please slow down',
+  keyGenerator: (req: Request) => {
+    // Use userId from body if available, otherwise IP
+    const userId = (req.body as any)?.userId;
+    return userId ? `chatbot:user:${userId}` : `chatbot:ip:${req.ip}`;
+  },
 });
 
 // Heavy operation rate limiter: 10 requests per 5 minutes

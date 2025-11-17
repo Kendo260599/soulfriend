@@ -10,6 +10,7 @@
 import { memorySystem, WorkingMemoryData, ShortTermMemoryData, LongTermMemoryData } from './memorySystem';
 import { enhancedChatbotService, EnhancedResponse } from './enhancedChatbotService';
 import { logger } from '../utils/logger';
+import redisService from './redisService';
 
 export interface MemoryAwareResponse extends EnhancedResponse {
   relevantMemories?: Array<{
@@ -58,11 +59,30 @@ export class MemoryAwareChatbotService {
       }> = [];
 
       try {
-        relevantMemories = await memorySystem.retrieveRelevantMemories(userId, message, 5);
-        logger.info(`Retrieved ${relevantMemories.length} relevant memories`, {
-          userId,
-          query: message.substring(0, 50),
-        });
+        // 🔴 TRY CACHE FIRST
+        if (redisService.isReady()) {
+          const cacheKey = `memories:${userId}:${message.substring(0, 50)}`;
+          const cached = await redisService.getCachedJSON<typeof relevantMemories>(cacheKey);
+          
+          if (cached) {
+            relevantMemories = cached;
+            logger.info(`✅ Cache HIT: Retrieved ${cached.length} memories from Redis`);
+          } else {
+            // Cache miss - fetch from Pinecone
+            relevantMemories = await memorySystem.retrieveRelevantMemories(userId, message, 5);
+            
+            // Cache for 10 minutes
+            await redisService.cacheJSON(cacheKey, relevantMemories, 600);
+            logger.info(`⚠️ Cache MISS: Retrieved ${relevantMemories.length} memories from Pinecone, cached`);
+          }
+        } else {
+          // Redis not available - direct fetch
+          relevantMemories = await memorySystem.retrieveRelevantMemories(userId, message, 5);
+          logger.info(`Retrieved ${relevantMemories.length} relevant memories (no cache)`, {
+            userId,
+            query: message.substring(0, 50),
+          });
+        }
       } catch (error) {
         logger.warn('Failed to retrieve long-term memories, continuing without them', error);
       }

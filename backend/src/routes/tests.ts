@@ -128,12 +128,22 @@ router.get(
       });
     }
 
-    // Lấy từ MongoDB
-    const results = await TestResult.find().sort({ completedAt: -1 });
+    // Lấy từ MongoDB với pagination
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [results, total] = await Promise.all([
+      TestResult.find().sort({ completedAt: -1 }).skip(skip).limit(limit),
+      TestResult.countDocuments(),
+    ]);
 
     res.json({
       success: true,
       count: results.length,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
       data: results,
     });
   })

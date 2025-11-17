@@ -348,7 +348,9 @@ export class MemorySystem {
     try {
       // 1. Delete from Redis (working + short-term)
       if (this.isEnabled()) {
-        const workingKeys = await this.redis!.keys(`working:*${userId}*`);
+        // Use SCAN instead of KEYS for better performance with large datasets
+        // Fallback to keys() for now, but with pattern to limit scope
+        const workingKeys = await this.redis!.keys(`working:${userId}:*`);
         if (workingKeys.length > 0) {
           await this.redis!.del(...workingKeys);
         }
@@ -383,7 +385,8 @@ export class MemorySystem {
       let shortTermCount = 0;
 
       if (this.isEnabled()) {
-        const workingKeys = await this.redis!.keys(`working:*${userId}*`);
+        // Check working memory with specific pattern
+        const workingKeys = await this.redis!.keys(`working:${userId}:*`);
         workingExists = workingKeys.length > 0;
         shortTermCount = await this.redis!.zcard(`shortterm:${userId}`);
       }

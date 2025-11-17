@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import styled, { createGlobalStyle } from 'styled-components';
 
 // Import components
-import WelcomePage from './WelcomePage';
 import ProfessionalDashboard from './ProfessionalDashboard';
 import TestTaking from './TestTaking';
 import TestResults from './TestResults';
@@ -274,7 +273,7 @@ const App: React.FC = () => {
         <AppContainer>
           <Router>
             <Routes>
-              <Route path="/" element={<WelcomePage />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<ProfessionalDashboard testResults={testResults} />} />
             <Route path="/test/:testType" element={<TestTaking 
               selectedTests={[]} 

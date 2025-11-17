@@ -10,6 +10,15 @@ import helmet from 'helmet';
 import { createServer } from 'http';
 import * as Sentry from '@sentry/node';
 
+// Extend Express Request type for rawBody
+declare global {
+  namespace Express {
+    interface Request {
+      rawBody?: string;
+    }
+  }
+}
+
 // Configuration
 import databaseConnection from './config/database';
 import config from './config/environment';
@@ -171,10 +180,59 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Body parsing with UTF-8 support
-app.use(express.json({ limit: '10mb', type: 'application/json' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.text({ type: 'text/plain' }));
+// Body parsing with UTF-8 support (CRITICAL for Vietnamese characters!)
+app.use(express.json({ 
+  limit: '10mb', 
+  type: 'application/json',
+  verify: (req: any, res: any, buf: Buffer) => {
+    // Preserve raw buffer for UTF-8 validation
+    req.rawBody = buf.toString('utf8');
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 50000
+}));
+app.use(express.text({ type: 'text/plain', defaultCharset: 'utf-8' }));
+
+// ⚠️ CRITICAL: Vietnamese UTF-8 Fix Middleware
+// Must come AFTER body parsers to fix corrupted encoding
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.body && typeof req.body === 'object') {
+    // Recursively fix all string values in request body
+    const fixEncoding = (obj: any): any => {
+      if (typeof obj === 'string') {
+        try {
+          // If string contains replacement characters (�), it's corrupted
+          if (obj.includes('�') || obj.charCodeAt(0) === 65533) {
+            // Try to recover from raw body if available
+            if (req.rawBody) {
+              const parsed = JSON.parse(req.rawBody);
+              return parsed;
+            }
+          }
+          // Normalize Vietnamese characters (NFC = Canonical Composition)
+          return obj.normalize('NFC');
+        } catch {
+          return obj;
+        }
+      } else if (Array.isArray(obj)) {
+        return obj.map(fixEncoding);
+      } else if (obj !== null && typeof obj === 'object') {
+        const fixed: any = {};
+        for (const key in obj) {
+          fixed[key] = fixEncoding(obj[key]);
+        }
+        return fixed;
+      }
+      return obj;
+    };
+    
+    req.body = fixEncoding(req.body);
+  }
+  next();
+});
 
 // Sanitize user input against NoSQL injection
 // Note: Disabled for Express v5 compatibility - implementing manual sanitization in validators

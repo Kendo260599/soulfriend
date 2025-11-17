@@ -9,6 +9,7 @@ import { Redis } from 'ioredis';
 import { vectorStore, VectorMetadata } from './vectorStore';
 import LongTermMemory from '../models/LongTermMemory';
 import config from '../config/environment';
+import redisService from './redisService';
 
 export interface WorkingMemoryData {
   emotion: string;

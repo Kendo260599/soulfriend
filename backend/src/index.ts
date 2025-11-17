@@ -17,6 +17,9 @@ import { qstashService } from './config/qstash';
 import { redisConnection } from './config/redis';
 import { initSentry } from './config/sentry';
 
+// Redis Service
+import redisService from './services/redisService';
+
 // Middleware
 import { auditLogger } from './middleware/auditLogger';
 import { errorHandler } from './middleware/errorHandler';
@@ -452,8 +455,10 @@ const startServer = async () => {
       });
 
       // Connect to Redis AFTER server starts (non-blocking)
-      console.log('🔴 Connecting to Redis (non-blocking)...');
-      redisConnection.connect().catch(err => {
+      console.log('🔴 Connecting to Redis Cloud (non-blocking)...');
+      redisService.connect().then(() => {
+        console.log('✅ Redis Cloud connected - Caching enabled!');
+      }).catch(err => {
         console.warn('⚠️  Redis connection failed, continuing without cache:', err instanceof Error ? err.message : err);
       });
 

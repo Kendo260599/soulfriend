@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 
 // Import components
-import ProfessionalDashboard from './ProfessionalDashboard';
-import TestTaking from './TestTaking';
-import TestResults from './TestResults';
-import ResultsAnalysis from './ResultsAnalysis';
 import ChatBot from './ChatBot';
+import ProfessionalDashboard from './ProfessionalDashboard';
+import ResultsAnalysis from './ResultsAnalysis';
+import TestResults from './TestResults';
+import TestTaking from './TestTaking';
+import WelcomePage from './WelcomePage';
 
 // Import AI Context
 import { AIProvider } from '../contexts/AIContext';
@@ -273,7 +274,7 @@ const App: React.FC = () => {
         <AppContainer>
           <Router>
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<WelcomePage />} />
               <Route path="/dashboard" element={<ProfessionalDashboard testResults={testResults} />} />
             <Route path="/test/:testType" element={<TestTaking 
               selectedTests={[]} 

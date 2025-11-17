@@ -193,18 +193,27 @@ router.get(
 
 /**
  * GET /api/hitl-feedback/all
- * Get all feedback entries
+ * Get all feedback entries with pagination
  */
 router.get(
   '/all',
   asyncHandler(async (req, res) => {
     try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const skip = (page - 1) * limit;
+
       const allFeedback = hitlFeedbackService.getAllFeedback();
+      const total = allFeedback.length;
+      const paginatedFeedback = allFeedback.slice(skip, skip + limit);
 
       res.json({
         success: true,
-        count: allFeedback.length,
-        feedback: allFeedback,
+        count: paginatedFeedback.length,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        feedback: paginatedFeedback,
       });
     } catch (error: any) {
       logger.error('Error getting all feedback:', error);

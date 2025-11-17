@@ -149,7 +149,20 @@ export class MemoryAwareChatbotService {
 
       // 4.3. Extract insights for long-term memory (background task)
       this.extractInsightsBackground(userId, sessionId, message, response).catch(error => {
-        logger.warn('Background insight extraction failed', error);
+        // CRITICAL ERROR LOGGING - Force visibility
+        console.error('🚨🚨🚨 INSIGHT EXTRACTION FAILED 🚨🚨🚨');
+        console.error('Error:', error);
+        console.error('Error Message:', error?.message);
+        console.error('Error Stack:', error?.stack);
+        console.error('User ID:', userId);
+        console.error('Session ID:', sessionId);
+        logger.error('Background insight extraction failed', {
+          error: error?.message,
+          stack: error?.stack,
+          userId,
+          sessionId,
+          timestamp: new Date().toISOString()
+        });
       });
 
       // ====================
@@ -255,7 +268,16 @@ export class MemoryAwareChatbotService {
     userMessage: string,
     botResponse: EnhancedResponse
   ): Promise<void> {
+    // ENTRY POINT LOGGING - Verify function is called
+    console.log('🔍 extractInsightsBackground() CALLED');
+    console.log('  User ID:', userId);
+    console.log('  Session ID:', sessionId);
+    console.log('  Message:', userMessage.substring(0, 50));
+    console.log('  Message Length:', userMessage.length);
+    
     try {
+      console.log('✅ Inside try block - starting extraction...');
+      
       // FIXED: Removed 15-char threshold - learn from ALL messages!
       // Extract patterns from user behavior
       const insights: LongTermMemoryData[] = [];

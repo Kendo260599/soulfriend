@@ -77,3 +77,17 @@ backend/Dockerfile.disabled
 # Railway configuration with sensitive data
 backend/railway.toml
 railway.toml
+
+# Redis test/connection files (contain credentials)
+redis-connect.js
+test-redis-connection.js
+*redis-test*.js
+backend/connect-*-redis.ts
+backend/cleanup-redis*.ts
+
+# PowerShell scripts with credentials
+add-redis-to-render.ps1
+*-redis-*.ps1
+
+# Documentation with credentials
+REDIS_INTEGRATION*.md

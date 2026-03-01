@@ -76,7 +76,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
 ### 7. 🔑 Cerebras API Key (ĐÃ DEPRECATED)
 **Hành động:** Không cần rotate — chỉ cần revoke key cũ  
-1. Truy cập Cerebras dashboard → API Keys → Delete key `***REDACTED***...`
+1. Truy cập Cerebras dashboard → API Keys → Delete key cũ đã bị lộ
 
 ### 8. 🔑 Unknown Key `sk-or-v1-...`
 **Hành động:** Xác định nguồn gốc key này và revoke  

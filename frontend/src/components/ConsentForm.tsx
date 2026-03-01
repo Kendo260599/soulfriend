@@ -191,7 +191,8 @@ const ConsentForm: React.FC<ConsentFormProps> = ({ onConsentGiven }) => {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/consent', {
+      const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
+      const response = await axios.post(`${apiUrl}/api/consent`, {
         agreed: true,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent

@@ -212,7 +212,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNewTest, onViewProfile, onDataB
   useEffect(() => {
     const loadResults = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/tests/results');
+        const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
+        const response = await fetch(`${apiUrl}/api/tests/results`);
         const data = await response.json();
         
         if (data.success && data.data) {

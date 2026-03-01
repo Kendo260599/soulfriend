@@ -4,7 +4,7 @@
 
 export const API_CONFIG = {
   // ⚠️ IMPORTANT: Set REACT_APP_API_URL in Vercel Environment Variables
-  // Railway Backend URL: https://your-project-name.up.railway.app
+  // Render Backend URL
   // Remove trailing slash to prevent double slashes
   BASE_URL: (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, ''),
   ENDPOINTS: {

@@ -38,7 +38,10 @@ export const authenticateAdmin = asyncHandler(
 
     // Verify JWT token
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || '***REDACTED_JWT***') as any;
+      if (!process.env.JWT_SECRET) {
+        return res.status(500).json({ success: false, message: 'Server configuration error' });
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
 
       if (!decoded.adminId) {
         return res.status(401).json({

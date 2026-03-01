@@ -9,7 +9,7 @@ import { DialogContext, OrchestratorResponse } from './chatbotOrchestratorServic
 
 // Backend API configuration
 // Remove trailing slash to prevent double slashes
-const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-production.up.railway.app').replace(/\/$/, '');
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
 const API_VERSION = 'v2';
 const CHATBOT_BASE = `${BACKEND_URL}/api/${API_VERSION}/chatbot`;
 

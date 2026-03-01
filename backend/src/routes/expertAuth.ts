@@ -10,8 +10,12 @@ import logger from '../utils/logger';
 
 const router = express.Router();
 
-// JWT Secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || '***REDACTED_JWT***';
+// JWT Secret - MUST be set via environment variable
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set');
+  process.exit(1);
+}
 const JWT_EXPIRES_IN = '7d'; // Token valid for 7 days
 
 // =============================================================================

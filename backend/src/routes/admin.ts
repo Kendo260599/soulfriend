@@ -55,9 +55,13 @@ router.post(
     }
 
     // Tạo JWT token
+    if (!process.env.JWT_SECRET) {
+      console.error('FATAL: JWT_SECRET environment variable is not set');
+      return res.status(500).json({ success: false, message: 'Server configuration error' });
+    }
     const token = jwt.sign(
       { adminId: admin._id, username: admin.username },
-      process.env.JWT_SECRET || '***REDACTED_JWT***',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 

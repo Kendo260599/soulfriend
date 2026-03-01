@@ -32,7 +32,7 @@ class EmailService {
    * Initialize email service - prefer SendGrid, fallback to SMTP
    */
   private initialize(): void {
-    // Priority 1: SendGrid (most reliable for Railway)
+    // Priority 1: SendGrid (most reliable for Render)
     if (config.SENDGRID_API_KEY) {
       try {
         sgMail.setApiKey(config.SENDGRID_API_KEY);

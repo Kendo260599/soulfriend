@@ -52,7 +52,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         'http://localhost:3000',
         'https://soulfriend-kendo260599s-projects.vercel.app',
         'https://soulfriend-git-main-kendo260599s-projects.vercel.app',
-        'https://soulfriend-production.up.railway.app'
+        'https://soulfriend-api.onrender.com'
       ],
       methods: ['GET', 'POST'],
       credentials: true

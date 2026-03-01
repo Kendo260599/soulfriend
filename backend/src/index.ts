@@ -491,7 +491,7 @@ const startServer = async () => {
     console.log('✅ Socket.io initialized successfully');
 
     // Start HTTP server FIRST - before database connection
-    // This ensures Railway health check can reach server immediately
+    // This ensures Render health check can reach server immediately
     const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
     console.log(`📊 Starting server on port: ${actualPort}`);
 

@@ -56,6 +56,20 @@ backend/check-*.js
 backend/list-*.js
 backend/internal-*.js
 
+# Root-level test/utility files with potential secrets
+test-*.js
+test-*.ts
+test-*.ps1
+test-*.html
+check-*.js
+analyze-*.js
+deploy-*.ps1
+auto-deploy-*.ps1
+railway-*.ps1
+verify-*.ps1
+set-vercel-*.js
+set-vercel-*.ps1
+
 # Docker files (only keep if needed)
 backend/Dockerfile.dev
 backend/Dockerfile.disabled
@@ -91,3 +105,17 @@ add-redis-to-render.ps1
 
 # Documentation with credentials
 REDIS_INTEGRATION*.md
+
+# Sensitive/obsolete documentation files
+*_DEPLOYMENT_GUIDE.md
+*_DEPLOY_*.md
+*RAILWAY*.md
+*GEMINI*.md
+*CEREBRAS*.md
+JWT_SECRET*.md
+MONGODB_*.md
+*_SECRET_*.md
+*API_KEY*.md
+SENTRY_*.md
+*ENV_SETUP*.md
+*_VARIABLES*.md

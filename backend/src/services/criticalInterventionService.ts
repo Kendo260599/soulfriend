@@ -208,7 +208,7 @@ export class CriticalInterventionService {
       keywords: alert.detectedKeywords,
     });
 
-    // Force console output for Railway visibility
+    // Force console output for Render visibility
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
     console.error(`User: ${userId}`);

@@ -316,15 +316,23 @@ class DemographicsService {
   // ================================
 
   private encryptData(data: any): string {
-    // Simple encryption - in production, use proper encryption
-    return btoa(JSON.stringify(data));
+    // Encode data - for localStorage, use base64 with URI encoding for safety
+    try {
+      return btoa(encodeURIComponent(JSON.stringify(data)));
+    } catch {
+      return btoa(JSON.stringify(data));
+    }
   }
 
   private decryptData(encryptedData: string): any {
     try {
-      return JSON.parse(atob(encryptedData));
+      return JSON.parse(decodeURIComponent(atob(encryptedData)));
     } catch {
-      return [];
+      try {
+        return JSON.parse(atob(encryptedData));
+      } catch {
+        return [];
+      }
     }
   }
 

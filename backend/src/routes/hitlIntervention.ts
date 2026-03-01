@@ -7,13 +7,17 @@ import express from 'express';
 import { criticalInterventionService } from '../services/criticalInterventionService';
 import enhancedChatbotService from '../services/enhancedChatbotService';
 import logger from '../utils/logger';
+import { authenticateExpert } from './expertAuth';
 
 const router = express.Router();
+
+// Apply expert authentication to all HITL routes
+router.use(authenticateExpert);
 
 /**
  * @route   GET /api/hitl/alerts
  * @desc    Get all active alerts (pending/escalated)
- * @access  Clinical Team (TODO: Add auth middleware)
+ * @access  Clinical Team (Authenticated Expert)
  */
 router.get('/alerts', async (req, res) => {
   try {

@@ -6,8 +6,12 @@
 import express, { Request, Response } from 'express';
 import { memorySystem } from '../services/memorySystem';
 import { vectorStore } from '../services/vectorStore';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = express.Router();
+
+// Require admin authentication for all test routes
+router.use(authenticateAdmin);
 
 // Test working memory
 router.post('/working-memory', async (req: Request, res: Response) => {

@@ -5,6 +5,7 @@
 
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import logger from '../utils/logger';
 import { criticalInterventionService } from '../services/criticalInterventionService';
 
@@ -63,6 +64,31 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
   });
 
   logger.info('🔌 Socket.io server initializing...');
+
+  // =============================================================================
+  // SOCKET AUTHENTICATION MIDDLEWARE
+  // =============================================================================
+
+  const authenticateSocket = (socket: Socket, next: (err?: Error) => void) => {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    if (!token) {
+      logger.warn(`🔒 Socket connection rejected: No auth token provided`);
+      return next(new Error('Authentication required'));
+    }
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      logger.error('JWT_SECRET not configured');
+      return next(new Error('Server configuration error'));
+    }
+    try {
+      const decoded = jwt.verify(token as string, jwtSecret) as any;
+      (socket as any).user = decoded;
+      next();
+    } catch (err) {
+      logger.warn(`🔒 Socket connection rejected: Invalid token`);
+      return next(new Error('Invalid authentication token'));
+    }
+  };
 
   // =============================================================================
   // USER NAMESPACE - For users in crisis
@@ -138,6 +164,9 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
   // =============================================================================
 
   const expertNamespace = io.of('/expert');
+
+  // Apply authentication to expert namespace
+  expertNamespace.use(authenticateSocket);
 
   expertNamespace.on('connection', (socket: Socket) => {
     const { expertId, expertName } = socket.handshake.query as { expertId?: string; expertName?: string };

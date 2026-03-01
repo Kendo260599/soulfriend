@@ -14,8 +14,12 @@ import express, { Request, Response } from 'express';
 import { criticalInterventionService } from '../services/criticalInterventionService';
 import { logger } from '../utils/logger';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { authenticateExpert } from './expertAuth';
 
 const router = express.Router();
+
+// Apply expert authentication to all critical alert routes
+router.use(authenticateExpert);
 
 /**
  * GET /api/alerts/active

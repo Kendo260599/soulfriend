@@ -333,31 +333,68 @@ class SecurityService {
 
 
   private async encrypt(data: string): Promise<string> {
-    // Simple encryption - in production, use proper encryption library
-    const key = await this.getEncryptionKey();
-    const encoded = btoa(data);
-    return encoded; // Placeholder - implement proper encryption
+    try {
+      const key = await this.getCryptoKey();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encodedData = new TextEncoder().encode(data);
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        encodedData
+      );
+      // Combine IV + ciphertext and base64 encode
+      const combined = new Uint8Array(iv.length + new Uint8Array(encrypted).length);
+      combined.set(iv);
+      combined.set(new Uint8Array(encrypted), iv.length);
+      return btoa(Array.from(combined).map(b => String.fromCharCode(b)).join(''));
+    } catch {
+      // Fallback: base64 encode (better than plaintext)
+      return btoa(encodeURIComponent(data));
+    }
   }
 
   private async decrypt(encryptedData: string): Promise<string> {
-    // Simple decryption - in production, use proper decryption library
-    const key = await this.getEncryptionKey();
-    return atob(encryptedData); // Placeholder - implement proper decryption
+    try {
+      const key = await this.getCryptoKey();
+      const combined = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+      const iv = combined.slice(0, 12);
+      const ciphertext = combined.slice(12);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        ciphertext
+      );
+      return new TextDecoder().decode(decrypted);
+    } catch {
+      // Fallback: try base64 decode (for legacy data)
+      try {
+        return decodeURIComponent(atob(encryptedData));
+      } catch {
+        return encryptedData;
+      }
+    }
   }
 
-  private async getEncryptionKey(): Promise<string> {
-    // Generate or retrieve encryption key
-    let key = localStorage.getItem('encryption_key');
-    if (!key) {
-      key = this.generateEncryptionKey();
-      localStorage.setItem('encryption_key', key);
+  private cryptoKey: CryptoKey | null = null;
+
+  private async getCryptoKey(): Promise<CryptoKey> {
+    if (this.cryptoKey) return this.cryptoKey;
+    let rawKey = localStorage.getItem('encryption_key');
+    if (!rawKey) {
+      rawKey = this.generateEncryptionKey();
+      localStorage.setItem('encryption_key', rawKey);
     }
-    return key;
+    const keyData = Uint8Array.from(atob(rawKey), c => c.charCodeAt(0));
+    this.cryptoKey = await crypto.subtle.importKey(
+      'raw', keyData, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']
+    );
+    return this.cryptoKey;
   }
 
   private generateEncryptionKey(): string {
-    // Generate a simple encryption key
-    return btoa(Math.random().toString(36).substring(2, 15));
+    // Generate a cryptographically secure 256-bit key
+    const keyBytes = crypto.getRandomValues(new Uint8Array(32));
+    return btoa(Array.from(keyBytes).map(b => String.fromCharCode(b)).join(''));
   }
 
   // ================================
@@ -388,15 +425,22 @@ class SecurityService {
   }
 
   private hashEmail(email: string): string {
-    // Simple email hashing
     const [local, domain] = email.split('@');
-    const hashedLocal = btoa(local).substring(0, 8);
+    // Use a simple hash derived from charCodes rather than reversible btoa
+    let hash = 0;
+    for (let i = 0; i < local.length; i++) {
+      hash = ((hash << 5) - hash + local.charCodeAt(i)) | 0;
+    }
+    const hashedLocal = Math.abs(hash).toString(36).substring(0, 8);
     return `${hashedLocal}@${domain}`;
   }
 
   private hashName(name: string): string {
-    // Simple name hashing
-    return btoa(name).substring(0, 8);
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash).toString(36).substring(0, 8);
   }
 
   private hashPhone(phone: string): string {

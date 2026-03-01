@@ -7,6 +7,7 @@ import express from 'express';
 import chatbotController from '../controllers/chatbotController';
 import { rateLimiter } from '../middleware/rateLimiter';
 import { chatbotRateLimiter } from '../middleware/redisRateLimiter';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -115,7 +116,7 @@ router.delete('/session-memory/:sessionId', chatbotController.clearSessionMemory
  * DEBUG ENDPOINT - Version check
  * GET /api/v2/chatbot/debug/version
  */
-router.get('/debug/version', (req, res) => {
+router.get('/debug/version', authenticateAdmin, (req, res) => {
   res.json({
     version: '1.0.1',
     timestamp: new Date().toISOString(),
@@ -132,7 +133,7 @@ router.get('/debug/version', (req, res) => {
  * DEBUG ENDPOINT - Verify crisis detection in production
  * GET /api/v2/chatbot/debug/crisis-check
  */
-router.get('/debug/crisis-check', async (req, res) => {
+router.get('/debug/crisis-check', authenticateAdmin, async (req, res) => {
   try {
     const { detectCrisis } = await import('../data/crisisManagementData');
     
@@ -177,7 +178,7 @@ router.get('/debug/crisis-check', async (req, res) => {
  * DEBUG ENDPOINT - Test crisis detection directly
  * GET /api/v2/chatbot/debug/crisis-test?message=xxx
  */
-router.get('/debug/crisis-test', async (req, res) => {
+router.get('/debug/crisis-test', authenticateAdmin, async (req, res) => {
   try {
     const { message } = req.query;
 

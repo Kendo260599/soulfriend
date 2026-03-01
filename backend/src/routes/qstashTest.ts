@@ -5,8 +5,12 @@
 
 import { Router, Request, Response } from 'express';
 import { qstashService } from '../config/qstash';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = Router();
+
+// Require admin auth for test routes
+router.use(authenticateAdmin);
 
 /**
  * Test QStash - Send immediate message

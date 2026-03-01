@@ -13,8 +13,12 @@ import {
   addBreadcrumb,
   withSpan
 } from '../config/sentry';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = Router();
+
+// Require admin auth for test routes
+router.use(authenticateAdmin);
 
 // ============================================================================
 // TEST 1: Basic Error Tracking

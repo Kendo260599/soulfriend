@@ -6,8 +6,12 @@
 import { Router, Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
 import { captureException, captureMessage } from '../config/sentry';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = Router();
+
+// Require admin auth for test routes
+router.use(authenticateAdmin);
 
 /**
  * Test route - intentional error

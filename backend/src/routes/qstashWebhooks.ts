@@ -14,9 +14,12 @@ const router = Router();
  */
 router.post('/alert', async (req: Request, res: Response) => {
   try {
-    // Verify QStash signature (optional but recommended)
+    // Verify QStash signature (REQUIRED in production)
     const signature = req.headers['upstash-signature'] as string;
-    const isValid = signature ? await verifyQStashSignature(req, signature) : true;
+    if (!signature) {
+      return res.status(401).json({ error: 'Missing QStash signature' });
+    }
+    const isValid = await verifyQStashSignature(req, signature);
 
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid QStash signature' });
@@ -54,7 +57,10 @@ router.post('/alert', async (req: Request, res: Response) => {
 router.post('/daily-report', async (req: Request, res: Response) => {
   try {
     const signature = req.headers['upstash-signature'] as string;
-    const isValid = signature ? await verifyQStashSignature(req, signature) : true;
+    if (!signature) {
+      return res.status(401).json({ error: 'Missing QStash signature' });
+    }
+    const isValid = await verifyQStashSignature(req, signature);
 
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid QStash signature' });
@@ -85,27 +91,33 @@ router.post('/daily-report', async (req: Request, res: Response) => {
 });
 
 /**
- * Verify QStash signature for security
+ * Verify QStash signature using HMAC-SHA256
  */
 async function verifyQStashSignature(req: Request, signature: string): Promise<boolean> {
   try {
     const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
     const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;
 
-    if (!currentSigningKey || !nextSigningKey) {
-      console.warn('⚠️  QStash signing keys not configured - skipping verification');
-      return true;
+    if (!currentSigningKey) {
+      console.error('❌ QSTASH_CURRENT_SIGNING_KEY not configured - rejecting webhook');
+      return false;
     }
 
-    // QStash signature verification
-    // Format: "v1=<signature>,v1=<signature>"
+    const crypto = await import('crypto');
     const body = JSON.stringify(req.body);
-    const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-    // Simple verification (in production, use @upstash/qstash verifySignature)
-    const isValid = signature.includes('v1=');
-    
-    return isValid;
+    // Try current key first, then next key (for key rotation)
+    for (const key of [currentSigningKey, nextSigningKey].filter(Boolean) as string[]) {
+      const hmac = crypto.createHmac('sha256', key);
+      hmac.update(body);
+      const expectedSignature = hmac.digest('base64');
+      if (signature === expectedSignature || signature === `v1=${expectedSignature}`) {
+        return true;
+      }
+    }
+
+    console.warn('⚠️ QStash signature mismatch');
+    return false;
   } catch (error) {
     console.error('❌ Signature verification error:', error);
     return false;

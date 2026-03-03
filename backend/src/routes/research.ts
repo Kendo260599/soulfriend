@@ -13,10 +13,11 @@ const router = express.Router();
 /**
  * POST /api/research
  * Lưu dữ liệu research mới
- * Public route - không cần authentication
+ * Requires admin authentication
  */
 router.post(
   '/',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const { participantId, testResults, sessionData, qualityMetrics, metadata } = req.body;
@@ -73,7 +74,6 @@ router.post(
       res.status(500).json({
         success: false,
         error: 'Failed to save research data',
-        details: (error as Error).message,
       });
     }
   })
@@ -131,7 +131,6 @@ router.get(
       res.status(500).json({
         success: false,
         error: 'Failed to fetch research data',
-        details: (error as Error).message,
       });
     }
   })
@@ -173,7 +172,6 @@ router.get(
       res.status(500).json({
         success: false,
         error: 'Failed to fetch statistics',
-        details: (error as Error).message,
       });
     }
   })
@@ -259,7 +257,6 @@ router.get(
       res.status(500).json({
         success: false,
         error: 'Failed to export data',
-        details: (error as Error).message,
       });
     }
   })
@@ -294,7 +291,6 @@ router.get(
       res.status(500).json({
         success: false,
         error: 'Failed to fetch research data',
-        details: (error as Error).message,
       });
     }
   })
@@ -329,7 +325,6 @@ router.delete(
       res.status(500).json({
         success: false,
         error: 'Failed to delete research data',
-        details: (error as Error).message,
       });
     }
   })

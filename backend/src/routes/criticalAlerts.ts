@@ -41,7 +41,6 @@ router.get(
       res.status(500).json({
         success: false,
         message: 'Error fetching active alerts',
-        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   })
@@ -78,7 +77,7 @@ router.post(
       logger.error('Error acknowledging alert:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Error acknowledging alert',
+        message: 'Error acknowledging alert',
       });
     }
   })
@@ -116,7 +115,7 @@ router.post(
       logger.error('Error resolving alert:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Error resolving alert',
+        message: 'Error resolving alert',
       });
     }
   })
@@ -150,7 +149,6 @@ router.get(
       res.status(500).json({
         success: false,
         message: 'Error fetching alert details',
-        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   })
@@ -190,7 +188,6 @@ router.get(
       res.status(500).json({
         success: false,
         message: 'Error fetching alert stats',
-        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   })

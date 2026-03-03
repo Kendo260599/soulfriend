@@ -35,10 +35,42 @@ router.post('/register', async (req: Request, res: Response) => {
       });
     }
 
-    if (password.length < 8) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== 'string' || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email format',
+      });
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
       return res.status(400).json({
         success: false,
         error: 'Password must be at least 8 characters',
+      });
+    }
+
+    if (typeof name !== 'string' || name.length < 2 || name.length > 100) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name must be between 2 and 100 characters',
+      });
+    }
+
+    // Validate optional fields
+    const validRoles = ['crisis_counselor', 'psychologist', 'psychiatrist', 'social_worker', 'supervisor'];
+    if (role && (typeof role !== 'string' || !validRoles.includes(role))) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+      });
+    }
+
+    if (phone && (typeof phone !== 'string' || phone.length > 20)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid phone number',
       });
     }
 
@@ -99,10 +131,19 @@ router.post('/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     // Validation
-    if (!email || !password) {
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({
         success: false,
         error: 'Email and password are required',
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email format',
       });
     }
 

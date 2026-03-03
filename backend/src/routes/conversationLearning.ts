@@ -6,8 +6,12 @@ import { Router } from 'express';
 import { conversationLearningService } from '../services/conversationLearningService';
 import logger from '../utils/logger';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { authenticateExpert } from './expertAuth';
 
 const router = Router();
+
+// All conversation learning routes require expert authentication
+router.use(authenticateExpert);
 
 /**
  * POST /api/conversation-learning/feedback
@@ -34,7 +38,7 @@ router.post(
       logger.error('Error recording feedback:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to record feedback',
       });
     }
   })
@@ -61,7 +65,7 @@ router.get(
       logger.error('Error getting insights:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to get insights',
       });
     }
   })
@@ -100,7 +104,7 @@ router.get(
       logger.error('Error exporting training data:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to export training data',
       });
     }
   })
@@ -127,7 +131,7 @@ router.get(
       logger.error('Error finding common questions:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to find common questions',
       });
     }
   })
@@ -154,7 +158,7 @@ router.get(
       logger.error('Error getting conversations for review:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to get conversations for review',
       });
     }
   })

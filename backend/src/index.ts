@@ -81,19 +81,14 @@ initSentry();
 // PREFLIGHT HANDLER - MUST BE FIRST
 // ====================
 // Handle preflight requests BEFORE any other middleware
-// This ensures OPTIONS requests don't get blocked by other middleware
+// cors() middleware handles this, but keep explicit handler for edge cases
 app.options(/.*/, (req: Request, res: Response) => {
-  // Ultra-simple OPTIONS handler - just return CORS headers immediately
-  // No config access, no logic - just enough to satisfy browser preflight
   const origin = req.headers.origin as string | undefined;
 
-  // Set CORS headers
-  if (origin) {
+  if (origin && ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.vercel.app'))) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Vary', 'Origin');
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
   }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header(
@@ -131,10 +126,23 @@ app.use(
 );
 
 // CORS configuration - MUST be before other middleware
-// Use simple origin allow all for now to debug
+const ALLOWED_ORIGINS = [
+  'https://soulfriend.vercel.app',
+  'https://soulfriend-v4.vercel.app',
+  process.env.FRONTEND_URL,
+  ...(config.NODE_ENV === 'development' ? ['http://localhost:3000', 'http://localhost:5173'] : []),
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: true, // Allow all origins temporarily to debug
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, server-to-server)
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.vercel.app'))) {
+        return callback(null, origin);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
@@ -143,42 +151,7 @@ app.use(
   })
 );
 
-// ====================
-// CORS MIDDLEWARE - ALWAYS SET HEADERS
-// ====================
-// This middleware ensures CORS headers are ALWAYS set, even if other middleware fails
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const origin = req.headers.origin as string | undefined;
-
-  // Set CORS headers on every request
-  if (origin) {
-    // Allow all origins for now (we'll restrict later)
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Vary', 'Origin');
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Requested-With, X-API-Version'
-  );
-  res.header(
-    'Access-Control-Expose-Headers',
-    'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset'
-  );
-  res.header('Access-Control-Max-Age', '86400');
-
-  // Handle preflight immediately
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-
-  next();
-});
+// CORS headers handled by cors() middleware above — removed duplicate manual CORS handler
 
 // Body parsing with UTF-8 support (CRITICAL for Vietnamese characters!)
 app.use(express.json({ 
@@ -235,8 +208,28 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Sanitize user input against NoSQL injection
-// Note: Disabled for Express v5 compatibility - implementing manual sanitization in validators
-// Manual sanitization implemented in route validators
+// Strips MongoDB operators ($gt, $ne, etc.) from request body, query, and params
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  const sanitize = (obj: any): any => {
+    if (typeof obj !== 'object' || obj === null) return obj;
+    if (Array.isArray(obj)) return obj.map(sanitize);
+    const clean: any = {};
+    for (const key of Object.keys(obj)) {
+      if (key.startsWith('$')) continue; // Strip MongoDB operators
+      clean[key] = typeof obj[key] === 'object' ? sanitize(obj[key]) : obj[key];
+    }
+    return clean;
+  };
+  if (req.body) req.body = sanitize(req.body);
+  if (req.query) {
+    for (const key of Object.keys(req.query)) {
+      if (typeof req.query[key] === 'object') {
+        req.query[key] = undefined;
+      }
+    }
+  }
+  next();
+});
 
 // ====================
 // LOGGING & MONITORING
@@ -269,6 +262,8 @@ app.use(rateLimiter.middleware);
 // Stricter rate limiting for auth endpoints
 app.use('/api/auth', authRateLimiter.middleware);
 app.use('/api/admin/login', authRateLimiter.middleware);
+app.use('/api/v2/expert/login', authRateLimiter.middleware);
+app.use('/api/v2/expert/register', authRateLimiter.middleware);
 
 // ====================
 // API VERSIONING

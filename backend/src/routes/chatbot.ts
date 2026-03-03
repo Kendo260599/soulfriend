@@ -76,9 +76,9 @@ router.post('/session/:sessionId/end', chatbotController.endSession);
 /**
  * @route   GET /api/v2/chatbot/stats
  * @desc    Get chatbot statistics
- * @access  Admin only (TODO: Add auth middleware)
+ * @access  Admin only
  */
-router.get('/stats', chatbotController.getStats);
+router.get('/stats', authenticateAdmin, chatbotController.getStats);
 
 // ====================
 // 🧠 MEMORY-AWARE ENDPOINTS
@@ -94,23 +94,23 @@ router.post('/chat-with-memory', chatbotController.chatWithMemory);
 /**
  * @route   GET /api/v2/chatbot/history-with-memory/:userId/:sessionId
  * @desc    Get conversation history with memory context
- * @access  Public
+ * @access  Admin only
  */
-router.get('/history-with-memory/:userId/:sessionId', chatbotController.getHistoryWithMemory);
+router.get('/history-with-memory/:userId/:sessionId', authenticateAdmin, chatbotController.getHistoryWithMemory);
 
 /**
  * @route   GET /api/v2/chatbot/memory-profile/:userId
  * @desc    Get user's memory profile (patterns, preferences, insights)
- * @access  Public
+ * @access  Admin only
  */
-router.get('/memory-profile/:userId', chatbotController.getMemoryProfile);
+router.get('/memory-profile/:userId', authenticateAdmin, chatbotController.getMemoryProfile);
 
 /**
  * @route   DELETE /api/v2/chatbot/session-memory/:sessionId
  * @desc    Clear working memory for session
- * @access  Public
+ * @access  Admin only
  */
-router.delete('/session-memory/:sessionId', chatbotController.clearSessionMemory);
+router.delete('/session-memory/:sessionId', authenticateAdmin, chatbotController.clearSessionMemory);
 
 /**
  * DEBUG ENDPOINT - Version check
@@ -168,8 +168,8 @@ router.get('/debug/crisis-check', authenticateAdmin, async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({
-      error: error.message,
-      stack: error.stack
+      error: 'Crisis check failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -211,8 +211,8 @@ router.get('/debug/crisis-test', authenticateAdmin, async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({
-      error: error.message,
-      stack: error.stack,
+      error: 'Crisis test failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

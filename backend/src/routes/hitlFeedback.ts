@@ -8,8 +8,12 @@ import { Router } from 'express';
 import { hitlFeedbackService } from '../services/hitlFeedbackService';
 import logger from '../utils/logger';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { authenticateExpert } from './expertAuth';
 
 const router = Router();
+
+// All HITL feedback routes require expert authentication
+router.use(authenticateExpert);
 
 /**
  * POST /api/hitl-feedback/:alertId
@@ -55,7 +59,7 @@ router.post(
       logger.error('Error collecting HITL feedback:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to collect feedback',
       });
     }
   })
@@ -85,7 +89,7 @@ router.get(
       logger.error('Error calculating metrics:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to calculate metrics',
       });
     }
   })
@@ -114,7 +118,7 @@ router.get(
       logger.error('Error generating improvements:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to generate improvements',
       });
     }
   })
@@ -144,7 +148,7 @@ router.get(
       logger.error('Error getting keyword statistics:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to get keyword statistics',
       });
     }
   })
@@ -185,7 +189,7 @@ router.get(
       logger.error('Error exporting training data:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to export training data',
       });
     }
   })
@@ -219,7 +223,7 @@ router.get(
       logger.error('Error getting all feedback:', error);
       res.status(500).json({
         success: false,
-        error: error.message,
+        error: 'Failed to get feedback',
       });
     }
   })

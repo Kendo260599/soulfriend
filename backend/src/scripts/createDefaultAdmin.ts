@@ -23,10 +23,14 @@ const createDefaultAdmin = async () => {
     }
 
     // Tạo admin mặc định
+    if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+      console.error('❌ DEFAULT_ADMIN_PASSWORD environment variable is required');
+      process.exit(1);
+    }
     const defaultAdmin = new Admin({
       username: process.env.DEFAULT_ADMIN_USERNAME || 'admin',
       email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@soulfriend.com',
-      password: process.env.DEFAULT_ADMIN_PASSWORD || 'Kendo2605@',
+      password: process.env.DEFAULT_ADMIN_PASSWORD,
       fullName: 'System Administrator',
       role: 'super_admin',
     });

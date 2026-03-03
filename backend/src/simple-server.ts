@@ -160,7 +160,6 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'AI response failed',
-      details: (error as Error).message,
     });
   }
 });
@@ -216,7 +215,6 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
   res.status(500).json({
     success: false,
     error: 'Internal server error',
-    message: err.message
   });
 });
 

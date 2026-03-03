@@ -10,6 +10,7 @@ import { scoreTest } from '../utils/scoring';
 import { runClinicalValidation } from '../utils/clinicalTestRunner';
 import { createClinicalValidator } from '../utils/clinicalValidation';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { authenticateAdmin } from '../middleware/auth';
 
 import mongoose from 'mongoose';
 const router = express.Router();
@@ -110,10 +111,11 @@ router.post(
 
 /**
  * GET /api/tests/results
- * Lấy tất cả kết quả test đã lưu (cho dev/debug)
+ * Lấy tất cả kết quả test đã lưu (Admin only)
  */
 router.get(
   '/results',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     // Kiểm tra kết nối MongoDB
     if (mongoose.connection.readyState !== 1) {
@@ -129,8 +131,8 @@ router.get(
     }
 
     // Lấy từ MongoDB với pagination
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const skip = (page - 1) * limit;
 
     const [results, total] = await Promise.all([
@@ -483,10 +485,11 @@ function calculateMenopauseEvaluation(answers: number[]) {
 
 /**
  * GET /api/tests/validate
- * Chạy validation toàn diện cho hệ thống đánh giá tâm lý
+ * Chạy validation toàn diện cho hệ thống đánh giá tâm lý (Admin only)
  */
 router.get(
   '/validate',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     console.log('🔬 Starting Clinical Validation...');
 

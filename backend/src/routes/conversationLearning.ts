@@ -80,7 +80,7 @@ router.get(
   asyncHandler(async (req, res) => {
     try {
       const format = (req.query.format as 'jsonl' | 'csv') || 'jsonl';
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const limit = req.query.limit ? Math.min(parseInt(req.query.limit as string), 100) : undefined;
 
       if (format === 'jsonl' || format === 'csv') {
         const data = await conversationLearningService.exportForFineTuning(format);
@@ -118,7 +118,7 @@ router.get(
   '/common-questions',
   asyncHandler(async (req, res) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
       const questions = await conversationLearningService.findCommonQuestions(limit);
 
@@ -145,7 +145,7 @@ router.get(
   '/needs-review',
   asyncHandler(async (req, res) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
 
       const conversations = await conversationLearningService.getConversationsNeedingReview(limit);
 

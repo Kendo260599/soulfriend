@@ -6,6 +6,7 @@ import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { MockDataStore } from '../utils/mockDataStore';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ const router = express.Router();
  */
 router.get(
   '/data',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     try {
       // Trong thực tế, cần xác thực người dùng qua JWT token
@@ -64,6 +66,7 @@ router.get(
  */
 router.get(
   '/export',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const userData = {
@@ -115,6 +118,7 @@ router.get(
  */
 router.post(
   '/withdraw-consent',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     try {
       // Log consent withdrawal
@@ -158,6 +162,7 @@ router.post(
  */
 router.delete(
   '/data',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     try {
       // Log deletion request for audit trail
@@ -272,6 +277,7 @@ router.post(
  */
 router.get(
   '/audit-log',
+  authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
     try {
       // Log audit log access

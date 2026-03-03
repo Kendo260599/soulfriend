@@ -163,7 +163,7 @@ router.get(
   asyncHandler(async (req, res) => {
     try {
       const format = (req.query.format as 'jsonl' | 'csv') || 'jsonl';
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const limit = req.query.limit ? Math.min(parseInt(req.query.limit as string), 100) : undefined;
 
       if (format === 'jsonl' || format === 'csv') {
         const exportedData = await hitlFeedbackService.exportTrainingDataForFineTuning(format);
@@ -203,8 +203,8 @@ router.get(
   '/all',
   asyncHandler(async (req, res) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
       const skip = (page - 1) * limit;
 
       const allFeedback = hitlFeedbackService.getAllFeedback();

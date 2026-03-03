@@ -7,6 +7,7 @@ import { body, validationResult } from 'express-validator';
 import Consent from '../models/Consent';
 import { MockDataStore } from '../utils/mockDataStore';
 import { asyncHandler } from '../middleware/asyncHandler';
+import { authenticateAdmin } from '../middleware/auth';
 
 import mongoose from 'mongoose';
 const router = express.Router();
@@ -93,6 +94,7 @@ router.post(
  */
 router.get(
   '/stats',
+  authenticateAdmin,
   asyncHandler(async (req, res) => {
     try {
       const totalConsents = await Consent.countDocuments({ agreed: true });

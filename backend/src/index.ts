@@ -31,6 +31,7 @@ import redisService from './services/redisService';
 
 // Middleware
 import { auditLogger } from './middleware/auditLogger';
+import { authenticateAdmin } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
 import { authRateLimiter, rateLimiter } from './middleware/rateLimiter';
 
@@ -85,7 +86,7 @@ initSentry();
 app.options(/.*/, (req: Request, res: Response) => {
   const origin = req.headers.origin as string | undefined;
 
-  if (origin && ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.vercel.app'))) {
+  if (origin && ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.soulfriend.vercel.app'))) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Vary', 'Origin');
@@ -138,7 +139,7 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, server-to-server)
       if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.vercel.app'))) {
+      if (ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.soulfriend.vercel.app'))) {
         return callback(null, origin);
       }
       callback(new Error('Not allowed by CORS'));
@@ -291,8 +292,8 @@ app.use('/api/v2/expert', expertAuthRoutes);
 // ✨ NEW: QStash Webhooks for Scheduled Tasks
 app.use('/api/webhooks/qstash', qstashWebhookRoutes);
 
-// 🧪 TEST: QStash Testing Endpoints (Development)
-if (config.NODE_ENV === 'development' || process.env.ENABLE_TEST_ROUTES === 'true') {
+// 🧪 TEST: QStash Testing Endpoints (Development ONLY)
+if (config.NODE_ENV === 'development') {
   app.use('/api/test/qstash', qstashTestRoutes);
   console.log('🧪 QStash test routes enabled at /api/test/qstash');
   
@@ -328,8 +329,8 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-// Detailed health check (includes database status)
-app.get('/api/health/detailed', async (req: Request, res: Response) => {
+// Detailed health check (includes database status) - Admin only
+app.get('/api/health/detailed', authenticateAdmin, async (req: Request, res: Response) => {
   try {
     const dbStatus = databaseConnection.getConnectionState();
     const dbHealthy = databaseConnection.isHealthy();
@@ -377,7 +378,6 @@ app.get('/api/health/detailed', async (req: Request, res: Response) => {
     res.status(503).json({
       status: 'error',
       message: 'Health check failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

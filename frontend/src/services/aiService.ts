@@ -32,8 +32,8 @@ class AIService {
   private crisisKeywords: CrisisLevel[];
 
   constructor() {
-    // Sử dụng environment variables hoặc fallback
-    this.apiKey = process.env.REACT_APP_OPENAI_API_KEY || '';
+    // API key should NEVER be set in frontend - all AI calls go through backend
+    this.apiKey = '';
     this.baseUrl = process.env.REACT_APP_AI_API_URL || 'https://api.openai.com/v1';
     
     this.crisisKeywords = [

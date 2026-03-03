@@ -291,22 +291,9 @@ router.post('/complete-workflow', async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// TEST 10: Intentional Crash (Use with caution!)
+// TEST 10: Intentional Crash - REMOVED for security
+// (Even in dev, this is a DoS risk if admin account is compromised)
 // ============================================================================
-
-router.get('/crash', (req: Request, res: Response) => {
-  logger.warn('Intentional crash test initiated');
-  
-  // This will crash the server - use only in development!
-  process.nextTick(() => {
-    throw new Error('INTENTIONAL CRASH TEST - Server will restart');
-  });
-  
-  res.json({
-    message: 'Crash initiated! Server will restart.',
-    warning: 'This is for testing only!'
-  });
-});
 
 export default router;
 

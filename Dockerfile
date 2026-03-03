@@ -30,6 +30,10 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001
+USER nodeuser
+
 # Expose port (Railway will override with PORT env var)
 EXPOSE 8080
 

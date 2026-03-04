@@ -9,6 +9,7 @@
 
 import { memorySystem, WorkingMemoryData, ShortTermMemoryData, LongTermMemoryData } from './memorySystem';
 import { enhancedChatbotService, EnhancedResponse } from './enhancedChatbotService';
+import { toNumericScore } from '../types/risk';
 import { logger } from '../utils/logger';
 import redisService from './redisService';
 
@@ -124,7 +125,7 @@ export class MemoryAwareChatbotService {
       const newWorkingMemory: WorkingMemoryData = {
         emotion: response.emotionalState || workingMemory?.emotion || 'neutral',
         intent: response.intent,
-        crisisLevel: this.mapCrisisLevel(response.crisisLevel),
+        crisisLevel: toNumericScore(response.riskLevel),
         conversationHistory: [
           ...(workingMemory?.conversationHistory || []).slice(-5), // Keep last 5 messages
           `User: ${message}`,
@@ -141,7 +142,7 @@ export class MemoryAwareChatbotService {
         timestamp: Date.now(),
         message: message,
         emotion: response.emotionalState || 'neutral',
-        crisisScore: this.mapCrisisLevel(response.crisisLevel),
+        crisisScore: toNumericScore(response.riskLevel),
       };
 
       await memorySystem.saveShortTermMemory(userId, shortTermData);
@@ -778,19 +779,6 @@ export class MemoryAwareChatbotService {
     }
 
     return null;
-  }
-
-  /**
-   * Map crisis level to numeric score
-   */
-  private mapCrisisLevel(level: string): number {
-    const mapping: { [key: string]: number } = {
-      low: 2,
-      medium: 5,
-      high: 8,
-      critical: 10,
-    };
-    return mapping[level] || 0;
   }
 
   /**

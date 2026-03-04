@@ -3,9 +3,26 @@
  * Đảm bảo an toàn và đáng tin cậy của chatbot
  */
 
+import { RiskLevel, fromLowercase } from '../types/risk';
+
+/**
+ * Internal crisis level used in scenario definitions.
+ * Maps to RiskLevel via fromLowercase():
+ *   'low'      → RiskLevel.LOW
+ *   'medium'   → RiskLevel.MODERATE
+ *   'high'     → RiskLevel.HIGH
+ *   'critical' → RiskLevel.CRITICAL
+ */
+export type CrisisLevel = 'low' | 'medium' | 'high' | 'critical';
+
+/** Convert CrisisLevel to unified RiskLevel */
+export function crisisLevelToRiskLevel(level: CrisisLevel): RiskLevel {
+  return fromLowercase(level);
+}
+
 export interface CrisisScenario {
   id: string;
-  level: 'low' | 'medium' | 'high' | 'critical';
+  level: CrisisLevel;
   triggers: string[];
   immediateResponse: string;
   escalationProtocol: string[];
@@ -19,7 +36,7 @@ export interface SafetyProtocol {
   description: string;
   triggers: string[];
   actions: string[];
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: CrisisLevel;
   requiresHuman: boolean;
 }
 
@@ -361,7 +378,7 @@ export function detectCrisis(userInput: string): CrisisScenario | null {
 export function getRelevantReferral(
   userLocation: string,
   specialization: string[],
-  urgency: 'low' | 'medium' | 'high' | 'critical'
+  urgency: CrisisLevel
 ): ReferralData[] {
   let filteredReferrals = referralData.filter(referral =>
     referral.specialization.some(spec => specialization.includes(spec))
@@ -399,13 +416,13 @@ export function assessRisk(
   userHistory: string[],
   emotionalState: string
 ): {
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: CrisisLevel;
   riskFactors: string[];
   recommendations: string[];
 } {
   const crisis = detectCrisis(userInput);
   const riskFactors: string[] = [];
-  let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
+  let riskLevel: CrisisLevel = 'low';
 
   if (crisis) {
     riskLevel = crisis.level;

@@ -4,11 +4,13 @@
  * Based on scientific research and safety protocols
  */
 
+import { RiskLevel } from '../types/risk';
+
 export interface Intent {
   name: string;
   confidence: number;
   entities: Entity[];
-  riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  riskLevel: RiskLevel;
 }
 
 export interface Entity {
@@ -18,7 +20,7 @@ export interface Entity {
 }
 
 export interface RiskAssessment {
-  level: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  level: RiskLevel;
   triggers: string[];
   safetyScore: number;
 }
@@ -120,17 +122,17 @@ export class ChatbotNLUService {
     });
 
     // Determine risk level
-    let level: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+    let level: RiskLevel;
     let safetyScore: number;
 
     if (crisisCount > 0) {
-      level = 'CRISIS';
+      level = 'CRITICAL';
       safetyScore = 0.1; // Very low safety score
     } else if (highRiskCount >= 2) {
       level = 'HIGH';
       safetyScore = 0.3;
     } else if (highRiskCount === 1) {
-      level = 'MED';
+      level = 'MODERATE';
       safetyScore = 0.6;
     } else {
       level = 'LOW';
@@ -239,7 +241,7 @@ export class ChatbotNLUService {
   requiresSafetyFlow(intent: Intent): boolean {
     return intent.name === 'crisis_suicide' || 
            intent.name === 'report_abuse' || 
-           intent.riskLevel === 'CRISIS' || 
+           intent.riskLevel === 'CRITICAL' || 
            intent.riskLevel === 'HIGH';
   }
 

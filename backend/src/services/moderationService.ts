@@ -16,7 +16,14 @@
 import crypto from 'crypto';
 import logger from '../utils/logger';
 
-export type RiskLevel = 'low' | 'moderate' | 'high' | 'critical';
+/**
+ * Internal moderation risk level (lowercase).
+ * Use RiskLevel from '../types/risk' for cross-service communication.
+ */
+export type ModerationRiskLevel = 'low' | 'moderate' | 'high' | 'critical';
+
+/** @deprecated Use ModerationRiskLevel instead. Kept for backward compatibility. */
+export type RiskLevel = ModerationRiskLevel;
 
 export interface ModerationSignal {
   source: 'lexical' | 'openai' | 'llamaguard' | 'perspective';
@@ -26,7 +33,7 @@ export interface ModerationSignal {
 }
 
 export interface ModerationResult {
-  riskLevel: RiskLevel;
+  riskLevel: ModerationRiskLevel;
   riskScore: number; // 0..100
   signals: ModerationSignal[];
   normalized: string;
@@ -383,7 +390,7 @@ function aggregateSignals(signals: ModerationSignal[]): {
   // Moderate: Some signals but not high
   const isModerate = !isCritical && !isHigh && totalScore >= 25;
 
-  const riskLevel: RiskLevel = isCritical
+  const riskLevel: ModerationRiskLevel = isCritical
     ? 'critical'
     : isHigh
     ? 'high'

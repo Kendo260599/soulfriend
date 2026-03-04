@@ -5,6 +5,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { RiskLevel } from '../types/risk';
 import openAIService from './openAIService';
 
 export interface ChatMessage {
@@ -33,12 +34,12 @@ export interface IntentAnalysis {
   intent: string;
   confidence: number;
   entities: any[];
-  riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  riskLevel: RiskLevel;
 }
 
 export interface SafetyCheckResult {
   safe: boolean;
-  riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  riskLevel: RiskLevel;
   detectedIssues: string[];
   recommendedActions: string[];
   emergencyContacts?: any[];
@@ -87,7 +88,7 @@ export class ChatbotService {
       const intentAnalysis = await this.analyzeIntent(message);
 
       // Check safety first
-      if (intentAnalysis.riskLevel === 'CRISIS' || intentAnalysis.riskLevel === 'HIGH') {
+      if (intentAnalysis.riskLevel === RiskLevel.CRITICAL || intentAnalysis.riskLevel === RiskLevel.HIGH) {
         const safetyResponse = await this.handleSafetyFlow(intentAnalysis);
         const botMsg = this.createMessage(sessionId, 'bot', safetyResponse.message, 'bot', {
           intent: intentAnalysis.intent,
@@ -150,7 +151,7 @@ export class ChatbotService {
         intent: 'crisis',
         confidence: 0.95,
         entities: [],
-        riskLevel: 'CRISIS',
+        riskLevel: RiskLevel.CRITICAL,
       };
     }
 
@@ -170,7 +171,7 @@ export class ChatbotService {
         intent: 'high_risk',
         confidence: 0.85,
         entities: [],
-        riskLevel: 'HIGH',
+        riskLevel: RiskLevel.HIGH,
       };
     }
 
@@ -184,7 +185,7 @@ export class ChatbotService {
         intent: 'screening_test',
         confidence: 0.8,
         entities: [],
-        riskLevel: 'LOW',
+        riskLevel: RiskLevel.LOW,
       };
     }
 
@@ -197,7 +198,7 @@ export class ChatbotService {
         intent: 'relaxation_skill',
         confidence: 0.75,
         entities: [],
-        riskLevel: 'MED',
+        riskLevel: RiskLevel.MODERATE,
       };
     }
 
@@ -210,7 +211,7 @@ export class ChatbotService {
         intent: 'relationship_help',
         confidence: 0.7,
         entities: [],
-        riskLevel: 'MED',
+        riskLevel: RiskLevel.MODERATE,
       };
     }
 
@@ -223,7 +224,7 @@ export class ChatbotService {
         intent: 'resource_request',
         confidence: 0.75,
         entities: [],
-        riskLevel: 'LOW',
+        riskLevel: RiskLevel.LOW,
       };
     }
 
@@ -232,7 +233,7 @@ export class ChatbotService {
       intent: 'general_help',
       confidence: 0.5,
       entities: [],
-      riskLevel: 'LOW',
+      riskLevel: RiskLevel.LOW,
     };
   }
 
@@ -243,18 +244,18 @@ export class ChatbotService {
     const intentAnalysis = await this.analyzeIntent(message);
 
     const result: SafetyCheckResult = {
-      safe: intentAnalysis.riskLevel === 'LOW',
+      safe: intentAnalysis.riskLevel === RiskLevel.LOW || intentAnalysis.riskLevel === RiskLevel.NONE,
       riskLevel: intentAnalysis.riskLevel,
       detectedIssues: [],
       recommendedActions: [],
     };
 
-    if (intentAnalysis.riskLevel === 'CRISIS') {
+    if (intentAnalysis.riskLevel === RiskLevel.CRITICAL) {
       result.detectedIssues.push('Phát hiện nguy cơ tự tử cao');
       result.recommendedActions.push('Liên hệ ngay số khẩn cấp 113 hoặc 1900 599 958');
       result.recommendedActions.push('Thông báo cho người thân ngay lập tức');
       result.emergencyContacts = this.getEmergencyContactsSync();
-    } else if (intentAnalysis.riskLevel === 'HIGH') {
+    } else if (intentAnalysis.riskLevel === RiskLevel.HIGH) {
       result.detectedIssues.push('Phát hiện dấu hiệu trầm cảm nghiêm trọng');
       result.recommendedActions.push('Tìm kiếm hỗ trợ chuyên nghiệp');
       result.recommendedActions.push('Liên hệ tổng đài tư vấn tâm lý');

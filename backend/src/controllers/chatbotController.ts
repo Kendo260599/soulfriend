@@ -7,6 +7,7 @@ import { NextFunction, Request, Response } from 'express';
 import { ChatbotService } from '../services/chatbotService';
 import { EnhancedChatbotService } from '../services/enhancedChatbotService';
 import { memoryAwareChatbotService } from '../services/memoryAwareChatbotService';
+import { RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
 
 export class ChatbotController {
@@ -157,7 +158,7 @@ export class ChatbotController {
       const safetyResult = await this.chatbotService.performSafetyCheck(message);
 
       // Log high-risk situations
-      if (safetyResult.riskLevel === 'CRISIS' || safetyResult.riskLevel === 'HIGH') {
+      if (safetyResult.riskLevel === RiskLevel.CRITICAL || safetyResult.riskLevel === RiskLevel.HIGH) {
         logger.warn('High-risk message detected', {
           userId,
           riskLevel: safetyResult.riskLevel,

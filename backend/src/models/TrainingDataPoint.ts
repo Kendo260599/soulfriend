@@ -6,6 +6,7 @@
  */
 
 import mongoose, { Document, Schema } from 'mongoose';
+import { RiskLevel } from '../types/risk';
 
 // =============================================================================
 // INTERFACE
@@ -25,7 +26,7 @@ export interface ITrainingDataPoint extends Document {
 
   // Ground truth labels (from human expert)
   label: 'crisis' | 'no_crisis';
-  riskLevel: 'NONE' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | 'EXTREME';
+  riskLevel: RiskLevel;
   riskType?: string;
 
   // AI prediction (for comparison)

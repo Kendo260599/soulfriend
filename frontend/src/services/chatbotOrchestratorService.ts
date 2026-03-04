@@ -7,6 +7,7 @@
 import ChatbotNLUService, { Intent } from './chatbotNLUService';
 import ChatbotSafetyService, { SafetyResponse } from './chatbotSafetyService';
 import ChatbotRAGService, { RAGResponse } from './chatbotRAGService';
+import { RiskLevel } from '../types/risk';
 
 export interface DialogContext {
   userId: string;
@@ -14,7 +15,7 @@ export interface DialogContext {
   conversationHistory: Message[];
   userProfile: UserProfile;
   currentIntent: string;
-  riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  riskLevel: RiskLevel;
   safetyFlowActive: boolean;
 }
 

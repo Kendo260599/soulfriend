@@ -5,6 +5,7 @@
  */
 
 import mongoose, { Document, Schema } from 'mongoose';
+import { RiskLevel } from '../types/risk';
 
 // =============================================================================
 // INTERFACES
@@ -20,7 +21,7 @@ export interface IHITLFeedback extends Document {
   // Ground truth from expert
   wasActualCrisis: boolean;
   crisisConfidenceScore: number;
-  actualRiskLevel: 'NONE' | 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | 'EXTREME';
+  actualRiskLevel: RiskLevel;
   actualRiskType?: string;
 
   // Original detection

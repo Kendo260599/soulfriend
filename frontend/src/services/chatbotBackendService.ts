@@ -6,6 +6,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 import { DialogContext, OrchestratorResponse } from './chatbotOrchestratorService';
+import { RiskLevel } from '../types/risk';
 
 // Backend API configuration
 // Remove trailing slash to prevent double slashes
@@ -41,7 +42,7 @@ export interface BackendIntentAnalysis {
   intent: string;
   confidence: number;
   entities: any[];
-  riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  riskLevel: RiskLevel;
   userSegment?: string;
   emotionalState?: string;
   crisisLevel?: 'low' | 'medium' | 'high' | 'critical';
@@ -49,7 +50,7 @@ export interface BackendIntentAnalysis {
 
 export interface BackendSafetyCheck {
   safe: boolean;
-  riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW';
+  riskLevel: RiskLevel;
   detectedIssues: string[];
   recommendedActions: string[];
   emergencyContacts?: any[];

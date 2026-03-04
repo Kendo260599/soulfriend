@@ -414,7 +414,7 @@ const AdvancedChatBot: React.FC<AdvancedChatBotProps> = ({ onBack }) => {
         </SendButton>
       </InputContainer>
 
-      {context.riskLevel === 'CRISIS' && (
+      {context.riskLevel === 'CRITICAL' && (
         <EmergencyAlert>
           🚨 Nếu bạn đang trong nguy hiểm, hãy gọi 112 ngay lập tức! 🚨
         </EmergencyAlert>

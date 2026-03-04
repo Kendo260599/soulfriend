@@ -4,6 +4,8 @@
  * Based on scientific research and safety protocols
  */
 
+import { RiskLevel } from '../types/risk';
+
 export interface SafetyResponse {
   isEmergency: boolean;
   emergencyNumbers: EmergencyNumber[];
@@ -146,8 +148,8 @@ export class ChatbotSafetyService {
   /**
    * Generate safety response based on risk level
    */
-  generateSafetyResponse(riskLevel: 'CRISIS' | 'HIGH' | 'MED' | 'LOW'): SafetyResponse {
-    const isEmergency = riskLevel === 'CRISIS' || riskLevel === 'HIGH';
+  generateSafetyResponse(riskLevel: RiskLevel): SafetyResponse {
+    const isEmergency = riskLevel === 'CRITICAL' || riskLevel === 'HIGH';
     
     return {
       isEmergency,
@@ -164,7 +166,7 @@ export class ChatbotSafetyService {
    */
   private generateResponseTemplate(riskLevel: string): string {
     switch (riskLevel) {
-      case 'CRISIS':
+      case 'CRITICAL':
         return `🚨 TÔI LO CHO SỰ AN TOÀN CỦA BẠN
 
 Nếu bạn đang trong nguy hiểm ngay lập tức:

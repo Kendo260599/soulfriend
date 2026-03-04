@@ -10,6 +10,8 @@
 
 import logger from '../utils/logger';
 import { CriticalAlert } from './criticalInterventionService';
+import HITLFeedbackModel from '../models/HITLFeedback';
+import TrainingDataPointModel from '../models/TrainingDataPoint';
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -194,12 +196,44 @@ export interface ModelImprovementSuggestions {
 // =============================================================================
 
 export class HITLFeedbackService {
-  private feedbackData: Map<string, HITLFeedback> = new Map();
-  private trainingData: TrainingDataPoint[] = [];
+  private feedbackCache: Map<string, HITLFeedback> = new Map();
   private keywordStats: Map<string, KeywordAnalysis> = new Map();
 
   constructor() {
+    this.loadFromDB();
     logger.info('🔄 HITLFeedbackService initialized - AI improvement loop ready');
+  }
+
+  /**
+   * Load existing feedback from MongoDB into cache on startup
+   */
+  private async loadFromDB(): Promise<void> {
+    try {
+      const feedbacks = await HITLFeedbackModel.find({}).sort({ timestamp: -1 }).limit(500).lean();
+      for (const fb of feedbacks) {
+        this.feedbackCache.set(fb.alertId, {
+          alertId: fb.alertId,
+          timestamp: fb.timestamp,
+          wasActualCrisis: fb.wasActualCrisis,
+          crisisConfidenceScore: fb.crisisConfidenceScore,
+          actualRiskLevel: fb.actualRiskLevel as any,
+          actualRiskType: fb.actualRiskType as any,
+          clinicalNotes: fb.clinicalNotes,
+          missedIndicators: fb.missedIndicators,
+          falseIndicators: fb.falseIndicators,
+          suggestedKeywords: fb.suggestedKeywords,
+          unnecessaryKeywords: fb.unnecessaryKeywords,
+          responseTimeSeconds: fb.responseTimeSeconds,
+          interventionSuccess: fb.interventionSuccess,
+          userOutcome: fb.userOutcome,
+          reviewedBy: fb.reviewedBy,
+          reviewedAt: fb.reviewedAt,
+        });
+      }
+      logger.info(`📂 Loaded ${feedbacks.length} feedback entries from MongoDB into cache`);
+    } catch (error) {
+      logger.warn('⚠️ Could not load feedback from MongoDB (DB may not be ready yet)', error);
+    }
   }
 
   /**
@@ -215,7 +249,40 @@ export class HITLFeedbackService {
       ...feedback,
     };
 
-    this.feedbackData.set(alert.id, completeFeedback);
+    this.feedbackCache.set(alert.id, completeFeedback);
+
+    // Persist to MongoDB (non-blocking)
+    HITLFeedbackModel.findOneAndUpdate(
+      { alertId: alert.id },
+      {
+        alertId: alert.id,
+        userId: alert.userId || 'unknown',
+        sessionId: alert.sessionId || 'unknown',
+        timestamp: completeFeedback.timestamp,
+        wasActualCrisis: completeFeedback.wasActualCrisis,
+        crisisConfidenceScore: completeFeedback.crisisConfidenceScore,
+        actualRiskLevel: completeFeedback.actualRiskLevel,
+        actualRiskType: completeFeedback.actualRiskType,
+        aiPrediction: {
+          riskLevel: alert.riskLevel,
+          riskType: alert.riskType || 'unknown',
+          detectedKeywords: alert.detectedKeywords || [],
+          confidence: 0.96,
+        },
+        userMessage: alert.userMessage || '',
+        clinicalNotes: completeFeedback.clinicalNotes,
+        missedIndicators: completeFeedback.missedIndicators,
+        falseIndicators: completeFeedback.falseIndicators,
+        suggestedKeywords: completeFeedback.suggestedKeywords,
+        unnecessaryKeywords: completeFeedback.unnecessaryKeywords,
+        responseTimeSeconds: completeFeedback.responseTimeSeconds,
+        interventionSuccess: completeFeedback.interventionSuccess,
+        userOutcome: completeFeedback.userOutcome,
+        reviewedBy: completeFeedback.reviewedBy,
+        reviewedAt: completeFeedback.reviewedAt || new Date(),
+      },
+      { upsert: true, new: true }
+    ).catch(err => logger.error('❌ Failed to persist HITL feedback to MongoDB:', err));
 
     logger.info(`📊 Feedback collected for alert ${alert.id}`, {
       wasActualCrisis: feedback.wasActualCrisis,
@@ -283,15 +350,34 @@ export class HITLFeedbackService {
       predictionError: feedback.wasActualCrisis ? undefined : 'false_positive',
     };
 
-    this.trainingData.push(trainingPoint);
+    // Persist to MongoDB (non-blocking)
+    TrainingDataPointModel.findOneAndUpdate(
+      { trainingId: trainingPoint.id },
+      {
+        trainingId: trainingPoint.id,
+        alertId: alert.id,
+        timestamp: trainingPoint.timestamp,
+        userMessage: trainingPoint.userMessage,
+        userProfile: trainingPoint.userProfile,
+        testResults: trainingPoint.testResults,
+        context: trainingPoint.context,
+        label: trainingPoint.label,
+        riskLevel: trainingPoint.riskLevel,
+        riskType: trainingPoint.riskType,
+        aiPrediction: trainingPoint.aiPrediction,
+        expertAnnotations: trainingPoint.expertAnnotations,
+        wasCorrectPrediction: trainingPoint.wasCorrectPrediction,
+        predictionError: trainingPoint.predictionError,
+        createdFrom: 'hitl_feedback',
+        reviewedBy: feedback.reviewedBy,
+      },
+      { upsert: true, new: true }
+    ).catch(err => logger.error('❌ Failed to persist training data to MongoDB:', err));
 
     logger.info(`🎯 Training data point created: ${trainingPoint.id}`, {
       label: trainingPoint.label,
       wasCorrect: trainingPoint.wasCorrectPrediction,
     });
-
-    // TODO: Save to database for long-term storage
-    // await database.trainingData.insert(trainingPoint);
   }
 
   /**
@@ -380,7 +466,7 @@ export class HITLFeedbackService {
 
     const suggestions: ModelImprovementSuggestions = {
       timestamp: new Date(),
-      basedOnAlerts: this.feedbackData.size,
+      basedOnAlerts: this.feedbackCache.size,
       keywordsToAdd: [],
       keywordsToRemove: [],
       keywordsToAdjust: [],
@@ -417,7 +503,7 @@ export class HITLFeedbackService {
 
     // Find keywords to add (from expert suggestions)
     const suggestedKeywordsCount = new Map<string, number>();
-    for (const feedback of this.feedbackData.values()) {
+    for (const feedback of this.feedbackCache.values()) {
       for (const keyword of feedback.suggestedKeywords || []) {
         suggestedKeywordsCount.set(keyword, (suggestedKeywordsCount.get(keyword) || 0) + 1);
       }
@@ -433,7 +519,7 @@ export class HITLFeedbackService {
     }
 
     // Analyze false positives patterns
-    const falsePositives = Array.from(this.feedbackData.values()).filter(f => !f.wasActualCrisis);
+    const falsePositives = Array.from(this.feedbackCache.values()).filter(f => !f.wasActualCrisis);
 
     if (falsePositives.length > 0) {
       suggestions.contextualRules.push({
@@ -469,10 +555,35 @@ export class HITLFeedbackService {
     const now = new Date();
     const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
-    // Filter feedback within period
-    const periodFeedback = Array.from(this.feedbackData.values()).filter(
-      f => f.timestamp >= periodStart
-    );
+    // Try MongoDB first, fallback to cache
+    let periodFeedback: HITLFeedback[];
+    try {
+      const dbFeedbacks = await HITLFeedbackModel.find({
+        timestamp: { $gte: periodStart },
+      }).lean();
+      periodFeedback = dbFeedbacks.map(f => ({
+        alertId: f.alertId,
+        timestamp: f.timestamp,
+        wasActualCrisis: f.wasActualCrisis,
+        crisisConfidenceScore: f.crisisConfidenceScore,
+        actualRiskLevel: f.actualRiskLevel as any,
+        actualRiskType: f.actualRiskType as any,
+        clinicalNotes: f.clinicalNotes,
+        missedIndicators: f.missedIndicators,
+        falseIndicators: f.falseIndicators,
+        suggestedKeywords: f.suggestedKeywords,
+        unnecessaryKeywords: f.unnecessaryKeywords,
+        responseTimeSeconds: f.responseTimeSeconds,
+        interventionSuccess: f.interventionSuccess,
+        userOutcome: f.userOutcome,
+        reviewedBy: f.reviewedBy,
+        reviewedAt: f.reviewedAt,
+      }));
+    } catch {
+      periodFeedback = Array.from(this.feedbackCache.values()).filter(
+        f => f.timestamp >= periodStart
+      );
+    }
 
     const totalReviewed = periodFeedback.length;
 
@@ -612,9 +723,9 @@ export class HITLFeedbackService {
   private async checkAndTriggerModelImprovement(): Promise<void> {
     const MINIMUM_FEEDBACK_COUNT = 10; // Minimum 10 feedback entries
 
-    if (this.feedbackData.size >= MINIMUM_FEEDBACK_COUNT) {
+    if (this.feedbackCache.size >= MINIMUM_FEEDBACK_COUNT) {
       logger.info(
-        `🔔 Sufficient feedback data collected (${this.feedbackData.size}). Triggering model improvement analysis...`
+        `🔔 Sufficient feedback data collected (${this.feedbackCache.size}). Triggering model improvement analysis...`
       );
 
       const suggestions = await this.generateModelImprovements();
@@ -627,19 +738,43 @@ export class HITLFeedbackService {
   /**
    * Get training data for model fine-tuning
    */
-  getTrainingData(limit?: number): TrainingDataPoint[] {
-    const data = limit ? this.trainingData.slice(-limit) : this.trainingData;
-    logger.info(`📦 Retrieved ${data.length} training data points for fine-tuning`);
-    return data;
+  async getTrainingData(limit?: number): Promise<TrainingDataPoint[]> {
+    try {
+      const query = TrainingDataPointModel.find({}).sort({ timestamp: -1 });
+      if (limit) query.limit(limit);
+      const docs = await query.lean();
+      const data = docs.map(d => ({
+        id: d.trainingId,
+        timestamp: d.timestamp,
+        userMessage: d.userMessage,
+        userProfile: d.userProfile,
+        testResults: d.testResults,
+        context: d.context,
+        label: d.label,
+        riskLevel: d.riskLevel as any,
+        riskType: d.riskType,
+        aiPrediction: d.aiPrediction,
+        expertAnnotations: d.expertAnnotations,
+        wasCorrectPrediction: d.wasCorrectPrediction,
+        predictionError: d.predictionError,
+      }));
+      logger.info(`📦 Retrieved ${data.length} training data points from MongoDB`);
+      return data;
+    } catch (error) {
+      logger.warn('⚠️ MongoDB query failed, returning empty training data', error);
+      return [];
+    }
   }
 
   /**
    * Export training data in format for ML model
    */
   async exportTrainingDataForFineTuning(format: 'jsonl' | 'csv' = 'jsonl'): Promise<string> {
+    const trainingData = await this.getTrainingData();
+
     if (format === 'jsonl') {
       // JSONL format for OpenAI fine-tuning or similar
-      return this.trainingData
+      return trainingData
         .map(point =>
           JSON.stringify({
             prompt: `Detect crisis in message: "${point.userMessage}"`,
@@ -654,7 +789,7 @@ export class HITLFeedbackService {
 
     // CSV format
     const headers = 'message,label,risk_level,risk_type,was_correct\n';
-    const rows = this.trainingData
+    const rows = trainingData
       .map(point =>
         [
           `"${point.userMessage.replace(/"/g, '""')}"`,
@@ -672,15 +807,53 @@ export class HITLFeedbackService {
   /**
    * Get keyword statistics for analysis
    */
-  getKeywordStatistics(): KeywordAnalysis[] {
+  async getKeywordStatistics(): Promise<KeywordAnalysis[]> {
+    try {
+      const dbStats = await (HITLFeedbackModel as any).getKeywordStatistics();
+      if (dbStats && dbStats.length > 0) {
+        return dbStats.map((s: any) => ({
+          keyword: s.keyword,
+          timesDetected: s.timesDetected,
+          timesConfirmed: s.timesConfirmed,
+          timesFalsePositive: s.timesFalsePositive,
+          accuracy: s.accuracy,
+          falsePositiveRate: s.falsePositiveRate,
+          recommendation: this.generateKeywordRecommendation(s),
+        })).sort((a: KeywordAnalysis, b: KeywordAnalysis) => b.timesDetected - a.timesDetected);
+      }
+    } catch {
+      // Fallback to in-memory cache
+    }
     return Array.from(this.keywordStats.values()).sort((a, b) => b.timesDetected - a.timesDetected);
   }
 
   /**
-   * Get all feedback data
+   * Get all feedback data from MongoDB with cache fallback
    */
-  getAllFeedback(): HITLFeedback[] {
-    return Array.from(this.feedbackData.values());
+  async getAllFeedback(): Promise<HITLFeedback[]> {
+    try {
+      const docs = await HITLFeedbackModel.find({}).sort({ timestamp: -1 }).lean();
+      return docs.map(f => ({
+        alertId: f.alertId,
+        timestamp: f.timestamp,
+        wasActualCrisis: f.wasActualCrisis,
+        crisisConfidenceScore: f.crisisConfidenceScore,
+        actualRiskLevel: f.actualRiskLevel as any,
+        actualRiskType: f.actualRiskType as any,
+        clinicalNotes: f.clinicalNotes,
+        missedIndicators: f.missedIndicators,
+        falseIndicators: f.falseIndicators,
+        suggestedKeywords: f.suggestedKeywords,
+        unnecessaryKeywords: f.unnecessaryKeywords,
+        responseTimeSeconds: f.responseTimeSeconds,
+        interventionSuccess: f.interventionSuccess,
+        userOutcome: f.userOutcome,
+        reviewedBy: f.reviewedBy,
+        reviewedAt: f.reviewedAt,
+      }));
+    } catch {
+      return Array.from(this.feedbackCache.values());
+    }
   }
 }
 

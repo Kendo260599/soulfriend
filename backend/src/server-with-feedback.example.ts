@@ -143,7 +143,7 @@ function generateAlerts(metrics: any): string[] {
  * Run this periodically (e.g., daily via cron)
  */
 async function checkFineTuningReadiness() {
-  const trainingData = hitlFeedbackService.getTrainingData();
+  const trainingData = await hitlFeedbackService.getTrainingData();
   const MINIMUM_SAMPLES = 100;
 
   if (trainingData.length >= MINIMUM_SAMPLES) {

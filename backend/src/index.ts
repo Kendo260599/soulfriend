@@ -62,6 +62,7 @@ import './models/InterventionMessage';
 import './models/TrainingDataPoint';
 import './models/LongTermMemory';
 import './models/ABExperiment';
+import './models/CriticalAlert';
 
 // Services
 import emailService from './services/emailService';

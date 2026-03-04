@@ -132,16 +132,16 @@ router.get(
   '/keywords',
   asyncHandler(async (req, res) => {
     try {
-      const keywordStats = hitlFeedbackService.getKeywordStatistics();
+      const keywordStats = await hitlFeedbackService.getKeywordStatistics();
 
       res.json({
         success: true,
         keywords: keywordStats,
         summary: {
           total: keywordStats.length,
-          highAccuracy: keywordStats.filter(k => k.accuracy > 0.8).length,
-          needsAdjustment: keywordStats.filter(k => k.recommendation === 'adjust_weight').length,
-          shouldRemove: keywordStats.filter(k => k.recommendation === 'remove').length,
+          highAccuracy: keywordStats.filter((k: any) => k.accuracy > 0.8).length,
+          needsAdjustment: keywordStats.filter((k: any) => k.recommendation === 'adjust_weight').length,
+          shouldRemove: keywordStats.filter((k: any) => k.recommendation === 'remove').length,
         },
       });
     } catch (error: any) {
@@ -176,7 +176,7 @@ router.get(
         res.send(exportedData);
       } else {
         // JSON format
-        const trainingData = hitlFeedbackService.getTrainingData(limit);
+        const trainingData = await hitlFeedbackService.getTrainingData(limit);
 
         res.json({
           success: true,
@@ -207,7 +207,7 @@ router.get(
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
       const skip = (page - 1) * limit;
 
-      const allFeedback = hitlFeedbackService.getAllFeedback();
+      const allFeedback = await hitlFeedbackService.getAllFeedback();
       const total = allFeedback.length;
       const paginatedFeedback = allFeedback.slice(skip, skip + limit);
 

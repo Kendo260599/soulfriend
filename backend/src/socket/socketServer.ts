@@ -8,6 +8,8 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger';
 import { criticalInterventionService } from '../services/criticalInterventionService';
+import InterventionMessage from '../models/InterventionMessage';
+import ConversationLog from '../models/ConversationLog';
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -96,6 +98,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
   const userNamespace = io.of('/user');
 
+  // User namespace does NOT require JWT (users are anonymous session-based)
+  // But we validate userId/sessionId presence
   userNamespace.on('connection', (socket: Socket) => {
     const { userId, sessionId } = socket.handshake.query as { userId?: string; sessionId?: string };
 
@@ -129,6 +133,16 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         const activeAlert = await getActiveInterventionForSession(sessionId);
         
         if (activeAlert) {
+          // Persist user message to MongoDB
+          InterventionMessage.create({
+            alertId: activeAlert.id,
+            sessionId,
+            userId,
+            sender: 'user',
+            message,
+            timestamp: timestamp || new Date(),
+          }).catch(err => logger.warn('Failed to persist user intervention message:', err));
+
           // Forward message to expert
           const interventionRoom = getInterventionRoom(activeAlert.id);
           io.of('/expert').to(interventionRoom).emit('user_message', {
@@ -144,6 +158,21 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       } catch (error) {
         logger.error('Error checking active intervention:', error);
       }
+    });
+
+    // Typing indicator
+    socket.on('user_typing', (data: { isTyping: boolean }) => {
+      getActiveInterventionForSession(sessionId).then(activeAlert => {
+        if (activeAlert) {
+          const interventionRoom = getInterventionRoom(activeAlert.id);
+          io.of('/expert').to(interventionRoom).emit('user_typing', {
+            userId,
+            sessionId,
+            alertId: activeAlert.id,
+            isTyping: data.isTyping,
+          });
+        }
+      }).catch(() => {});
     });
 
     // Handle disconnection
@@ -242,8 +271,17 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
       logger.info(`👨‍⚕️ Expert message to ${userId}: ${message.substring(0, 50)}...`);
 
-      // Save message to database (implement later)
-      // await saveInterventionMessage(alertId, sessionId, message, 'expert', expertId);
+      // Persist message to MongoDB
+      InterventionMessage.create({
+        alertId,
+        sessionId,
+        userId,
+        sender: 'expert',
+        senderName: expertName,
+        senderId: expertId,
+        message,
+        timestamp: timestamp || new Date(),
+      }).catch(err => logger.warn('Failed to persist expert intervention message:', err));
 
       // Send to user
       const userRoom = getUserRoom(userId, sessionId);
@@ -264,6 +302,32 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       });
 
       logger.info(`📤 Expert message delivered to user ${userId}`);
+    });
+
+    // Expert typing indicator
+    socket.on('expert_typing', (data: {
+      alertId: string;
+      userId: string;
+      sessionId: string;
+      isTyping: boolean;
+    }) => {
+      const userRoom = getUserRoom(data.userId, data.sessionId);
+      userNamespace.to(userRoom).emit('expert_typing', {
+        expertName,
+        isTyping: data.isTyping,
+      });
+    });
+
+    // Mark messages as read
+    socket.on('mark_read', async (data: { alertId: string }) => {
+      try {
+        await InterventionMessage.updateMany(
+          { alertId: data.alertId, sender: 'user', read: false },
+          { read: true }
+        );
+      } catch (err) {
+        logger.warn('Failed to mark messages as read:', err);
+      }
     });
 
     // Expert closes intervention
@@ -387,9 +451,36 @@ async function getActiveInterventionForSession(sessionId: string): Promise<HITLA
  */
 async function getSessionHistory(sessionId: string): Promise<any[]> {
   try {
-    // TODO: Implement MongoDB query to get conversation history
-    // For now, return empty array
-    return [];
+    // 1. Get intervention messages from MongoDB
+    const interventionMsgs = await InterventionMessage.find({ sessionId })
+      .sort({ timestamp: 1 })
+      .limit(100)
+      .lean();
+
+    if (interventionMsgs.length > 0) {
+      return interventionMsgs.map(m => ({
+        sender: m.sender,
+        senderName: m.senderName,
+        message: m.message,
+        timestamp: m.timestamp,
+        read: m.read,
+      }));
+    }
+
+    // 2. Fallback: Get recent chatbot conversation from ConversationLog
+    const chatLogs = await ConversationLog.find({ sessionId })
+      .sort({ timestamp: -1 })
+      .limit(20)
+      .lean();
+
+    const history: any[] = [];
+    for (const log of chatLogs.reverse()) {
+      history.push(
+        { sender: 'user', message: log.userMessage, timestamp: log.timestamp },
+        { sender: 'assistant', message: log.aiResponse, timestamp: log.timestamp }
+      );
+    }
+    return history;
   } catch (error) {
     logger.error('Error getting session history:', error);
     return [];

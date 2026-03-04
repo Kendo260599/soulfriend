@@ -44,6 +44,8 @@ import criticalAlertsRoutes from './routes/criticalAlerts';
 import expertAuthRoutes from './routes/expertAuth';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
 import hitlInterventionRoutes from './routes/hitlIntervention';
+import fineTuningRoutes from './routes/fineTuning';
+import abTestingRoutes from './routes/abTesting';
 import qstashTestRoutes from './routes/qstashTest';
 import qstashWebhookRoutes from './routes/qstashWebhooks';
 import researchRoutes from './routes/research';
@@ -59,6 +61,7 @@ import './models/HITLFeedback';
 import './models/InterventionMessage';
 import './models/TrainingDataPoint';
 import './models/LongTermMemory';
+import './models/ABExperiment';
 
 // Services
 import emailService from './services/emailService';
@@ -288,6 +291,10 @@ app.use('/api/alerts', criticalAlertsRoutes);
 
 // ✨ NEW: Expert Authentication & Dashboard
 app.use('/api/v2/expert', expertAuthRoutes);
+
+// ✨ NEW: Auto Fine-Tuning Pipeline & A/B Testing
+app.use('/api/fine-tuning', fineTuningRoutes);
+app.use('/api/ab-testing', abTestingRoutes);
 
 // ✨ NEW: QStash Webhooks for Scheduled Tasks
 app.use('/api/webhooks/qstash', qstashWebhookRoutes);

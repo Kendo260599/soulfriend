@@ -241,8 +241,8 @@ export class CentralRiskScoringService {
   private calculateScore(signals: RiskSignal[]): number {
     if (signals.length === 0) return 0;
 
-    // Source priority weights
-    const sourceWeights: Record<string, number> = {
+    // Default source priority weights
+    const defaultWeights: Record<string, number> = {
       crisis_keywords: 1.0,
       moderation: 0.9,
       social_harm: 0.85,
@@ -252,6 +252,22 @@ export class CentralRiskScoringService {
       ai: 0.8,
       lexical: 0.8,
     };
+
+    // Apply dynamic weights from Auto Fine-Tuning Pipeline (if available)
+    const sourceWeights: Record<string, number> = { ...defaultWeights };
+    try {
+      // Lazy import to avoid circular deps — autoFineTuningService may
+      // override weights after a tuning cycle is applied
+      const { autoFineTuningService } = require('./autoFineTuningService');
+      for (const source of Object.keys(defaultWeights)) {
+        const dynamicWeight = autoFineTuningService.getSourceWeight(source);
+        if (dynamicWeight !== null) {
+          sourceWeights[source] = dynamicWeight;
+        }
+      }
+    } catch {
+      // Fine-tuning service not available — use defaults
+    }
 
     let weightedSum = 0;
     let totalWeight = 0;

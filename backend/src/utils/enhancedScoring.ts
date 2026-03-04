@@ -75,7 +75,10 @@ export interface EnhancedTestResult {
 // 3. PHQ-9 ENHANCED ALGORITHM (Based on Kroenke et al. 2001-2023 updates)
 // =============================================================================
 
-export function enhancedPHQ9Scoring(answers: Record<number, number>): EnhancedTestResult {
+export function enhancedPHQ9Scoring(
+  answers: Record<number, number>,
+  longitudinalTrend: EnhancedTestResult['longitudinalTrend'] = 'insufficient_data'
+): EnhancedTestResult {
   const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
 
   // Standard PHQ-9 severity levels (unchanged - these are validated)
@@ -200,7 +203,7 @@ export function enhancedPHQ9Scoring(answers: Record<number, number>): EnhancedTe
     protectiveFactors,
     culturalConsiderations,
     comorbidityRisk,
-    longitudinalTrend: 'insufficient_data', // Would need historical data
+    longitudinalTrend, // Computed by therapeuticContextService.getLongitudinalTrend()
   };
 }
 
@@ -208,7 +211,10 @@ export function enhancedPHQ9Scoring(answers: Record<number, number>): EnhancedTe
 // 4. GAD-7 ENHANCED ALGORITHM (Based on Spitzer et al. 2006-2023 updates)
 // =============================================================================
 
-export function enhancedGAD7Scoring(answers: Record<number, number>): EnhancedTestResult {
+export function enhancedGAD7Scoring(
+  answers: Record<number, number>,
+  longitudinalTrend: EnhancedTestResult['longitudinalTrend'] = 'insufficient_data'
+): EnhancedTestResult {
   const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
 
   // Standard GAD-7 severity levels
@@ -301,7 +307,7 @@ export function enhancedGAD7Scoring(answers: Record<number, number>): EnhancedTe
     protectiveFactors,
     culturalConsiderations: generateCulturalConsiderations('anxiety'),
     comorbidityRisk,
-    longitudinalTrend: 'insufficient_data',
+    longitudinalTrend, // Computed by therapeuticContextService.getLongitudinalTrend()
   };
 }
 

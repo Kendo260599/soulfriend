@@ -4,6 +4,7 @@
 
 import { Router } from 'express';
 import { conversationLearningService } from '../services/conversationLearningService';
+import ConversationLog from '../models/ConversationLog';
 import logger from '../utils/logger';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { authenticateExpert } from './expertAuth';
@@ -160,6 +161,82 @@ router.get(
         success: false,
         error: 'Failed to get conversations for review',
       });
+    }
+  })
+);
+
+/**
+ * POST /api/conversation-learning/approve/:conversationId
+ * Expert approves conversation for training data
+ */
+router.post(
+  '/approve/:conversationId',
+  asyncHandler(async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const reviewedBy = (req as any).expert?.email || 'unknown';
+
+      const doc = await ConversationLog.findOne({ conversationId });
+      if (!doc) {
+        return res.status(404).json({ success: false, error: 'Conversation not found' });
+      }
+
+      doc.approvedForTraining = true;
+      doc.needsReview = false;
+      doc.reviewedBy = reviewedBy;
+      doc.reviewedAt = new Date();
+      await doc.save();
+
+      logger.info('Conversation approved for training', { conversationId, reviewedBy });
+
+      res.json({
+        success: true,
+        message: `Conversation ${conversationId} đã được duyệt cho training.`,
+        conversationId,
+      });
+    } catch (error: any) {
+      logger.error('Error approving conversation:', error);
+      res.status(500).json({ success: false, error: 'Failed to approve conversation' });
+    }
+  })
+);
+
+/**
+ * POST /api/conversation-learning/reject/:conversationId
+ * Expert rejects conversation (not suitable for training)
+ */
+router.post(
+  '/reject/:conversationId',
+  asyncHandler(async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const { reason } = req.body;
+      const reviewedBy = (req as any).expert?.email || 'unknown';
+
+      const doc = await ConversationLog.findOne({ conversationId });
+      if (!doc) {
+        return res.status(404).json({ success: false, error: 'Conversation not found' });
+      }
+
+      doc.approvedForTraining = false;
+      doc.needsReview = false;
+      doc.reviewedBy = reviewedBy;
+      doc.reviewedAt = new Date();
+      if (reason) {
+        doc.userFeedback = `[REJECTED] ${reason}`;
+      }
+      await doc.save();
+
+      logger.info('Conversation rejected for training', { conversationId, reviewedBy, reason });
+
+      res.json({
+        success: true,
+        message: `Conversation ${conversationId} đã bị từ chối.`,
+        conversationId,
+      });
+    } catch (error: any) {
+      logger.error('Error rejecting conversation:', error);
+      res.status(500).json({ success: false, error: 'Failed to reject conversation' });
     }
   })
 );

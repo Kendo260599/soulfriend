@@ -81,18 +81,21 @@ export class MemorySystem {
 
   /**
    * Save working memory (current session context)
+   * Key format: working:{userId}:{sessionId}
    */
-  async saveWorkingMemory(sessionId: string, data: WorkingMemoryData): Promise<void> {
+  async saveWorkingMemory(sessionId: string, data: WorkingMemoryData, userId?: string): Promise<void> {
     if (!this.isEnabled()) {
       console.log('⚠️  Memory system disabled, skipping save');
       return;
     }
 
     try {
-      const key = `working:${sessionId}`;
+      // Use userId:sessionId composite key for GDPR-compliant deletion by userId
+      const key = userId ? `working:${userId}:${sessionId}` : `working:${sessionId}`;
       await this.redis!.setex(key, 3600, JSON.stringify({
         ...data,
         lastUpdated: Date.now(),
+        userId, // Store userId in payload for reverse lookup
       }));
       console.log(`✅ Working memory saved for session: ${sessionId}`);
     } catch (error) {
@@ -348,11 +351,12 @@ export class MemorySystem {
     try {
       // 1. Delete from Redis (working + short-term)
       if (this.isEnabled()) {
-        // Use SCAN instead of KEYS for better performance with large datasets
-        // Fallback to keys() for now, but with pattern to limit scope
-        const workingKeys = await this.redis!.keys(`working:${userId}:*`);
-        if (workingKeys.length > 0) {
-          await this.redis!.del(...workingKeys);
+      // Delete working memory — try both key formats for backward compat
+        const workingKeysNew = await this.redis!.keys(`working:${userId}:*`);
+        const workingKeysLegacy = await this.redis!.keys(`working:${userId}`);
+        const allWorkingKeys = [...workingKeysNew, ...workingKeysLegacy].filter(Boolean);
+        if (allWorkingKeys.length > 0) {
+          await this.redis!.del(...allWorkingKeys);
         }
         await this.redis!.del(`shortterm:${userId}`);
       }
@@ -385,7 +389,7 @@ export class MemorySystem {
       let shortTermCount = 0;
 
       if (this.isEnabled()) {
-        // Check working memory with specific pattern
+        // Check working memory with composite key pattern
         const workingKeys = await this.redis!.keys(`working:${userId}:*`);
         workingExists = workingKeys.length > 0;
         shortTermCount = await this.redis!.zcard(`shortterm:${userId}`);

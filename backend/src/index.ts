@@ -534,6 +534,14 @@ const startServer = async () => {
         console.warn('⚠️  Failed to import vectorStore:', err);
       });
 
+      // Start memory consolidation service (24h periodic cleanup)
+      import('./services/memoryConsolidationService').then(({ memoryConsolidationService }) => {
+        memoryConsolidationService.startPeriodicConsolidation();
+        console.log('✅ Memory consolidation service started (24h interval)');
+      }).catch(err => {
+        console.warn('⚠️  Memory consolidation service failed to start:', err instanceof Error ? err.message : err);
+      });
+
       // Test email service connection
       if (emailService.isReady()) {
     emailService.testConnection().then((success: boolean) => {

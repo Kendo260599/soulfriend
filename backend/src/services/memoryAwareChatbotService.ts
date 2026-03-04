@@ -12,6 +12,8 @@ import { enhancedChatbotService, EnhancedResponse } from './enhancedChatbotServi
 import { toNumericScore } from '../types/risk';
 import { logger } from '../utils/logger';
 import redisService from './redisService';
+import { memoryConsolidationService } from './memoryConsolidationService';
+import { therapeuticContextService } from './therapeuticContextService';
 
 export interface MemoryAwareResponse extends EnhancedResponse {
   relevantMemories?: Array<{
@@ -89,6 +91,16 @@ export class MemoryAwareChatbotService {
       }
 
       // ====================
+      // STEP 1.5: LOAD THERAPEUTIC CONTEXT
+      // ====================
+      let therapeuticContext = '';
+      try {
+        therapeuticContext = await therapeuticContextService.getContextForPrompt(userId);
+      } catch (err) {
+        logger.warn('Failed to load therapeutic context, continuing without it', err);
+      }
+
+      // ====================
       // STEP 2: BUILD ENHANCED PROMPT
       // ====================
 
@@ -96,7 +108,8 @@ export class MemoryAwareChatbotService {
         message,
         workingMemory,
         relevantMemories,
-        userProfile
+        userProfile,
+        therapeuticContext
       );
 
       logger.info('Enhanced prompt built', {
@@ -134,7 +147,7 @@ export class MemoryAwareChatbotService {
         lastUpdated: Date.now(),
       };
 
-      await memorySystem.saveWorkingMemory(sessionId, newWorkingMemory);
+      await memorySystem.saveWorkingMemory(sessionId, newWorkingMemory, userId);
       logger.info('Working memory updated', { sessionId });
 
       // 4.2. Save to short-term memory
@@ -215,12 +228,18 @@ export class MemoryAwareChatbotService {
     message: string,
     workingMemory: WorkingMemoryData | null,
     relevantMemories: Array<{ content: string; type: string; confidence: number }>,
-    userProfile?: any
+    userProfile?: any,
+    therapeuticContext?: string
   ): string {
     let prompt = message;
 
     // Add memory context as system instructions
     const contextParts: string[] = [];
+
+    // 0. Therapeutic context (comprehensive user profile)
+    if (therapeuticContext) {
+      contextParts.push(`[Therapeutic Profile:\n${therapeuticContext}\n]`);
+    }
 
     // 1. Working memory context
     if (workingMemory) {
@@ -348,12 +367,18 @@ export class MemoryAwareChatbotService {
         // Save micro-insights and return early
         if (insights.length > 0) {
           for (const insight of insights) {
-            await memorySystem.saveLongTermMemory(userId, insight);
-            logger.info('🔬 Micro-insight saved from short message', {
+            const dedupResult = await memoryConsolidationService.deduplicateBeforeSave(
+              userId, insight.type, insight.content, insight.metadata
+            );
+            if (dedupResult === 'new') {
+              await memorySystem.saveLongTermMemory(userId, insight);
+            }
+            logger.info('🔬 Micro-insight processed from short message', {
               userId,
               messageLength: userMessage.length,
               message: userMessage,
               insightType: insight.type,
+              dedupResult,
             });
           }
         }
@@ -556,12 +581,18 @@ export class MemoryAwareChatbotService {
 
       for (const insight of insights) {
         try {
-          await memorySystem.saveLongTermMemory(userId, insight);
-          logger.info('Insight saved to long-term memory', {
+          const dedupResult = await memoryConsolidationService.deduplicateBeforeSave(
+            userId, insight.type, insight.content, insight.metadata
+          );
+          if (dedupResult === 'new') {
+            await memorySystem.saveLongTermMemory(userId, insight);
+          }
+          logger.info('Insight processed for long-term memory', {
             userId,
             type: insight.type,
             category: insight.metadata.category,
             confidence: insight.metadata.confidence,
+            dedupResult,
           });
         } catch (error) {
           logger.warn('Failed to save insight', { error, insight: insight.type });

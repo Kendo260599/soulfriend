@@ -63,6 +63,7 @@ import './models/TrainingDataPoint';
 import './models/LongTermMemory';
 import './models/ABExperiment';
 import './models/CriticalAlert';
+import './models/AuditLog';
 
 // Services
 import emailService from './services/emailService';
@@ -541,6 +542,14 @@ const startServer = async () => {
         console.log('✅ Memory consolidation service started (24h interval)');
       }).catch(err => {
         console.warn('⚠️  Memory consolidation service failed to start:', err instanceof Error ? err.message : err);
+      });
+
+      // Start data retention service (daily GDPR cleanup)
+      import('./services/dataRetentionService').then(({ dataRetentionService }) => {
+        dataRetentionService.startPeriodicEnforcement();
+        console.log('✅ Data retention service started (24h interval)');
+      }).catch(err => {
+        console.warn('⚠️  Data retention service failed to start:', err instanceof Error ? err.message : err);
       });
 
       // Test email service connection

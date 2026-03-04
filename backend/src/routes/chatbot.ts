@@ -8,6 +8,7 @@ import chatbotController from '../controllers/chatbotController';
 import { rateLimiter } from '../middleware/rateLimiter';
 import { chatbotRateLimiter } from '../middleware/redisRateLimiter';
 import { authenticateAdmin } from '../middleware/auth';
+import { checkConsent } from '../middleware/consentEnforcement';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.use(chatbotRateLimiter);
  * @desc    Process chat message
  * @access  Public
  */
-router.post('/message', chatbotController.processMessage);
+router.post('/message', checkConsent('dataProcessing'), chatbotController.processMessage);
 
 /**
  * @route   GET /api/v2/chatbot/history/:sessionId
@@ -89,7 +90,7 @@ router.get('/stats', authenticateAdmin, chatbotController.getStats);
  * @desc    Process message with 3-tier memory context
  * @access  Public
  */
-router.post('/chat-with-memory', chatbotController.chatWithMemory);
+router.post('/chat-with-memory', checkConsent('dataProcessing', 'aiProcessing'), chatbotController.chatWithMemory);
 
 /**
  * @route   GET /api/v2/chatbot/history-with-memory/:userId/:sessionId

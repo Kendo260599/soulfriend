@@ -11,6 +11,8 @@ import { runClinicalValidation } from '../utils/clinicalTestRunner';
 import { createClinicalValidator } from '../utils/clinicalValidation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { authenticateAdmin } from '../middleware/auth';
+import { encryptTestResult } from '../middleware/encryption';
+import { checkConsent } from '../middleware/consentEnforcement';
 
 import mongoose from 'mongoose';
 const router = express.Router();
@@ -40,6 +42,8 @@ router.post(
     body('answers.*').isInt({ min: 0, max: 10 }).withMessage('Điểm số phải từ 0-10'),
     body('consentId').isString().isLength({ min: 1 }).withMessage('Consent ID không hợp lệ'),
   ],
+  checkConsent('dataProcessing'),
+  encryptTestResult,
   asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

@@ -1,17 +1,18 @@
 /**
  * Audit Logging Middleware
  * Track all sensitive operations for compliance and security
+ * Now backed by MongoDB with file-based fallback
  */
 
 import { Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import path from 'path';
+import AuditLogModel from '../models/AuditLog';
 
 export interface AuditLog {
   timestamp: Date;
   userId?: string;
   userEmail?: string;
   action: string;
+  category?: 'auth' | 'data_access' | 'data_modify' | 'data_delete' | 'consent' | 'admin' | 'system';
   resource: string;
   method: string;
   path: string;
@@ -21,49 +22,49 @@ export interface AuditLog {
   changes?: any;
   result?: 'success' | 'failure';
   errorMessage?: string;
+  legalBasis?: string;
+  dataCategories?: string[];
 }
 
 export class AuditLogger {
-  private logDir: string;
-  private logFile: string;
-
   constructor() {
-    this.logDir = path.join(__dirname, '../../logs');
-    this.logFile = path.join(this.logDir, 'audit.log');
-    this.ensureLogDirectory();
-  }
-
-  private ensureLogDirectory(): void {
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
+    // MongoDB-backed — no file system setup needed
   }
 
   /**
-   * Log audit entry
+   * Log audit entry to MongoDB (non-blocking)
    */
   log(entry: AuditLog): void {
     const logEntry = {
       ...entry,
       timestamp: entry.timestamp || new Date(),
+      category: entry.category || this.inferCategory(entry.action, entry.method),
+      result: entry.result || 'success',
     };
 
-    const logLine = JSON.stringify(logEntry) + '\n';
-
-    fs.appendFile(this.logFile, logLine, err => {
-      if (err) {
-        console.error('Failed to write audit log:', err);
-      }
+    // Non-blocking persist to MongoDB
+    AuditLogModel.create(logEntry).catch(err => {
+      console.error('Failed to write audit log to MongoDB:', err);
     });
-
-    // In production, also send to external logging service (e.g., CloudWatch, Datadog)
-    if (process.env.NODE_ENV === 'production') {
-      this.sendToExternalService(logEntry);
-    }
   }
 
   /**
-   * Middleware to log all requests
+   * Infer category from action and method
+   */
+  private inferCategory(action: string, method: string): string {
+    if (action.startsWith('login') || action.startsWith('logout') || action === 'failed_login' || action === 'password_reset') {
+      return 'auth';
+    }
+    if (action.startsWith('data_delete') || method === 'DELETE') return 'data_delete';
+    if (action.startsWith('data_read') || action === 'data_access' || method === 'GET') return 'data_access';
+    if (action.startsWith('consent') || action.includes('consent')) return 'consent';
+    if (action.startsWith('admin')) return 'admin';
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'data_modify';
+    return 'system';
+  }
+
+  /**
+   * Middleware to log all requests to sensitive endpoints
    */
   middleware = (req: Request, res: Response, next: NextFunction): void => {
     const startTime = Date.now();
@@ -76,8 +77,8 @@ export class AuditLogger {
       const duration = Date.now() - startTime;
       const log: AuditLog = {
         timestamp: new Date(),
-        userId: (req as any).user?.id,
-        userEmail: (req as any).user?.email,
+        userId: (req as any).user?.id || (req as any).expert?.expertId,
+        userEmail: (req as any).user?.email || (req as any).expert?.email,
         action: req.method,
         resource: req.path,
         method: req.method,
@@ -88,7 +89,7 @@ export class AuditLogger {
         result: res.statusCode < 400 ? 'success' : 'failure',
       };
 
-      // Only log sensitive endpoints
+      // Log all sensitive endpoints (including GET for data access)
       if (auditLogger.shouldLog(req.path, req.method)) {
         auditLogger.log(log);
       }
@@ -109,14 +110,13 @@ export class AuditLogger {
       '/api/tests',
       '/api/research',
       '/api/consent',
+      '/api/v2/expert',
+      '/api/v2/hitl',
+      '/api/v2/critical-alerts',
     ];
 
-    const sensitiveMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
-
-    return (
-      sensitiveEndpoints.some(endpoint => path.startsWith(endpoint)) &&
-      sensitiveMethods.includes(method)
-    );
+    // Log ALL methods for sensitive endpoints (including GET for data access auditing)
+    return sensitiveEndpoints.some(endpoint => path.startsWith(endpoint));
   }
 
   /**
@@ -129,7 +129,7 @@ export class AuditLogger {
     changes?: any,
     result: 'success' | 'failure' = 'success'
   ): void {
-    const log: AuditLog = {
+    this.log({
       timestamp: new Date(),
       userId,
       action,
@@ -140,21 +140,34 @@ export class AuditLogger {
       userAgent: 'system',
       changes,
       result,
-    };
-
-    this.log(log);
+    });
   }
 
   /**
-   * Log data access
+   * Log data access (GDPR Art. 30 compliance)
    */
   logDataAccess(
     userId: string,
     resource: string,
     action: 'read' | 'write' | 'delete',
-    dataType: string
+    dataType: string,
+    legalBasis?: string
   ): void {
-    this.logAction(`data_${action}`, resource, userId, { dataType }, 'success');
+    this.log({
+      timestamp: new Date(),
+      userId,
+      action: `data_${action}`,
+      category: action === 'delete' ? 'data_delete' : action === 'write' ? 'data_modify' : 'data_access',
+      resource,
+      method: 'SYSTEM',
+      path: resource,
+      ip: 'system',
+      userAgent: 'system',
+      changes: { dataType },
+      result: 'success',
+      legalBasis,
+      dataCategories: [dataType],
+    });
   }
 
   /**
@@ -167,110 +180,83 @@ export class AuditLogger {
     ip?: string,
     result: 'success' | 'failure' = 'success'
   ): void {
-    const log: AuditLog = {
+    this.log({
       timestamp: new Date(),
       userId,
       userEmail: email,
       action: event,
+      category: 'auth',
       resource: 'auth',
       method: 'AUTH',
       path: `/api/auth/${event}`,
       ip: ip || 'unknown',
       userAgent: 'unknown',
       result,
-    };
-
-    this.log(log);
+    });
   }
 
   /**
-   * Send to external logging service
+   * Log GDPR-specific events
    */
-  private sendToExternalService(entry: AuditLog): void {
-    // TODO: Implement integration with external logging service
-    // Examples: AWS CloudWatch, Datadog, Loggly, Splunk
-    // This is a placeholder for production implementation
+  logGDPR(
+    action: string,
+    userId: string,
+    legalBasis: string,
+    dataCategories: string[],
+    details?: any
+  ): void {
+    this.log({
+      timestamp: new Date(),
+      userId,
+      action,
+      category: action.includes('delete') ? 'data_delete' : 'consent',
+      resource: 'gdpr',
+      method: 'SYSTEM',
+      path: '/gdpr',
+      ip: 'system',
+      userAgent: 'system',
+      changes: details,
+      result: 'success',
+      legalBasis,
+      dataCategories,
+    });
   }
 
   /**
-   * Query audit logs
+   * Query audit logs from MongoDB
    */
   async queryLogs(filters: {
     userId?: string;
     startDate?: Date;
     endDate?: Date;
     action?: string;
+    category?: string;
     result?: 'success' | 'failure';
+    limit?: number;
   }): Promise<AuditLog[]> {
-    return new Promise((resolve, reject) => {
-      fs.readFile(this.logFile, 'utf8', (err, data) => {
-        if (err) {
-          return reject(err);
-        }
+    const query: any = {};
 
-        const logs = data
-          .split('\n')
-          .filter(line => line.trim())
-          .map(line => JSON.parse(line) as AuditLog)
-          .filter(log => {
-            if (filters.userId && log.userId !== filters.userId) {
-              return false;
-            }
-            if (filters.action && log.action !== filters.action) {
-              return false;
-            }
-            if (filters.result && log.result !== filters.result) {
-              return false;
-            }
-            if (filters.startDate && new Date(log.timestamp) < filters.startDate) {
-              return false;
-            }
-            if (filters.endDate && new Date(log.timestamp) > filters.endDate) {
-              return false;
-            }
-            return true;
-          });
+    if (filters.userId) query.userId = filters.userId;
+    if (filters.action) query.action = filters.action;
+    if (filters.category) query.category = filters.category;
+    if (filters.result) query.result = filters.result;
+    if (filters.startDate || filters.endDate) {
+      query.timestamp = {};
+      if (filters.startDate) query.timestamp.$gte = filters.startDate;
+      if (filters.endDate) query.timestamp.$lte = filters.endDate;
+    }
 
-        resolve(logs);
-      });
-    });
+    return AuditLogModel.find(query)
+      .sort({ timestamp: -1 })
+      .limit(filters.limit || 500)
+      .lean();
   }
 
   /**
    * Generate audit report
    */
   async generateReport(startDate: Date, endDate: Date): Promise<any> {
-    const logs = await this.queryLogs({ startDate, endDate });
-
-    return {
-      period: {
-        start: startDate,
-        end: endDate,
-      },
-      totalEvents: logs.length,
-      successfulEvents: logs.filter(l => l.result === 'success').length,
-      failedEvents: logs.filter(l => l.result === 'failure').length,
-      uniqueUsers: new Set(logs.map(l => l.userId).filter(Boolean)).size,
-      actionBreakdown: this.groupBy(logs, 'action'),
-      resourceBreakdown: this.groupBy(logs, 'resource'),
-      topUsers: this.getTopUsers(logs, 10),
-    };
-  }
-
-  private groupBy(logs: AuditLog[], key: keyof AuditLog): any {
-    return logs.reduce((acc, log) => {
-      const value = log[key] as string;
-      acc[value] = (acc[value] || 0) + 1;
-      return acc;
-    }, {} as any);
-  }
-
-  private getTopUsers(logs: AuditLog[], limit: number): any[] {
-    const userCounts = this.groupBy(logs, 'userId');
-    return Object.entries(userCounts)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
-      .slice(0, limit)
-      .map(([userId, count]) => ({ userId, count }));
+    return (AuditLogModel as any).generateReport(startDate, endDate);
   }
 }
 

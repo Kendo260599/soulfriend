@@ -9,11 +9,11 @@
  * 1. moderationService.assess()    — lexical scanning + external APIs
  * 2. detectCrisis()                — crisis scenario matching
  * 3. assessRisk()                  — history + emotional state analysis
- * 4. (future) Social Harm Decoder  — gaslighting, shaming patterns
- * 5. (future) Bias Monitor         — response fairness checks
+ * 4. socialHarmDecoder.analyze()   — gaslighting, shaming, manipulation detection
+ * 5. biasMonitor.check()           — response fairness checks
  *
  * @module services/riskScoringService
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import {
@@ -29,6 +29,8 @@ import {
 } from '../types/risk';
 import moderationService, { ModerationResult } from './moderationService';
 import { detectCrisis, assessRisk, CrisisScenario } from '../data/crisisManagementData';
+import { socialHarmDecoder, SocialHarmResult } from './socialHarmDecoder';
+import { biasMonitor, BiasCheckResult } from './biasMonitor';
 import { logger } from '../utils/logger';
 
 // =============================================================================
@@ -51,7 +53,8 @@ export class CentralRiskScoringService {
   async assess(
     message: string,
     userHistory: string[] = [],
-    emotionalState: string = 'neutral'
+    emotionalState: string = 'neutral',
+    botResponse?: string
   ): Promise<RiskAssessment> {
     const signals: RiskSignal[] = [];
     let detectedCrisis: CrisisScenario | null = null;
@@ -132,6 +135,55 @@ export class CentralRiskScoringService {
     }
 
     // ─────────────────────────────────────────────────
+    // SOURCE 4: Social Harm Decoder (gaslighting, manipulation, shaming)
+    // ─────────────────────────────────────────────────
+    let socialHarmResult: SocialHarmResult | null = null;
+    try {
+      socialHarmResult = socialHarmDecoder.analyze(message);
+      if (socialHarmResult.detected) {
+        signals.push({
+          source: 'social_harm',
+          level: socialHarmResult.riskLevel,
+          score: socialHarmResult.score,
+          confidence: socialHarmResult.confidence,
+          details: {
+            category: socialHarmResult.categories.join(', '),
+            matchedKeywords: socialHarmResult.matchedPatterns.flatMap(p => p.matchedKeywords),
+            responseGuidance: socialHarmResult.responseGuidance,
+          },
+        });
+      }
+    } catch (error) {
+      logger.error('Social harm analysis failed:', error);
+    }
+
+    // ─────────────────────────────────────────────────
+    // SOURCE 5: Bias Monitor (AI response fairness checks)
+    // ─────────────────────────────────────────────────
+    let biasResult: BiasCheckResult | null = null;
+    if (botResponse) {
+      try {
+        biasResult = biasMonitor.check(botResponse, message);
+        if (biasResult.biasDetected) {
+          signals.push({
+            source: 'bias_monitor',
+            level: biasResult.severityLevel,
+            score: biasResult.score,
+            confidence: biasResult.confidence,
+            details: {
+              category: biasResult.categories.join(', '),
+              matchedKeywords: biasResult.matchedPatterns.flatMap(p => p.matchedPhrases),
+              shouldRewrite: biasResult.shouldRewrite,
+              corrections: biasResult.corrections,
+            },
+          });
+        }
+      } catch (error) {
+        logger.error('Bias monitor check failed:', error);
+      }
+    }
+
+    // ─────────────────────────────────────────────────
     // AGGREGATE: Determine final risk level
     // ─────────────────────────────────────────────────
     const finalLevel = this.aggregateSignals(signals);
@@ -193,6 +245,8 @@ export class CentralRiskScoringService {
     const sourceWeights: Record<string, number> = {
       crisis_keywords: 1.0,
       moderation: 0.9,
+      social_harm: 0.85,
+      bias_monitor: 0.7,
       sentiment: 0.7,
       history: 0.6,
       ai: 0.8,
@@ -224,7 +278,20 @@ export class CentralRiskScoringService {
       return this.inferRiskType(crisis);
     }
 
-    // Priority 2: From moderation signals
+    // Priority 2: From social harm signals
+    for (const signal of signals) {
+      if (signal.source === 'social_harm' && signal.details?.category) {
+        const categories = signal.details.category.split(', ');
+        if (categories.includes('coercive_control')) {
+          return 'coercion';
+        }
+        if (categories.includes('emotional_manipulation') || categories.includes('gaslighting')) {
+          return 'manipulation';
+        }
+      }
+    }
+
+    // Priority 3: From moderation signals
     for (const signal of signals) {
       if (signal.details?.riskType) {
         return signal.details.riskType;

@@ -74,7 +74,7 @@ export function requiresReferral(level: RiskLevel): boolean {
 /**
  * Type of risk detected
  */
-export type RiskType = 'suicidal' | 'self_harm' | 'psychosis' | 'violence' | 'general';
+export type RiskType = 'suicidal' | 'self_harm' | 'psychosis' | 'violence' | 'manipulation' | 'coercion' | 'general';
 
 // =============================================================================
 // RISK SCORING
@@ -89,7 +89,7 @@ export type RiskScore = number;
  * Result from a single risk detection source
  */
 export interface RiskSignal {
-  source: 'lexical' | 'crisis_keywords' | 'moderation' | 'sentiment' | 'ai' | 'history';
+  source: 'lexical' | 'crisis_keywords' | 'moderation' | 'sentiment' | 'ai' | 'history' | 'social_harm' | 'bias_monitor';
   level: RiskLevel;
   score: RiskScore;
   confidence: number; // 0..1
@@ -97,6 +97,12 @@ export interface RiskSignal {
     category?: string;
     matchedKeywords?: string[];
     riskType?: RiskType;
+    /** Response guidance from Social Harm Decoder */
+    responseGuidance?: string[];
+    /** Whether AI response should be rewritten (Bias Monitor) */
+    shouldRewrite?: boolean;
+    /** Corrections to apply to AI response (Bias Monitor) */
+    corrections?: string[];
   };
 }
 

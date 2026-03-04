@@ -21,7 +21,7 @@ export interface CriticalAlert {
   userId: string;
   sessionId: string;
   riskLevel: 'CRITICAL' | 'EXTREME';
-  riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence';
+  riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence' | 'manipulation' | 'coercion';
   userMessage: string;
   detectedKeywords: string[];
   userProfile?: any;
@@ -169,7 +169,7 @@ export class CriticalInterventionService {
     sessionId: string,
     riskData: {
       riskLevel: 'CRITICAL' | 'EXTREME';
-      riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence';
+      riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence' | 'manipulation' | 'coercion';
       userMessage: string;
       detectedKeywords: string[];
       userProfile?: any;

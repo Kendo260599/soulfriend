@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import { geminiCircuit } from './circuitBreakerService';
 
 /**
  * Gemini AI Service
@@ -83,41 +84,43 @@ export class GeminiService {
       // Gemini API format
       const prompt = `${systemPrompt}\n\nNgười dùng: ${userMessage}\n\nCHUN:`;
 
-      const response = await this.client.post(`/models/${this.MODEL}:generateContent`, {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
+      const response: any = await geminiCircuit.executeWithRetry(() =>
+        this.client.post(`/models/${this.MODEL}:generateContent`, {
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
           },
-        ],
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.7,
-          topP: 0.9,
-          topK: 40,
-        },
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-        ],
-      });
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+          ],
+        })
+      );
 
       const aiResponse = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -214,33 +217,35 @@ export class GeminiService {
         role: 'user',
       });
 
-      const response = await this.client.post(`/models/${this.MODEL}:generateContent`, {
-        contents: contents,
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.7,
-          topP: 0.9,
-          topK: 40,
-        },
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      const response: any = await geminiCircuit.executeWithRetry(() =>
+        this.client.post(`/models/${this.MODEL}:generateContent`, {
+          contents: contents,
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
           },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-        ],
-      });
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+          ],
+        })
+      );
 
       const aiResponse = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
 

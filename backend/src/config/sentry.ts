@@ -46,12 +46,12 @@ export function initSentry(): void {
       release: process.env.RENDER_GIT_COMMIT || 'development',
       
       // Performance Monitoring
-      // Capture 100% of transactions for complete visibility
-      tracesSampleRate: 1.0,
+      // Production: sample 20% for cost/performance balance; Dev: 100% for visibility
+      tracesSampleRate: isProduction ? 0.2 : 1.0,
       
       // Profiling - captures function-level performance data
-      // Sample 100% of traced transactions for detailed insights
-      profilesSampleRate: 1.0,
+      // Production: 10% to avoid overhead; Dev: 100%
+      profilesSampleRate: isProduction ? 0.1 : 1.0,
       
       // PII (Personally Identifiable Information) Collection
       // Sends default PII data like IP addresses, user agents

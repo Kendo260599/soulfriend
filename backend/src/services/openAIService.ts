@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import { openAICircuit } from './circuitBreakerService';
 
 /**
  * OpenAI Service
@@ -78,24 +79,26 @@ export class OpenAIService {
 - Nếu phát hiện bạo hành: Gọi 113 ngay lập tức
 - Luôn khuyến nghị gặp chuyên gia cho vấn đề nghiêm trọng`;
 
-      const response = await this.client.post('/chat/completions', {
-        model: this.MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt,
-          },
-          {
-            role: 'user',
-            content: userMessage,
-          },
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-        top_p: 0.9,
-        frequency_penalty: 0.1,
-        presence_penalty: 0.1,
-      });
+      const response: any = await openAICircuit.executeWithRetry(() =>
+        this.client.post('/chat/completions', {
+          model: this.MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+          top_p: 0.9,
+          frequency_penalty: 0.1,
+          presence_penalty: 0.1,
+        })
+      );
 
       const aiResponse = response.data?.choices?.[0]?.message?.content;
 
@@ -175,15 +178,17 @@ export class OpenAIService {
         },
       ];
 
-      const response = await this.client.post('/chat/completions', {
-        model: this.MODEL,
-        messages: messages,
-        max_tokens: 1000,
-        temperature: 0.7,
-        top_p: 0.9,
-        frequency_penalty: 0.1,
-        presence_penalty: 0.1,
-      });
+      const response: any = await openAICircuit.executeWithRetry(() =>
+        this.client.post('/chat/completions', {
+          model: this.MODEL,
+          messages: messages,
+          max_tokens: 1000,
+          temperature: 0.7,
+          top_p: 0.9,
+          frequency_penalty: 0.1,
+          presence_penalty: 0.1,
+        })
+      );
 
       const aiResponse = response.data?.choices?.[0]?.message?.content;
 

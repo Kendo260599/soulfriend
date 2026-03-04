@@ -67,6 +67,7 @@ import './models/AuditLog';
 
 // Services
 import emailService from './services/emailService';
+import { logger } from './utils/logger';
 
 // Socket.io
 import { initializeSocketServer } from './socket/socketServer';
@@ -152,7 +153,7 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
-    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'X-Request-Id', 'X-Response-Time'],
     optionsSuccessStatus: 200,
   })
 );
@@ -241,19 +242,9 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // LOGGING & MONITORING
 // ====================
 
-// Request logging
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const startTime = Date.now();
-
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    console.log(
-      `[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`
-    );
-  });
-
-  next();
-});
+// Request context: assigns unique request ID + tracks response time
+import { requestContext } from './middleware/requestContext';
+app.use(requestContext);
 
 // Audit logging for sensitive operations
 app.use(auditLogger.middleware);
@@ -343,9 +334,26 @@ app.get('/api/health/detailed', authenticateAdmin, async (req: Request, res: Res
   try {
     const dbStatus = databaseConnection.getConnectionState();
     const dbHealthy = databaseConnection.isHealthy();
+    const redisHealthy = redisConnection.isHealthy();
+
+    // Determine overall status
+    let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    if (!dbHealthy) overallStatus = 'unhealthy';
+    else if (!redisHealthy) overallStatus = 'degraded';
+
+    // Get circuit breaker stats
+    let circuitBreakers: any[] = [];
+    try {
+      const { getAllCircuitStats } = await import('./services/circuitBreakerService');
+      circuitBreakers = getAllCircuitStats();
+      // If any circuit is OPEN, mark degraded
+      if (circuitBreakers.some((cb: any) => cb.state === 'OPEN')) {
+        overallStatus = overallStatus === 'unhealthy' ? 'unhealthy' : 'degraded';
+      }
+    } catch { /* circuit breaker not available */ }
 
     const health = {
-      status: dbHealthy ? 'healthy' : 'degraded',
+      status: overallStatus,
       version: '4.0.0',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -357,7 +365,7 @@ app.get('/api/health/detailed', authenticateAdmin, async (req: Request, res: Res
           message: getDbStatusMessage(dbStatus),
         },
         cache: {
-          status: redisConnection.isHealthy() ? 'connected' : 'disconnected',
+          status: redisHealthy ? 'connected' : 'disconnected',
           configured: config.REDIS_URL ? 'yes' : 'no',
         },
         vectorDb: {
@@ -370,6 +378,7 @@ app.get('/api/health/detailed', authenticateAdmin, async (req: Request, res: Res
           configured: process.env.QSTASH_TOKEN ? 'yes' : 'no',
         },
       },
+      circuitBreakers,
       system: {
         memory: {
           used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
@@ -381,7 +390,24 @@ app.get('/api/health/detailed', authenticateAdmin, async (req: Request, res: Res
       },
     };
 
-    const statusCode = dbHealthy ? 200 : 503;
+    // Alert on degraded/unhealthy status via email
+    if (overallStatus !== 'healthy') {
+      try {
+        const alertEmail = process.env.ALERT_EMAIL || process.env.SMTP_FROM;
+        if (alertEmail && emailService.isReady()) {
+          await emailService.send({
+            to: alertEmail,
+            subject: `⚠️ SoulFriend Health Alert: ${overallStatus.toUpperCase()}`,
+            html: `<h2>Health Status: ${overallStatus}</h2><pre>${JSON.stringify(health.services, null, 2)}</pre><p>Circuit Breakers:</p><pre>${JSON.stringify(circuitBreakers, null, 2)}</pre><p>Time: ${health.timestamp}</p>`,
+          });
+        }
+      } catch (alertErr) {
+        // Don't fail health check due to alert failure
+        console.warn('Failed to send health alert email:', alertErr);
+      }
+    }
+
+    const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
     res.status(statusCode).json(health);
   } catch (error) {
     res.status(503).json({
@@ -588,7 +614,20 @@ const startServer = async () => {
         console.log('🔒 HTTP server closed');
 
         try {
+          // Close Redis connection
+          try {
+            await redisService.disconnect();
+            console.log('🔌 Redis disconnected');
+          } catch (redisErr) {
+            console.warn('⚠️  Redis disconnect error:', redisErr);
+          }
+
+          // Close MongoDB connection
           await databaseConnection.disconnect();
+
+          // Close logger streams
+          logger.close();
+
           console.log('👋 Graceful shutdown complete');
           process.exit(0);
         } catch (error) {

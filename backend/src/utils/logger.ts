@@ -162,13 +162,26 @@ class Logger {
   }
 
   private sendToExternalServices(entry: LogEntry): void {
-    // Send errors to Sentry if configured
-    if (config.SENTRY_DSN && entry.level === 'ERROR') {
-      // TODO: Implement Sentry integration
-      // Sentry.captureException(new Error(entry.message), {
-      //   extra: entry.metadata,
-      //   tags: { component: 'soulfriend-backend' }
-      // });
+    // Send errors and warnings to Sentry if configured
+    if (config.SENTRY_DSN && (entry.level === 'ERROR' || entry.level === 'WARN')) {
+      try {
+        // Dynamic import to avoid circular dependency
+        const Sentry = require('@sentry/node');
+        if (entry.level === 'ERROR') {
+          Sentry.captureException(new Error(entry.message), {
+            extra: entry.metadata,
+            tags: { component: 'soulfriend-backend', category: entry.metadata?.category },
+          });
+        } else if (entry.level === 'WARN' && entry.metadata?.category === 'security') {
+          Sentry.captureMessage(entry.message, {
+            level: 'warning',
+            extra: entry.metadata,
+            tags: { component: 'soulfriend-backend', category: 'security' },
+          });
+        }
+      } catch {
+        // Sentry not available — silently ignore
+      }
     }
   }
 

@@ -6,6 +6,7 @@
 import { Pinecone } from '@pinecone-database/pinecone';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import config from '../config/environment';
+import { pineconeCircuit } from './circuitBreakerService';
 
 export interface VectorMetadata {
   userId: string;
@@ -178,7 +179,7 @@ export class VectorStore {
 
     try {
       const index = this.pinecone.index(this.indexName);
-      await index.upsert([vector]);
+      await pineconeCircuit.execute(() => index.upsert([vector]));
       console.log(`✅ Vector upserted: ${vector.id}`);
     } catch (error) {
       console.error('❌ Failed to upsert vector:', error);
@@ -247,12 +248,14 @@ export class VectorStore {
 
     try {
       const index = this.pinecone.index(this.indexName);
-      const queryResponse = await index.query({
-        vector: params.vector,
-        filter: params.filter,
-        topK: params.topK || 5,
-        includeMetadata: params.includeMetadata !== false,
-      });
+      const queryResponse = await pineconeCircuit.execute(() =>
+        index.query({
+          vector: params.vector,
+          filter: params.filter,
+          topK: params.topK || 5,
+          includeMetadata: params.includeMetadata !== false,
+        })
+      );
 
       return (queryResponse.matches || []).map(match => ({
         id: match.id,
@@ -284,7 +287,7 @@ export class VectorStore {
 
     try {
       const index = this.pinecone.index(this.indexName);
-      await index.deleteMany(ids);
+      await pineconeCircuit.execute(() => index.deleteMany(ids));
       console.log(`✅ Deleted ${ids.length} vectors`);
     } catch (error) {
       console.error('❌ Failed to delete vectors:', error);

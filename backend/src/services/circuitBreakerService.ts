@@ -1,7 +1,7 @@
 /**
  * CIRCUIT BREAKER SERVICE
  *
- * Prevents cascading failures when external services (OpenAI, Gemini, Cerebras,
+ * Prevents cascading failures when external services (OpenAI,
  * Pinecone, etc.) become unavailable.
  *
  * States:
@@ -322,22 +322,6 @@ export const openAICircuit = new CircuitBreaker({
   callTimeout: 30_000, // AI calls can be slow
 });
 
-/** Circuit breaker for Google Gemini API calls */
-export const geminiCircuit = new CircuitBreaker({
-  name: 'Gemini',
-  failureThreshold: 5,
-  resetTimeout: 30_000,
-  callTimeout: 30_000,
-});
-
-/** Circuit breaker for Cerebras API calls */
-export const cerebrasCircuit = new CircuitBreaker({
-  name: 'Cerebras',
-  failureThreshold: 5,
-  resetTimeout: 60_000,
-  callTimeout: 20_000,
-});
-
 /** Circuit breaker for Pinecone vector store */
 export const pineconeCircuit = new CircuitBreaker({
   name: 'Pinecone',
@@ -352,8 +336,6 @@ export const pineconeCircuit = new CircuitBreaker({
 export function getAllCircuitStats(): CircuitBreakerStats[] {
   return [
     openAICircuit.getStats(),
-    geminiCircuit.getStats(),
-    cerebrasCircuit.getStats(),
     pineconeCircuit.getStats(),
   ];
 }
@@ -361,8 +343,6 @@ export function getAllCircuitStats(): CircuitBreakerStats[] {
 export default {
   CircuitBreaker,
   openAICircuit,
-  geminiCircuit,
-  cerebrasCircuit,
   pineconeCircuit,
   getAllCircuitStats,
 };

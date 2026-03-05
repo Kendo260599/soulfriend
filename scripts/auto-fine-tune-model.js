@@ -25,15 +25,11 @@ const CONFIG = {
   BACKUP_DIR: './training-data/backups',
   
   // Fine-tuning providers
-  PROVIDER: 'openai',  // 'openai' | 'google' | 'manual'
+  PROVIDER: 'openai',  // 'openai' | 'manual'
   
   // OpenAI config
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_MODEL: 'gpt-4',
-  
-  // Google config
-  GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID,
-  GOOGLE_MODEL: 'gemini-pro'
 };
 
 // =============================================================================

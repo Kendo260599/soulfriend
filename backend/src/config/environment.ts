@@ -54,10 +54,7 @@ interface EnvironmentConfig {
 
   // External APIs
   OPENAI_API_KEY?: string;
-  GEMINI_API_KEY?: string;
   AZURE_COGNITIVE_KEY?: string;
-  // Legacy (deprecated)
-  CEREBRAS_API_KEY?: string;
 
   // Monitoring
   SENTRY_DSN?: string;
@@ -174,10 +171,7 @@ function parseEnvironment(): EnvironmentConfig {
 
     // External APIs
     OPENAI_API_KEY: getEnvOptional('OPENAI_API_KEY'),
-    GEMINI_API_KEY: getEnvOptional('GEMINI_API_KEY'),
     AZURE_COGNITIVE_KEY: getEnvOptional('AZURE_COGNITIVE_KEY'),
-    // Legacy (deprecated)
-    CEREBRAS_API_KEY: getEnvOptional('CEREBRAS_API_KEY'),
 
     // Monitoring
     SENTRY_DSN: getEnvOptional('SENTRY_DSN'),
@@ -250,7 +244,7 @@ function logConfiguration(config: EnvironmentConfig): void {
   console.log(`   Redis: ${config.REDIS_URL ? 'Enabled' : 'Disabled'}`);
   console.log(`   SMTP: ${config.SMTP_HOST ? 'Enabled' : 'Disabled'}`);
   console.log(
-    `   External APIs: ${config.OPENAI_API_KEY ? 'OpenAI ✓' : ''} ${config.GEMINI_API_KEY ? 'Gemini ✓' : ''} ${config.AZURE_COGNITIVE_KEY ? 'Azure ✓' : ''}`
+    `   External APIs: ${config.OPENAI_API_KEY ? 'OpenAI ✓' : ''} ${config.AZURE_COGNITIVE_KEY ? 'Azure ✓' : ''}`
   );
   console.log(`   Monitoring: ${config.SENTRY_DSN ? 'Sentry ✓' : 'Local only'}`);
 }
@@ -301,10 +295,7 @@ export const {
   MAX_FILE_SIZE,
   UPLOAD_PATH,
   OPENAI_API_KEY,
-  GEMINI_API_KEY,
   AZURE_COGNITIVE_KEY,
-  // Legacy (deprecated)
-  CEREBRAS_API_KEY,
   SENTRY_DSN,
   HEALTH_CHECK_INTERVAL,
   BACKUP_SCHEDULE,

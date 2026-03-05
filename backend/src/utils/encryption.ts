@@ -12,21 +12,32 @@ const IV_LENGTH = 16; // 128 bits
 const TAG_LENGTH = 16; // 128 bits
 
 export class EncryptionService {
-  private encryptionKey: Buffer;
+  private encryptionKey: Buffer | null = null;
+  private isEnabled: boolean = false;
 
   constructor() {
     const key = process.env.ENCRYPTION_KEY;
 
     if (!key) {
-      throw new Error('ENCRYPTION_KEY environment variable is required');
+      console.warn('⚠️  ENCRYPTION_KEY not set. Encryption features will be disabled.');
+      return;
     }
 
     if (key.length < 32) {
-      throw new Error('ENCRYPTION_KEY must be at least 32 characters long');
+      console.warn('⚠️  ENCRYPTION_KEY must be at least 32 characters. Encryption disabled.');
+      return;
     }
 
     // Derive a consistent key from the environment variable
     this.encryptionKey = crypto.scryptSync(key, 'soulfriend-salt', KEY_LENGTH);
+    this.isEnabled = true;
+  }
+
+  /**
+   * Check if encryption is available
+   */
+  ready(): boolean {
+    return this.isEnabled && this.encryptionKey !== null;
   }
 
   /**
@@ -35,9 +46,12 @@ export class EncryptionService {
    * @returns Encrypted data with IV and auth tag
    */
   encrypt(plaintext: string): string {
+    if (!this.ready()) {
+      throw new Error('Encryption is not configured. Set ENCRYPTION_KEY environment variable.');
+    }
     try {
       const iv = crypto.randomBytes(IV_LENGTH);
-      const cipher = crypto.createCipheriv(ALGORITHM, this.encryptionKey, iv);
+      const cipher = crypto.createCipheriv(ALGORITHM, this.encryptionKey!, iv);
       cipher.setAAD(Buffer.from('soulfriend-aad'));
 
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
@@ -60,6 +74,9 @@ export class EncryptionService {
    * @returns Decrypted plaintext
    */
   decrypt(encryptedData: string): string {
+    if (!this.ready()) {
+      throw new Error('Encryption is not configured. Set ENCRYPTION_KEY environment variable.');
+    }
     try {
       const combined = Buffer.from(encryptedData, 'base64');
 
@@ -68,7 +85,7 @@ export class EncryptionService {
       const authTag = combined.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
       const encrypted = combined.subarray(IV_LENGTH + TAG_LENGTH);
 
-      const decipher = crypto.createDecipheriv(ALGORITHM, this.encryptionKey, iv);
+      const decipher = crypto.createDecipheriv(ALGORITHM, this.encryptionKey!, iv);
       decipher.setAAD(Buffer.from('soulfriend-aad'));
       decipher.setAuthTag(authTag);
 

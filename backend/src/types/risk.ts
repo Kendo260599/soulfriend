@@ -189,10 +189,10 @@ export function toNumericScore(level: RiskLevel): number {
  * Convert numeric score back to RiskLevel
  */
 export function fromNumericScore(score: number): RiskLevel {
-  if (score >= 9) return RiskLevel.EXTREME;
-  if (score >= 7) return RiskLevel.CRITICAL;
-  if (score >= 5) return RiskLevel.HIGH;
-  if (score >= 3) return RiskLevel.MODERATE;
+  if (score >= 10) return RiskLevel.EXTREME;
+  if (score >= 8) return RiskLevel.CRITICAL;
+  if (score >= 6) return RiskLevel.HIGH;
+  if (score >= 4) return RiskLevel.MODERATE;
   if (score >= 1) return RiskLevel.LOW;
   return RiskLevel.NONE;
 }

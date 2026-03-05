@@ -181,15 +181,24 @@ app.use(express.text({ type: 'text/plain', defaultCharset: 'utf-8' }));
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.body && typeof req.body === 'object') {
     // Recursively fix all string values in request body
-    const fixEncoding = (obj: any): any => {
+    const fixEncoding = (obj: any, _path?: string): any => {
       if (typeof obj === 'string') {
         try {
           // If string contains replacement characters (�), it's corrupted
           if (obj.includes('�') || obj.charCodeAt(0) === 65533) {
-            // Try to recover from raw body if available
-            if (req.rawBody) {
-              const parsed = JSON.parse(req.rawBody);
-              return parsed;
+            // Try to recover specific field from raw body
+            if (req.rawBody && _path) {
+              try {
+                const parsed = JSON.parse(req.rawBody);
+                const parts = _path.split('.');
+                let value: any = parsed;
+                for (const part of parts) {
+                  value = value?.[part];
+                }
+                if (typeof value === 'string') {
+                  return value.normalize('NFC');
+                }
+              } catch { /* fall through to NFC normalize */ }
             }
           }
           // Normalize Vietnamese characters (NFC = Canonical Composition)
@@ -198,11 +207,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           return obj;
         }
       } else if (Array.isArray(obj)) {
-        return obj.map(fixEncoding);
+        return obj.map((item, i) => fixEncoding(item, _path ? `${_path}.${i}` : `${i}`));
       } else if (obj !== null && typeof obj === 'object') {
         const fixed: any = {};
         for (const key in obj) {
-          fixed[key] = fixEncoding(obj[key]);
+          fixed[key] = fixEncoding(obj[key], _path ? `${_path}.${key}` : key);
         }
         return fixed;
       }
@@ -620,6 +629,14 @@ const startServer = async () => {
             console.log('🔌 Redis disconnected');
           } catch (redisErr) {
             console.warn('⚠️  Redis disconnect error:', redisErr);
+          }
+
+          // Close memory system's Redis connection (ioredis)
+          try {
+            const { memorySystem } = await import('./services/memorySystem');
+            await memorySystem.disconnect();
+          } catch (memErr) {
+            console.warn('⚠️  Memory system disconnect error:', memErr);
           }
 
           // Close MongoDB connection

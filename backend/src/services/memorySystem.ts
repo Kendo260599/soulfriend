@@ -106,14 +106,23 @@ export class MemorySystem {
   /**
    * Get working memory
    */
-  async getWorkingMemory(sessionId: string): Promise<WorkingMemoryData | null> {
+  async getWorkingMemory(sessionId: string, userId?: string): Promise<WorkingMemoryData | null> {
     if (!this.isEnabled()) {
       return null;
     }
 
     try {
-      const key = `working:${sessionId}`;
-      const data = await this.redis!.get(key);
+      // Try userId-prefixed key first, then fallback to sessionId-only key
+      const userKey = userId ? `working:${userId}:${sessionId}` : null;
+      const sessionKey = `working:${sessionId}`;
+      let data: string | null = null;
+
+      if (userKey) {
+        data = await this.redis!.get(userKey);
+      }
+      if (!data) {
+        data = await this.redis!.get(sessionKey);
+      }
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error('❌ Failed to get working memory:', error);
@@ -124,13 +133,17 @@ export class MemorySystem {
   /**
    * Clear working memory
    */
-  async clearWorkingMemory(sessionId: string): Promise<void> {
+  async clearWorkingMemory(sessionId: string, userId?: string): Promise<void> {
     if (!this.isEnabled()) {
       return;
     }
 
     try {
+      // Delete both possible keys
       await this.redis!.del(`working:${sessionId}`);
+      if (userId) {
+        await this.redis!.del(`working:${userId}:${sessionId}`);
+      }
       console.log(`✅ Working memory cleared for session: ${sessionId}`);
     } catch (error) {
       console.error('❌ Failed to clear working memory:', error);
@@ -409,6 +422,22 @@ export class MemorySystem {
         shortTermCount: 0,
         longTermCount: 0,
       };
+    }
+  }
+
+  /**
+   * Disconnect Redis connection (for graceful shutdown)
+   */
+  async disconnect(): Promise<void> {
+    if (this.redis) {
+      try {
+        await this.redis.quit();
+        this.redis = null;
+        this.enabled = false;
+        console.log('🔌 Memory system Redis disconnected');
+      } catch (error) {
+        console.warn('⚠️  Memory system Redis disconnect error:', error);
+      }
     }
   }
 }

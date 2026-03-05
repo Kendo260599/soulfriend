@@ -206,7 +206,7 @@ const PrivacyManagement: React.FC = () => {
   const fetchUserData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/user/data');
+      const response = await axios.get('/api/v2/user/data');
       setUserData(response.data);
       setMessage({ type: 'success', text: 'Đã tải dữ liệu cá nhân thành công' });
     } catch (error) {
@@ -218,7 +218,7 @@ const PrivacyManagement: React.FC = () => {
   const exportUserData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/user/export', { responseType: 'blob' });
+      const response = await axios.get('/api/v2/user/export', { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -241,7 +241,7 @@ const PrivacyManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      await axios.delete('/api/user/data');
+      await axios.delete('/api/v2/user/data');
       setUserData(null);
       setShowDeleteDialog(false);
       setDeleteConfirmed(false);
@@ -258,7 +258,7 @@ const PrivacyManagement: React.FC = () => {
   const withdrawConsent = async () => {
     setLoading(true);
     try {
-      await axios.post('/api/user/withdraw-consent');
+      await axios.post('/api/v2/user/withdraw-consent');
       setMessage({ 
         type: 'success', 
         text: 'Đã rút lại sự đồng ý. Dữ liệu của bạn sẽ chỉ được lưu trữ theo yêu cầu pháp lý.' 

@@ -143,7 +143,7 @@ const TestTaking: React.FC<TestTakingProps> = ({
     try {
       // Gửi kết quả lên server
       const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
-      const response = await axios.post(`${apiUrl}/api/tests/submit`, {
+      const response = await axios.post(`${apiUrl}/api/v2/tests/submit`, {
         testType: currentTestType,
         answers,
         consentId

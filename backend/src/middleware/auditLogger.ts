@@ -49,6 +49,26 @@ export class AuditLogger {
   }
 
   /**
+   * Derive semantic action name from HTTP method and path
+   */
+  deriveAction(method: string, path: string): string {
+    const lowerPath = path.toLowerCase();
+    if (lowerPath.includes('login') || lowerPath.includes('auth')) {
+      return method === 'POST' ? 'login' : 'auth_check';
+    }
+    if (lowerPath.includes('consent')) {
+      return method === 'POST' ? 'consent_update' : 'consent_read';
+    }
+    if (lowerPath.includes('admin')) {
+      return `admin_${method.toLowerCase()}`;
+    }
+    if (method === 'DELETE') return 'data_delete';
+    if (method === 'GET') return 'data_access';
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'data_modify';
+    return `${method.toLowerCase()}:${path}`;
+  }
+
+  /**
    * Infer category from action and method
    */
   private inferCategory(action: string, method: string): string {
@@ -79,7 +99,7 @@ export class AuditLogger {
         timestamp: new Date(),
         userId: (req as any).user?.id || (req as any).expert?.expertId,
         userEmail: (req as any).user?.email || (req as any).expert?.email,
-        action: req.method,
+        action: auditLogger.deriveAction(req.method, req.path),
         resource: req.path,
         method: req.method,
         path: req.originalUrl,

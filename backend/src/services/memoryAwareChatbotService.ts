@@ -47,7 +47,7 @@ export class MemoryAwareChatbotService {
       // ====================
 
       // 1.1. Load working memory (session context)
-      const workingMemory = await memorySystem.getWorkingMemory(sessionId);
+      const workingMemory = await memorySystem.getWorkingMemory(sessionId, userId);
       logger.info(`Working memory loaded: ${workingMemory ? 'exists' : 'none'}`, {
         sessionId,
         emotion: workingMemory?.emotion,
@@ -832,7 +832,7 @@ export class MemoryAwareChatbotService {
       const messages = enhancedChatbotService.messages.get(sessionId) || [];
 
       // Get memory context
-      const workingMemory = await memorySystem.getWorkingMemory(sessionId);
+      const workingMemory = await memorySystem.getWorkingMemory(sessionId, userId);
       const recentInteractions = await memorySystem.getRecentInteractions(userId, limit);
       const memoryStats = await memorySystem.getMemoryStats(userId);
 
@@ -959,8 +959,8 @@ export class MemoryAwareChatbotService {
   /**
    * Clear session memory (for new conversation)
    */
-  async clearSessionMemory(sessionId: string): Promise<void> {
-    await memorySystem.clearWorkingMemory(sessionId);
+  async clearSessionMemory(sessionId: string, userId?: string): Promise<void> {
+    await memorySystem.clearWorkingMemory(sessionId, userId);
     logger.info('Session memory cleared', { sessionId });
   }
 

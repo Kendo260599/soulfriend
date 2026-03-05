@@ -9,10 +9,11 @@ export const API_CONFIG = {
   BASE_URL: (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, ''),
   ENDPOINTS: {
     HEALTH: '/api/health',
-    CONSENT: '/api/consent',
-    TESTS: '/api/tests',
-    ADMIN: '/api/admin',
-    USER: '/api/user'
+    CONSENT: '/api/v2/consent',
+    TESTS: '/api/v2/tests',
+    ADMIN: '/api/v2/admin',
+    USER: '/api/v2/user',
+    CHATBOT: '/api/v2/chatbot'
   },
   TIMEOUT: 10000, // 10 seconds
   RETRY_ATTEMPTS: 3

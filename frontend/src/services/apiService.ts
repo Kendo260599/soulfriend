@@ -78,19 +78,19 @@ class ApiService {
   }
 
   public async submitConsent(data: any): Promise<AxiosResponse> {
-    return this.post('/api/consent', data);
+    return this.post('/api/v2/consent', data);
   }
 
   public async submitTest(data: any): Promise<AxiosResponse> {
-    return this.post('/api/tests/submit', data);
+    return this.post('/api/v2/tests/submit', data);
   }
 
   public async getTestQuestions(testType: string): Promise<AxiosResponse> {
-    return this.get(`/api/tests/questions/${testType}`);
+    return this.get(`/api/v2/tests/questions/${testType}`);
   }
 
   public async adminLogin(credentials: any): Promise<AxiosResponse> {
-    return this.post('/api/admin/login', credentials);
+    return this.post('/api/v2/admin/login', credentials);
   }
 }
 

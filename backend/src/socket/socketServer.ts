@@ -53,10 +53,14 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     cors: {
       origin: [
         'http://localhost:3000',
+        'http://localhost:5173',
+        'https://soulfriend.vercel.app',
+        'https://soulfriend-v4.vercel.app',
         'https://soulfriend-kendo260599s-projects.vercel.app',
         'https://soulfriend-git-main-kendo260599s-projects.vercel.app',
-        'https://soulfriend-api.onrender.com'
-      ],
+        'https://soulfriend-api.onrender.com',
+        process.env.FRONTEND_URL,
+      ].filter(Boolean) as string[],
       methods: ['GET', 'POST'],
       credentials: true
     },

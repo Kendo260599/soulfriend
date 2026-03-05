@@ -95,6 +95,7 @@ const LongTermMemorySchema = new Schema<ILongTermMemory>(
   },
   {
     timestamps: true,
+    collection: 'long_term_memories',
   }
 );
 

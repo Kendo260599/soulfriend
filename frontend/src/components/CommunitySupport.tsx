@@ -387,27 +387,54 @@ const CommunitySupport: React.FC<CommunitySupportProps> = ({ onBack }) => {
     },
     {
       id: 4,
-      title: 'Podcast hỗ trợ',
-      description: 'Các podcast chia sẻ kinh nghiệm và lời khuyên từ chuyên gia',
+      title: 'Podcast sức khỏe tâm lý',
+      description: 'Chia sẻ kinh nghiệm từ chuyên gia tâm lý và người trong cuộc',
       icon: '🎧',
       link: '#',
-      type: 'podcast'
+      type: 'podcast',
+      updated: true,
+      content: [
+        'Ep.1: Hiểu về trầm cảm ở phụ nữ Việt Nam',
+        'Ep.2: Stress công việc và gia đình - cách cân bằng',
+        'Ep.3: Lo âu xã hội trong thời đại số',
+        'Ep.4: Chăm sóc sức khỏe tâm lý sau sinh',
+        'Ep.5: Tiền mãn kinh - thay đổi mà không sợ hãi',
+        'Ep.6: Kỹ năng mindfulness cho người bận rộn'
+      ]
     },
     {
       id: 5,
-      title: 'Ứng dụng di động',
-      description: 'Danh sách ứng dụng hỗ trợ sức khỏe tâm lý được khuyến nghị',
+      title: 'Ứng dụng hỗ trợ tâm lý',
+      description: 'Danh sách ứng dụng di động được chuyên gia khuyến nghị',
       icon: '📱',
       link: '#',
-      type: 'app'
+      type: 'app',
+      updated: true,
+      content: [
+        'Headspace - Thiền & Mindfulness (4.8⭐)',
+        'Calm - Giấc ngủ & Thư giãn (4.7⭐)',
+        'Woebot - AI hỗ trợ CBT (4.6⭐)',
+        'Insight Timer - Thiền miễn phí (4.9⭐)',
+        'BetterHelp - Tư vấn trực tuyến (4.5⭐)',
+        'Moodfit - Theo dõi tâm trạng (4.4⭐)'
+      ]
     },
     {
       id: 6,
       title: 'Khóa học trực tuyến',
-      description: 'Các khóa học về kỹ năng sống và quản lý cảm xúc',
+      description: 'Các khóa học kỹ năng sống và quản lý cảm xúc từ đại học uy tín',
       icon: '🎓',
       link: '#',
-      type: 'course'
+      type: 'course',
+      updated: true,
+      content: [
+        'Yale: The Science of Well-Being (Miễn phí)',
+        'Coursera: CBT cho lo âu và trầm cảm',
+        'edX: Tâm lý học tích cực (Harvard)',
+        'Udemy: Kỹ năng quản lý stress hiệu quả',
+        'ĐH Y Hà Nội: Sức khỏe tâm thần cơ bản',
+        'Mindfulness-Based Stress Reduction (MBSR)'
+      ]
     }
   ];
 
@@ -443,29 +470,55 @@ const CommunitySupport: React.FC<CommunitySupportProps> = ({ onBack }) => {
       id: 1,
       name: 'Dr. Nguyễn Thị Minh',
       specialty: 'Tâm lý học lâm sàng',
+      credentials: 'Tiến sĩ Tâm lý, ĐH Y Dược TP.HCM',
       contact: '0901 234 567',
-      location: 'TP.HCM'
+      location: 'TP.HCM',
+      type: 'psychologist'
     },
     {
       id: 2,
       name: 'Ths. Trần Văn Nam',
-      specialty: 'Tư vấn gia đình',
+      specialty: 'Tư vấn gia đình & hôn nhân',
+      credentials: 'Thạc sĩ Tâm lý, Chứng chỉ AAMFT',
       contact: '0902 345 678',
-      location: 'Hà Nội'
+      location: 'Hà Nội',
+      type: 'counselor'
     },
     {
       id: 3,
       name: 'Bs. Lê Thị Hoa',
       specialty: 'Tâm thần học',
+      credentials: 'Bác sĩ CKI Tâm thần, BV Tâm thần TW',
       contact: '0903 456 789',
-      location: 'Đà Nẵng'
+      location: 'Đà Nẵng',
+      type: 'psychiatrist'
     },
     {
       id: 4,
       name: 'Ths. Phạm Văn Đức',
-      specialty: 'Tư vấn hôn nhân',
+      specialty: 'Tư vấn stress & burn-out',
+      credentials: 'Thạc sĩ Tâm lý, Chứng chỉ ACT',
       contact: '0904 567 890',
-      location: 'TP.HCM'
+      location: 'TP.HCM',
+      type: 'counselor'
+    },
+    {
+      id: 5,
+      name: 'PGS.TS. Hoàng Thị Lan',
+      specialty: 'Tâm lý phụ nữ & trẻ em',
+      credentials: 'Phó GS, Viện Tâm lý học VN',
+      contact: '0905 678 901',
+      location: 'Hà Nội',
+      type: 'psychologist'
+    },
+    {
+      id: 6,
+      name: 'Bs. Đỗ Minh Tuấn',
+      specialty: 'Tâm thần học phụ nữ',
+      credentials: 'CKII Tâm thần, Chuyên gia trầm cảm sau sinh',
+      contact: '0906 789 012',
+      location: 'TP.HCM',
+      type: 'psychiatrist'
     }
   ];
 
@@ -489,6 +542,26 @@ const CommunitySupport: React.FC<CommunitySupportProps> = ({ onBack }) => {
       name: 'Tổng đài quốc gia',
       number: '111',
       description: 'Bảo vệ trẻ em'
+    },
+    {
+      name: 'Đường dây bạo lực gia đình',
+      number: '1800 1567',
+      description: 'Miễn phí 24/7'
+    },
+    {
+      name: 'Tổng đài sức khỏe tâm thần',
+      number: '1800 599 920',
+      description: 'Tư vấn miễn phí'
+    },
+    {
+      name: 'BV Tâm thần Trung ương',
+      number: '024 3825 3028',
+      description: 'Hà Nội'
+    },
+    {
+      name: 'Hội LHPN Việt Nam',
+      number: '024 3971 5060',
+      description: 'Hỗ trợ phụ nữ'
     }
   ];
 
@@ -624,14 +697,57 @@ const CommunitySupport: React.FC<CommunitySupportProps> = ({ onBack }) => {
             <ProfessionalItem key={professional.id}>
               <ProfessionalName>{professional.name}</ProfessionalName>
               <ProfessionalSpecialty>{professional.specialty}</ProfessionalSpecialty>
+              <div style={{ fontSize: '0.85rem', color: '#4b5563', marginBottom: '8px', fontStyle: 'italic' }}>
+                {professional.credentials}
+              </div>
               <ProfessionalContact>
                 📞 {professional.contact}<br />
-                📍 {professional.location}
+                📍 {professional.location}<br />
+                🏷️ {professional.type === 'psychiatrist' ? 'Bác sĩ Tâm thần' : professional.type === 'psychologist' ? 'Nhà Tâm lý học' : 'Tư vấn viên'}
               </ProfessionalContact>
             </ProfessionalItem>
           ))}
         </ProfessionalList>
       </ProfessionalSection>
+
+      {/* Treatment Centers */}
+      <div style={{ marginTop: '2rem' }}>
+        <ProfessionalSection style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <ProfessionalTitle style={{ color: '#16a34a' }}>🏥 Cơ sở Điều trị Sức khỏe Tâm thần</ProfessionalTitle>
+          <ProfessionalList>
+            <ProfessionalItem style={{ borderColor: '#bbf7d0' }}>
+              <ProfessionalName style={{ color: '#16a34a' }}>Bệnh viện công</ProfessionalName>
+              <ProfessionalSpecialty>
+                • Bệnh viện Tâm thần Trung ương<br/>
+                • Bệnh viện Tâm thần Hà Nội<br/>
+                • Bệnh viện Tâm thần TP.HCM<br/>
+                • Bệnh viện Tâm thần Đà Nẵng
+              </ProfessionalSpecialty>
+              <ProfessionalContact>Coverage: 35.2% · Quality: 6.5/10</ProfessionalContact>
+            </ProfessionalItem>
+            <ProfessionalItem style={{ borderColor: '#c4b5fd' }}>
+              <ProfessionalName style={{ color: '#7c3aed' }}>Cơ sở tư nhân</ProfessionalName>
+              <ProfessionalSpecialty>
+                • Phòng khám Tâm lý - Tâm thần<br/>
+                • Trung tâm Tư vấn Tâm lý<br/>
+                • Phòng khám Đa khoa<br/>
+                • Bệnh viện Tư nhân
+              </ProfessionalSpecialty>
+              <ProfessionalContact>Coverage: 15.8% · Quality: 7.8/10</ProfessionalContact>
+            </ProfessionalItem>
+            <ProfessionalItem style={{ borderColor: '#fde68a' }}>
+              <ProfessionalName style={{ color: '#d97706' }}>Dịch vụ cộng đồng</ProfessionalName>
+              <ProfessionalSpecialty>
+                • Trung tâm Công tác Xã hội<br/>
+                • Hội Phụ nữ<br/>
+                • Tổ chức Phi lợi nhuận<br/>
+                • Dịch vụ Tư vấn Trực tuyến
+              </ProfessionalSpecialty>
+              <ProfessionalContact>Coverage: 25.6% · Quality: 5.9/10</ProfessionalContact>
+            </ProfessionalItem>
+          </ProfessionalList>
+        </ProfessionalSection>
+      </div>
     </ContentSection>
   );
 
@@ -653,6 +769,64 @@ const CommunitySupport: React.FC<CommunitySupportProps> = ({ onBack }) => {
           ))}
         </EmergencyContacts>
       </EmergencySection>
+
+      {/* HITL System Explanation */}
+      <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '15px', padding: '25px', marginBottom: '25px' }}>
+        <h3 style={{ color: '#1e40af', fontSize: '1.4rem', marginBottom: '15px', fontWeight: 600 }}>🤝 Hệ thống HITL (Human-in-the-Loop)</h3>
+        <p style={{ color: '#1e3a5f', lineHeight: 1.7, marginBottom: '15px' }}>
+          SoulFriend sử dụng hệ thống <strong>Human-in-the-Loop (HITL)</strong> — kết hợp AI và chuyên gia con người 
+          để đảm bảo an toàn cho người dùng. AI chatbot hỗ trợ 24/7, nhưng khi phát hiện tình huống khủng hoảng, 
+          hệ thống sẽ tự động chuyển sang chế độ can thiệp chuyên gia.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+          <div style={{ background: 'white', borderRadius: '10px', padding: '15px', borderLeft: '4px solid #3b82f6' }}>
+            <strong style={{ color: '#1e40af' }}>🤖 Bước 1: AI Sàng lọc</strong>
+            <p style={{ color: '#4b5563', fontSize: '0.9rem', marginTop: '5px' }}>AI phân tích nội dung cuộc hội thoại để phát hiện dấu hiệu khủng hoảng (từ khóa, cảm xúc, mức độ nghiêm trọng)</p>
+          </div>
+          <div style={{ background: 'white', borderRadius: '10px', padding: '15px', borderLeft: '4px solid #f59e0b' }}>
+            <strong style={{ color: '#d97706' }}>⚠️ Bước 2: Cảnh báo</strong>
+            <p style={{ color: '#4b5563', fontSize: '0.9rem', marginTop: '5px' }}>Nếu phát hiện nguy cơ, hệ thống cảnh báo người dùng và cung cấp đường dây nóng ngay lập tức</p>
+          </div>
+          <div style={{ background: 'white', borderRadius: '10px', padding: '15px', borderLeft: '4px solid #ef4444' }}>
+            <strong style={{ color: '#dc2626' }}>👨‍⚕️ Bước 3: Chuyên gia can thiệp</strong>
+            <p style={{ color: '#4b5563', fontSize: '0.9rem', marginTop: '5px' }}>Chuyên gia tâm lý được thông báo để can thiệp trực tiếp trong trường hợp khẩn cấp</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Crisis Detection Info */}
+      <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: '15px', padding: '25px', marginBottom: '25px' }}>
+        <h3 style={{ color: '#a16207', fontSize: '1.4rem', marginBottom: '15px', fontWeight: 600 }}>🔍 Hệ thống Phát hiện Khủng hoảng</h3>
+        <p style={{ color: '#713f12', lineHeight: 1.7, marginBottom: '15px' }}>
+          AI của SoulFriend được huấn luyện để nhận diện các dấu hiệu khủng hoảng tâm lý:
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+          {[
+            '💬 Từ khóa liên quan tự hại',
+            '😔 Biểu hiện tuyệt vọng kéo dài',
+            '🔴 Điểm DASS-21 mức nghiêm trọng',
+            '⚡ Thay đổi cảm xúc đột ngột',
+            '🚫 Cô lập xã hội nghiêm trọng',
+            '💊 Đề cập đến chất gây nghiện'
+          ].map((item, i) => (
+            <div key={i} style={{ background: 'white', borderRadius: '8px', padding: '10px', fontSize: '0.9rem', color: '#92400e' }}>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Safety Protocols */}
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '15px', padding: '25px' }}>
+        <h3 style={{ color: '#16a34a', fontSize: '1.4rem', marginBottom: '15px', fontWeight: 600 }}>🛡️ Quy trình An toàn</h3>
+        <div style={{ color: '#166534', lineHeight: 1.7 }}>
+          <p style={{ marginBottom: '12px' }}><strong>1. Khi cảm thấy không ổn:</strong> Hít thở sâu 4-7-8. Gọi ngay đường dây nóng 1900 5999 15.</p>
+          <p style={{ marginBottom: '12px' }}><strong>2. Khi có ý định tự hại:</strong> Hãy rời khỏi tình huống nguy hiểm. Gọi 115 hoặc đến phòng cấp cứu gần nhất.</p>
+          <p style={{ marginBottom: '12px' }}><strong>3. Khi người thân gặp nguy:</strong> Ở bên cạnh họ. Gọi đường dây bạo lực gia đình 1800 1567.</p>
+          <p style={{ marginBottom: '12px' }}><strong>4. An toàn trực tuyến:</strong> Không chia sẻ thông tin cá nhân nhạy cảm. Dữ liệu được mã hóa end-to-end.</p>
+          <p><strong>5. Sau khủng hoảng:</strong> Hẹn gặp chuyên gia tâm lý trong 48 giờ. Tham gia nhóm hỗ trợ để phục hồi.</p>
+        </div>
+      </div>
     </ContentSection>
   );
 

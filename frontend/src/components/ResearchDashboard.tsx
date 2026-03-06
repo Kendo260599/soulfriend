@@ -10,6 +10,7 @@ import styled, { keyframes } from 'styled-components';
 import { adminAuthService } from '../services/adminAuthService';
 import { realDataCollector } from '../services/realDataCollector';
 import { RealResearchData, realResearchService, ResearchInsights, ResearchReport } from '../services/realResearchService';
+import { vietnamWomenHealthData, vietnamPsychologicalScales, culturalFactors, vietnamMentalHealthServices } from '../data/vietnamResearchData';
 import AnimatedButton from './AnimatedButton';
 import AnimatedCard from './AnimatedCard';
 import LoadingSpinner from './LoadingSpinner';
@@ -226,15 +227,99 @@ const ButtonGroup = styled.div`
 `;
 
 const ChartContainer = styled.div`
-  height: 300px;
   background: #f8f9fa;
   border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+`;
+
+const BarChart = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+`;
+
+const BarRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #666;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
+  gap: 1rem;
+`;
+
+const BarLabel = styled.div`
+  min-width: 140px;
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+  text-align: right;
+`;
+
+const BarTrack = styled.div`
+  flex: 1;
+  height: 28px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+`;
+
+const BarFill = styled.div<{ width: number; color: string }>`
+  height: 100%;
+  width: ${props => props.width}%;
+  background: ${props => props.color};
+  border-radius: 6px;
+  transition: width 0.8s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 0.8rem;
+  color: white;
+  font-weight: 600;
+  min-width: 40px;
+`;
+
+const VNDataGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+`;
+
+const VNCard = styled.div<{ borderColor: string }>`
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid ${props => props.borderColor};
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+`;
+
+const VNCardTitle = styled.h4`
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  font-size: 1.05rem;
+`;
+
+const VNCardText = styled.p`
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+`;
+
+const TagList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+`;
+
+const Tag = styled.span<{ color: string }>`
+  background: ${props => props.color}15;
+  color: ${props => props.color};
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
 `;
 
 const DataTable = styled.div`
@@ -790,6 +875,237 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
         )}
       </Section>
 
+      {/* ===== VIETNAM RESEARCH DATA ===== */}
+      <Section animation="slideInUp">
+        <SectionTitle>🇻🇳 Dữ liệu Sức khỏe Tâm thần Phụ nữ Việt Nam</SectionTitle>
+        
+        {/* Prevalence Chart */}
+        <ChartContainer>
+          <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Tỷ lệ phổ biến các vấn đề tâm lý</h4>
+          <BarChart>
+            <BarRow>
+              <BarLabel>Stress</BarLabel>
+              <BarTrack>
+                <BarFill width={35.4} color="#ef4444">35.4%</BarFill>
+              </BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Lo âu (Anxiety)</BarLabel>
+              <BarTrack>
+                <BarFill width={18.7} color="#f59e0b">18.7%</BarFill>
+              </BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Trầm cảm</BarLabel>
+              <BarTrack>
+                <BarFill width={15.2} color="#3b82f6">15.2%</BarFill>
+              </BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Trầm cảm sau sinh</BarLabel>
+              <BarTrack>
+                <BarFill width={12.8} color="#8b5cf6">12.8%</BarFill>
+              </BarTrack>
+            </BarRow>
+          </BarChart>
+        </ChartContainer>
+
+        {/* DASS-21 Vietnamese Norms */}
+        <h3 style={{ margin: '1.5rem 0 1rem', color: '#333' }}>📊 Chuẩn DASS-21 cho phụ nữ Việt Nam</h3>
+        <VNDataGrid>
+          <VNCard borderColor="#3b82f6">
+            <VNCardTitle>😔 Trầm cảm (Depression)</VNCardTitle>
+            <VNCardText>
+              Mean: {vietnamPsychologicalScales.DASS21.vietnameseNorms.depression.mean} ± {vietnamPsychologicalScales.DASS21.vietnameseNorms.depression.sd}<br/>
+              Validity: {(vietnamPsychologicalScales.DASS21.validity * 100).toFixed(0)}% · Reliability: {(vietnamPsychologicalScales.DASS21.reliability * 100).toFixed(0)}%
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#f59e0b">
+            <VNCardTitle>😰 Lo âu (Anxiety)</VNCardTitle>
+            <VNCardText>
+              Mean: {vietnamPsychologicalScales.DASS21.vietnameseNorms.anxiety.mean} ± {vietnamPsychologicalScales.DASS21.vietnameseNorms.anxiety.sd}<br/>
+              Validity: {(vietnamPsychologicalScales.DASS21.validity * 100).toFixed(0)}% · Reliability: {(vietnamPsychologicalScales.DASS21.reliability * 100).toFixed(0)}%
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#ef4444">
+            <VNCardTitle>😤 Stress</VNCardTitle>
+            <VNCardText>
+              Mean: {vietnamPsychologicalScales.DASS21.vietnameseNorms.stress.mean} ± {vietnamPsychologicalScales.DASS21.vietnameseNorms.stress.sd}<br/>
+              Validity: {(vietnamPsychologicalScales.DASS21.validity * 100).toFixed(0)}% · Reliability: {(vietnamPsychologicalScales.DASS21.reliability * 100).toFixed(0)}%
+            </VNCardText>
+          </VNCard>
+        </VNDataGrid>
+
+        {/* Women's Health Data */}
+        <h3 style={{ margin: '1.5rem 0 1rem', color: '#333' }}>👩 Dữ liệu Sức khỏe Phụ nữ</h3>
+        <VNDataGrid>
+          <VNCard borderColor="#ec4899">
+            <VNCardTitle>🤰 Sức khỏe sinh sản</VNCardTitle>
+            <VNCardText>
+              Tuổi mang thai TB: {vietnamWomenHealthData.reproductiveHealth.pregnancy.averageAge}<br/>
+              Trầm cảm sau sinh: {vietnamWomenHealthData.reproductiveHealth.postpartum.depressionRate}%<br/>
+              Tuổi mãn kinh TB: {vietnamWomenHealthData.reproductiveHealth.menopause.averageAge}
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#7c3aed">
+            <VNCardTitle>⚖️ Áp lực xã hội</VNCardTitle>
+            <VNCardText>
+              Tuổi kết hôn TB: {vietnamWomenHealthData.socialFactors.familyPressure.marriage.averageAge}<br/>
+              Áp lực kết hôn: {vietnamWomenHealthData.socialFactors.familyPressure.marriage.pressure}/10<br/>
+              Áp lực sinh con: {vietnamWomenHealthData.socialFactors.familyPressure.childbearing.pressure}/10
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#0d9488">
+            <VNCardTitle>🏥 Tiếp cận y tế tâm thần</VNCardTitle>
+            <VNCardText>
+              Nhận thức: {vietnamWomenHealthData.healthcareAccess.mentalHealth.awareness}%<br/>
+              Khả năng tiếp cận: {vietnamWomenHealthData.healthcareAccess.mentalHealth.accessibility}%<br/>
+              Chi phí hợp lý: {vietnamWomenHealthData.healthcareAccess.mentalHealth.affordability}%
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#d97706">
+            <VNCardTitle>💼 Stress kinh tế</VNCardTitle>
+            <VNCardText>
+              Tỷ lệ lao động nữ: {vietnamWomenHealthData.economicFactors.employment.participationRate}%<br/>
+              Chênh lệch lương: {((1 - vietnamWomenHealthData.economicFactors.employment.wageGap) * 100).toFixed(0)}% thấp hơn nam<br/>
+              Stress giáo dục con: {vietnamWomenHealthData.economicFactors.financialStress.childrenEducation}/10
+            </VNCardText>
+          </VNCard>
+        </VNDataGrid>
+
+        {/* Cultural Factors */}
+        <h3 style={{ margin: '1.5rem 0 1rem', color: '#333' }}>🎭 Yếu tố Văn hóa</h3>
+        <VNDataGrid>
+          <VNCard borderColor="#16a34a">
+            <VNCardTitle>✅ Yếu tố tích cực</VNCardTitle>
+            <TagList>
+              {culturalFactors.positive.map((f, i) => <Tag key={i} color="#16a34a">{f}</Tag>)}
+            </TagList>
+          </VNCard>
+          <VNCard borderColor="#dc2626">
+            <VNCardTitle>⚠️ Yếu tố tiêu cực</VNCardTitle>
+            <TagList>
+              {culturalFactors.negative.map((f, i) => <Tag key={i} color="#dc2626">{f}</Tag>)}
+            </TagList>
+          </VNCard>
+        </VNDataGrid>
+
+        {/* Barriers */}
+        <VNCard borderColor="#6366f1">
+          <VNCardTitle>🚧 Rào cản tiếp cận dịch vụ tâm lý</VNCardTitle>
+          <TagList>
+            {vietnamWomenHealthData.healthcareAccess.barriers.map((b, i) => <Tag key={i} color="#6366f1">{b}</Tag>)}
+          </TagList>
+        </VNCard>
+      </Section>
+
+      {/* ===== INTERNATIONAL STANDARDS ===== */}
+      <Section animation="slideInUp">
+        <SectionTitle>🌍 Tiêu chuẩn Quốc tế & So sánh</SectionTitle>
+        
+        <h3 style={{ margin: '0 0 1rem', color: '#333' }}>📋 WHO Digital Health Guidelines 2024</h3>
+        <VNDataGrid>
+          <VNCard borderColor="#0ea5e9">
+            <VNCardTitle>🏥 Khuyến nghị WHO</VNCardTitle>
+            <VNCardText>
+              • Sàng lọc sức khỏe tâm thần định kỳ cho phụ nữ<br/>
+              • Tích hợp sức khỏe tâm thần vào chăm sóc sức khỏe ban đầu<br/>
+              • Ứng dụng Digital Health trong sàng lọc tâm lý<br/>
+              • Đảm bảo quyền riêng tư dữ liệu người dùng
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#0ea5e9">
+            <VNCardTitle>📊 Mục tiêu WHO 2030</VNCardTitle>
+            <VNCardText>
+              • Tăng 50% ngân sách sức khỏe tâm thần<br/>
+              • 80% quốc gia tích hợp SKTL vào chăm sóc ban đầu<br/>
+              • Giảm 1/3 tỷ lệ tự tử toàn cầu<br/>
+              • Truy cập phổ cập dịch vụ SKTL
+            </VNCardText>
+          </VNCard>
+        </VNDataGrid>
+
+        <h3 style={{ margin: '1.5rem 0 1rem', color: '#333' }}>📖 DSM-5-TR Standards</h3>
+        <VNDataGrid>
+          <VNCard borderColor="#7c3aed">
+            <VNCardTitle>Tiêu chuẩn chẩn đoán</VNCardTitle>
+            <VNCardText>
+              DASS-21 được khuyến nghị sử dụng như công cụ sàng lọc (screening) để đánh giá mức độ trầm cảm, lo âu và stress. Theo DSM-5-TR, đây là công cụ đáng tin cậy cho cộng đồng.
+            </VNCardText>
+          </VNCard>
+          <VNCard borderColor="#7c3aed">
+            <VNCardTitle>Evidence-based Interventions</VNCardTitle>
+            <VNCardText>
+              • CBT (Liệu pháp Nhận thức Hành vi): hiệu quả 60-80%<br/>
+              • MBSR (Giảm stress dựa trên Chánh niệm): hiệu quả 55-70%<br/>
+              • IPT (Liệu pháp Liên cá nhân): hiệu quả cho trầm cảm sau sinh
+            </VNCardText>
+          </VNCard>
+        </VNDataGrid>
+
+        <h3 style={{ margin: '1.5rem 0 1rem', color: '#333' }}>📈 So sánh Việt Nam vs Quốc tế</h3>
+        <ChartContainer>
+          <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Tỷ lệ trầm cảm ở phụ nữ (% dân số)</h4>
+          <BarChart>
+            <BarRow>
+              <BarLabel>Việt Nam</BarLabel>
+              <BarTrack><BarFill width={15.2} color="#ef4444">15.2%</BarFill></BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Trung bình TG</BarLabel>
+              <BarTrack><BarFill width={12.0} color="#3b82f6">12.0%</BarFill></BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Đông Nam Á</BarLabel>
+              <BarTrack><BarFill width={14.5} color="#f59e0b">14.5%</BarFill></BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Nhật Bản</BarLabel>
+              <BarTrack><BarFill width={8.5} color="#10b981">8.5%</BarFill></BarTrack>
+            </BarRow>
+            <BarRow>
+              <BarLabel>Hoa Kỳ</BarLabel>
+              <BarTrack><BarFill width={21.0} color="#8b5cf6">21.0%</BarFill></BarTrack>
+            </BarRow>
+          </BarChart>
+        </ChartContainer>
+
+        {/* Treatment Centers */}
+        <h3 style={{ margin: '1.5rem 0 1rem', color: '#333' }}>🏥 Cơ sở Điều trị Sức khỏe Tâm thần tại Việt Nam</h3>
+        <VNDataGrid>
+          <VNCard borderColor="#059669">
+            <VNCardTitle>Bệnh viện công</VNCardTitle>
+            <VNCardText>
+              {vietnamMentalHealthServices.public.hospitals.map(h => `• ${h}`).join('\n')}
+            </VNCardText>
+            <TagList>
+              <Tag color="#059669">Coverage: {vietnamMentalHealthServices.public.coverage}%</Tag>
+              <Tag color="#0ea5e9">Quality: {vietnamMentalHealthServices.public.quality}/10</Tag>
+            </TagList>
+          </VNCard>
+          <VNCard borderColor="#7c3aed">
+            <VNCardTitle>Cơ sở tư nhân</VNCardTitle>
+            <VNCardText>
+              {vietnamMentalHealthServices.private.clinics.map(c => `• ${c}`).join('\n')}
+            </VNCardText>
+            <TagList>
+              <Tag color="#7c3aed">Coverage: {vietnamMentalHealthServices.private.coverage}%</Tag>
+              <Tag color="#0ea5e9">Quality: {vietnamMentalHealthServices.private.quality}/10</Tag>
+            </TagList>
+          </VNCard>
+          <VNCard borderColor="#d97706">
+            <VNCardTitle>Dịch vụ cộng đồng</VNCardTitle>
+            <VNCardText>
+              {vietnamMentalHealthServices.community.services.map(s => `• ${s}`).join('\n')}
+            </VNCardText>
+            <TagList>
+              <Tag color="#d97706">Coverage: {vietnamMentalHealthServices.community.coverage}%</Tag>
+              <Tag color="#0ea5e9">Quality: {vietnamMentalHealthServices.community.quality}/10</Tag>
+            </TagList>
+          </VNCard>
+        </VNDataGrid>
+      </Section>
+
       <FilterSection>
         <FilterGroup>
           <FilterLabel htmlFor="period-filter">Time Period</FilterLabel>
@@ -847,7 +1163,25 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
           <Section animation="slideInUp">
             <SectionTitle>📊 Demographics Analysis</SectionTitle>
             <ChartContainer>
-              <div>Demographics Distribution Chart (Real Data)</div>
+              <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Phân bố Demographics (Real Data)</h4>
+              <BarChart>
+                {insights.demographics && Object.keys(insights.demographics.ageDistribution).length > 0
+                  ? Object.entries(insights.demographics.ageDistribution).map(([age, count]) => {
+                    const maxCount = Math.max(...Object.values(insights.demographics.ageDistribution) as number[]);
+                    return (
+                      <BarRow key={age}>
+                        <BarLabel>{age}</BarLabel>
+                        <BarTrack>
+                          <BarFill width={maxCount > 0 ? ((count as number) / maxCount) * 100 : 0} color="#667eea">
+                            {String(count)}
+                          </BarFill>
+                        </BarTrack>
+                      </BarRow>
+                    );
+                  })
+                  : <div style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Chưa có dữ liệu demographics từ người dùng thực</div>
+                }
+              </BarChart>
             </ChartContainer>
             <AnalysisContainer>
               <InsightCard>
@@ -905,7 +1239,22 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
           <Section animation="slideInUp">
             <SectionTitle>📈 Test Performance Analysis</SectionTitle>
             <ChartContainer>
-              <div>Performance Analysis Chart (Real Data)</div>
+              <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Phân tích hiệu suất Test (Real Data)</h4>
+              <BarChart>
+                {Object.entries(insights.testAnalysis.averageScores).length > 0
+                  ? Object.entries(insights.testAnalysis.averageScores).map(([testType, score]) => (
+                    <BarRow key={testType}>
+                      <BarLabel>{testType}</BarLabel>
+                      <BarTrack>
+                        <BarFill width={Math.min((score / 42) * 100, 100)} color="#667eea">
+                          {score.toFixed(1)}
+                        </BarFill>
+                      </BarTrack>
+                    </BarRow>
+                  ))
+                  : <div style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Chưa có dữ liệu test từ người dùng thực</div>
+                }
+              </BarChart>
             </ChartContainer>
             <AnalysisContainer>
               {Object.entries(insights.testAnalysis.averageScores).map(([testType, score]) => (

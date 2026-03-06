@@ -22,6 +22,7 @@ import ExpertDashboard from './components/ExpertDashboard';
 import ExpertLogin from './components/ExpertLogin';
 import FeaturesShowcase from './components/FeaturesShowcase';
 import GameFi from './components/GameFi';
+import LifeStageNavigation from './components/LifeStageNavigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ResearchDashboard } from './components/ResearchDashboard';
 import TestFlow from './App'; // Step-based: Consent → DASS-21 → Results
@@ -145,6 +146,7 @@ const Navigation: React.FC = () => {
         <NavLinkBtn active={path === '/content'} onClick={() => navigate('/content')}>Khám phá</NavLinkBtn>
         <NavLinkBtn active={path === '/research'} onClick={() => navigate('/research')}>Nghiên cứu</NavLinkBtn>
         <NavLinkBtn active={path === '/community'} onClick={() => navigate('/community')}>Cộng đồng</NavLinkBtn>
+        <NavLinkBtn active={path === '/life-stages'} onClick={() => navigate('/life-stages')}>Giai đoạn sống</NavLinkBtn>
         <NavLinkBtn active={path === '/gamefi'} onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLinkBtn>
         <NavLinkBtn active={path === '/start'} onClick={() => navigate('/start')}>Làm test DASS-21</NavLinkBtn>
         {isAuthenticated ? (
@@ -223,6 +225,11 @@ const RoutedApp: React.FC = () => {
         <Route path="/community" element={
           <UserRoute>
             <CommunitySupport onBack={() => navigate('/')} />
+          </UserRoute>
+        } />
+        <Route path="/life-stages" element={
+          <UserRoute>
+            <LifeStageNavigation onBack={() => navigate('/')} onStartTest={() => navigate('/start')} />
           </UserRoute>
         } />
 

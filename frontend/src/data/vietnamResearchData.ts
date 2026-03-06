@@ -389,60 +389,6 @@ export const vietnamResearchData: VietnamResearchData = {
           "Cultural emphasis on emotional control affects anxiety scores",
           "Depression scores may be underreported due to stigma"
         ]
-      },
-      {
-        test: "GAD-7",
-        vietnameseNorms: {
-          mean: 8.3,
-          sd: 5.1,
-          percentiles: {
-            "25th": 4.0,
-            "50th": 8.0,
-            "75th": 12.0,
-            "90th": 16.0
-          }
-        },
-        culturalNotes: [
-          "Somatic symptoms more prominent than cognitive symptoms",
-          "Cultural tendency to minimize psychological distress",
-          "Family concerns often manifest as anxiety"
-        ]
-      },
-      {
-        test: "PHQ-9",
-        vietnameseNorms: {
-          mean: 7.8,
-          sd: 4.9,
-          percentiles: {
-            "25th": 3.0,
-            "50th": 7.0,
-            "75th": 12.0,
-            "90th": 16.0
-          }
-        },
-        culturalNotes: [
-          "Physical symptoms often reported before emotional symptoms",
-          "Cultural stigma affects help-seeking behavior",
-          "Family support influences depression severity"
-        ]
-      },
-      {
-        test: "EPDS",
-        vietnameseNorms: {
-          mean: 9.2,
-          sd: 5.8,
-          percentiles: {
-            "25th": 4.0,
-            "50th": 9.0,
-            "75th": 14.0,
-            "90th": 19.0
-          }
-        },
-        culturalNotes: [
-          "Postpartum depression often undiagnosed",
-          "Cultural expectations of motherhood affect scores",
-          "Family support crucial for recovery"
-        ]
       }
     ],
     culturalAdaptations: [
@@ -571,51 +517,7 @@ export const vietnamPsychologicalScales = {
     validity: 0.89,
     reliability: 0.91
   },
-  GAD7: {
-    vietnameseNorms: {
-      mean: 8.3,
-      sd: 5.1,
-      cutoff: 10
-    },
-    culturalAdaptations: [
-      "Worry about family emphasized",
-      "Physical symptoms included",
-      "Cultural stressors added",
-      "Language culturally appropriate"
-    ],
-    validity: 0.87,
-    reliability: 0.89
-  },
-  PHQ9: {
-    vietnameseNorms: {
-      mean: 7.8,
-      sd: 4.9,
-      cutoff: 10
-    },
-    culturalAdaptations: [
-      "Physical symptoms emphasized",
-      "Family impact included",
-      "Cultural expressions used",
-      "Stigma considerations"
-    ],
-    validity: 0.85,
-    reliability: 0.88
-  },
-  EPDS: {
-    vietnameseNorms: {
-      mean: 9.2,
-      sd: 5.8,
-      cutoff: 13
-    },
-    culturalAdaptations: [
-      "Postpartum traditions considered",
-      "Family support emphasized",
-      "Cultural expectations included",
-      "Language culturally sensitive"
-    ],
-    validity: 0.82,
-    reliability: 0.86
-  }
+
 };
 
 // Dữ liệu về các yếu tố văn hóa ảnh hưởng đến sức khỏe tâm thần

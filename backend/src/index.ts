@@ -55,6 +55,12 @@ import userRoutes from './routes/user';
 import userAuthRoutes from './routes/userAuth';
 import memoryTestRoutes from './routes/memoryTest';
 
+// V5 Routes - Self-Improving AI System
+import v5LearningPipelineRoutes from './routes/v5/learningPipeline';
+import v5AnalyticsRoutes from './routes/v5/analytics';
+import v5KnowledgeGraphRoutes from './routes/v5/knowledgeGraph';
+import v5ExperimentRoutes from './routes/v5/experiments';
+
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
 import './models/Expert';
@@ -65,6 +71,13 @@ import './models/LongTermMemory';
 import './models/ABExperiment';
 import './models/CriticalAlert';
 import './models/AuditLog';
+
+// V5 Models
+import './models/InteractionEvent';
+import './models/EvaluationScore';
+import './models/UserFeedback';
+import './models/ExpertReview';
+import './models/TrainingDataset';
 
 // Services
 import emailService from './services/emailService';
@@ -305,6 +318,12 @@ app.use('/api/ab-testing', abTestingRoutes);
 // ✨ NEW: QStash Webhooks for Scheduled Tasks
 app.use('/api/webhooks/qstash', qstashWebhookRoutes);
 
+// 🧠 V5: Self-Improving AI System Routes
+app.use('/api/v5/learning', v5LearningPipelineRoutes);
+app.use('/api/v5/analytics', v5AnalyticsRoutes);
+app.use('/api/v5/knowledge-graph', v5KnowledgeGraphRoutes);
+app.use('/api/v5/experiments', v5ExperimentRoutes);
+
 // 🧪 TEST: QStash Testing Endpoints (Development ONLY)
 if (config.NODE_ENV === 'development') {
   app.use('/api/test/qstash', qstashTestRoutes);
@@ -333,12 +352,13 @@ app.use('/api/chatbot', chatbotRoutes);
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    message: 'SoulFriend V4.0 API is running successfully!',
-    version: '4.0.0',
+    message: 'SoulFriend V5.0 API is running successfully!',
+    version: '5.0.0',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     openai: 'initialized',
     chatbot: 'ready',
+    v5: 'self-improving-ai-enabled',
   });
 });
 
@@ -367,7 +387,7 @@ app.get('/api/health/detailed', authenticateAdmin, async (req: Request, res: Res
 
     const health = {
       status: overallStatus,
-      version: '4.0.0',
+      version: '5.0.0',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       services: {
@@ -451,11 +471,17 @@ app.get('/api/live', (req: Request, res: Response) => {
 app.get('/api', (req: Request, res: Response) => {
   res.json({
     name: 'SoulFriend API',
-    version: '4.0.0',
-    description: 'Mental health support platform for Vietnamese women',
+    version: '5.0.0',
+    description: 'Self-improving mental health support platform for Vietnamese women',
     endpoints: {
       health: '/api/health',
       healthDetailed: '/api/health/detailed',
+      v5: {
+        learning: '/api/v5/learning',
+        analytics: '/api/v5/analytics',
+        knowledgeGraph: '/api/v5/knowledge-graph',
+        experiments: '/api/v5/experiments',
+      },
       v2: {
         consent: '/api/v2/consent',
         tests: '/api/v2/tests',
@@ -465,7 +491,7 @@ app.get('/api', (req: Request, res: Response) => {
         chatbot: '/api/v2/chatbot',
       },
       v1_deprecated: {
-        note: 'v1 endpoints are deprecated and will be removed in v5.0',
+        note: 'v1 endpoints are deprecated and will be removed in v6.0',
         consent: '/api/consent',
         tests: '/api/tests',
         admin: '/api/admin',
@@ -540,13 +566,14 @@ const startServer = async () => {
 
     const server = httpServer.listen(actualPort, '0.0.0.0', () => {
       console.log('╔════════════════════════════════════════════╗');
-      console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
+      console.log('║   🚀 SoulFriend V5.0 Server Started!     ║');
       console.log('╠════════════════════════════════════════════╣');
       console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
       console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
-      console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
+      console.log(`║   API v5: http://localhost:${actualPort}/api/v5     ║`);
       console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
       console.log(`║   Socket.io: ENABLED (real-time chat)    ║`);
+      console.log(`║   V5: Self-Improving AI Pipeline ACTIVE  ║`);
       console.log('╚════════════════════════════════════════════╝');
 
       // Connect to database AFTER server starts (non-blocking)
@@ -589,6 +616,26 @@ const startServer = async () => {
         console.log('✅ Data retention service started (24h interval)');
       }).catch(err => {
         console.warn('⚠️  Data retention service failed to start:', err instanceof Error ? err.message : err);
+      });
+
+      // V5: Initialize Event Queue handlers for Learning Pipeline
+      import('./services/eventQueueService').then(({ eventQueueService }) => {
+        // Log all learning events
+        const eventTypes = [
+          'interaction.captured', 'evaluation.completed', 'feedback.received',
+          'expert_review.submitted', 'training_data.curated', 'model.improved',
+          'experiment.started', 'experiment.completed', 'crisis.detected', 'guardrail.violated',
+        ] as const;
+        
+        for (const type of eventTypes) {
+          eventQueueService.subscribe(type, async (data: any) => {
+            console.log(`🧠 [V5 Event] ${type}:`, JSON.stringify(data).substring(0, 200));
+          });
+        }
+        
+        console.log('✅ V5 Event Queue initialized (Learning Pipeline active)');
+      }).catch(err => {
+        console.warn('⚠️  V5 Event Queue failed to start:', err instanceof Error ? err.message : err);
       });
 
       // Test email service connection
@@ -692,7 +739,7 @@ const startServer = async () => {
 
       const server = httpServer.listen(actualPort, '0.0.0.0', () => {
         console.log('╔════════════════════════════════════════════╗');
-        console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
+        console.log('║   🚀 SoulFriend V5.0 Server Started!     ║');
         console.log('║   ⚠️  FALLBACK MODE (Error Recovery)     ║');
         console.log('╠════════════════════════════════════════════╣');
         console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);

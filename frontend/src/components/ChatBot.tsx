@@ -232,6 +232,43 @@ const FeedbackButton = styled.button<{ active?: boolean }>`
   }
 `;
 
+const EmotionPicker = styled.div`
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  animation: fadeIn 0.3s ease;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
+
+const EmotionButton = styled.button<{ active?: boolean }>`
+  background: ${props => props.active ? 'rgba(102, 126, 234, 0.2)' : 'rgba(245, 247, 255, 0.8)'};
+  border: 1px solid ${props => props.active ? '#667eea' : 'rgba(102, 126, 234, 0.15)'};
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #667eea;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  
+  &:hover {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+  }
+`;
+
+const FeedbackSent = styled.span`
+  font-size: 0.7rem;
+  color: #667eea;
+  opacity: 0.7;
+  margin-left: 4px;
+`;
+
 const ToolbarButton = styled.button`
   background: transparent;
   border: 1px solid rgba(102, 126, 234, 0.3);
@@ -401,6 +438,8 @@ interface ChatMessage {
   isBot: boolean;
   timestamp: Date;
   feedback?: 'positive' | 'negative' | null;
+  emotionChange?: 'feel_better' | 'same' | 'still_confused' | 'feel_worse' | null;
+  showEmotionPicker?: boolean;
   retryCount?: number;
 }
 
@@ -667,16 +706,62 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   };
 
 
-  // Feedback handling
-  const handleFeedback = (messageId: string, feedback: 'positive' | 'negative') => {
+  // Feedback handling - V5 Learning Pipeline
+  const handleFeedback = async (messageId: string, feedback: 'positive' | 'negative') => {
     setMessages(prev => prev.map(msg => 
       msg.id === messageId 
-        ? { ...msg, feedback: msg.feedback === feedback ? null : feedback }
+        ? { 
+            ...msg, 
+            feedback: msg.feedback === feedback ? null : feedback,
+            showEmotionPicker: feedback === 'negative' ? true : msg.showEmotionPicker,
+          }
         : msg
     ));
-    
-    // Log feedback for analytics (could send to backend)
-    console.log(`Feedback for message ${messageId}: ${feedback}`);
+
+    // Send to V5 Learning Pipeline
+    try {
+      const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
+      await fetch(`${apiUrl}/api/v5/learning/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        credentials: 'include',
+        body: JSON.stringify({
+          interactionEventId: messageId,
+          userId: userIdRef.current,
+          sessionId: sessionIdRef.current,
+          rating: feedback === 'positive' ? 'helpful' : 'not_helpful',
+        }),
+      });
+    } catch (err) {
+      console.warn('V5 feedback send failed (non-critical):', err);
+    }
+  };
+
+  // Emotion change tracking - V5 Learning Pipeline
+  const handleEmotionChange = async (messageId: string, emotion: 'feel_better' | 'same' | 'still_confused' | 'feel_worse') => {
+    setMessages(prev => prev.map(msg =>
+      msg.id === messageId
+        ? { ...msg, emotionChange: emotion, showEmotionPicker: false }
+        : msg
+    ));
+
+    try {
+      const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
+      await fetch(`${apiUrl}/api/v5/learning/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        credentials: 'include',
+        body: JSON.stringify({
+          interactionEventId: messageId,
+          userId: userIdRef.current,
+          sessionId: sessionIdRef.current,
+          rating: 'not_helpful',
+          emotionChange: emotion,
+        }),
+      });
+    } catch (err) {
+      console.warn('V5 emotion feedback send failed (non-critical):', err);
+    }
   };
 
   // Export conversation
@@ -935,22 +1020,57 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
             
             {/* Feedback buttons for bot messages */}
             {message.isBot && (
-              <MessageActions>
-                <FeedbackButton 
-                  active={message.feedback === 'positive'}
-                  onClick={() => handleFeedback(message.id, 'positive')}
-                  title="Hữu ích"
-                >
-                  👍
-                </FeedbackButton>
-                <FeedbackButton 
-                  active={message.feedback === 'negative'}
-                  onClick={() => handleFeedback(message.id, 'negative')}
-                  title="Chưa hữu ích"
-                >
-                  👎
-                </FeedbackButton>
-              </MessageActions>
+              <>
+                <MessageActions>
+                  <FeedbackButton 
+                    active={message.feedback === 'positive'}
+                    onClick={() => handleFeedback(message.id, 'positive')}
+                    title="Hữu ích"
+                  >
+                    👍
+                  </FeedbackButton>
+                  <FeedbackButton 
+                    active={message.feedback === 'negative'}
+                    onClick={() => handleFeedback(message.id, 'negative')}
+                    title="Chưa hữu ích"
+                  >
+                    👎
+                  </FeedbackButton>
+                  {message.feedback && (
+                    <FeedbackSent>✓ Đã ghi nhận</FeedbackSent>
+                  )}
+                </MessageActions>
+                
+                {/* Emotion change picker after negative feedback */}
+                {message.showEmotionPicker && (
+                  <EmotionPicker>
+                    <EmotionButton
+                      active={message.emotionChange === 'feel_better'}
+                      onClick={() => handleEmotionChange(message.id, 'feel_better')}
+                    >
+                      😊 Tốt hơn
+                    </EmotionButton>
+                    <EmotionButton
+                      active={message.emotionChange === 'same'}
+                      onClick={() => handleEmotionChange(message.id, 'same')}
+                    >
+                      😐 Như cũ
+                    </EmotionButton>
+                    <EmotionButton
+                      active={message.emotionChange === 'still_confused'}
+                      onClick={() => handleEmotionChange(message.id, 'still_confused')}
+                    >
+                      😕 Vẫn mập mờ
+                    </EmotionButton>
+                    <EmotionButton
+                      active={message.emotionChange === 'feel_worse'}
+                      onClick={() => handleEmotionChange(message.id, 'feel_worse')}
+                    >
+                      😢 Tệ hơn
+                    </EmotionButton>
+                  </EmotionPicker>
+                )}
+              </>
             )}
           </div>
         ))}

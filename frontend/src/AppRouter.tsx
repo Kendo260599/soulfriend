@@ -1,7 +1,11 @@
 /**
  * AppRouter
  * Main routing for SoulFriend application
- * Unified router: Landing → Content pages → Test flow → Expert dashboard
+ * 
+ * Access levels:
+ *   PUBLIC  (no login): Landing, DASS-21 test, Features
+ *   USER    (login required): GameFi, Content, Research, Community, ChatBot
+ *   EXPERT  (expert login): Expert Dashboard
  */
 
 import React, { useEffect, useState } from 'react';
@@ -9,6 +13,7 @@ import { BrowserRouter, Navigate, Route, Routes, useNavigate, useLocation } from
 import styled, { createGlobalStyle } from 'styled-components';
 
 // Components
+import AuthPage from './components/AuthPage';
 import ChatBot from './components/ChatBot';
 import CommunitySupport from './components/CommunitySupport';
 import ContentOverviewPage from './components/ContentOverviewPage';
@@ -16,10 +21,12 @@ import ContentShowcaseLanding from './components/ContentShowcaseLanding';
 import ExpertDashboard from './components/ExpertDashboard';
 import ExpertLogin from './components/ExpertLogin';
 import FeaturesShowcase from './components/FeaturesShowcase';
+import GameFi from './components/GameFi';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ResearchDashboard } from './components/ResearchDashboard';
 import TestFlow from './App'; // Step-based: Consent → DASS-21 → Results
 import { AIProvider } from './contexts/AIContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Global styles
 const GlobalStyle = createGlobalStyle`
@@ -107,15 +114,26 @@ const NavLinkBtn = styled.button<{ active?: boolean }>`
 `;
 
 /**
- * Navigation component with active state
+ * UserRoute - Redirect to /login if not authenticated
+ */
+const UserRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
+
+/**
+ * Navigation component with active state & auth
  */
 const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
+  const { isAuthenticated, user, logout } = useAuth();
 
-  // Hide nav on expert pages and test flow
-  if (path.startsWith('/expert') || path.startsWith('/start')) {
+  // Hide nav on expert pages, test flow, login page
+  if (path.startsWith('/expert') || path.startsWith('/start') || path === '/login') {
     return null;
   }
 
@@ -127,7 +145,17 @@ const Navigation: React.FC = () => {
         <NavLinkBtn active={path === '/content'} onClick={() => navigate('/content')}>Khám phá</NavLinkBtn>
         <NavLinkBtn active={path === '/research'} onClick={() => navigate('/research')}>Nghiên cứu</NavLinkBtn>
         <NavLinkBtn active={path === '/community'} onClick={() => navigate('/community')}>Cộng đồng</NavLinkBtn>
+        <NavLinkBtn active={path === '/gamefi'} onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLinkBtn>
         <NavLinkBtn active={path === '/start'} onClick={() => navigate('/start')}>Làm test DASS-21</NavLinkBtn>
+        {isAuthenticated ? (
+          <NavLinkBtn onClick={() => { logout(); navigate('/'); }}>
+            👤 {user?.displayName} · Đăng xuất
+          </NavLinkBtn>
+        ) : (
+          <NavLinkBtn active={path === '/login'} onClick={() => navigate('/login')}>
+            Đăng nhập
+          </NavLinkBtn>
+        )}
       </NavLinks>
     </NavBar>
   );
@@ -151,6 +179,8 @@ const RoutedApp: React.FC = () => {
     <>
       <Navigation />
       <Routes>
+        {/* ===== PUBLIC ROUTES (no login required) ===== */}
+        
         {/* Landing page */}
         <Route path="/" element={
           <ContentShowcaseLanding
@@ -162,28 +192,48 @@ const RoutedApp: React.FC = () => {
           />
         } />
 
-        {/* Content pages */}
-        <Route path="/content" element={
-          <ContentOverviewPage
-            onBack={() => navigate('/')}
-            onViewTest={(_testType: any) => navigate('/start')}
-            onViewAI={() => navigate('/start')}
-            onViewResearch={() => navigate('/research')}
-            onViewCrisis={() => navigate('/community')}
-          />
-        } />
-        <Route path="/research" element={
-          <ResearchDashboard onBack={() => navigate('/')} />
-        } />
-        <Route path="/community" element={
-          <CommunitySupport onBack={() => navigate('/')} />
-        } />
-        <Route path="/features" element={<FeaturesShowcase />} />
-
-        {/* Test flow — step-based inside one route */}
+        {/* DASS-21 test — anonymous, no login */}
         <Route path="/start" element={<TestFlow />} />
 
-        {/* Expert routes */}
+        {/* Features showcase — public */}
+        <Route path="/features" element={<FeaturesShowcase />} />
+
+        {/* Auth page */}
+        <Route path="/login" element={<AuthPage />} />
+
+        {/* ===== PROTECTED ROUTES (user login required) ===== */}
+
+        {/* Content pages - require login */}
+        <Route path="/content" element={
+          <UserRoute>
+            <ContentOverviewPage
+              onBack={() => navigate('/')}
+              onViewTest={(_testType: any) => navigate('/start')}
+              onViewAI={() => navigate('/start')}
+              onViewResearch={() => navigate('/research')}
+              onViewCrisis={() => navigate('/community')}
+            />
+          </UserRoute>
+        } />
+        <Route path="/research" element={
+          <UserRoute>
+            <ResearchDashboard onBack={() => navigate('/')} />
+          </UserRoute>
+        } />
+        <Route path="/community" element={
+          <UserRoute>
+            <CommunitySupport onBack={() => navigate('/')} />
+          </UserRoute>
+        } />
+
+        {/* GameFi — require login */}
+        <Route path="/gamefi" element={
+          <UserRoute>
+            <GameFi />
+          </UserRoute>
+        } />
+
+        {/* ===== EXPERT ROUTES (expert login required) ===== */}
         <Route path="/expert/login" element={<ExpertLogin />} />
         <Route path="/expert/dashboard" element={
           <ProtectedRoute><ExpertDashboard /></ProtectedRoute>
@@ -202,14 +252,16 @@ const RoutedApp: React.FC = () => {
 
 const AppRouter: React.FC = () => {
   return (
-    <AIProvider>
-      <GlobalStyle />
-      <AppContainer>
-        <BrowserRouter>
-          <RoutedApp />
-        </BrowserRouter>
-      </AppContainer>
-    </AIProvider>
+    <AuthProvider>
+      <AIProvider>
+        <GlobalStyle />
+        <AppContainer>
+          <BrowserRouter>
+            <RoutedApp />
+          </BrowserRouter>
+        </AppContainer>
+      </AIProvider>
+    </AuthProvider>
   );
 };
 

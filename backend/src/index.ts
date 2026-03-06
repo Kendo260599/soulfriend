@@ -52,6 +52,7 @@ import researchRoutes from './routes/research';
 import sentryTestRoutes from './routes/sentryTestRoutes';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
+import userAuthRoutes from './routes/userAuth';
 import memoryTestRoutes from './routes/memoryTest';
 
 // Import Models (để MongoDB tạo collections)
@@ -268,6 +269,8 @@ app.use(rateLimiter.middleware);
 // Stricter rate limiting for auth endpoints
 app.use('/api/auth', authRateLimiter.middleware);
 app.use('/api/admin/login', authRateLimiter.middleware);
+app.use('/api/v2/auth/login', authRateLimiter.middleware);
+app.use('/api/v2/auth/register', authRateLimiter.middleware);
 app.use('/api/v2/expert/login', authRateLimiter.middleware);
 app.use('/api/v2/expert/register', authRateLimiter.middleware);
 
@@ -280,6 +283,7 @@ app.use('/api/v2/consent', consentRoutes);
 app.use('/api/v2/tests', testRoutes);
 app.use('/api/v2/admin', adminRoutes);
 app.use('/api/v2/user', userRoutes);
+app.use('/api/v2/auth', userAuthRoutes);
 app.use('/api/v2/research', researchRoutes);
 app.use('/api/v2/chatbot', chatbotRoutes);
 

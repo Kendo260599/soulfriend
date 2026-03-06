@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import ConsentForm from './components/ConsentForm';
-import TestSelection, { TestType } from './components/TestSelection';
+import { TestType } from './components/TestSelection';
 import TestTaking from './components/TestTaking';
 import TestResults from './components/TestResults';
-import PrivacyManagement from './components/PrivacyManagement';
-import Dashboard from './components/Dashboard';
-import DataBackup from './components/DataBackup';
 import NotificationSystem, { Notification } from './components/NotificationSystem';
 import PageTransition from './components/PageTransition';
-import LoadingSpinner from './components/LoadingSpinner';
 import ChatBot from './components/ChatBot';
 import { AIProvider } from './contexts/AIContext';
 import { TestResult } from './types';
@@ -17,57 +13,23 @@ import './App.css';
 // Enum để quản lý các bước của ứng dụng
 enum AppStep {
   CONSENT = 'consent',
-  DASHBOARD = 'dashboard',
-  TEST_SELECTION = 'test-selection',
   TAKING_TEST = 'taking-test',
   RESULTS = 'results',
-  PRIVACY_MANAGEMENT = 'privacy-management',
-  DATA_BACKUP = 'data-backup'
 }
-
-// Using TestResult from types/index.ts
 
 function App() {
   const [currentStep, setCurrentStep] = useState<AppStep>(AppStep.CONSENT);
   const [consentId, setConsentId] = useState<string | null>(null);
-  const [selectedTests, setSelectedTests] = useState<TestType[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   /**
    * Xử lý khi người dùng đã đồng ý tham gia
+   * → Đi thẳng vào bài test DASS-21
    */
   const handleConsentGiven = (id: string) => {
     setConsentId(id);
-    setCurrentStep(AppStep.DASHBOARD);
-  };
-
-  /**
-   * Xử lý khi người dùng chọn các test
-   */
-  const handleTestsSelected = (tests: TestType[]) => {
-    setSelectedTests(tests);
     setCurrentStep(AppStep.TAKING_TEST);
-  };
-
-  /**
-   * Xử lý quay lại bước trước
-   */
-  const handleBack = () => {
-    switch (currentStep) {
-      case AppStep.TEST_SELECTION:
-        setCurrentStep(AppStep.DASHBOARD);
-        break;
-      case AppStep.TAKING_TEST:
-        setCurrentStep(AppStep.TEST_SELECTION);
-        break;
-      case AppStep.RESULTS:
-        setCurrentStep(AppStep.TAKING_TEST);
-        break;
-      case AppStep.PRIVACY_MANAGEMENT:
-        setCurrentStep(AppStep.DASHBOARD);
-        break;
-    }
   };
 
   /**
@@ -78,34 +40,16 @@ function App() {
       case AppStep.CONSENT:
         return <ConsentForm onConsentGiven={handleConsentGiven} />;
       
-      case AppStep.DASHBOARD:
-        return (
-          <Dashboard
-            onNewTest={() => setCurrentStep(AppStep.TEST_SELECTION)}
-            onViewProfile={() => setCurrentStep(AppStep.PRIVACY_MANAGEMENT)}
-            onDataBackup={() => setCurrentStep(AppStep.DATA_BACKUP)}
-          />
-        );
-      
-      case AppStep.TEST_SELECTION:
-        return (
-          <TestSelection 
-            consentId={consentId!}
-            onTestsSelected={handleTestsSelected}
-            onBack={handleBack}
-          />
-        );
-      
       case AppStep.TAKING_TEST:
         return (
           <TestTaking
-            selectedTests={selectedTests}
-            consentId={consentId!}
+            selectedTests={[TestType.DASS_21]}
+            consentId={consentId || ''}
             onComplete={(results) => {
               setTestResults(results);
               setCurrentStep(AppStep.RESULTS);
             }}
-            onBack={handleBack}
+            onBack={() => setCurrentStep(AppStep.CONSENT)}
           />
         );
       
@@ -119,18 +63,10 @@ function App() {
             }}
             onNewTests={() => {
               setTestResults([]);
-              setSelectedTests([]);
-              setCurrentStep(AppStep.DASHBOARD);
+              setCurrentStep(AppStep.CONSENT);
             }}
-            onPrivacyManagement={() => setCurrentStep(AppStep.PRIVACY_MANAGEMENT)}
           />
         );
-      
-      case AppStep.PRIVACY_MANAGEMENT:
-        return <PrivacyManagement />;
-      
-      case AppStep.DATA_BACKUP:
-        return <DataBackup onBack={() => setCurrentStep(AppStep.DASHBOARD)} />;
       
       default:
         return <ConsentForm onConsentGiven={handleConsentGiven} />;

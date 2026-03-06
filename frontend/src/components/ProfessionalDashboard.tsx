@@ -370,48 +370,8 @@ const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
       id: 'dass21',
       icon: '🧠',
       title: 'DASS-21',
-      description: 'Đánh giá trầm cảm, lo âu và stress',
+      description: 'Đánh giá mức độ Trầm cảm, Lo âu và Stress — 21 câu hỏi chuẩn quốc tế (Lovibond & Lovibond, 1995)',
       duration: '5-10 phút',
-      color: colors.info
-    },
-    {
-      id: 'phq9',
-      icon: '💭',
-      title: 'PHQ-9',
-      description: 'Bảng câu hỏi sức khỏe bệnh nhân',
-      duration: '3-5 phút',
-      color: colors.warning
-    },
-    {
-      id: 'gad7',
-      icon: '😰',
-      title: 'GAD-7',
-      description: 'Đánh giá rối loạn lo âu tổng quát',
-      duration: '3-5 phút',
-      color: colors.success
-    },
-    {
-      id: 'pms',
-      icon: '🌸',
-      title: 'PMS Scale',
-      description: 'Đánh giá hội chứng tiền kinh nguyệt',
-      duration: '5-8 phút',
-      color: colors.primary
-    },
-    {
-      id: 'menopause',
-      icon: '🌺',
-      title: 'Menopause Rating',
-      description: 'Đánh giá triệu chứng mãn kinh',
-      duration: '5-8 phút',
-      color: colors.accent
-    },
-    {
-      id: 'family',
-      icon: '👨‍👩‍👧‍👦',
-      title: 'Family APGAR',
-      description: 'Đánh giá chức năng gia đình',
-      duration: '3-5 phút',
       color: colors.info
     }
   ];

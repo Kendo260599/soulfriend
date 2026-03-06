@@ -270,51 +270,13 @@ export class ChatbotOrchestratorService {
    * Get suggested tests based on entities and user profile
    */
   private getSuggestedTests(entities: any[], userProfile: UserProfile): any[] {
-    const tests = [];
-
-    // Life stage based tests
-    if (userProfile.lifeStage === 'postpartum') {
-      tests.push({
-        name: 'EPDS',
-        description: 'Thang đo trầm cảm sau sinh (Edinburgh Postnatal Depression Scale)'
-      });
-    }
-
-    // Symptom based tests
-    entities.forEach(entity => {
-      if (entity.type === 'symptom') {
-        switch (entity.value) {
-          case 'depression':
-            tests.push({
-              name: 'PHQ-9',
-              description: 'Thang đo trầm cảm (Patient Health Questionnaire-9)'
-            });
-            break;
-          case 'anxiety':
-            tests.push({
-              name: 'GAD-7',
-              description: 'Thang đo lo âu tổng quát (Generalized Anxiety Disorder-7)'
-            });
-            break;
-        }
+    // Only DASS-21 is available
+    return [
+      {
+        name: 'DASS-21',
+        description: 'Thang đo Trầm cảm, Lo âu và Stress (Depression Anxiety Stress Scales-21)'
       }
-    });
-
-    // Default tests
-    if (tests.length === 0) {
-      tests.push(
-        {
-          name: 'DASS-21',
-          description: 'Thang đo trầm cảm, lo âu, stress (Depression Anxiety Stress Scales)'
-        },
-        {
-          name: 'PHQ-9',
-          description: 'Thang đo trầm cảm (Patient Health Questionnaire-9)'
-        }
-      );
-    }
-
-    return tests;
+    ];
   }
 
   /**

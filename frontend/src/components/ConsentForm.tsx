@@ -255,25 +255,22 @@ const ConsentForm: React.FC<ConsentFormProps> = ({ onConsentGiven }) => {
 
         <SectionTitle>📋 Nội dung khảo sát</SectionTitle>
         <InfoText>
-          Khảo sát bao gồm các bài đánh giá tâm lý được chuẩn hóa quốc tế:
+          Khảo sát sử dụng thang đo DASS-21 (Depression, Anxiety and Stress Scales) — 
+          bộ công cụ đánh giá tâm lý được chuẩn hóa quốc tế bởi Lovibond & Lovibond (1995):
         </InfoText>
         <ul style={{ paddingLeft: '20px' }}>
-          <li><strong>DASS-21:</strong> Đánh giá mức độ lo âu, trầm cảm và stress</li>
-          <li><strong>GAD-7:</strong> Thang đo rối loạn lo âu tổng quát</li>
-          <li><strong>PHQ-9:</strong> Đánh giá mức độ trầm cảm</li>
-          <li><strong>EPDS:</strong> Đánh giá trầm cảm sau sinh (dành cho mẹ bỉm sữa)</li>
-          <li><strong>Thang đo tự yêu thương:</strong> Đánh giá khả năng tự chăm sóc bản thân</li>
-          <li><strong>Thang đo chánh niệm:</strong> Đánh giá khả năng sống tỉnh thức</li>
-          <li><strong>Thang đo tự tin dành cho phụ nữ:</strong> Đánh giá lòng tự tin</li>
-          <li><strong>Thang đo lòng tự trọng Rosenberg:</strong> Đánh giá lòng tự trọng</li>
+          <li><strong>DASS-21:</strong> Đánh giá đồng thời 3 chiều sức khỏe tâm lý</li>
+          <li><strong>Trầm cảm (Depression):</strong> 7 câu hỏi — đo mức độ buồn bã, mất hứng thú, tuyệt vọng</li>
+          <li><strong>Lo âu (Anxiety):</strong> 7 câu hỏi — đo mức độ lo lắng, hoảng sợ, căng thẳng cơ thể</li>
+          <li><strong>Stress:</strong> 7 câu hỏi — đo mức độ căng thẳng, khó thư giãn, dễ kích động</li>
         </ul>
 
         <SectionTitle>⏱️ Thời gian và cách thức</SectionTitle>
         <InfoText>
-          Việc hoàn thành toàn bộ khảo sát sẽ mất khoảng <strong>15-20 phút</strong>. 
-          Bạn có thể dừng lại và tiếp tục sau, hoặc hoàn thành một lần duy nhất. 
-          Kết quả sẽ được hiển thị ngay sau khi bạn hoàn thành, kèm theo những 
-          gợi ý chăm sóc sức khỏe tâm lý phù hợp.
+          Bài đánh giá gồm <strong>21 câu hỏi</strong>, hoàn thành trong khoảng <strong>5-10 phút</strong>. 
+          Mỗi câu hỏi có 4 mức độ từ 0 (Không đúng chút nào) đến 3 (Hoàn toàn đúng). 
+          Kết quả sẽ được hiển thị ngay sau khi bạn hoàn thành, kèm theo phân tích chi tiết 
+          và gợi ý chăm sóc sức khỏe tâm lý phù hợp.
         </InfoText>
       </ContentCard>
 

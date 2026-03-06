@@ -391,7 +391,7 @@ const WelcomePage: React.FC = () => {
   };
 
   const handleLearnMore = () => {
-    navigate('/about');
+    navigate('/content');
   };
 
   return (
@@ -412,8 +412,8 @@ const WelcomePage: React.FC = () => {
           </MainTitle>
           
           <Subtitle>
-            Khám phá và hiểu rõ hơn về tình trạng sức khỏe tâm thần của bạn 
-            thông qua các bài đánh giá khoa học và hỗ trợ AI thông minh.
+            Đánh giá mức độ Trầm cảm, Lo âu và Stress qua thang đo DASS-21 
+            chuẩn quốc tế, kết hợp AI chatbot hỗ trợ tâm lý 24/7.
           </Subtitle>
 
           <FeatureList>
@@ -465,8 +465,8 @@ const WelcomePage: React.FC = () => {
 
           <StatsContainer>
             <StatItem>
-              <StatNumber>13+</StatNumber>
-              <StatLabel>Bài đánh giá</StatLabel>
+              <StatNumber>DASS-21</StatNumber>
+              <StatLabel>Thang đo chuẩn quốc tế</StatLabel>
             </StatItem>
             <StatItem>
               <StatNumber>100%</StatNumber>
@@ -474,7 +474,7 @@ const WelcomePage: React.FC = () => {
             </StatItem>
             <StatItem>
               <StatNumber>24/7</StatNumber>
-              <StatLabel>Hỗ trợ</StatLabel>
+              <StatLabel>AI hỗ trợ</StatLabel>
             </StatItem>
           </StatsContainer>
         </RightSection>

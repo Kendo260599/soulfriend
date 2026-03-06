@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
+import ExpertReviewPanel from './ExpertReviewPanel';
 import '../styles/ExpertDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
@@ -54,6 +55,7 @@ const ExpertDashboard: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [availability, setAvailability] = useState('available');
+  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review'>('crisis');
 
   // Load expert info from localStorage
   useEffect(() => {
@@ -313,6 +315,37 @@ const ExpertDashboard: React.FC = () => {
         </div>
       </header>
 
+      {/* Dashboard Tab Navigation */}
+      <div className="dashboard-tabs" style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e0e0e0', padding: '0 20px' }}>
+        <button
+          onClick={() => setDashboardTab('crisis')}
+          style={{
+            padding: '12px 24px', border: 'none', background: 'none', cursor: 'pointer',
+            fontWeight: dashboardTab === 'crisis' ? 600 : 400, fontSize: 14,
+            color: dashboardTab === 'crisis' ? '#d32f2f' : '#666',
+            borderBottom: `3px solid ${dashboardTab === 'crisis' ? '#d32f2f' : 'transparent'}`,
+            marginBottom: -2,
+          }}
+        >
+          🚨 Crisis Intervention
+        </button>
+        <button
+          onClick={() => setDashboardTab('review')}
+          style={{
+            padding: '12px 24px', border: 'none', background: 'none', cursor: 'pointer',
+            fontWeight: dashboardTab === 'review' ? 600 : 400, fontSize: 14,
+            color: dashboardTab === 'review' ? '#4285f4' : '#666',
+            borderBottom: `3px solid ${dashboardTab === 'review' ? '#4285f4' : 'transparent'}`,
+            marginBottom: -2,
+          }}
+        >
+          🧠 V5 AI Review
+        </button>
+      </div>
+
+      {dashboardTab === 'review' ? (
+        <ExpertReviewPanel />
+      ) : (
       <div className="dashboard-content">
         {/* Alerts Sidebar */}
         <aside className="alerts-sidebar">
@@ -412,6 +445,7 @@ const ExpertDashboard: React.FC = () => {
           )}
         </main>
       </div>
+      )}
     </div>
   );
 };

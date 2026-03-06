@@ -632,8 +632,83 @@ const startServer = async () => {
             console.log(`🧠 [V5 Event] ${type}:`, JSON.stringify(data).substring(0, 200));
           });
         }
-        
+
+        // ================================
+        // V5 REACTIVE EVENT HANDLERS
+        // ================================
+
+        // Khi nhận feedback tiêu cực → đánh dấu cần expert review
+        eventQueueService.subscribe('feedback.received', async (data: any) => {
+          if (data.rating === 'not_helpful' || data.emotionChange === 'feel_worse') {
+            console.log('⚠️ [V5 Reactive] Negative feedback → flagging for expert review');
+          }
+        });
+
+        // Khi evaluation score thấp → tự động flag
+        eventQueueService.subscribe('evaluation.completed', async (data: any) => {
+          if (data.score !== undefined && data.score < 0.5) {
+            console.log('⚠️ [V5 Reactive] Low evaluation score:', data.score, '→ needs review');
+          }
+          if (data.needsReview) {
+            console.log('🔍 [V5 Reactive] Evaluation flagged for human review');
+          }
+        });
+
+        // Khi phát hiện crisis → alert
+        eventQueueService.subscribe('crisis.detected', async (data: any) => {
+          console.log('🚨 [V5 Reactive] CRISIS DETECTED:', data.crisisLevel, 'user:', data.userId);
+        });
+
+        // Khi guardrail bị vi phạm → log chi tiết
+        eventQueueService.subscribe('guardrail.violated', async (data: any) => {
+          console.log('🛡️ [V5 Reactive] GUARDRAIL VIOLATED:', data.violations?.length, 'violations');
+        });
+
+        // ================================
+        // V5 SCHEDULED JOBS
+        // ================================
+
+        // Auto-curate training data mỗi 6 giờ
+        const CURATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+        setInterval(async () => {
+          try {
+            const { trainingDataCurationService } = await import('./services/trainingDataCurationService');
+            const fromReviews = await trainingDataCurationService.curateFromExpertReviews();
+            const fromHighQuality = await trainingDataCurationService.curateFromHighQualityInteractions();
+            if (fromReviews > 0 || fromHighQuality > 0) {
+              console.log(`📦 [V5 Scheduled] Auto-curated: ${fromReviews} from reviews, ${fromHighQuality} from high-quality`);
+            }
+          } catch (err) {
+            console.warn('⚠️ [V5 Scheduled] Auto-curation failed:', err instanceof Error ? err.message : err);
+          }
+        }, CURATION_INTERVAL);
+
+        // Batch evaluate pending interactions mỗi 2 giờ
+        const EVAL_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
+        setInterval(async () => {
+          try {
+            const { interactionCaptureService } = await import('./services/interactionCaptureService');
+            const { responseEvaluationService } = await import('./services/responseEvaluationService');
+            const pending = await interactionCaptureService.getForReview(10);
+            if (pending.length > 0) {
+              const evalData = pending.map((i: any) => ({
+                interactionEventId: i._id?.toString(),
+                sessionId: i.sessionId,
+                userId: i.userId,
+                userMessage: i.userText,
+                aiResponse: i.aiResponse,
+              }));
+              const count = await responseEvaluationService.batchEvaluate(evalData);
+              console.log(`🔬 [V5 Scheduled] Batch evaluated: ${count}/${pending.length} interactions`);
+            }
+          } catch (err) {
+            console.warn('⚠️ [V5 Scheduled] Batch evaluation failed:', err instanceof Error ? err.message : err);
+          }
+        }, EVAL_INTERVAL);
+
         console.log('✅ V5 Event Queue initialized (Learning Pipeline active)');
+        console.log('✅ V5 Reactive handlers registered');
+        console.log('✅ V5 Scheduled jobs started (curation: 6h, evaluation: 2h)');
       }).catch(err => {
         console.warn('⚠️  V5 Event Queue failed to start:', err instanceof Error ? err.message : err);
       });

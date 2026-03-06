@@ -7,6 +7,7 @@ import { NextFunction, Request, Response } from 'express';
 import { ChatbotService } from '../services/chatbotService';
 import { EnhancedChatbotService } from '../services/enhancedChatbotService';
 import { memoryAwareChatbotService } from '../services/memoryAwareChatbotService';
+import { v5IntegrationService } from '../services/v5IntegrationService';
 import { RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
 
@@ -49,19 +50,44 @@ export class ChatbotController {
 
       // Process message with Memory-Aware Chatbot Service (WITH LEARNING!)
       const chatbotMode = mode === 'em_style' ? 'em_style' : 'default';
+      const startTime = Date.now();
+      const effectiveSessionId = sessionId || this.generateSessionId();
+      const effectiveUserId = userId || 'anonymous';
       const response = await memoryAwareChatbotService.chat(
         message,
-        sessionId || this.generateSessionId(),
-        userId || 'anonymous',
+        effectiveSessionId,
+        effectiveUserId,
         context?.userProfile,
         chatbotMode
       );
+      const responseTimeMs = Date.now() - startTime;
+
+      // V5: Safety guardrail check (SYNC — trước khi gửi response)
+      const safetyCheck = v5IntegrationService.checkSafety(response.message, message);
+      if (!safetyCheck.safe) {
+        response.message = safetyCheck.response;
+        (response as any).response = safetyCheck.response;
+      }
 
       res.json({
         success: true,
         data: response,
         timestamp: new Date().toISOString(),
       });
+
+      // V5: Capture interaction + auto-evaluate (ASYNC — fire-and-forget)
+      v5IntegrationService.afterChatResponse({
+        sessionId: effectiveSessionId,
+        userId: effectiveUserId,
+        userMessage: message,
+        aiResponse: response.message,
+        responseTimeMs,
+        riskLevel: response.riskLevel,
+        emotionalState: response.emotionalState,
+        qualityScore: response.qualityScore,
+        intent: response.intent,
+        crisisLevel: response.crisisLevel,
+      }).catch(() => {});
     } catch (error) {
       logger.error('Error processing chatbot message:', error);
       next(error);
@@ -328,19 +354,43 @@ export class ChatbotController {
 
       // Process with memory-aware service
       const chatbotMode = mode === 'em_style' ? 'em_style' : 'default';
+      const startTime = Date.now();
+      const effectiveSessionId = sessionId || this.generateSessionId();
       const response = await memoryAwareChatbotService.chat(
         message,
-        sessionId || this.generateSessionId(),
+        effectiveSessionId,
         userId,
         context?.userProfile,
         chatbotMode
       );
+      const responseTimeMs = Date.now() - startTime;
+
+      // V5: Safety guardrail check (SYNC — trước khi gửi response)
+      const safetyCheck = v5IntegrationService.checkSafety(response.message, message);
+      if (!safetyCheck.safe) {
+        response.message = safetyCheck.response;
+        (response as any).response = safetyCheck.response;
+      }
 
       res.json({
         success: true,
         data: response,
         timestamp: new Date().toISOString(),
       });
+
+      // V5: Capture interaction + auto-evaluate (ASYNC — fire-and-forget)
+      v5IntegrationService.afterChatResponse({
+        sessionId: effectiveSessionId,
+        userId,
+        userMessage: message,
+        aiResponse: response.message,
+        responseTimeMs,
+        riskLevel: response.riskLevel,
+        emotionalState: response.emotionalState,
+        qualityScore: response.qualityScore,
+        intent: response.intent,
+        crisisLevel: response.crisisLevel,
+      }).catch(() => {});
     } catch (error) {
       logger.error('Error processing memory-aware chatbot message:', error);
       next(error);

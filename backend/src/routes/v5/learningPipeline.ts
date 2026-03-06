@@ -1,4 +1,4 @@
-`/**
+/**
  * V5 LEARNING PIPELINE ROUTES
  * 
  * API endpoints cho hệ thống học tập liên tục V5
@@ -415,7 +415,7 @@ router.get(
   '/curate/export',
   authenticateAdmin,
   asyncHandler(async (req: Request, res: Response) => {
-    const trainingRunId = (req.query.runId as string) || `run_${Date.now()}`;
+    const trainingRunId = (req.query.runId as string) || ('run_' + Date.now());
     const data = await trainingDataCurationService.exportForTraining(trainingRunId);
     res.json({ success: true, data, count: data.length });
   })

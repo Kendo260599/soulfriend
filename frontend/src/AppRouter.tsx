@@ -23,6 +23,7 @@ import ExpertLogin from './components/ExpertLogin';
 import FeaturesShowcase from './components/FeaturesShowcase';
 import GameFi from './components/GameFi';
 import LifeStageNavigation from './components/LifeStageNavigation';
+import ProgressTracker from './components/ProgressTracker';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ResearchDashboard } from './components/ResearchDashboard';
 import TestFlow from './App'; // Step-based: Consent → DASS-21 → Results
@@ -148,6 +149,7 @@ const Navigation: React.FC = () => {
         <NavLinkBtn active={path === '/community'} onClick={() => navigate('/community')}>Cộng đồng</NavLinkBtn>
         <NavLinkBtn active={path === '/life-stages'} onClick={() => navigate('/life-stages')}>Giai đoạn sống</NavLinkBtn>
         <NavLinkBtn active={path === '/gamefi'} onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLinkBtn>
+        <NavLinkBtn active={path === '/progress'} onClick={() => navigate('/progress')}>📊 Tiến trình</NavLinkBtn>
         <NavLinkBtn active={path === '/start'} onClick={() => navigate('/start')}>Làm test DASS-21</NavLinkBtn>
         {isAuthenticated ? (
           <NavLinkBtn onClick={() => { logout(); navigate('/'); }}>
@@ -237,6 +239,13 @@ const RoutedApp: React.FC = () => {
         <Route path="/gamefi" element={
           <UserRoute>
             <GameFi />
+          </UserRoute>
+        } />
+
+        {/* Progress Tracker — require login */}
+        <Route path="/progress" element={
+          <UserRoute>
+            <ProgressTracker onBack={() => navigate('/')} />
           </UserRoute>
         } />
 

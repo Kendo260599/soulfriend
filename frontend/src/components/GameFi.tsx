@@ -11,10 +11,11 @@
  * Requires authentication.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
+import SocialSharing from './SocialSharing';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -251,7 +252,89 @@ const ComingSoonText = styled.p`
 const GameFi: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [completedQuests, setCompletedQuests] = useState<Set<number>>(new Set());
+
+  // ========== PERSISTENT STATE ==========
+  const GAMEFI_STORAGE_KEY = 'soulfriend_gamefi';
+
+  const loadGameState = () => {
+    try {
+      const saved = localStorage.getItem(GAMEFI_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Reset quests if last completed date is not today
+        const today = new Date().toDateString();
+        if (parsed.lastQuestDate !== today) {
+          parsed.completedQuests = [];
+          parsed.lastQuestDate = today;
+        }
+        // Streak logic — check if last visit was yesterday
+        const lastVisit = parsed.lastVisitDate ? new Date(parsed.lastVisitDate) : null;
+        const now = new Date();
+        if (lastVisit) {
+          const diffDays = Math.floor((now.getTime() - lastVisit.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays > 1) {
+            parsed.streak = 1; // Reset streak if missed a day
+          } else if (diffDays === 1 && parsed.lastVisitDate !== now.toDateString()) {
+            parsed.streak = (parsed.streak || 0) + 1;
+          }
+        }
+        parsed.lastVisitDate = now.toDateString();
+        return parsed;
+      }
+    } catch {}
+    return {
+      xp: 0,
+      streak: 1,
+      completedQuests: [] as number[],
+      lastQuestDate: new Date().toDateString(),
+      lastVisitDate: new Date().toDateString(),
+      totalTestsTaken: 0,
+      totalChatMessages: 0,
+      totalResearchRead: 0,
+    };
+  };
+
+  const [gameState, setGameState] = useState(loadGameState);
+  const [completedQuests, setCompletedQuests] = useState<Set<number>>(
+    new Set(gameState.completedQuests || [])
+  );
+
+  // XP → Level formula: Level = floor(sqrt(XP / 50)) + 1
+  const calcLevel = (xp: number) => Math.floor(Math.sqrt(xp / 50)) + 1;
+  const level = calcLevel(gameState.xp);
+  const nextLevelXP = Math.pow(level, 2) * 50;
+  const xpProgress = Math.round(((gameState.xp - Math.pow(level - 1, 2) * 50) / (nextLevelXP - Math.pow(level - 1, 2) * 50)) * 100);
+
+  // Save state to localStorage
+  useEffect(() => {
+    const toSave = {
+      ...gameState,
+      completedQuests: Array.from(completedQuests),
+    };
+    localStorage.setItem(GAMEFI_STORAGE_KEY, JSON.stringify(toSave));
+  }, [gameState, completedQuests]);
+
+  // Dynamic badge unlocking
+  const getBadges = () => {
+    const xp = gameState.xp;
+    const streak = gameState.streak;
+    const tests = gameState.totalTestsTaken;
+    const chats = gameState.totalChatMessages;
+    const reads = gameState.totalResearchRead;
+    return [
+      { icon: '🌱', name: 'Người bắt đầu', status: 'Hoàn thành test đầu tiên', unlocked: tests >= 1 },
+      { icon: '🔥', name: 'Streak 3 ngày', status: '3 ngày liên tiếp', unlocked: streak >= 3 },
+      { icon: '⭐', name: 'Streak 7 ngày', status: '7 ngày liên tiếp', unlocked: streak >= 7 },
+      { icon: '💎', name: 'Streak 30 ngày', status: '30 ngày liên tiếp', unlocked: streak >= 30 },
+      { icon: '🧠', name: 'Nhà tâm lý', status: 'Làm 10 bài test', unlocked: tests >= 10 },
+      { icon: '💬', name: 'Người chia sẻ', status: 'Chat 50 tin nhắn', unlocked: chats >= 50 },
+      { icon: '📊', name: 'Nhà nghiên cứu', status: 'Đọc 5 bài nghiên cứu', unlocked: reads >= 5 },
+      { icon: '🏆', name: 'Champion', status: 'Đạt Level 10', unlocked: level >= 10 },
+    ];
+  };
+
+  const badges = getBadges();
+  const unlockedCount = badges.filter(b => b.unlocked).length;
 
   const dailyQuests = [
     {
@@ -298,25 +381,20 @@ const GameFi: React.FC = () => {
     },
   ];
 
-  const badges = [
-    { icon: '🌱', name: 'Người bắt đầu', status: 'Hoàn thành test đầu tiên', unlocked: true },
-    { icon: '🔥', name: 'Streak 3 ngày', status: '3 ngày liên tiếp', unlocked: true },
-    { icon: '⭐', name: 'Streak 7 ngày', status: '7 ngày liên tiếp', unlocked: false },
-    { icon: '💎', name: 'Streak 30 ngày', status: '30 ngày liên tiếp', unlocked: false },
-    { icon: '🧠', name: 'Nhà tâm lý', status: 'Làm 10 bài test', unlocked: false },
-    { icon: '💬', name: 'Người chia sẻ', status: 'Chat 50 tin nhắn', unlocked: true },
-    { icon: '📊', name: 'Nhà nghiên cứu', status: 'Đọc 5 bài nghiên cứu', unlocked: false },
-    { icon: '🏆', name: 'Champion', status: 'Đạt Level 10', unlocked: false },
-  ];
+  // Badges are computed dynamically by getBadges() above
 
   const handleQuestClick = (index: number) => {
+    if (completedQuests.has(index)) return; // Can't un-complete a quest
     const newCompleted = new Set(completedQuests);
-    if (newCompleted.has(index)) {
-      newCompleted.delete(index);
-    } else {
-      newCompleted.add(index);
-    }
+    newCompleted.add(index);
     setCompletedQuests(newCompleted);
+    // Award XP
+    const xpReward = parseInt(dailyQuests[index].reward.replace(/[^0-9]/g, ''), 10) || 20;
+    setGameState((prev: typeof gameState) => ({
+      ...prev,
+      xp: prev.xp + xpReward,
+      completedQuests: Array.from(newCompleted),
+    }));
     dailyQuests[index].action();
   };
 
@@ -337,19 +415,19 @@ const GameFi: React.FC = () => {
 
       <StatsRow>
         <StatCard color="#E8B4B8">
-          <StatValue>150</StatValue>
-          <StatLabel>XP tổng cộng</StatLabel>
+          <StatValue>{gameState.xp}</StatValue>
+          <StatLabel>XP tổng cộng (→ Lv.{level + 1} cần {nextLevelXP} XP)</StatLabel>
         </StatCard>
         <StatCard color="#48BB78">
-          <StatValue>3 🔥</StatValue>
+          <StatValue>{gameState.streak} 🔥</StatValue>
           <StatLabel>Streak hiện tại</StatLabel>
         </StatCard>
         <StatCard color="#805AD5">
-          <StatValue>Lv. 2</StatValue>
-          <StatLabel>Cấp độ</StatLabel>
+          <StatValue>Lv. {level}</StatValue>
+          <StatLabel>Cấp độ ({xpProgress}% → Lv.{level + 1})</StatLabel>
         </StatCard>
         <StatCard color="#DD6B20">
-          <StatValue>3/8</StatValue>
+          <StatValue>{unlockedCount}/{badges.length}</StatValue>
           <StatLabel>Huy hiệu</StatLabel>
         </StatCard>
       </StatsRow>
@@ -385,6 +463,16 @@ const GameFi: React.FC = () => {
           </BadgeCard>
         ))}
       </BadgeGrid>
+
+      {/* Social Sharing */}
+      <SectionTitle>🔗 Chia sẻ thành tích</SectionTitle>
+      <SocialSharing
+        type={unlockedCount > 0 ? 'badge' : 'general'}
+        badgeName={badges.find(b => b.unlocked)?.name}
+        badgeIcon={badges.find(b => b.unlocked)?.icon}
+      />
+
+      <div style={{ height: '1.5rem' }} />
 
       <ComingSoon>
         <ComingSoonTitle>🚀 Sắp ra mắt</ComingSoonTitle>

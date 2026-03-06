@@ -276,20 +276,78 @@ function getTestDisplayName(testType: string): string {
   return names[testType] || testType;
 }
 
-// Helper function để lấy gợi ý chăm sóc
+/**
+ * Gợi ý chăm sóc dựa trên mức độ nghiêm trọng thực tế từ DASS-21
+ * Phân tích severity level cá nhân hóa khuyến nghị
+ */
 function getRecommendations(results: TestResult[]): string[] {
-  const recommendations = [
-    "Dành thời gian cho bản thân mỗi ngày, dù chỉ 10-15 phút để thư giãn",
-    "Thực hành hít thở sâu hoặc thiền định để giảm căng thẳng",
-    "Duy trì lối sống lành mạnh với dinh dưỡng đầy đủ và tập thể dục đều đặn",
+  if (!results || results.length === 0) {
+    return [
+      "Hãy hoàn thành bài test DASS-21 để nhận gợi ý phù hợp",
+      "Dành thời gian cho bản thân mỗi ngày, dù chỉ 10-15 phút",
+    ];
+  }
+
+  // Xác định mức độ nghiêm trọng nhất trong các kết quả
+  const severityOrder = ['normal', 'mild', 'moderate', 'moderately_severe', 'high', 'severe'];
+  let maxSeverity = 'normal';
+  let maxScore = 0;
+
+  results.forEach(r => {
+    const level = (r.evaluation?.level || 'normal').toLowerCase();
+    const idx = severityOrder.indexOf(level);
+    const currentMax = severityOrder.indexOf(maxSeverity);
+    if (idx > currentMax) maxSeverity = level;
+    if (r.totalScore > maxScore) maxScore = r.totalScore;
+  });
+
+  // Gợi ý cơ bản luôn có
+  const base = [
+    "Duy trì lối sống lành mạnh với dinh dưỡng đầy đủ và giấc ngủ 7-8 tiếng",
     "Kết nối với bạn bè, gia đình hoặc cộng đồng để có sự hỗ trợ tinh thần",
-    "Tham gia các hoạt động yêu thích hoặc sở thích để nâng cao tinh thần",
-    "Thiết lập ranh giới lành mạnh trong công việc và cuộc sống cá nhân",
-    "Ghi nhật ký cảm xúc để hiểu rõ hơn về bản thân",
-    "Tìm kiếm sự hỗ trợ chuyên nghiệp nếu cảm thấy cần thiết"
   ];
-  
-  return recommendations.slice(0, 5); // Trả về 5 gợi ý đầu tiên
+
+  // Gợi ý theo mức độ nghiêm trọng
+  if (maxSeverity === 'normal') {
+    return [
+      "🎉 Kết quả cho thấy sức khỏe tâm lý của bạn đang ổn định — hãy tiếp tục duy trì!",
+      "Thực hành mindfulness hoặc thiền định 10 phút/ngày để duy trì cân bằng",
+      "Ghi nhật ký biết ơn — viết 3 điều tích cực mỗi tối trước khi ngủ",
+      ...base,
+    ];
+  }
+
+  if (maxSeverity === 'mild') {
+    return [
+      "⚠️ Bạn có dấu hiệu nhẹ — đây là lúc tốt để bắt đầu chăm sóc bản thân sớm",
+      "Thực hành hít thở sâu 4-7-8 (hít 4s, giữ 7s, thở ra 8s) khi căng thẳng",
+      "Dành 15-20 phút mỗi ngày cho hoạt động thể chất yêu thích (đi bộ, yoga, bơi lội)",
+      "Giảm caffeine và thời gian sử dụng mạng xã hội vào buổi tối",
+      ...base,
+    ];
+  }
+
+  if (maxSeverity === 'moderate') {
+    return [
+      "🟠 Mức trung bình — bạn đang trải qua một số khó khăn, hãy chú ý chăm sóc bản thân",
+      "Thực hành Progressive Muscle Relaxation (thư giãn cơ bắp tuần tự) mỗi tối",
+      "Thiết lập ranh giới lành mạnh — học cách nói 'không' khi quá tải",
+      "Ghi nhật ký cảm xúc hàng ngày để nhận diện các trigger gây căng thẳng",
+      "Cân nhắc nói chuyện với chuyên gia tâm lý nếu tình trạng kéo dài trên 2 tuần",
+      ...base,
+    ];
+  }
+
+  // severe / extremely_severe / high / moderately_severe
+  return [
+    "🔴 Kết quả cho thấy bạn đang cần được hỗ trợ — bạn xứng đáng được giúp đỡ",
+    "⚡ KHUYẾN NGHỊ MẠNH: Hãy liên hệ chuyên gia tâm lý hoặc bác sĩ sớm nhất có thể",
+    "📞 Đường dây hỗ trợ 24/7: Tổng đài 1800 599 920 (miễn phí), Hotline 1900 0027",
+    "Chia sẻ với người thân hoặc bạn bè đáng tin cậy về cảm xúc của bạn",
+    "Tránh đưa ra quyết định lớn khi đang trong trạng thái căng thẳng cao",
+    "Đảm bảo an toàn: tránh rượu bia, chất kích thích, và tìm môi trường an toàn",
+    ...base,
+  ];
 }
 
 // Props interface

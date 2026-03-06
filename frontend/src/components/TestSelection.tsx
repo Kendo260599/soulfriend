@@ -10,13 +10,6 @@ import AnimatedButton from './AnimatedButton';
 // Types cho các loại test
 export enum TestType {
   DASS_21 = 'DASS-21',
-  GAD_7 = 'GAD-7',
-  PHQ_9 = 'PHQ-9',
-  EPDS = 'EPDS',
-  SELF_COMPASSION = 'SELF_COMPASSION',
-  MINDFULNESS = 'MINDFULNESS',
-  SELF_CONFIDENCE = 'SELF_CONFIDENCE',
-  ROSENBERG_SELF_ESTEEM = 'ROSENBERG_SELF_ESTEEM'
 }
 
 // Thông tin về các bài test
@@ -28,90 +21,18 @@ interface TestInfo {
   duration: string;
   icon: string;
   color: string;
-  category: 'mood' | 'anxiety' | 'self' | 'mindfulness';
 }
 
 const testList: TestInfo[] = [
   {
     id: TestType.DASS_21,
     name: 'DASS-21',
-    description: 'Đánh giá mức độ lo âu, trầm cảm và căng thẳng tổng hợp',
+    description: 'Thang đo đánh giá mức độ Trầm cảm, Lo âu và Căng thẳng (21 câu hỏi). Phiên bản Việt hóa chuẩn theo Lovibond & Lovibond (1995).',
     questions: 21,
     duration: '5-7 phút',
     icon: '🧠',
     color: '#6366f1',
-    category: 'mood'
   },
-  {
-    id: TestType.GAD_7,
-    name: 'GAD-7',
-    description: 'Thang đo rối loạn lo âu tổng quát, đánh giá mức độ lo lắng',
-    questions: 7,
-    duration: '2-3 phút',
-    icon: '😰',
-    color: '#f59e0b',
-    category: 'anxiety'
-  },
-  {
-    id: TestType.PHQ_9,
-    name: 'PHQ-9',
-    description: 'Bảng câu hỏi sức khỏe bệnh nhân, đánh giá mức độ trầm cảm',
-    questions: 9,
-    duration: '3-4 phút',
-    icon: '💙',
-    color: '#3b82f6',
-    category: 'mood'
-  },
-  {
-    id: TestType.EPDS,
-    name: 'EPDS',
-    description: 'Thang đo trầm cảm sau sinh dành cho các mẹ mới sinh con',
-    questions: 10,
-    duration: '3-4 phút',
-    icon: '🤱',
-    color: '#ec4899',
-    category: 'mood'
-  },
-  {
-    id: TestType.SELF_COMPASSION,
-    name: 'Thang đo tự yêu thương',
-    description: 'Đánh giá khả năng tự chăm sóc và yêu thương bản thân',
-    questions: 10,
-    duration: '4-5 phút',
-    icon: '💖',
-    color: '#f97316',
-    category: 'self'
-  },
-  {
-    id: TestType.MINDFULNESS,
-    name: 'Thang đo chánh niệm',
-    description: 'Đánh giá khả năng sống tỉnh thức và nhận thức hiện tại',
-    questions: 20,
-    duration: '6-8 phút',
-    icon: '🧘‍♀️',
-    color: '#10b981',
-    category: 'mindfulness'
-  },
-  {
-    id: TestType.SELF_CONFIDENCE,
-    name: 'Thang đo tự tin',
-    description: 'Đánh giá mức độ tự tin dành riêng cho phụ nữ',
-    questions: 10,
-    duration: '4-5 phút',
-    icon: '💪',
-    color: '#8b5cf6',
-    category: 'self'
-  },
-  {
-    id: TestType.ROSENBERG_SELF_ESTEEM,
-    name: 'Thang đo lòng tự trọng',
-    description: 'Thang đo Rosenberg đánh giá lòng tự trọng tổng thể',
-    questions: 10,
-    duration: '3-4 phút',
-    icon: '⭐',
-    color: '#ef4444',
-    category: 'self'
-  }
 ];
 
 // Styled Components
@@ -141,27 +62,6 @@ const Subtitle = styled.p`
   max-width: 600px;
   margin: 0 auto 30px auto;
   line-height: 1.6;
-`;
-
-const CategorySection = styled.div`
-  margin-bottom: 40px;
-`;
-
-const CategoryTitle = styled.h2`
-  color: #495057;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  font-weight: 500;
-  
-  &::before {
-    content: '';
-    display: inline-block;
-    width: 4px;
-    height: 24px;
-    background: #d63384;
-    margin-right: 12px;
-    vertical-align: middle;
-  }
 `;
 
 const TestGrid = styled.div`
@@ -222,17 +122,6 @@ const ActionButtons = styled.div`
 
 
 
-const SelectedCount = styled.div`
-  text-align: center;
-  color: #495057;
-  font-size: 1rem;
-  margin-bottom: 20px;
-  
-  strong {
-    color: #d63384;
-  }
-`;
-
 // Props interface
 interface TestSelectionProps {
   consentId: string;
@@ -265,86 +154,41 @@ const TestSelection: React.FC<TestSelectionProps> = ({ consentId, onTestsSelecte
     }
   };
 
-  /**
-   * Tính tổng thời gian ước tính
-   */
-  const getTotalDuration = () => {
-    const totalMinutes = selectedTests.reduce((total, testId) => {
-      const test = testList.find(t => t.id === testId);
-      if (test) {
-        const minutes = parseInt(test.duration.split('-')[1] || test.duration.split(' ')[0]);
-        return total + minutes;
-      }
-      return total;
-    }, 0);
-    
-    return `${totalMinutes} phút`;
-  };
-
-  /**
-   * Nhóm test theo category
-   */
-  const groupedTests = testList.reduce((groups, test) => {
-    const category = test.category;
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-    groups[category].push(test);
-    return groups;
-  }, {} as Record<string, TestInfo[]>);
-
-  const categoryNames = {
-    mood: '🌸 Tâm trạng & Cảm xúc',
-    anxiety: '😰 Lo âu & Căng thẳng',
-    self: '💝 Tự nhận thức & Lòng tự trọng',
-    mindfulness: '🧘‍♀️ Chánh niệm & Tỉnh thức'
-  };
-
   return (
     <Container>
       <Header>
-        <Title>Chọn bài đánh giá tâm lý</Title>
+        <Title>Đánh giá sức khỏe tâm lý</Title>
         <Subtitle>
-          Hãy chọn các bài đánh giá mà bạn muốn thực hiện. Bạn có thể chọn nhiều bài để có cái nhìn tổng thể về sức khỏe tâm lý của mình.
+          Thang đo DASS-21 giúp đánh giá mức độ Trầm cảm, Lo âu và Căng thẳng của bạn trong tuần vừa qua. Kết quả hoàn toàn bảo mật.
         </Subtitle>
-        {selectedTests.length > 0 && (
-          <SelectedCount>
-            Đã chọn <strong>{selectedTests.length}</strong> bài test • Thời gian ước tính: <strong>{getTotalDuration()}</strong>
-          </SelectedCount>
-        )}
       </Header>
 
-      {Object.entries(groupedTests).map(([category, tests]) => (
-        <CategorySection key={category}>
-          <CategoryTitle>{categoryNames[category as keyof typeof categoryNames]}</CategoryTitle>
-          <TestGrid>
-            {tests.map((test, index) => {
-              const isSelected = selectedTests.includes(test.id);
-              return (
-                <AnimatedCard
-                  key={test.id}
-                  hoverEffect="lift"
-                  animation={index % 2 === 0 ? "slideInLeft" : "slideInRight"}
-                  elevation={isSelected ? 3 : 2}
-                  onClick={() => handleTestToggle(test.id)}
-                  badge={isSelected ? { text: "Đã chọn", color: "success" } : undefined}
-                  className={isSelected ? "selected-test" : ""}
-                >
-                  <TestHeader>
-                    <TestIcon>{test.icon}</TestIcon>
-                    <TestName color={test.color}>{test.name}</TestName>
-                  </TestHeader>
-                  <TestDescription>{test.description}</TestDescription>
-                  <TestMeta>
-                    <span>{test.questions} câu hỏi</span>
-                    <span>{test.duration}</span>
-                  </TestMeta>
-                </AnimatedCard>
-              );
-            })}
-          </TestGrid>
-        </CategorySection>
-      ))}
+      <TestGrid>
+        {testList.map((test, index) => {
+          const isSelected = selectedTests.includes(test.id);
+          return (
+            <AnimatedCard
+              key={test.id}
+              hoverEffect="lift"
+              animation="slideInLeft"
+              elevation={isSelected ? 3 : 2}
+              onClick={() => handleTestToggle(test.id)}
+              badge={isSelected ? { text: "Đã chọn", color: "success" } : undefined}
+              className={isSelected ? "selected-test" : ""}
+            >
+              <TestHeader>
+                <TestIcon>{test.icon}</TestIcon>
+                <TestName color={test.color}>{test.name}</TestName>
+              </TestHeader>
+              <TestDescription>{test.description}</TestDescription>
+              <TestMeta>
+                <span>{test.questions} câu hỏi</span>
+                <span>{test.duration}</span>
+              </TestMeta>
+            </AnimatedCard>
+          );
+        })}
+      </TestGrid>
 
       <ActionButtons>
         <AnimatedButton variant="outline" onClick={onBack} icon="←">
@@ -357,7 +201,7 @@ const TestSelection: React.FC<TestSelectionProps> = ({ consentId, onTestsSelecte
           animation={selectedTests.length > 0 ? "glow" : "none"}
           icon="→"
         >
-          Bắt đầu làm test ({selectedTests.length})
+          Bắt đầu làm test
         </AnimatedButton>
       </ActionButtons>
     </Container>

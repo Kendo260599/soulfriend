@@ -6,13 +6,6 @@
 import React, { useState } from 'react';
 import { TestType } from './TestSelection';
 import DASS21Test from './DASS21Test';
-import GAD7Test from './GAD7Test';
-import PHQ9Test from './PHQ9Test';
-import EPDSTest from './EPDSTest';
-import SelfCompassionTest from './SelfCompassionTest';
-import MindfulnessTest from './MindfulnessTest';
-import SelfConfidenceTest from './SelfConfidenceTest';
-import RosenbergTest from './RosenbergTest';
 import axios from 'axios';
 import styled from 'styled-components';
 
@@ -197,62 +190,6 @@ const TestTaking: React.FC<TestTakingProps> = ({
         return (
           <DASS21Test
             onComplete={handleTestComplete}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.GAD_7:
-        return (
-          <GAD7Test
-            onComplete={handleTestComplete}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.PHQ_9:
-        return (
-          <PHQ9Test
-            onComplete={handleTestComplete}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.EPDS:
-        return (
-          <EPDSTest
-            onComplete={handleTestCompleteNew}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.SELF_COMPASSION:
-        return (
-          <SelfCompassionTest
-            onComplete={handleTestCompleteNew}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.MINDFULNESS:
-        return (
-          <MindfulnessTest
-            onComplete={handleTestCompleteNew}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.SELF_CONFIDENCE:
-        return (
-          <SelfConfidenceTest
-            onComplete={handleTestCompleteNew}
-            onBack={handleBack}
-          />
-        );
-      
-      case TestType.ROSENBERG_SELF_ESTEEM:
-        return (
-          <RosenbergTest
-            onComplete={handleTestCompleteNew}
             onBack={handleBack}
           />
         );

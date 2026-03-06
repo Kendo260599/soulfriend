@@ -1,129 +1,180 @@
 /**
- * DASS-21: Depression, Anxiety and Stress Scale - 21 Questions
- * Thang đo trầm cảm, lo âu và căng thẳng 21 câu hỏi
+ * DASS-21: Depression, Anxiety and Stress Scale - 21 Items
+ * Thang đo Trầm cảm - Lo âu - Căng thẳng (DASS-21)
+ * Phiên bản Việt hóa chuẩn (Lovibond & Lovibond, 1995)
+ * Nguồn: csrh.vhu.edu.vn
+ *
+ * Hướng dẫn: Xin vui lòng đọc mỗi câu dưới đây và khoanh tròn số 0, 1, 2, 3
+ * để cho biết câu đó áp dụng cho bạn bao nhiêu trong tuần vừa qua.
+ * Không có câu trả lời đúng hay sai. Không nên dành quá nhiều thời gian cho câu nào.
+ *
+ * Phân nhóm câu hỏi:
+ *   - Trầm cảm (D): 3, 5, 10, 13, 16, 17, 21
+ *   - Lo âu (A): 2, 4, 7, 9, 15, 19, 20
+ *   - Căng thẳng (S): 1, 6, 8, 11, 12, 14, 18
  */
 
 const DASS21_QUESTIONS = [
   {
     id: 1,
-    text: "Tôi cảm thấy khó thư giãn",
-    category: "stress"
+    text: 'Tôi thấy khó mà thoải mái được',
+    category: 'stress',
   },
   {
     id: 2,
-    text: "Tôi cười cảm thấy khô khan miệng",
-    category: "anxiety"
+    text: 'Tôi bị khô miệng',
+    category: 'anxiety',
   },
   {
     id: 3,
-    text: "Tôi không thể cảm nhận được bất kỳ cảm xúc tích cực nào",
-    category: "depression"
+    text: 'Tôi không thể có cảm xúc tích cực gì cả',
+    category: 'depression',
   },
   {
     id: 4,
-    text: "Tôi gặp khó khăn trong việc thở (thở nhanh, khó thở mà không có hoạt động thể lực)",
-    category: "anxiety"
+    text: 'Tôi bị rối loạn nhịp thở (thở gấp, khó thở dù không hoạt động thể lực)',
+    category: 'anxiety',
   },
   {
     id: 5,
-    text: "Tôi cảm thấy khó khăn khi bắt đầu làm việc gì đó",
-    category: "depression"
+    text: 'Tôi thấy khó bắt tay vào công việc',
+    category: 'depression',
   },
   {
     id: 6,
-    text: "Tôi có xu hướng phản ứng thái quá với các tình huống",
-    category: "stress"
+    text: 'Tôi có xu hướng phản ứng thái quá',
+    category: 'stress',
   },
   {
     id: 7,
-    text: "Tôi cảm thấy run rẩy (ví dụ: tay run)",
-    category: "anxiety"
+    text: 'Tôi bị run (tay, chân...)',
+    category: 'anxiety',
   },
   {
     id: 8,
-    text: "Tôi cảm thấy tôi đang sử dụng rất nhiều năng lượng thần kinh",
-    category: "stress"
+    text: 'Tôi thấy mình luôn bồn chồn',
+    category: 'stress',
   },
   {
     id: 9,
-    text: "Tôi lo lắng về những tình huống mà tôi có thể hoảng sợ và biến mình thành trò cười",
-    category: "anxiety"
+    text: 'Tôi lo lắng về những tình huống có thể làm tôi hoảng sợ hoặc biến tôi thành trò cười',
+    category: 'anxiety',
   },
   {
     id: 10,
-    text: "Tôi cảm thấy không có gì để mong đợi",
-    category: "depression"
+    text: 'Tôi thấy mình chẳng có gì để mong đợi cả',
+    category: 'depression',
   },
   {
     id: 11,
-    text: "Tôi thấy mình dễ bực bội",
-    category: "stress"
+    text: 'Tôi thấy bản thân dễ bị kích động',
+    category: 'stress',
   },
   {
     id: 12,
-    text: "Tôi cảm thấy khó thư giãn",
-    category: "stress"
+    text: 'Tôi thấy khó thư giãn được',
+    category: 'stress',
   },
   {
     id: 13,
-    text: "Tôi cảm thấy buồn và chán nản",
-    category: "depression"
+    text: 'Tôi cảm thấy buồn rầu, chán nản',
+    category: 'depression',
   },
   {
     id: 14,
-    text: "Tôi cảm thấy không kiên nhẫn với bất cứ điều gì làm chậm trễ những việc tôi đang làm",
-    category: "stress"
+    text: 'Tôi không chấp nhận được bất cứ điều gì cản trở tôi tiếp tục công việc đang làm',
+    category: 'stress',
   },
   {
     id: 15,
-    text: "Tôi cảm thấy như sắp hoảng sợ",
-    category: "anxiety"
+    text: 'Tôi thấy mình gần như hoảng loạn',
+    category: 'anxiety',
   },
   {
     id: 16,
-    text: "Tôi không thể hứng thú với bất cứ điều gì",
-    category: "depression"
+    text: 'Tôi không thể hào hứng với bất cứ điều gì',
+    category: 'depression',
   },
   {
     id: 17,
-    text: "Tôi cảm thấy mình không có giá trị như một con người",
-    category: "depression"
+    text: 'Tôi cảm thấy mình chẳng đáng làm người',
+    category: 'depression',
   },
   {
     id: 18,
-    text: "Tôi cảm thấy mình khá nhạy cảm",
-    category: "stress"
+    text: 'Tôi thấy mình khá dễ phật ý, tự ái',
+    category: 'stress',
   },
   {
     id: 19,
-    text: "Tôi cảm thấy tim mình đập mạnh mà không có hoạt động thể lực (ví dụ: cảm giác tim đập nhanh, tim bỏ nhịp)",
-    category: "anxiety"
+    text: 'Tôi nghe thấy rõ tiếng nhịp tim dù không làm việc gì (đánh trống ngực...)',
+    category: 'anxiety',
   },
   {
     id: 20,
-    text: "Tôi cảm thấy sợ hãi mà không có lý do rõ ràng",
-    category: "anxiety"
+    text: 'Tôi hay sợ vô cớ',
+    category: 'anxiety',
   },
   {
     id: 21,
-    text: "Tôi cảm thấy cuộc sống không có ý nghĩa",
-    category: "depression"
-  }
+    text: 'Tôi thấy cuộc sống vô nghĩa',
+    category: 'depression',
+  },
 ];
 
 const ANSWER_OPTIONS = [
-  { value: 0, label: "Không áp dụng cho tôi chút nào" },
-  { value: 1, label: "Áp dụng cho tôi ở một mức độ nào đó, hoặc thỉnh thoảng" },
-  { value: 2, label: "Áp dụng cho tôi ở mức độ đáng kể, hoặc phần lớn thời gian" },
-  { value: 3, label: "Áp dụng cho tôi rất nhiều, hoặc hầu hết thời gian" }
+  { value: 0, label: 'Không đúng với tôi chút nào cả' },
+  { value: 1, label: 'Đúng với tôi phần nào, hoặc thỉnh thoảng mới có' },
+  { value: 2, label: 'Đúng với tôi phần nhiều, hoặc phần lớn thời gian' },
+  { value: 3, label: 'Hoàn toàn đúng với tôi, hoặc hầu hết thời gian' },
 ];
 
+/**
+ * Bảng phân loại mức độ (điểm đã nhân 2)
+ *
+ *              | Bình thường | Nhẹ   | Vừa    | Nặng   | Rất nặng
+ * Trầm cảm    | 0-9         | 10-13 | 14-20  | 21-27  | ≥28
+ * Lo âu       | 0-7         | 8-9   | 10-14  | 15-19  | ≥20
+ * Căng thẳng  | 0-14        | 15-18 | 19-25  | 26-33  | ≥34
+ */
+const SCORING_RANGES = {
+  depression: [
+    { min: 0, max: 9, level: 'normal', label: 'Bình thường' },
+    { min: 10, max: 13, level: 'mild', label: 'Nhẹ' },
+    { min: 14, max: 20, level: 'moderate', label: 'Vừa' },
+    { min: 21, max: 27, level: 'severe', label: 'Nặng' },
+    { min: 28, max: 42, level: 'extremely_severe', label: 'Rất nặng' },
+  ],
+  anxiety: [
+    { min: 0, max: 7, level: 'normal', label: 'Bình thường' },
+    { min: 8, max: 9, level: 'mild', label: 'Nhẹ' },
+    { min: 10, max: 14, level: 'moderate', label: 'Vừa' },
+    { min: 15, max: 19, level: 'severe', label: 'Nặng' },
+    { min: 20, max: 42, level: 'extremely_severe', label: 'Rất nặng' },
+  ],
+  stress: [
+    { min: 0, max: 14, level: 'normal', label: 'Bình thường' },
+    { min: 15, max: 18, level: 'mild', label: 'Nhẹ' },
+    { min: 19, max: 25, level: 'moderate', label: 'Vừa' },
+    { min: 26, max: 33, level: 'severe', label: 'Nặng' },
+    { min: 34, max: 42, level: 'extremely_severe', label: 'Rất nặng' },
+  ],
+};
+
 module.exports = {
-  testType: "DASS-21",
-  name: "Thang đo DASS-21 (Lo âu - Trầm cảm - Stress)",
-  description: "Đánh giá mức độ trầm cảm, lo âu và căng thẳng trong 1 tuần vừa qua",
+  testType: 'DASS-21',
+  name: 'Thang đo DASS-21 (Trầm cảm - Lo âu - Căng thẳng)',
+  description:
+    'Thang đo đánh giá mức độ Trầm cảm, Lo âu và Căng thẳng trong 1 tuần vừa qua. Gồm 21 câu hỏi, mỗi câu cho điểm từ 0-3.',
+  instructions:
+    'Xin vui lòng đọc mỗi câu dưới đây và chọn số 0, 1, 2, 3 để cho biết câu đó áp dụng cho bạn bao nhiêu trong tuần vừa qua. Không có câu trả lời đúng hay sai.',
   questions: DASS21_QUESTIONS,
   answerOptions: ANSWER_OPTIONS,
-  timeframe: "1 tuần qua",
-  categories: ["depression", "anxiety", "stress"]
+  scoringRanges: SCORING_RANGES,
+  timeframe: '1 tuần qua',
+  categories: ['depression', 'anxiety', 'stress'],
+  source: 'Lovibond & Lovibond (1995) - Phiên bản Việt hóa',
+  totalQuestions: 21,
+  maxScorePerQuestion: 3,
+  note: 'Điểm mỗi thang con = tổng 7 câu × 2. Tổng điểm DASS-21 = Trầm cảm + Lo âu + Căng thẳng.',
 };

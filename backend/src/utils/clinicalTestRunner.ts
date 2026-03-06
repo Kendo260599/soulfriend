@@ -5,11 +5,12 @@
  */
 
 import { createClinicalValidator, VALIDATION_DATASET, ValidationUtils } from './clinicalValidation';
-import { scorePHQ9, scoreGAD7 } from './scoring';
-import { enhancedPHQ9Scoring, enhancedGAD7Scoring, EnhancedTestResult } from './enhancedScoring';
+import { scoreDASS21 } from './scoring';
+import { EnhancedTestResult } from './enhancedScoring';
 
 /**
  * Helper function to calculate enhanced score
+ * Hiện tại chỉ hỗ trợ DASS-21
  */
 const calculateEnhancedScore = (params: {
   questionType: string;
@@ -22,10 +23,13 @@ const calculateEnhancedScore = (params: {
     answersMap[index + 1] = response;
   });
 
-  if (params.questionType === 'PHQ9') {
-    return enhancedPHQ9Scoring(answersMap);
-  } else if (params.questionType === 'GAD7') {
-    return enhancedGAD7Scoring(answersMap);
+  if (params.questionType === 'DASS-21' || params.questionType === 'DASS_21') {
+    const result = scoreDASS21(answersMap);
+    return {
+      ...result,
+      percentileRank: 50,
+      riskFactors: [],
+    };
   }
 
   // Default fallback

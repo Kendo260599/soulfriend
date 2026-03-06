@@ -431,7 +431,7 @@ const WelcomeSplash: React.FC<WelcomeSplashProps> = ({
         </LogoContainer>
         
         <Subtitle>
-          V3.0 Expert Edition
+          V4.0 Expert Edition
           <br />
           Nền tảng đánh giá sức khỏe tâm lý chuyên nghiệp
         </Subtitle>

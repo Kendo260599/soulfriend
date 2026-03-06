@@ -434,7 +434,7 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
     isInitialized: false
   });
   const [selectedPeriod, setSelectedPeriod] = useState<'all' | '7d' | '30d' | '90d' | '1y'>('all');
-  const [selectedTest, setSelectedTest] = useState<'all' | 'DASS-21' | 'GAD-7' | 'PHQ-9' | 'EPDS' | 'Family-APGAR' | 'Family-Relationship' | 'Parental-Stress'>('all');
+  const [selectedTest, setSelectedTest] = useState<'all' | 'DASS-21'>('all');
   const [selectedLocation, setSelectedLocation] = useState<'all' | 'Hanoi' | 'Ho Chi Minh City' | 'Da Nang' | 'Hai Phong' | 'Can Tho'>('all');
   const [filters, setFilters] = useState<Record<string, any>>({});
 
@@ -744,8 +744,8 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
           <StatLabel>Data Quality</StatLabel>
         </StatsCard>
         <StatsCard animation="slideInUp" color="#7b1fa2">
-          <StatNumber color="#7b1fa2">13</StatNumber>
-          <StatLabel>Assessment Types</StatLabel>
+          <StatNumber color="#7b1fa2">DASS-21</StatNumber>
+          <StatLabel>Assessment Type</StatLabel>
         </StatsCard>
       </StatsGrid>
 
@@ -811,17 +811,11 @@ export const ResearchDashboard: React.FC<ResearchDashboardProps> = ({ onBack }) 
           <FilterSelect
             id="test-filter"
             value={selectedTest}
-            onChange={(e) => setSelectedTest(e.target.value as 'all' | 'DASS-21' | 'GAD-7' | 'PHQ-9' | 'EPDS' | 'Family-APGAR' | 'Family-Relationship' | 'Parental-Stress')}
+            onChange={(e) => setSelectedTest(e.target.value as 'all' | 'DASS-21')}
             aria-label="Select test type"
           >
             <option value="all">All Tests</option>
             <option value="DASS-21">DASS-21</option>
-            <option value="GAD-7">GAD-7</option>
-            <option value="PHQ-9">PHQ-9</option>
-            <option value="EPDS">EPDS</option>
-            <option value="Family-APGAR">Family APGAR</option>
-            <option value="Family-Relationship">Family Relationship</option>
-            <option value="Parental-Stress">Parental Stress</option>
           </FilterSelect>
         </FilterGroup>
         <FilterGroup>

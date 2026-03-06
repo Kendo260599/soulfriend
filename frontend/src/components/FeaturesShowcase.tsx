@@ -187,7 +187,7 @@ const FeaturesShowcase: React.FC = () => {
     {
       icon: '🧠',
       title: 'Khoa học & Chính xác',
-      description: 'Sử dụng các thang đo tâm lý chuẩn quốc tế như PHQ-9, GAD-7, DASS-21 được validate bởi cộng đồng khoa học toàn cầu.',
+      description: 'Sử dụng thang đo DASS-21 chuẩn quốc tế, được validate bởi cộng đồng khoa học toàn cầu (đánh giá Trầm cảm, Lo âu, Stress).',
       gradient: 'linear-gradient(45deg, #667eea, #764ba2)',
       delay: '0.1s'
     },

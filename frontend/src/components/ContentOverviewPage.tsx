@@ -483,58 +483,42 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
       id: 'DASS-21',
       icon: '🧠',
       title: 'DASS-21',
-      duration: '5-7 phút',
-      description: 'Đánh giá toàn diện mức độ lo âu, trầm cảm và stress (21 câu)',
+      duration: '5-10 phút',
+      description: 'Đánh giá toàn diện Trầm cảm, Lo âu và Stress (21 câu hỏi)',
       category: 'mood'
     },
     {
-      id: 'PHQ-9',
+      id: 'DASS-21-depression',
       icon: '💭',
-      title: 'PHQ-9',
-      duration: '3-4 phút',
-      description: 'Sàng lọc trầm cảm theo tiêu chuẩn DSM-5 (9 câu)',
+      title: 'Depression (DASS-21)',
+      duration: 'Thành phần',
+      description: '7 câu đánh giá mức độ trầm cảm: Buồn bã, mất hứng thú, tuyệt vọng',
       category: 'mood'
     },
     {
-      id: 'GAD-7',
+      id: 'DASS-21-anxiety',
       icon: '😰',
-      title: 'GAD-7',
-      duration: '2-3 phút',
-      description: 'Đánh giá rối loạn lo âu tổng quát (7 câu)',
+      title: 'Anxiety (DASS-21)',
+      duration: 'Thành phần',
+      description: '7 câu đánh giá mức độ lo âu: Run rẩy, hoảng sợ, khó thở',
       category: 'anxiety'
     },
     {
-      id: 'EPDS',
-      icon: '🤱',
-      title: 'EPDS',
-      duration: '3-4 phút',
-      description: 'Đánh giá trầm cảm sau sinh chuyên biệt (10 câu)',
-      category: 'postpartum'
-    },
-    {
-      id: 'PMS',
-      icon: '🌸',
-      title: 'PMS Scale',
-      duration: '5-8 phút',
-      description: 'Đánh giá hội chứng tiền kinh nguyệt',
-      category: 'reproductive'
-    },
-    {
-      id: 'MENOPAUSE',
-      icon: '🌺',
-      title: 'Menopause Rating',
-      duration: '5-8 phút',
-      description: 'Đánh giá triệu chứng mãn kinh',
-      category: 'reproductive'
+      id: 'DASS-21-stress',
+      icon: '💥',
+      title: 'Stress (DASS-21)',
+      duration: 'Thành phần',
+      description: '7 câu đánh giá mức độ stress: Căng thẳng, khó thư giãn, dễ bị kích động',
+      category: 'mood'
     }
   ];
 
   const contentCategories = [
     {
       icon: '🧠',
-      title: 'Psychological Tests',
-      count: '13 tests',
-      description: 'Chuẩn quốc tế, được dịch và chuyển thể cho phụ nữ Việt Nam',
+      title: 'DASS-21 Assessment',
+      count: '3-in-1 Test',
+      description: 'Đánh giá Trầm cảm, Lo âu và Stress chuẩn quốc tế',
       variant: 'primary' as const,
       action: () => setActiveTab('tests')
     },
@@ -549,7 +533,7 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
     {
       icon: '📊',
       title: 'Research Data',
-      count: '1000+ data points',
+      count: 'Nghiên cứu VN',
       description: 'Dữ liệu nghiên cứu thực tế tại Việt Nam',
       variant: 'accent' as const,
       action: onViewResearch
@@ -576,14 +560,14 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
       description: 'Tỷ lệ rối loạn lo âu'
     },
     {
-      number: '12.8%',
-      label: 'Sau sinh',
-      description: 'Trầm cảm sau sinh'
+      number: '35.4%',
+      label: 'Stress',
+      description: 'Mức độ stress cao'
     },
     {
-      number: '28.5%',
-      label: 'Mãn kinh',
-      description: 'Triệu chứng tâm lý'
+      number: '24/7',
+      label: 'AI Support',
+      description: 'Hỗ trợ liên tục'
     }
   ];
 
@@ -687,9 +671,9 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
 
         {(activeTab === 'all' || activeTab === 'tests') && (
           <Section>
-            <SectionTitle>Tests Tâm lý Chuyên nghiệp</SectionTitle>
+            <SectionTitle>DASS-21 Assessment</SectionTitle>
             <SectionSubtitle>
-              13 tests dựa trên tiêu chuẩn quốc tế DSM-5, WHO, được dịch và chuyển thể cho phụ nữ Việt Nam
+              Thang đo DASS-21 chuẩn quốc tế (Lovibond & Lovibond, 1995) — đánh giá 3 chiều sức khỏe tâm lý
             </SectionSubtitle>
             
             <TestGrid>

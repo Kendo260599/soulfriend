@@ -528,16 +528,16 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
   const features = [
     {
       icon: '🧠',
-      title: '13 Psychological Tests',
-      description: 'Hệ thống đánh giá tâm lý chuyên nghiệp dựa trên tiêu chuẩn quốc tế DSM-5, WHO',
+      title: 'DASS-21 Assessment',
+      description: 'Thang đo chuẩn quốc tế đánh giá toàn diện Trầm cảm, Lo âu và Stress (Lovibond & Lovibond, 1995)',
       highlights: [
-        'DASS-21: Trầm cảm, lo âu, stress (21 câu, 5-7 phút)',
-        'PHQ-9: Sàng lọc trầm cảm DSM-5 (9 câu, 3-4 phút)',
-        'EPDS: Trầm cảm sau sinh (10 câu, 3-4 phút)',
-        'PMS Scale: Tiền kinh nguyệt (5-8 phút)',
-        'Menopause Rating: Mãn kinh (5-8 phút)'
+        'Depression: 7 câu đánh giá mức độ trầm cảm',
+        'Anxiety: 7 câu đánh giá mức độ lo âu',
+        'Stress: 7 câu đánh giá mức độ stress',
+        '21 câu hỏi, hoàn thành trong 5-10 phút',
+        'Kết quả phân loại 5 mức: Bình thường → Rất nặng'
       ],
-      cta: 'Xem tất cả 13 tests',
+      cta: 'Bắt đầu DASS-21',
       action: onViewTests,
       variant: 'primary' as const
     },
@@ -546,7 +546,7 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
       title: 'AI Chatbot CHUN',
       description: 'Trợ lý AI chuyên nghiệp với khả năng phát hiện khủng hoảng và hỗ trợ 24/7',
       highlights: [
-        '96% độ chính xác phát hiện tự tử',
+        'Phát hiện khủng hoảng tự động',
         'HITL Crisis Support System',
         'Evidence-based responses (CBT, Mindfulness)',
         'Vietnamese cultural context',
@@ -559,13 +559,13 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
     {
       icon: '📊',
       title: 'Dữ liệu Nghiên cứu Việt Nam',
-      description: 'Thống kê thực tế về sức khỏe tâm lý phụ nữ Việt Nam với 1000+ data points',
+      description: 'Thống kê thực tế về sức khỏe tâm lý phụ nữ Việt Nam dựa trên các nghiên cứu khoa học',
       highlights: [
-        '15.2% trầm cảm, 18.7% lo âu, 35.4% stress',
-        '12.8% trầm cảm sau sinh, 35-40% lo âu',
-        '28.5% triệu chứng mãn kinh',
-        '45.3% hội chứng tiền kinh nguyệt',
-        'Cultural factors analysis'
+        '15.2% phụ nữ có triệu chứng trầm cảm',
+        '18.7% tỷ lệ rối loạn lo âu',
+        '35.4% mức độ stress cao',
+        'Phân tích yếu tố văn hóa Việt Nam',
+        'Dữ liệu từ nghiên cứu thực tế'
       ],
       cta: 'Xem nghiên cứu chi tiết',
       action: onViewResearch,
@@ -591,9 +591,9 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
   const contentCategories = [
     {
       icon: '🧠',
-      title: 'Psychological Tests',
-      count: '13 tests',
-      description: 'Chuẩn quốc tế, được dịch và chuyển thể cho phụ nữ Việt Nam'
+      title: 'DASS-21 Test',
+      count: '3-in-1 Assessment',
+      description: 'Đánh giá Trầm cảm, Lo âu, Stress chuẩn quốc tế'
     },
     {
       icon: '🤖',
@@ -604,7 +604,7 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
     {
       icon: '📊',
       title: 'Research Data',
-      count: '1000+ data points',
+      count: 'Nghiên cứu VN',
       description: 'Dữ liệu nghiên cứu thực tế tại Việt Nam'
     },
     {
@@ -627,14 +627,14 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
       description: 'Tỷ lệ rối loạn lo âu'
     },
     {
-      number: '12.8%',
-      label: 'Sau sinh',
-      description: 'Trầm cảm sau sinh'
+      number: '35.4%',
+      label: 'Stress',
+      description: 'Mức độ stress cao'
     },
     {
-      number: '28.5%',
-      label: 'Mãn kinh',
-      description: 'Triệu chứng tâm lý'
+      number: '24/7',
+      label: 'AI Support',
+      description: 'Hỗ trợ liên tục'
     }
   ];
 
@@ -649,27 +649,27 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
           </HeroTitle>
           
           <HeroSubtitle>
-            13 Tests Tâm lý + AI Chatbot CHUN + Dữ liệu Nghiên cứu Việt Nam
+            DASS-21 Assessment + AI Chatbot CHUN + Dữ liệu Nghiên cứu Việt Nam
           </HeroSubtitle>
           
           <HeroDescription>
-            Hỗ trợ phụ nữ Việt Nam với công nghệ AI tiên tiến, nghiên cứu khoa học sâu sắc, 
-            và hệ thống can thiệp khủng hoảng chuyên nghiệp. Từ tests tâm lý chuẩn quốc tế 
-            đến AI chatbot thông minh, từ dữ liệu nghiên cứu thực tế đến hỗ trợ khủng hoảng 24/7.
+            Hỗ trợ phụ nữ Việt Nam với thang đo DASS-21 chuẩn quốc tế, AI chatbot thông minh, 
+            và hệ thống can thiệp khủng hoảng chuyên nghiệp. Đánh giá toàn diện Trầm cảm, Lo âu 
+            và Stress với kết quả khoa học chính xác.
           </HeroDescription>
           
           <StatsContainer>
             <StatItem>
-              <StatNumber>13</StatNumber>
-              <StatLabel>Psychological Tests</StatLabel>
+              <StatNumber>DASS-21</StatNumber>
+              <StatLabel>3-in-1 Assessment</StatLabel>
             </StatItem>
             <StatItem>
-              <StatNumber>96%</StatNumber>
-              <StatLabel>Crisis Detection</StatLabel>
+              <StatNumber>21</StatNumber>
+              <StatLabel>Câu hỏi chuẩn hóa</StatLabel>
             </StatItem>
             <StatItem>
-              <StatNumber>1000+</StatNumber>
-              <StatLabel>Research Data</StatLabel>
+              <StatNumber>5</StatNumber>
+              <StatLabel>Mức độ phân loại</StatLabel>
             </StatItem>
             <StatItem>
               <StatNumber>24/7</StatNumber>

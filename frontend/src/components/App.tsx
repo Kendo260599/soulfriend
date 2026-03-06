@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { Navigate, Route, BrowserRouter as Router, Routes, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 
 // Import components
 import ChatBot from './ChatBot';
+import CommunitySupport from './CommunitySupport';
+import ContentOverviewPage from './ContentOverviewPage';
+import ContentShowcaseLanding from './ContentShowcaseLanding';
+import ExpertDashboard from './ExpertDashboard';
+import ExpertLogin from './ExpertLogin';
+import FeaturesShowcase from './FeaturesShowcase';
 import ProfessionalDashboard from './ProfessionalDashboard';
+import { ResearchDashboard } from './ResearchDashboard';
 import ResultsAnalysis from './ResultsAnalysis';
 import TestResults from './TestResults';
 import TestTaking from './TestTaking';
@@ -180,6 +187,64 @@ const RetryButton = styled.button`
   }
 `;
 
+// Navigation bar
+const NavBar = styled.nav`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(232, 180, 184, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+`;
+
+const NavBrand = styled.div`
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4A4A4A;
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #E8B4B8;
+  }
+`;
+
+const NavLinks = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+  }
+`;
+
+const NavLink = styled.button`
+  background: none;
+  border: none;
+  color: #6B6B6B;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(232, 180, 184, 0.15);
+    color: #E8B4B8;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+`;
+
 // Error boundary class
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -224,7 +289,6 @@ class ErrorBoundary extends React.Component<
 // Main App component
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [currentRoute, setCurrentRoute] = useState('/');
   const [testResults, setTestResults] = useState<any[]>([]);
 
   useEffect(() => {
@@ -237,9 +301,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Update current route
-    setCurrentRoute(window.location.pathname);
-    
     // Load test results from localStorage
     const savedResults = localStorage.getItem('testResults');
     if (savedResults) {
@@ -273,27 +334,7 @@ const App: React.FC = () => {
         <GlobalStyle />
         <AppContainer>
           <Router>
-            <Routes>
-              <Route path="/" element={<WelcomePage />} />
-              <Route path="/dashboard" element={<ProfessionalDashboard testResults={testResults} />} />
-            <Route path="/test/:testType" element={<TestTaking 
-              selectedTests={[]} 
-              consentId="" 
-              onComplete={() => {}} 
-              onBack={() => {}} 
-            />} />
-            <Route path="/results" element={<TestResults 
-              results={testResults} 
-              onRetakeTests={() => {}} 
-              onNewTests={() => {}} 
-            />} />
-            <Route path="/analysis" element={<ResultsAnalysis 
-              testResults={testResults} 
-              onContinue={() => {}} 
-              onViewAI={() => {}} 
-            />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <RoutedApp testResults={testResults} />
           </Router>
           
           {/* Global ChatBot - Available on all pages */}
@@ -301,6 +342,94 @@ const App: React.FC = () => {
         </AppContainer>
       </AIProvider>
     </ErrorBoundary>
+  );
+};
+
+// Inner component with access to useNavigate
+const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      {/* Global Navigation */}
+      <NavBar>
+        <NavBrand onClick={() => navigate('/')}>🌸 SoulFriend</NavBrand>
+        <NavLinks>
+          <NavLink onClick={() => navigate('/')}>Trang chủ</NavLink>
+          <NavLink onClick={() => navigate('/content')}>Khám phá</NavLink>
+          <NavLink onClick={() => navigate('/research')}>Nghiên cứu</NavLink>
+          <NavLink onClick={() => navigate('/community')}>Cộng đồng</NavLink>
+          <NavLink onClick={() => navigate('/start')}>Làm test</NavLink>
+          <NavLink onClick={() => navigate('/dashboard')}>Dashboard</NavLink>
+        </NavLinks>
+      </NavBar>
+
+      <Routes>
+        {/* Landing page - Content Showcase */}
+        <Route path="/" element={
+          <ContentShowcaseLanding
+            onGetStarted={() => navigate('/start')}
+            onViewTests={() => navigate('/content')}
+            onViewAI={() => navigate('/start')}
+            onViewResearch={() => navigate('/research')}
+            onAdminLogin={() => navigate('/expert/login')}
+          />
+        } />
+
+        {/* Start test flow */}
+        <Route path="/start" element={<WelcomePage />} />
+
+        {/* Content Overview */}
+        <Route path="/content" element={
+          <ContentOverviewPage
+            onBack={() => navigate('/')}
+            onViewTest={(testType) => navigate(`/test/${testType}`)}
+            onViewAI={() => navigate('/start')}
+            onViewResearch={() => navigate('/research')}
+            onViewCrisis={() => navigate('/community')}
+          />
+        } />
+
+        {/* Research Dashboard */}
+        <Route path="/research" element={
+          <ResearchDashboard onBack={() => navigate('/')} />
+        } />
+
+        {/* Community Support */}
+        <Route path="/community" element={
+          <CommunitySupport onBack={() => navigate('/')} />
+        } />
+
+        {/* Features Showcase */}
+        <Route path="/features" element={<FeaturesShowcase />} />
+
+        {/* Expert Login & Dashboard */}
+        <Route path="/expert/login" element={<ExpertLogin />} />
+        <Route path="/expert/dashboard" element={<ExpertDashboard />} />
+
+        {/* Test flow routes */}
+        <Route path="/dashboard" element={<ProfessionalDashboard testResults={testResults} />} />
+        <Route path="/test/:testType" element={<TestTaking 
+          selectedTests={[]} 
+          consentId="" 
+          onComplete={() => {}} 
+          onBack={() => {}} 
+        />} />
+        <Route path="/results" element={<TestResults 
+          results={testResults} 
+          onRetakeTests={() => {}} 
+          onNewTests={() => {}} 
+        />} />
+        <Route path="/analysis" element={<ResultsAnalysis 
+          testResults={testResults} 
+          onContinue={() => {}} 
+          onViewAI={() => {}} 
+        />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };
 

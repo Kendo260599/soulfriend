@@ -56,7 +56,36 @@ export class MemorySystem {
     // Check if Redis is configured
     if (config.REDIS_URL) {
       try {
-        this.redis = new Redis(config.REDIS_URL);
+        this.redis = new Redis(config.REDIS_URL, {
+          maxRetriesPerRequest: 3,
+          retryStrategy: (times: number) => {
+            if (times > 10) {
+              console.error('❌ Memory System: Redis reconnection limit reached');
+              return null; // Stop retrying
+            }
+            return Math.min(times * 200, 5000);
+          },
+          lazyConnect: false,
+          enableOfflineQueue: false,
+        });
+
+        // MUST attach error handler to prevent unhandled error events
+        this.redis.on('error', (err: Error) => {
+          if (this.enabled) {
+            console.error('❌ Memory System Redis error:', err.message);
+            this.enabled = false;
+          }
+        });
+
+        this.redis.on('connect', () => {
+          console.log('✅ Memory System Redis connected');
+          this.enabled = true;
+        });
+
+        this.redis.on('close', () => {
+          this.enabled = false;
+        });
+
         this.enabled = true;
         console.log('✅ Memory System initialized with Redis');
       } catch (error) {

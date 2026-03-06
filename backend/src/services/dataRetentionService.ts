@@ -151,6 +151,13 @@ export class DataRetentionService {
    * Enforce all retention policies
    */
   async enforceAll(): Promise<RetentionResult[]> {
+    // Check MongoDB connection before running
+    const mongoose = await import('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      logger.warn('[DataRetention] MongoDB not connected (state: ' + mongoose.connection.readyState + '), skipping enforcement');
+      return [];
+    }
+
     logger.info('[DataRetention] Starting retention enforcement...');
 
     const results: RetentionResult[] = [];
@@ -215,8 +222,26 @@ export class DataRetentionService {
 
     // Use the mongoose connection to access the collection directly
     const mongoose = await import('mongoose');
-    const collection = mongoose.connection.collection(policy.collection);
 
+    // Check if MongoDB is connected
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('MongoDB not connected');
+    }
+
+    // Check if collection exists before trying to delete
+    const collections = await mongoose.connection.db!.listCollections({ name: policy.collection }).toArray();
+    if (collections.length === 0) {
+      logger.debug(`[DataRetention] Collection '${policy.collection}' does not exist, skipping`);
+      return {
+        policy: policy.name,
+        collection: policy.collection,
+        deletedCount: 0,
+        cutoffDate,
+        executedAt: new Date(),
+      };
+    }
+
+    const collection = mongoose.connection.collection(policy.collection);
     const deleteResult = await collection.deleteMany(filter);
 
     return {

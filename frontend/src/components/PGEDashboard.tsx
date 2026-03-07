@@ -17,7 +17,7 @@
  * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
  * 12. Session Analytics — Adaptive Session Manager (Phase 7)
  * 
- * @version 6.0.0 — PGE Phase 8: Cohort Analytics
+ * @version 7.0.0 — PGE Phase 9: Narrative Intelligence
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -321,6 +321,49 @@ interface CohortDashboardData {
   zScores?: Array<{ dimension: number; zScore: number; percentile: number }>;
 }
 
+interface NarrativeDashboardData {
+  themes: {
+    userId: string;
+    themes: Array<{ theme: string; hits: number; percentage: number }>;
+    topKeywords: Array<{ term: string; score: number }>;
+    totalMessages: number;
+    analyzedAt: string;
+  };
+  linguistic: {
+    userId: string;
+    markers: { rumination: number; avoidance: number; hopeExpression: number; totalMarkers: number };
+    trend: { rumination: number[]; avoidance: number[]; hopeExpression: number[] };
+    analyzedAt: string;
+  };
+  arcs: {
+    userId: string;
+    arcs: Array<{
+      type: 'crisis' | 'recovery' | 'growth' | 'plateau';
+      startIdx: number; endIdx: number; avgEBH: number;
+      dateRange?: { start: string; end: string };
+    }>;
+    coherence: number;
+    totalDataPoints: number;
+    analyzedAt: string;
+  };
+  risk: {
+    userId: string;
+    topicRisks: Array<{ theme: string; avgEBH: number; occurrences: number; impact: 'trigger' | 'neutral' | 'protective' }>;
+    highRiskTopics: string[];
+    protectiveTopics: string[];
+    analyzedAt: string;
+  };
+  insights: {
+    userId: string;
+    insights: Array<{
+      type: 'pattern' | 'warning' | 'strength' | 'milestone';
+      title: string; description: string; confidence: number; relatedThemes: string[];
+    }>;
+    memoryPatterns: Array<{ type: string; count: number; avgConfidence: number }>;
+    analyzedAt: string;
+  };
+}
+
 // ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
@@ -378,7 +421,7 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
@@ -386,6 +429,7 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
   const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [sessionAnalytics, setSessionAnalytics] = useState<SessionAnalyticsData | null>(null);
   const [cohortData, setCohortData] = useState<CohortDashboardData | null>(null);
+  const [narrativeData, setNarrativeData] = useState<NarrativeDashboardData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -531,6 +575,25 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token, fetchCohortDashboard, selectedUserId]);
 
+  const fetchNarrativeDashboard = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/narrative/dashboard/${encodeURIComponent(uid)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setNarrativeData(data.data);
+      else setError(data.error || 'Failed to fetch narrative data');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -562,6 +625,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           </TabBtn>
           <TabBtn active={view === 'cohort'} onClick={() => setView('cohort')}>
             🌐 Dân số
+          </TabBtn>
+          <TabBtn active={view === 'narrative'} onClick={() => setView('narrative')}>
+            📖 Câu chuyện
           </TabBtn>
         </TabRow>
       </Header>
@@ -603,7 +669,7 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchSessionAnalytics(selectedUserId)}
         />
-      ) : (
+      ) : view === 'cohort' ? (
         <CohortView
           data={cohortData}
           loading={loading}
@@ -611,6 +677,14 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchCohortDashboard(selectedUserId || undefined)}
           onGenerateSnapshot={generateSnapshot}
+        />
+      ) : (
+        <NarrativeView
+          data={narrativeData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchNarrativeDashboard(selectedUserId)}
         />
       )}
     </Container>
@@ -3124,5 +3198,323 @@ const TransitionCount = styled.span`margin-left: auto; color: #888; font-size: 0
 const CohortTimestamp = styled.div`
   text-align: center; color: #aaa; font-size: 0.75rem; margin-top: 16px; font-style: italic;
 `;
+
+// ═══════════════════════════════════════════
+// NARRATIVE VIEW (Phase 9)
+// ═══════════════════════════════════════════
+
+const THEME_LABELS: Record<string, string> = {
+  'công_việc': '💼 Công việc', 'gia_đình': '👨‍👩‍👧 Gia đình', 'học_tập': '📚 Học tập',
+  'mối_quan_hệ': '💑 Mối quan hệ', 'sức_khoẻ': '🏥 Sức khoẻ', 'tài_chính': '💰 Tài chính',
+  'bản_thân': '🪞 Bản thân', 'khủng_hoảng': '🚨 Khủng hoảng', 'tương_lai': '🔮 Tương lai',
+};
+
+const ARC_CONFIG: Record<string, { color: string; label: string; icon: string }> = {
+  crisis: { color: '#f44336', label: 'Khủng hoảng', icon: '🔴' },
+  recovery: { color: '#4caf50', label: 'Phục hồi', icon: '🟢' },
+  growth: { color: '#2196f3', label: 'Phát triển', icon: '🔵' },
+  plateau: { color: '#ff9800', label: 'Bình ổn', icon: '🟡' },
+};
+
+const IMPACT_STYLE: Record<string, { color: string; label: string; icon: string }> = {
+  trigger: { color: '#f44336', label: 'Kích hoạt tiêu cực', icon: '⚠️' },
+  neutral: { color: '#ff9800', label: 'Trung tính', icon: '➖' },
+  protective: { color: '#4caf50', label: 'Bảo vệ', icon: '🛡️' },
+};
+
+const INSIGHT_STYLE: Record<string, { color: string; icon: string }> = {
+  pattern: { color: '#2196f3', icon: '🔄' },
+  warning: { color: '#f44336', icon: '⚠️' },
+  strength: { color: '#4caf50', icon: '💪' },
+  milestone: { color: '#9c27b0', icon: '🏆' },
+};
+
+const NarrativeView: React.FC<{
+  data: NarrativeDashboardData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+}> = ({ data, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để phân tích câu chuyện..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading || !selectedUserId}>
+          {loading ? '⏳' : '📖'} Phân tích
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang phân tích câu chuyện người dùng...</LoadingText>}
+
+      {!data && !loading && (
+        <EmptyText>Nhập User ID và nhấn "📖 Phân tích" để xem narrative intelligence.</EmptyText>
+      )}
+
+      {data && !loading && (
+        <>
+          {/* ── INSIGHTS ── */}
+          <NarrCard>
+            <NarrCardTitle>💡 Insights phát hiện ({data.insights.insights.length})</NarrCardTitle>
+            {data.insights.insights.length === 0 ? (
+              <EmptyText>Chưa phát hiện insight nào. Cần thêm cuộc trò chuyện.</EmptyText>
+            ) : (
+              <NarrInsightGrid>
+                {data.insights.insights.map((ins, i) => {
+                  const style = INSIGHT_STYLE[ins.type] || INSIGHT_STYLE.pattern;
+                  return (
+                    <NarrInsightCard key={i} style={{ borderLeft: `4px solid ${style.color}` }}>
+                      <NarrInsightIcon>{style.icon}</NarrInsightIcon>
+                      <div>
+                        <NarrInsightTitle>{ins.title}</NarrInsightTitle>
+                        <NarrInsightDesc>{ins.description}</NarrInsightDesc>
+                        <NarrInsightMeta>
+                          Tin cậy: {(ins.confidence * 100).toFixed(0)}%
+                          {ins.relatedThemes.length > 0 && ` • Chủ đề: ${ins.relatedThemes.map(t => THEME_LABELS[t] || t).join(', ')}`}
+                        </NarrInsightMeta>
+                      </div>
+                    </NarrInsightCard>
+                  );
+                })}
+              </NarrInsightGrid>
+            )}
+          </NarrCard>
+
+          {/* ── THEMES ── */}
+          <NarrCard>
+            <NarrCardTitle>🏷️ Chủ đề chính ({data.themes.themes.length} chủ đề từ {data.themes.totalMessages} tin nhắn)</NarrCardTitle>
+            <NarrThemeGrid>
+              {data.themes.themes.map((t, i) => (
+                <NarrThemeBar key={i}>
+                  <NarrThemeLabel>{THEME_LABELS[t.theme] || t.theme}</NarrThemeLabel>
+                  <NarrThemeBarFill style={{ width: `${t.percentage}%` }} />
+                  <NarrThemePct>{t.percentage}% ({t.hits})</NarrThemePct>
+                </NarrThemeBar>
+              ))}
+            </NarrThemeGrid>
+            {data.themes.topKeywords.length > 0 && (
+              <>
+                <NarrSubTitle>📝 Từ khoá nổi bật (TF-IDF)</NarrSubTitle>
+                <NarrKeywordRow>
+                  {data.themes.topKeywords.slice(0, 12).map((kw, i) => (
+                    <NarrKeywordChip key={i} style={{ fontSize: `${Math.min(1.2, 0.7 + kw.score * 0.05)}rem` }}>
+                      {kw.term}
+                    </NarrKeywordChip>
+                  ))}
+                </NarrKeywordRow>
+              </>
+            )}
+          </NarrCard>
+
+          {/* ── LINGUISTIC MARKERS ── */}
+          <NarrCard>
+            <NarrCardTitle>🗣️ Dấu hiệu ngôn ngữ</NarrCardTitle>
+            <NarrMarkerRow>
+              <NarrMarkerGauge>
+                <NarrMarkerLabel>🔁 Rumination</NarrMarkerLabel>
+                <NarrGaugeBar>
+                  <NarrGaugeFill style={{ width: `${data.linguistic.markers.rumination * 100}%`, background: '#f44336' }} />
+                </NarrGaugeBar>
+                <NarrMarkerVal>{(data.linguistic.markers.rumination * 100).toFixed(0)}%</NarrMarkerVal>
+              </NarrMarkerGauge>
+              <NarrMarkerGauge>
+                <NarrMarkerLabel>🚫 Avoidance</NarrMarkerLabel>
+                <NarrGaugeBar>
+                  <NarrGaugeFill style={{ width: `${data.linguistic.markers.avoidance * 100}%`, background: '#ff9800' }} />
+                </NarrGaugeBar>
+                <NarrMarkerVal>{(data.linguistic.markers.avoidance * 100).toFixed(0)}%</NarrMarkerVal>
+              </NarrMarkerGauge>
+              <NarrMarkerGauge>
+                <NarrMarkerLabel>🌱 Hope</NarrMarkerLabel>
+                <NarrGaugeBar>
+                  <NarrGaugeFill style={{ width: `${data.linguistic.markers.hopeExpression * 100}%`, background: '#4caf50' }} />
+                </NarrGaugeBar>
+                <NarrMarkerVal>{(data.linguistic.markers.hopeExpression * 100).toFixed(0)}%</NarrMarkerVal>
+              </NarrMarkerGauge>
+            </NarrMarkerRow>
+            {data.linguistic.trend.rumination.length > 1 && (
+              <>
+                <NarrSubTitle>📈 Xu hướng theo thời gian</NarrSubTitle>
+                <NarrTrendRow>
+                  {['rumination', 'avoidance', 'hopeExpression'].map(key => (
+                    <NarrTrendLine key={key}>
+                      <NarrTrendLabel>{key === 'rumination' ? '🔁' : key === 'avoidance' ? '🚫' : '🌱'} {key}</NarrTrendLabel>
+                      <NarrSparkline>
+                        {(data.linguistic.trend as any)[key].map((v: number, i: number) => (
+                          <NarrSparkDot key={i} style={{
+                            bottom: `${v * 100}%`,
+                            left: `${(i / Math.max(1, (data.linguistic.trend as any)[key].length - 1)) * 100}%`,
+                            background: key === 'rumination' ? '#f44336' : key === 'avoidance' ? '#ff9800' : '#4caf50',
+                          }} />
+                        ))}
+                      </NarrSparkline>
+                    </NarrTrendLine>
+                  ))}
+                </NarrTrendRow>
+              </>
+            )}
+          </NarrCard>
+
+          {/* ── STORY ARCS ── */}
+          <NarrCard>
+            <NarrCardTitle>📚 Story Arcs (Mạch lạc: {(data.arcs.coherence * 100).toFixed(0)}%)</NarrCardTitle>
+            {data.arcs.arcs.length === 0 ? (
+              <EmptyText>Chưa đủ dữ liệu để phát hiện story arc.</EmptyText>
+            ) : (
+              <NarrArcTimeline>
+                {data.arcs.arcs.map((arc, i) => {
+                  const cfg = ARC_CONFIG[arc.type];
+                  return (
+                    <NarrArcSegment key={i} style={{ borderLeft: `4px solid ${cfg.color}` }}>
+                      <NarrArcIcon>{cfg.icon}</NarrArcIcon>
+                      <div>
+                        <NarrArcType style={{ color: cfg.color }}>{cfg.label}</NarrArcType>
+                        <NarrArcDetail>
+                          EBH TB: {arc.avgEBH.toFixed(2)} | Chỉ số {arc.startIdx}→{arc.endIdx}
+                          {arc.dateRange && (
+                            <> | {new Date(arc.dateRange.start).toLocaleDateString('vi')} → {new Date(arc.dateRange.end).toLocaleDateString('vi')}</>
+                          )}
+                        </NarrArcDetail>
+                      </div>
+                    </NarrArcSegment>
+                  );
+                })}
+              </NarrArcTimeline>
+            )}
+          </NarrCard>
+
+          {/* ── TOPIC RISK ── */}
+          <NarrCard>
+            <NarrCardTitle>🎯 Hồ sơ rủi ro chủ đề</NarrCardTitle>
+            {data.risk.topicRisks.length === 0 ? (
+              <EmptyText>Chưa đủ dữ liệu để đánh giá rủi ro.</EmptyText>
+            ) : (
+              <NarrRiskGrid>
+                {data.risk.topicRisks.map((tr, i) => {
+                  const imp = IMPACT_STYLE[tr.impact];
+                  return (
+                    <NarrRiskCard key={i} style={{ borderLeft: `4px solid ${imp.color}` }}>
+                      <NarrRiskTheme>{THEME_LABELS[tr.theme] || tr.theme}</NarrRiskTheme>
+                      <NarrRiskDetail>
+                        {imp.icon} {imp.label} • EBH TB: {tr.avgEBH.toFixed(2)} • {tr.occurrences} lần
+                      </NarrRiskDetail>
+                    </NarrRiskCard>
+                  );
+                })}
+              </NarrRiskGrid>
+            )}
+          </NarrCard>
+
+          {/* ── MEMORY PATTERNS ── */}
+          {data.insights.memoryPatterns.length > 0 && (
+            <NarrCard>
+              <NarrCardTitle>🧠 Mẫu trí nhớ dài hạn</NarrCardTitle>
+              <NarrMemoryGrid>
+                {data.insights.memoryPatterns.map((mp, i) => (
+                  <NarrMemoryItem key={i}>
+                    <NarrMemoryType>{mp.type}</NarrMemoryType>
+                    <NarrMemoryCount>{mp.count} mục</NarrMemoryCount>
+                    <NarrMemoryConf>Tin cậy: {(mp.avgConfidence * 100).toFixed(0)}%</NarrMemoryConf>
+                  </NarrMemoryItem>
+                ))}
+              </NarrMemoryGrid>
+            </NarrCard>
+          )}
+        </>
+      )}
+    </>
+  );
+};
+
+// ── Narrative Styled Components ──
+
+const NarrCard = styled.div`
+  background: #fff; border-radius: 16px; padding: 20px 24px; margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+`;
+const NarrCardTitle = styled.h3`
+  font-size: 1.05rem; font-weight: 700; margin: 0 0 14px 0; color: #333;
+`;
+const NarrSubTitle = styled.h4`
+  font-size: 0.9rem; font-weight: 600; margin: 16px 0 8px 0; color: #555;
+`;
+
+const NarrInsightGrid = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const NarrInsightCard = styled.div`
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+  background: #fafafa; border-radius: 10px;
+`;
+const NarrInsightIcon = styled.span`font-size: 1.3rem; margin-top: 2px;`;
+const NarrInsightTitle = styled.div`font-weight: 600; font-size: 0.9rem; color: #333;`;
+const NarrInsightDesc = styled.div`font-size: 0.82rem; color: #555; margin-top: 2px;`;
+const NarrInsightMeta = styled.div`font-size: 0.72rem; color: #999; margin-top: 4px;`;
+
+const NarrThemeGrid = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const NarrThemeBar = styled.div`
+  display: flex; align-items: center; gap: 10px; position: relative;
+`;
+const NarrThemeLabel = styled.span`min-width: 130px; font-size: 0.85rem; font-weight: 500;`;
+const NarrThemeBarFill = styled.div`
+  height: 18px; background: linear-gradient(90deg, #7c4dff, #b388ff); border-radius: 9px; min-width: 4px;
+  transition: width 0.4s ease;
+`;
+const NarrThemePct = styled.span`font-size: 0.75rem; color: #888;`;
+
+const NarrKeywordRow = styled.div`display: flex; flex-wrap: wrap; gap: 6px;`;
+const NarrKeywordChip = styled.span`
+  background: linear-gradient(135deg, #e8eaf6, #c5cae9); color: #283593;
+  padding: 4px 10px; border-radius: 14px; font-weight: 500;
+`;
+
+const NarrMarkerRow = styled.div`display: flex; gap: 16px; flex-wrap: wrap;`;
+const NarrMarkerGauge = styled.div`flex: 1; min-width: 150px;`;
+const NarrMarkerLabel = styled.div`font-size: 0.82rem; font-weight: 500; margin-bottom: 4px;`;
+const NarrGaugeBar = styled.div`
+  height: 10px; background: #eee; border-radius: 5px; overflow: hidden;
+`;
+const NarrGaugeFill = styled.div`
+  height: 100%; border-radius: 5px; transition: width 0.4s ease;
+`;
+const NarrMarkerVal = styled.div`font-size: 0.72rem; color: #888; text-align: right; margin-top: 2px;`;
+
+const NarrTrendRow = styled.div`display: flex; gap: 16px; flex-wrap: wrap;`;
+const NarrTrendLine = styled.div`flex: 1; min-width: 150px;`;
+const NarrTrendLabel = styled.div`font-size: 0.78rem; font-weight: 500; margin-bottom: 4px;`;
+const NarrSparkline = styled.div`
+  position: relative; height: 40px; background: #f5f5f5; border-radius: 6px;
+`;
+const NarrSparkDot = styled.div`
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  transform: translate(-50%, 50%);
+`;
+
+const NarrArcTimeline = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const NarrArcSegment = styled.div`
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: #fafafa; border-radius: 10px;
+`;
+const NarrArcIcon = styled.span`font-size: 1.2rem;`;
+const NarrArcType = styled.div`font-weight: 600; font-size: 0.88rem;`;
+const NarrArcDetail = styled.div`font-size: 0.75rem; color: #777; margin-top: 2px;`;
+
+const NarrRiskGrid = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const NarrRiskCard = styled.div`
+  padding: 10px 14px; background: #fafafa; border-radius: 10px;
+`;
+const NarrRiskTheme = styled.div`font-weight: 600; font-size: 0.88rem; color: #333;`;
+const NarrRiskDetail = styled.div`font-size: 0.78rem; color: #666; margin-top: 4px;`;
+
+const NarrMemoryGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;`;
+const NarrMemoryItem = styled.div`
+  background: #f5f5f5; padding: 12px; border-radius: 10px; text-align: center;
+`;
+const NarrMemoryType = styled.div`font-weight: 600; font-size: 0.85rem; text-transform: capitalize;`;
+const NarrMemoryCount = styled.div`font-size: 1.1rem; font-weight: 700; color: #7c4dff; margin: 4px 0;`;
+const NarrMemoryConf = styled.div`font-size: 0.72rem; color: #999;`;
 
 export default PGEDashboard;

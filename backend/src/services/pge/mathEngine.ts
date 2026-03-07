@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 6.0.0 — Phase 8: Cohort Analytics + Phase 3-7
+ * @version 7.0.0 — Phase 9: Narrative Intelligence + Phase 3-8
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -3166,4 +3166,261 @@ export function populationSummary(
     ebh: { mean: ebhMean, std: ebhStd, dangerCount, safeCount },
     effectiveness: { mean: effMean, std: effStd },
   };
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██████  PHASE 9: NARRATIVE INTELLIGENCE
+// ════════════════════════════════════════════════════════════════
+
+/** Vietnamese stop words for TF-IDF filtering */
+const VI_STOP_WORDS = new Set([
+  'của', 'và', 'là', 'có', 'nhưng', 'hoặc', 'nếu', 'thì', 'vì',
+  'nên', 'rất', 'quá', 'cũng', 'đã', 'đang', 'sẽ', 'không',
+  'bị', 'được', 'cho', 'đến', 'từ', 'trong', 'ngoài',
+  'trên', 'dưới', 'với', 'bởi', 'theo', 'qua',
+  'tôi', 'em', 'mình', 'bạn', 'nó', 'họ', 'chúng',
+  'đây', 'đó', 'kia', 'này', 'nắy', 'vậy',
+  'cái', 'các', 'những', 'một', 'hai', 'ba',
+  'đi', 'đến', 'lên', 'xuống', 'vào', 'ra',
+  'rồi', 'lắm', 'nữa', 'vẫn', 'chỉ', 'hơi',
+  'biết', 'nghĩ', 'thấy', 'muốn', 'cần', 'phải',
+  'còn', 'nào', 'gì', 'sao', 'ai', 'đâu',
+  'làm', 'hay', 'lại', 'nửa', 'khi', 'lúc',
+]);
+
+/** Theme keywords for Vietnamese psychological context */
+const THEME_KEYWORDS: Record<string, string[]> = {
+  'công_việc': ['công việc', 'làm việc', 'sếp', 'đồng nghiệp', 'công ty', 'lương', 'nghỉ việc', 'thăng chức', 'deadline', 'stress công việc', 'dự án'],
+  'gia_đình': ['gia đình', 'bố mẹ', 'anh chị em', 'con cái', 'chồng', 'vợ', 'bố', 'mẹ', 'nhà', 'hôn nhân', 'ly hôn'],
+  'học_tập': ['học', 'thi', 'điểm', 'trường', 'lớp', 'giáo viên', 'sinh viên', 'bài tập', 'luận văn', 'đồ án'],
+  'mối_quan_hệ': ['bạn bè', 'người yêu', 'chia tay', 'cô đơn', 'bị bỏ rơi', 'tin tưởng', 'phản bội', 'đổ vỡ', 'xã hội'],
+  'sức_khoẻ': ['sức khỏe', 'bệnh', 'đau', 'mệt', 'giấc ngủ', 'ngủ', 'sụt cân', 'thuốc', 'bác sĩ', 'bệnh viện'],
+  'tài_chính': ['tiền', 'nợ', 'trả nợ', 'thiếu tiền', 'thu nhập', 'chi tiêu', 'tiết kiệm', 'tài chính'],
+  'bản_thân': ['bản thân', 'tự ti', 'xấu hổ', 'tội lỗi', 'giá trị', 'không xứng đáng', 'thất bại', 'bất lực', 'vô dụng'],
+  'khủng_hoảng': ['chết', 'tự tử', 'tự hại', 'không muốn sống', 'tuyệt vọng', 'bế tắc', 'sụp đổ', 'không lối thoát'],
+  'tương_lai': ['tương lai', 'mơ ước', 'kế hoạch', 'mục tiêu', 'hy vọng', 'lo lắng tương lai', 'sợ hãi'],
+};
+
+/**
+ * Extract themes from text using keyword matching.
+ * Returns matched themes with hit counts.
+ */
+export function extractThemes(
+  text: string
+): Array<{ theme: string; hits: number }> {
+  const lower = text.toLowerCase();
+  const results: Array<{ theme: string; hits: number }> = [];
+
+  for (const [theme, keywords] of Object.entries(THEME_KEYWORDS)) {
+    let hits = 0;
+    for (const kw of keywords) {
+      // Count occurrences
+      let idx = 0;
+      while ((idx = lower.indexOf(kw, idx)) !== -1) {
+        hits++;
+        idx += kw.length;
+      }
+    }
+    if (hits > 0) results.push({ theme, hits });
+  }
+
+  return results.sort((a, b) => b.hits - a.hits);
+}
+
+/**
+ * Compute TF-IDF scores for significant words in a corpus of documents.
+ * Returns top-K terms by TF-IDF score.
+ */
+export function computeTfIdf(
+  documents: string[],
+  topK: number = 20
+): Array<{ term: string; score: number }> {
+  if (documents.length === 0) return [];
+
+  // Tokenize
+  const tokenized = documents.map(doc =>
+    doc.toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 1 && !VI_STOP_WORDS.has(w))
+  );
+
+  // Document frequency
+  const df: Record<string, number> = {};
+  for (const tokens of tokenized) {
+    const unique = new Set(tokens);
+    for (const t of unique) {
+      df[t] = (df[t] || 0) + 1;
+    }
+  }
+
+  // TF-IDF per term (aggregated across all docs)
+  const tfidf: Record<string, number> = {};
+  const N = documents.length;
+
+  for (const tokens of tokenized) {
+    const tf: Record<string, number> = {};
+    for (const t of tokens) tf[t] = (tf[t] || 0) + 1;
+    const maxTf = Math.max(...Object.values(tf), 1);
+
+    for (const [term, count] of Object.entries(tf)) {
+      const normalizedTf = count / maxTf;
+      const idf = Math.log((N + 1) / ((df[term] || 0) + 1)) + 1;
+      tfidf[term] = (tfidf[term] || 0) + normalizedTf * idf;
+    }
+  }
+
+  return Object.entries(tfidf)
+    .map(([term, score]) => ({ term, score }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+}
+
+/**
+ * Detect linguistic markers in text.
+ * Counts rumination (repetitive negative patterns), avoidance markers,
+ * and hope expressions.
+ */
+export function detectLinguisticMarkers(texts: string[]): {
+  rumination: number;   // 0-1
+  avoidance: number;    // 0-1
+  hopeExpression: number; // 0-1
+  totalMarkers: number;
+} {
+  const RUMINATION_PATTERNS = [
+    'tại sao', 'lúc nào cũng', 'cứ lặp lại', 'không thể ngừng',
+    'suốt ngày', 'mãi không', 'luôn luôn', 'lại thế',
+    'cứ nghĩ', 'không quên được', 'không bỏ được',
+  ];
+  const AVOIDANCE_PATTERNS = [
+    'không muốn nói', 'bỏ qua đi', 'không quan trọng',
+    'không sao đâu', 'thôi kệ', 'mặc kệ', 'trốn tránh',
+    'không dám', 'ngại', 'sợ',
+  ];
+  const HOPE_PATTERNS = [
+    'hy vọng', 'tin tưởng', 'sẽ tốt hơn', 'cố gắng', 'thử lại',
+    'cơ hội', 'khá hơn', 'vui', 'hạnh phúc', 'biết ơn',
+    'cảm ơn', 'tích cực', 'lạc quan', 'tự tin',
+  ];
+
+  let rumCount = 0, avdCount = 0, hopeCount = 0;
+  const combined = texts.join(' ').toLowerCase();
+
+  for (const p of RUMINATION_PATTERNS) {
+    let idx = 0;
+    while ((idx = combined.indexOf(p, idx)) !== -1) { rumCount++; idx += p.length; }
+  }
+  for (const p of AVOIDANCE_PATTERNS) {
+    let idx = 0;
+    while ((idx = combined.indexOf(p, idx)) !== -1) { avdCount++; idx += p.length; }
+  }
+  for (const p of HOPE_PATTERNS) {
+    let idx = 0;
+    while ((idx = combined.indexOf(p, idx)) !== -1) { hopeCount++; idx += p.length; }
+  }
+
+  const total = rumCount + avdCount + hopeCount;
+  const maxNorm = Math.max(total, 1);
+
+  return {
+    rumination: Math.min(1, rumCount / maxNorm),
+    avoidance: Math.min(1, avdCount / maxNorm),
+    hopeExpression: Math.min(1, hopeCount / maxNorm),
+    totalMarkers: total,
+  };
+}
+
+/**
+ * Detect story arcs from a sequence of EBH scores.
+ * Classifies sub-sequences into crisis, recovery, or growth arcs.
+ */
+export function detectStoryArcs(
+  ebhScores: number[],
+  windowSize: number = 5
+): Array<{ type: 'crisis' | 'recovery' | 'growth' | 'plateau'; startIdx: number; endIdx: number; avgEBH: number }> {
+  if (ebhScores.length < windowSize) return [];
+
+  const arcs: Array<{ type: 'crisis' | 'recovery' | 'growth' | 'plateau'; startIdx: number; endIdx: number; avgEBH: number }> = [];
+
+  for (let i = 0; i <= ebhScores.length - windowSize; i += Math.max(1, Math.floor(windowSize / 2))) {
+    const window = ebhScores.slice(i, i + windowSize);
+    const avg = window.reduce((s, v) => s + v, 0) / window.length;
+    const trend = window[window.length - 1] - window[0];
+
+    let type: 'crisis' | 'recovery' | 'growth' | 'plateau';
+    if (avg > 0.6 && trend > 0) type = 'crisis';
+    else if (trend < -0.1) type = 'recovery';
+    else if (avg < 0.3 && trend <= 0) type = 'growth';
+    else type = 'plateau';
+
+    arcs.push({ type, startIdx: i, endIdx: i + windowSize - 1, avgEBH: avg });
+  }
+
+  // Merge consecutive same-type arcs
+  const merged: typeof arcs = [];
+  for (const arc of arcs) {
+    const last = merged[merged.length - 1];
+    if (last && last.type === arc.type) {
+      last.endIdx = arc.endIdx;
+      last.avgEBH = (last.avgEBH + arc.avgEBH) / 2;
+    } else {
+      merged.push({ ...arc });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Score narrative coherence: how logically consistent is the emotional trajectory.
+ * Based on autocorrelation smoothness — low jitter = high coherence.
+ */
+export function narrativeCoherence(ebhScores: number[]): number {
+  if (ebhScores.length < 3) return 0.5;
+
+  let jitter = 0;
+  for (let i = 2; i < ebhScores.length; i++) {
+    // Direction change = incoherence
+    const d1 = ebhScores[i - 1] - ebhScores[i - 2];
+    const d2 = ebhScores[i] - ebhScores[i - 1];
+    if (d1 * d2 < 0) jitter++; // sign change
+  }
+
+  const maxChanges = ebhScores.length - 2;
+  return 1 - (jitter / maxChanges);
+}
+
+/**
+ * Compute theme-emotion correlation.
+ * Given themes per message and corresponding EBH/ES scores,
+ * returns which themes correlate with higher/lower EBH.
+ */
+export function themeEmotionCorrelation(
+  themeHits: Array<{ theme: string; hits: number }>[],
+  ebhScores: number[]
+): Array<{ theme: string; avgEBH: number; occurrences: number; impact: 'trigger' | 'neutral' | 'protective' }> {
+  if (themeHits.length !== ebhScores.length) return [];
+
+  const themeStats: Record<string, { totalEBH: number; count: number }> = {};
+
+  for (let i = 0; i < themeHits.length; i++) {
+    for (const th of themeHits[i]) {
+      if (!themeStats[th.theme]) themeStats[th.theme] = { totalEBH: 0, count: 0 };
+      themeStats[th.theme].totalEBH += ebhScores[i];
+      themeStats[th.theme].count++;
+    }
+  }
+
+  const overallAvgEBH = ebhScores.length > 0
+    ? ebhScores.reduce((s, v) => s + v, 0) / ebhScores.length : 0;
+
+  return Object.entries(themeStats)
+    .map(([theme, stats]) => {
+      const avgEBH = stats.totalEBH / stats.count;
+      const impact: 'trigger' | 'neutral' | 'protective' =
+        avgEBH > overallAvgEBH + 0.1 ? 'trigger' :
+        avgEBH < overallAvgEBH - 0.1 ? 'protective' : 'neutral';
+      return { theme, avgEBH, occurrences: stats.count, impact };
+    })
+    .sort((a, b) => b.avgEBH - a.avgEBH);
 }

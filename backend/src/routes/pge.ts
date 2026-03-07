@@ -45,6 +45,7 @@ import { banditPolicy } from '../services/pge/banditPolicy';
 import { forecastEngine } from '../services/pge/forecastEngine';
 import { sessionManager } from '../services/pge/sessionManager';
 import { cohortEngine } from '../services/pge/cohortEngine';
+import { narrativeIntelligenceEngine } from '../services/pge/narrativeIntelligenceEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -828,6 +829,112 @@ router.post('/cohort/snapshot',
     } catch (error) {
       logger.error('[PGE Route] cohort snapshot error:', error);
       res.status(500).json({ success: false, error: 'Failed to generate snapshot' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// ██████  PHASE 9: NARRATIVE INTELLIGENCE ENDPOINTS
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * GET /narrative/themes/:userId — Thematic profile
+ */
+router.get('/narrative/themes/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const themes = await narrativeIntelligenceEngine.analyzeThemes(userId);
+      res.json({ success: true, data: themes });
+    } catch (error) {
+      logger.error('[PGE Route] narrative themes error:', error);
+      res.status(500).json({ success: false, error: 'Failed to analyze themes' });
+    }
+  }
+);
+
+/**
+ * GET /narrative/linguistic/:userId — Linguistic markers profile
+ */
+router.get('/narrative/linguistic/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const linguistic = await narrativeIntelligenceEngine.getLinguisticProfile(userId);
+      res.json({ success: true, data: linguistic });
+    } catch (error) {
+      logger.error('[PGE Route] narrative linguistic error:', error);
+      res.status(500).json({ success: false, error: 'Failed to analyze linguistic markers' });
+    }
+  }
+);
+
+/**
+ * GET /narrative/arcs/:userId — Story arc detection
+ */
+router.get('/narrative/arcs/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const arcs = await narrativeIntelligenceEngine.detectUserStoryArcs(userId);
+      res.json({ success: true, data: arcs });
+    } catch (error) {
+      logger.error('[PGE Route] narrative arcs error:', error);
+      res.status(500).json({ success: false, error: 'Failed to detect story arcs' });
+    }
+  }
+);
+
+/**
+ * GET /narrative/risk/:userId — Topic risk profile
+ */
+router.get('/narrative/risk/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const risk = await narrativeIntelligenceEngine.getTopicRiskProfile(userId);
+      res.json({ success: true, data: risk });
+    } catch (error) {
+      logger.error('[PGE Route] narrative risk error:', error);
+      res.status(500).json({ success: false, error: 'Failed to compute topic risk' });
+    }
+  }
+);
+
+/**
+ * GET /narrative/insights/:userId — Full narrative insights
+ */
+router.get('/narrative/insights/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const insights = await narrativeIntelligenceEngine.getInsights(userId);
+      res.json({ success: true, data: insights });
+    } catch (error) {
+      logger.error('[PGE Route] narrative insights error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate insights' });
+    }
+  }
+);
+
+/**
+ * GET /narrative/dashboard/:userId — Full narrative dashboard (all analyses)
+ */
+router.get('/narrative/dashboard/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const dashboard = await narrativeIntelligenceEngine.getFullNarrativeDashboard(userId);
+      res.json({ success: true, data: dashboard });
+    } catch (error) {
+      logger.error('[PGE Route] narrative dashboard error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate narrative dashboard' });
     }
   }
 );

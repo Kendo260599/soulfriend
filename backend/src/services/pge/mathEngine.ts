@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 5.0.0 — Phase 7: Adaptive Session Manager + Phase 3-6
+ * @version 6.0.0 — Phase 8: Cohort Analytics + Phase 3-7
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -2921,4 +2921,249 @@ export function computeSessionDepth(
 
   // Normalize to [0, 1]: delta of 0.15 per dimension ≈ deep engagement
   return Math.min(1, avgDelta / 0.15);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██████  PHASE 8: COHORT ANALYTICS
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Compute centroid (mean vector) of a cluster of state vectors.
+ */
+export function computeCentroid(vectors: Vec[]): Vec {
+  if (vectors.length === 0) return [];
+  const dim = vectors[0].length;
+  const sum = new Array(dim).fill(0);
+  for (const v of vectors) {
+    for (let i = 0; i < dim; i++) sum[i] += v[i];
+  }
+  return sum.map(s => s / vectors.length);
+}
+
+/**
+ * Compute within-cluster variance (average squared distance to centroid).
+ */
+export function clusterVariance(vectors: Vec[], centroid: Vec): number {
+  if (vectors.length === 0) return 0;
+  let total = 0;
+  for (const v of vectors) {
+    let dist2 = 0;
+    for (let i = 0; i < centroid.length; i++) {
+      dist2 += (v[i] - centroid[i]) ** 2;
+    }
+    total += dist2;
+  }
+  return total / vectors.length;
+}
+
+/**
+ * K-Means clustering for state vectors.
+ * Returns cluster assignments (index per vector) and centroids.
+ */
+export function kMeansClustering(
+  vectors: Vec[],
+  k: number,
+  maxIterations: number = 30
+): { assignments: number[]; centroids: Vec[] } {
+  if (vectors.length === 0 || k <= 0) return { assignments: [], centroids: [] };
+  const n = vectors.length;
+  const dim = vectors[0].length;
+  k = Math.min(k, n);
+
+  // Initialize centroids: pick k evenly spaced vectors
+  const centroids: Vec[] = [];
+  for (let i = 0; i < k; i++) {
+    const idx = Math.floor((i * n) / k);
+    centroids.push([...vectors[idx]]);
+  }
+
+  let assignments = new Array(n).fill(0);
+
+  for (let iter = 0; iter < maxIterations; iter++) {
+    // Assign each vector to nearest centroid
+    const newAssignments = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      let minDist = Infinity;
+      let bestC = 0;
+      for (let c = 0; c < k; c++) {
+        let dist = 0;
+        for (let d = 0; d < dim; d++) {
+          dist += (vectors[i][d] - centroids[c][d]) ** 2;
+        }
+        if (dist < minDist) { minDist = dist; bestC = c; }
+      }
+      newAssignments[i] = bestC;
+    }
+
+    // Check convergence
+    let changed = false;
+    for (let i = 0; i < n; i++) {
+      if (newAssignments[i] !== assignments[i]) { changed = true; break; }
+    }
+    assignments = newAssignments;
+    if (!changed) break;
+
+    // Recompute centroids
+    for (let c = 0; c < k; c++) {
+      const members = vectors.filter((_, i) => assignments[i] === c);
+      if (members.length > 0) {
+        const cent = computeCentroid(members);
+        for (let d = 0; d < dim; d++) centroids[c][d] = cent[d];
+      }
+    }
+  }
+
+  return { assignments, centroids };
+}
+
+/**
+ * Cosine similarity between two vectors.
+ * Returns value in [-1, 1], higher = more similar.
+ */
+export function cosineSimilarity(a: Vec, b: Vec): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  const denom = Math.sqrt(na) * Math.sqrt(nb);
+  return denom > 0 ? dot / denom : 0;
+}
+
+/**
+ * Compute per-dimension z-score of a user's mean state vs population.
+ * Returns array of { dimension, zScore, percentile }.
+ */
+export function computePopulationZScores(
+  userMean: Vec,
+  populationMeans: Vec[]
+): Array<{ dimension: number; zScore: number; percentile: number }> {
+  if (populationMeans.length < 2) return [];
+  const dim = userMean.length;
+  const results: Array<{ dimension: number; zScore: number; percentile: number }> = [];
+
+  for (let d = 0; d < dim; d++) {
+    const vals = populationMeans.map(v => v[d] ?? 0);
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    const std = Math.sqrt(variance);
+
+    const zScore = std > 1e-9 ? (userMean[d] - mean) / std : 0;
+    // Approximate percentile from z-score using logistic CDF
+    const percentile = 1 / (1 + Math.exp(-1.7 * zScore));
+
+    results.push({ dimension: d, zScore, percentile });
+  }
+  return results;
+}
+
+/**
+ * Compute cohort recovery benchmark.
+ * Given an array of session effectiveness scores for a cohort,
+ * returns { mean, median, p25, p75, rank } where rank is the user's percentile.
+ */
+export function cohortBenchmark(
+  cohortScores: number[],
+  userScore: number
+): { mean: number; median: number; p25: number; p75: number; rank: number } {
+  if (cohortScores.length === 0) {
+    return { mean: 0, median: 0, p25: 0, p75: 0, rank: 0.5 };
+  }
+  const sorted = [...cohortScores].sort((a, b) => a - b);
+  const n = sorted.length;
+  const mean = sorted.reduce((s, v) => s + v, 0) / n;
+  const median = n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
+  const p25 = sorted[Math.floor(n * 0.25)];
+  const p75 = sorted[Math.floor(n * 0.75)];
+  const rank = sorted.filter(s => s <= userScore).length / n;
+  return { mean, median, p25, p75, rank };
+}
+
+/**
+ * Detect common state transition patterns across population.
+ * Input: array of user trajectories (each = array of zone labels).
+ * Returns top-k most frequent bigram transitions with counts.
+ */
+export function mineTransitionPatterns(
+  trajectories: string[][],
+  topK: number = 10
+): Array<{ from: string; to: string; count: number; probability: number }> {
+  const bigramCounts: Record<string, number> = {};
+  let totalBigrams = 0;
+
+  for (const traj of trajectories) {
+    for (let i = 1; i < traj.length; i++) {
+      const key = `${traj[i - 1]}→${traj[i]}`;
+      bigramCounts[key] = (bigramCounts[key] || 0) + 1;
+      totalBigrams++;
+    }
+  }
+
+  return Object.entries(bigramCounts)
+    .map(([key, count]) => {
+      const [from, to] = key.split('→');
+      return { from, to, count, probability: totalBigrams > 0 ? count / totalBigrams : 0 };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, topK);
+}
+
+/**
+ * Compute intervention effectiveness by cohort.
+ * Groups interventions by type, computes mean deltaEBH per type.
+ */
+export function interventionEffectivenessByCohort(
+  records: Array<{ interventionType: string; deltaEBH: number }>
+): Array<{ type: string; count: number; avgDeltaEBH: number; successRate: number }> {
+  const groups: Record<string, { deltas: number[] }> = {};
+
+  for (const r of records) {
+    if (!groups[r.interventionType]) groups[r.interventionType] = { deltas: [] };
+    groups[r.interventionType].deltas.push(r.deltaEBH);
+  }
+
+  return Object.entries(groups)
+    .map(([type, g]) => {
+      const avg = g.deltas.reduce((s, v) => s + v, 0) / g.deltas.length;
+      const successRate = g.deltas.filter(d => d < 0).length / g.deltas.length; // negative delta = improvement
+      return { type, count: g.deltas.length, avgDeltaEBH: avg, successRate };
+    })
+    .sort((a, b) => a.avgDeltaEBH - b.avgDeltaEBH); // best (most negative) first
+}
+
+/**
+ * Compute population-level summary statistics.
+ */
+export function populationSummary(
+  ebhScores: number[],
+  effectivenessScores: number[]
+): {
+  totalUsers: number;
+  ebh: { mean: number; std: number; dangerCount: number; safeCount: number };
+  effectiveness: { mean: number; std: number };
+} {
+  const n = ebhScores.length;
+  if (n === 0) return {
+    totalUsers: 0,
+    ebh: { mean: 0, std: 0, dangerCount: 0, safeCount: 0 },
+    effectiveness: { mean: 0, std: 0 },
+  };
+
+  const ebhMean = ebhScores.reduce((s, v) => s + v, 0) / n;
+  const ebhStd = Math.sqrt(ebhScores.reduce((s, v) => s + (v - ebhMean) ** 2, 0) / n);
+  const dangerCount = ebhScores.filter(e => e > 0.6).length;
+  const safeCount = ebhScores.filter(e => e <= 0.3).length;
+
+  const effMean = effectivenessScores.length > 0
+    ? effectivenessScores.reduce((s, v) => s + v, 0) / effectivenessScores.length : 0;
+  const effStd = effectivenessScores.length > 1
+    ? Math.sqrt(effectivenessScores.reduce((s, v) => s + (v - effMean) ** 2, 0) / effectivenessScores.length) : 0;
+
+  return {
+    totalUsers: n,
+    ebh: { mean: ebhMean, std: ebhStd, dangerCount, safeCount },
+    effectiveness: { mean: effMean, std: effStd },
+  };
 }

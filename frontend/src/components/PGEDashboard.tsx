@@ -17,7 +17,7 @@
  * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
  * 12. Session Analytics — Adaptive Session Manager (Phase 7)
  * 
- * @version 5.0.0 — PGE Phase 7: Adaptive Session Manager
+ * @version 6.0.0 — PGE Phase 8: Cohort Analytics
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -274,6 +274,53 @@ interface SessionAnalyticsData {
   }>;
 }
 
+interface CohortDashboardData {
+  hasSnapshot: boolean;
+  snapshot: {
+    snapshotDate: string;
+    totalUsers: number;
+    cohorts: Array<{
+      cohortId: number;
+      label: string;
+      memberCount: number;
+      variance: number;
+      avgEBH: number;
+      avgEffectiveness: number;
+      avgRecoveryRate: number;
+      dominantSessionType: string;
+      topInterventions: Array<{ type: string; successRate: number }>;
+    }>;
+    populationStats: {
+      ebhMean: number;
+      ebhStd: number;
+      dangerCount: number;
+      safeCount: number;
+      effectivenessMean: number;
+      effectivenessStd: number;
+    };
+    transitionPatterns: Array<{
+      from: string;
+      to: string;
+      count: number;
+      probability: number;
+    }>;
+  } | null;
+  userCohort?: {
+    assigned: boolean;
+    cohortId?: number;
+    cohortLabel?: string;
+    similarity?: number;
+    peerComparison?: {
+      ebhPercentile: number;
+      effectivenessPercentile: number;
+      recoveryRatePercentile: number;
+    };
+    peerCount?: number;
+    message?: string;
+  };
+  zScores?: Array<{ dimension: number; zScore: number; percentile: number }>;
+}
+
 // ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
@@ -331,13 +378,14 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
   const [landscapeData, setLandscapeData] = useState<LandscapeData | null>(null);
   const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [sessionAnalytics, setSessionAnalytics] = useState<SessionAnalyticsData | null>(null);
+  const [cohortData, setCohortData] = useState<CohortDashboardData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -440,6 +488,49 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchCohortDashboard = useCallback(async (uid?: string) => {
+    try {
+      setLoading(true);
+      setError('');
+      const url = uid
+        ? `${API_URL}/api/pge/cohort/population?userId=${encodeURIComponent(uid)}`
+        : `${API_URL}/api/pge/cohort/population`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setCohortData(data.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const generateSnapshot = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/cohort/snapshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ k: 4 }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) {
+        await fetchCohortDashboard(selectedUserId || undefined);
+      } else {
+        setError(data.message || 'Failed to generate snapshot');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, fetchCohortDashboard, selectedUserId]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -468,6 +559,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           </TabBtn>
           <TabBtn active={view === 'sessions'} onClick={() => setView('sessions')}>
             📅 Phiên tâm lý
+          </TabBtn>
+          <TabBtn active={view === 'cohort'} onClick={() => setView('cohort')}>
+            🌐 Dân số
           </TabBtn>
         </TabRow>
       </Header>
@@ -501,13 +595,22 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchForecast(selectedUserId)}
         />
-      ) : (
+      ) : view === 'sessions' ? (
         <SessionView
           analytics={sessionAnalytics}
           loading={loading}
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchSessionAnalytics(selectedUserId)}
+        />
+      ) : (
+        <CohortView
+          data={cohortData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchCohortDashboard(selectedUserId || undefined)}
+          onGenerateSnapshot={generateSnapshot}
         />
       )}
     </Container>
@@ -1678,6 +1781,200 @@ const SessionView: React.FC<{
 };
 
 // ═══════════════════════════════════════════
+// COHORT VIEW COMPONENT
+// ═══════════════════════════════════════════
+
+const COHORT_COLOR_MAP: Record<number, string> = {
+  0: '#f44336', 1: '#ff9800', 2: '#2196f3', 3: '#4caf50',
+};
+const COHORT_ICON_MAP: Record<number, string> = {
+  0: '🚨', 1: '⚠️', 2: '🔧', 3: '🌱',
+};
+const ZONE_LABEL_MAP: Record<string, string> = {
+  danger: 'Nguy hiểm', warning: 'Cảnh báo', safe: 'An toàn',
+  critical: 'Nghiêm trọng', stable: 'Ổn định',
+};
+
+const CohortView: React.FC<{
+  data: CohortDashboardData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+  onGenerateSnapshot: () => void;
+}> = ({ data, loading, selectedUserId, onUserIdChange, onSearch, onGenerateSnapshot }) => {
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để so sánh (tuỳ chọn)..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading}>
+          {loading ? '⏳' : '🌐'} Xem dân số
+        </SearchBtn>
+        <SearchBtn onClick={onGenerateSnapshot} disabled={loading} style={{ background: 'linear-gradient(135deg, #6a1b9a, #e91e63)' }}>
+          {loading ? '⏳' : '🔄'} Phân tích mới
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang phân tích dữ liệu dân số...</LoadingText>}
+
+      {data && !loading && !data.hasSnapshot && (
+        <EmptyText>Chưa có dữ liệu dân số. Nhấn "🔄 Phân tích mới" để bắt đầu phân cụm.</EmptyText>
+      )}
+
+      {data && !loading && data.hasSnapshot && data.snapshot && (
+        <>
+          {/* Population Overview */}
+          <Section>
+            <SectionTitle>📊 Tổng quan dân số ({data.snapshot.totalUsers} người dùng)</SectionTitle>
+            <CohortStatsGrid>
+              <CohortStatCard color="#2196f3">
+                <CohortStatIcon>👥</CohortStatIcon>
+                <CohortStatValue>{data.snapshot.totalUsers}</CohortStatValue>
+                <CohortStatLabel>Tổng người dùng</CohortStatLabel>
+              </CohortStatCard>
+              <CohortStatCard color="#f44336">
+                <CohortStatIcon>🚨</CohortStatIcon>
+                <CohortStatValue>{data.snapshot.populationStats.dangerCount}</CohortStatValue>
+                <CohortStatLabel>Vùng nguy hiểm</CohortStatLabel>
+              </CohortStatCard>
+              <CohortStatCard color="#4caf50">
+                <CohortStatIcon>✅</CohortStatIcon>
+                <CohortStatValue>{data.snapshot.populationStats.safeCount}</CohortStatValue>
+                <CohortStatLabel>Vùng an toàn</CohortStatLabel>
+              </CohortStatCard>
+              <CohortStatCard color="#ff9800">
+                <CohortStatIcon>📈</CohortStatIcon>
+                <CohortStatValue>{(data.snapshot.populationStats.ebhMean * 100).toFixed(0)}%</CohortStatValue>
+                <CohortStatLabel>EBH trung bình</CohortStatLabel>
+              </CohortStatCard>
+              <CohortStatCard color="#9c27b0">
+                <CohortStatIcon>🎯</CohortStatIcon>
+                <CohortStatValue>{(data.snapshot.populationStats.effectivenessMean * 100).toFixed(0)}%</CohortStatValue>
+                <CohortStatLabel>Hiệu quả TB</CohortStatLabel>
+              </CohortStatCard>
+            </CohortStatsGrid>
+          </Section>
+
+          {/* Cohort Clusters */}
+          <Section>
+            <SectionTitle>🏷️ Nhóm người dùng ({data.snapshot.cohorts.length} nhóm)</SectionTitle>
+            <CohortClusterGrid>
+              {data.snapshot.cohorts.map((c) => (
+                <CohortClusterCard key={c.cohortId} borderColor={COHORT_COLOR_MAP[c.cohortId] || '#999'}>
+                  <CohortClusterHeader>
+                    <span>{COHORT_ICON_MAP[c.cohortId] || '📌'}</span>
+                    <CohortClusterTitle>{c.label}</CohortClusterTitle>
+                    <CohortMemberBadge>{c.memberCount} người</CohortMemberBadge>
+                  </CohortClusterHeader>
+                  <CohortClusterBody>
+                    <CohortMetricRow>
+                      <CohortMetricLabel>EBH trung bình</CohortMetricLabel>
+                      <CohortMetricValue color={c.avgEBH > 0.6 ? '#f44336' : c.avgEBH > 0.3 ? '#ff9800' : '#4caf50'}>
+                        {(c.avgEBH * 100).toFixed(0)}%
+                      </CohortMetricValue>
+                    </CohortMetricRow>
+                    <CohortMetricRow>
+                      <CohortMetricLabel>Hiệu quả</CohortMetricLabel>
+                      <CohortMetricValue color="#333">{(c.avgEffectiveness * 100).toFixed(0)}%</CohortMetricValue>
+                    </CohortMetricRow>
+                    <CohortMetricRow>
+                      <CohortMetricLabel>Tốc độ phục hồi</CohortMetricLabel>
+                      <CohortMetricValue color="#333">{(c.avgRecoveryRate * 100).toFixed(0)}%</CohortMetricValue>
+                    </CohortMetricRow>
+                    <CohortMetricRow>
+                      <CohortMetricLabel>Loại phiên phổ biến</CohortMetricLabel>
+                      <CohortMetricValue color="#666">{c.dominantSessionType}</CohortMetricValue>
+                    </CohortMetricRow>
+                    {c.topInterventions.length > 0 && (
+                      <CohortInterventionList>
+                        <small style={{ color: '#888' }}>Can thiệp hiệu quả:</small>
+                        {c.topInterventions.map((iv, j) => (
+                          <CohortInterventionTag key={j}>
+                            {iv.type} ({(iv.successRate * 100).toFixed(0)}%)
+                          </CohortInterventionTag>
+                        ))}
+                      </CohortInterventionList>
+                    )}
+                  </CohortClusterBody>
+                </CohortClusterCard>
+              ))}
+            </CohortClusterGrid>
+          </Section>
+
+          {/* User's Cohort & Peer Comparison */}
+          {data.userCohort && data.userCohort.assigned && (
+            <Section>
+              <SectionTitle>👤 Vị trí của bạn trong dân số</SectionTitle>
+              <PeerComparisonCard>
+                <PeerCompLeft>
+                  <PeerCohortBadge color={COHORT_COLOR_MAP[data.userCohort.cohortId!] || '#999'}>
+                    {COHORT_ICON_MAP[data.userCohort.cohortId!] || '📌'} {data.userCohort.cohortLabel}
+                  </PeerCohortBadge>
+                  <PeerInfo>Tương đồng: {((data.userCohort.similarity || 0) * 100).toFixed(0)}% | {data.userCohort.peerCount} người cùng nhóm</PeerInfo>
+                </PeerCompLeft>
+                <PeerCompRight>
+                  {data.userCohort.peerComparison && (
+                    <PeerPercentileGrid>
+                      <PeerPercentileItem>
+                        <PeerPercentileBar>
+                          <PeerPercentileFill width={data.userCohort.peerComparison.ebhPercentile * 100}
+                            color={data.userCohort.peerComparison.ebhPercentile > 0.7 ? '#f44336' : '#4caf50'} />
+                        </PeerPercentileBar>
+                        <PeerPercentileLabel>EBH: Top {(data.userCohort.peerComparison.ebhPercentile * 100).toFixed(0)}%</PeerPercentileLabel>
+                      </PeerPercentileItem>
+                      <PeerPercentileItem>
+                        <PeerPercentileBar>
+                          <PeerPercentileFill width={data.userCohort.peerComparison.effectivenessPercentile * 100}
+                            color={data.userCohort.peerComparison.effectivenessPercentile > 0.5 ? '#4caf50' : '#ff9800'} />
+                        </PeerPercentileBar>
+                        <PeerPercentileLabel>Hiệu quả: Top {(data.userCohort.peerComparison.effectivenessPercentile * 100).toFixed(0)}%</PeerPercentileLabel>
+                      </PeerPercentileItem>
+                      <PeerPercentileItem>
+                        <PeerPercentileBar>
+                          <PeerPercentileFill width={data.userCohort.peerComparison.recoveryRatePercentile * 100}
+                            color={data.userCohort.peerComparison.recoveryRatePercentile > 0.5 ? '#4caf50' : '#ff9800'} />
+                        </PeerPercentileBar>
+                        <PeerPercentileLabel>Phục hồi: Top {(data.userCohort.peerComparison.recoveryRatePercentile * 100).toFixed(0)}%</PeerPercentileLabel>
+                      </PeerPercentileItem>
+                    </PeerPercentileGrid>
+                  )}
+                </PeerCompRight>
+              </PeerComparisonCard>
+            </Section>
+          )}
+
+          {/* Transition Patterns */}
+          {data.snapshot.transitionPatterns.length > 0 && (
+            <Section>
+              <SectionTitle>🔄 Mẫu chuyển đổi trạng thái phổ biến</SectionTitle>
+              <TransitionPatternGrid>
+                {data.snapshot.transitionPatterns.slice(0, 8).map((p, i) => (
+                  <TransitionPatternCard key={i}>
+                    <TransitionFrom>{ZONE_LABEL_MAP[p.from] || p.from}</TransitionFrom>
+                    <TransitionArrow>→</TransitionArrow>
+                    <TransitionTo>{ZONE_LABEL_MAP[p.to] || p.to}</TransitionTo>
+                    <TransitionCount>{p.count}x ({(p.probability * 100).toFixed(1)}%)</TransitionCount>
+                  </TransitionPatternCard>
+                ))}
+              </TransitionPatternGrid>
+            </Section>
+          )}
+
+          <CohortTimestamp>
+            Snapshot: {new Date(data.snapshot.snapshotDate).toLocaleString('vi-VN')}
+          </CohortTimestamp>
+        </>
+      )}
+    </>
+  );
+};
+
+// ═══════════════════════════════════════════
 // STYLED COMPONENTS
 // ═══════════════════════════════════════════
 
@@ -2749,6 +3046,83 @@ const EffectivenessBar = styled.div`
 `;
 const EffectivenessFill = styled.div<{ width: number; color: string }>`
   height: 100%; width: ${p => p.width}%; background: ${p => p.color}; border-radius: 3px; transition: width 0.3s;
+`;
+
+// ═══════════════════════════════════════════
+// COHORT STYLED COMPONENTS
+// ═══════════════════════════════════════════
+
+const CohortStatsGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;`;
+const CohortStatCard = styled.div<{ color: string }>`
+  background: #fff; border-radius: 14px; padding: 16px 12px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 3px solid ${p => p.color};
+  transition: transform 0.2s; &:hover { transform: translateY(-2px); }
+`;
+const CohortStatIcon = styled.div`font-size: 1.4rem; margin-bottom: 4px;`;
+const CohortStatValue = styled.div`font-size: 1.5rem; font-weight: bold; color: #333;`;
+const CohortStatLabel = styled.div`font-size: 0.75rem; color: #888; margin-top: 2px;`;
+
+const CohortClusterGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;`;
+const CohortClusterCard = styled.div<{ borderColor: string }>`
+  background: #fff; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  border-left: 5px solid ${p => p.borderColor};
+  animation: ${fadeIn} 0.4s ease;
+`;
+const CohortClusterHeader = styled.div`
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  background: #f8f9fa; font-size: 0.95rem;
+`;
+const CohortClusterTitle = styled.div`flex: 1; font-weight: 600; color: #333; font-size: 0.88rem;`;
+const CohortMemberBadge = styled.div`
+  background: #e3f2fd; color: #1565c0; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+`;
+const CohortClusterBody = styled.div`padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;`;
+const CohortMetricRow = styled.div`display: flex; justify-content: space-between; align-items: center;`;
+const CohortMetricLabel = styled.span`font-size: 0.82rem; color: #666;`;
+const CohortMetricValue = styled.span<{ color: string }>`font-size: 0.88rem; font-weight: 600; color: ${p => p.color};`;
+const CohortInterventionList = styled.div`
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; align-items: center;
+`;
+const CohortInterventionTag = styled.span`
+  background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 500;
+`;
+
+const PeerComparisonCard = styled.div`
+  display: flex; gap: 20px; background: linear-gradient(135deg, #e8eaf6, #f3e5f5);
+  border-radius: 16px; padding: 20px 24px; animation: ${fadeIn} 0.4s ease;
+  flex-wrap: wrap;
+`;
+const PeerCompLeft = styled.div`display: flex; flex-direction: column; gap: 8px; min-width: 200px;`;
+const PeerCompRight = styled.div`flex: 1; min-width: 200px;`;
+const PeerCohortBadge = styled.div<{ color: string }>`
+  display: inline-block; padding: 6px 16px; border-radius: 14px; font-weight: 600;
+  background: ${p => p.color}20; color: ${p => p.color}; font-size: 0.9rem;
+`;
+const PeerInfo = styled.div`font-size: 0.82rem; color: #666;`;
+const PeerPercentileGrid = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const PeerPercentileItem = styled.div`display: flex; align-items: center; gap: 10px;`;
+const PeerPercentileBar = styled.div`
+  flex: 1; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden;
+`;
+const PeerPercentileFill = styled.div<{ width: number; color: string }>`
+  height: 100%; width: ${p => p.width}%; background: ${p => p.color}; border-radius: 5px;
+  transition: width 0.4s ease;
+`;
+const PeerPercentileLabel = styled.div`font-size: 0.78rem; color: #555; min-width: 140px;`;
+
+const TransitionPatternGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;`;
+const TransitionPatternCard = styled.div`
+  display: flex; align-items: center; gap: 8px; background: #fff; padding: 10px 14px;
+  border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); font-size: 0.85rem;
+`;
+const TransitionFrom = styled.span`color: #f44336; font-weight: 600;`;
+const TransitionArrow = styled.span`color: #999; font-size: 1.1rem;`;
+const TransitionTo = styled.span`color: #2196f3; font-weight: 600;`;
+const TransitionCount = styled.span`margin-left: auto; color: #888; font-size: 0.75rem;`;
+
+const CohortTimestamp = styled.div`
+  text-align: center; color: #aaa; font-size: 0.75rem; margin-top: 16px; font-style: italic;
 `;
 
 export default PGEDashboard;

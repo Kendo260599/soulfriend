@@ -29,8 +29,12 @@
  * GET  /api/pge/readiness/:userId               — Session readiness score (Phase 7)
  * POST /api/pge/finalize-session                — Finalize a completed session (Phase 7)
  * 
+ * GET  /api/pge/cohort/population               — Population dashboard (Phase 8)
+ * GET  /api/pge/cohort/user/:userId              — User’s cohort assignment & peer comparison (Phase 8)
+ * POST /api/pge/cohort/snapshot                  — Generate new cohort snapshot (Phase 8)
+ * 
  * @module routes/pge
- * @version 5.0.0 — PGE Phase 7: Adaptive Session Manager
+ * @version 6.0.0 — PGE Phase 8: Cohort Analytics
  */
 
 import { Router, Request, Response } from 'express';
@@ -40,6 +44,7 @@ import { topologyMapper } from '../services/pge/topologyMapper';
 import { banditPolicy } from '../services/pge/banditPolicy';
 import { forecastEngine } from '../services/pge/forecastEngine';
 import { sessionManager } from '../services/pge/sessionManager';
+import { cohortEngine } from '../services/pge/cohortEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -752,6 +757,77 @@ router.post(
     } catch (error) {
       logger.error('[PGE Route] finalize-session error:', error);
       res.status(500).json({ success: false, error: 'Failed to finalize session' });
+    }
+  }
+);
+
+// ════════════════════════════════════════
+// PHASE 8: COHORT ANALYTICS
+// ════════════════════════════════════════
+
+/**
+ * GET /cohort/population — Population dashboard overview
+ */
+router.get('/cohort/population',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.query.userId as string | undefined;
+      const dashboard = await cohortEngine.getPopulationDashboard(userId);
+
+      res.json({
+        success: true,
+        data: dashboard,
+        meta: { generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] cohort population error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get population dashboard' });
+    }
+  }
+);
+
+/**
+ * GET /cohort/user/:userId — User’s cohort assignment & peer comparison
+ */
+router.get('/cohort/user/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const data = await cohortEngine.getUserCohort(userId);
+
+      res.json({
+        success: true,
+        data,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] cohort user error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get user cohort' });
+    }
+  }
+);
+
+/**
+ * POST /cohort/snapshot — Generate new cohort clustering snapshot
+ */
+router.post('/cohort/snapshot',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const k = parseInt(req.body.k) || 4;
+      const result = await cohortEngine.generateSnapshot(k);
+
+      res.json({
+        success: result.success !== false,
+        data: result.data || null,
+        message: result.message || undefined,
+        meta: { k, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] cohort snapshot error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate snapshot' });
     }
   }
 );

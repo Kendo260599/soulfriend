@@ -16,7 +16,7 @@
  * └─────────────────────────────────────────────────────────────┘
  * 
  * @module services/pge/interventionEngine
- * @version 1.0.0 — PGE Phase 2
+ * @version 2.0.0 — PGE Phase 2 + Phase 4 Topology Integration
  */
 
 import { logger } from '../../utils/logger';
@@ -48,7 +48,12 @@ import {
   classifyZone,
   learnInterventionMatrix,
   interventionVector,
+  applyTopologyWeights,
+  getTopologyStrategyReason,
+  TopologyProfile,
 } from './mathEngine';
+import { topologyMapper } from './topologyMapper';
+import { banditPolicy } from './banditPolicy';
 
 // ════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -106,6 +111,9 @@ class InterventionEngine {
       escapeForce: number;
       escapeRatio: number;
       reason: string;
+      topologyProfile?: string;
+      topologyStrategy?: string;
+      banditInfo?: string;
       trajectoryComparison: {
         withoutIntervention: Array<{ step: number; ebhScore: number; esScore: number }>;
         withIntervention: Array<{ step: number; ebhScore: number; esScore: number }>;
@@ -156,7 +164,60 @@ class InterventionEngine {
       [0.5, 0.7, 1.0], // intensity levels
     );
 
-    if (candidates.length === 0) {
+    // 3.5 PHASE 4: Apply topology profile weights
+    let topologyProfile: TopologyProfile | undefined;
+    let topologyStrategy: string | undefined;
+    let weightedCandidates = candidates;
+    try {
+      const topoResult = await topologyMapper.computeTopology(userId);
+      if (topoResult.profile?.profile) {
+        topologyProfile = topoResult.profile.profile as TopologyProfile;
+        topologyStrategy = getTopologyStrategyReason(topologyProfile);
+        weightedCandidates = applyTopologyWeights(candidates, topologyProfile);
+        logger.info('[InterventionEngine] Topology-weighted intervention', {
+          userId: userId.substring(0, 8),
+          profile: topologyProfile,
+          topCandidate: weightedCandidates[0]?.typeName,
+        });
+      }
+    } catch (err) {
+      logger.warn('[InterventionEngine] Topology lookup failed, using unweighted:', err);
+    }
+
+    // 3.7 PHASE 5: Bandit RL boost — Thompson Sampling contextual weights
+    let banditInfo: string | undefined;
+    try {
+      const banditResult = await banditPolicy.selectArm(userId, {
+        topologyProfile: topologyProfile,
+        zone,
+        ebhScore,
+      });
+      if (banditResult.active) {
+        // Apply bandit boost: multiply effectiveness by (0.8 + 0.2 * normalizedBanditScore)
+        const maxBanditScore = banditResult.selections[0]?.combinedScore || 1;
+        weightedCandidates = weightedCandidates.map(c => {
+          if (c.type < 0 || c.type >= INTERVENTION_TYPES.length) return c;
+          const banditSel = banditResult.selections.find(s => s.arm === c.type);
+          if (!banditSel) return c;
+          const normalizedScore = banditSel.combinedScore / Math.max(0.01, maxBanditScore);
+          return {
+            ...c,
+            effectiveness: Math.min(1, c.effectiveness * (0.8 + 0.2 * normalizedScore)),
+          };
+        }).sort((a, b) => b.effectiveness - a.effectiveness);
+
+        banditInfo = `Bandit RL (${banditResult.totalObservations} obs): ${banditResult.bestArm.armName} — Thompson value ${banditResult.bestArm.sampledValue.toFixed(3)}`;
+        logger.info('[InterventionEngine] Bandit-boosted intervention', {
+          userId: userId.substring(0, 8),
+          bestBanditArm: banditResult.bestArm.armName,
+          observations: banditResult.totalObservations,
+        });
+      }
+    } catch (err) {
+      logger.warn('[InterventionEngine] Bandit lookup failed:', err);
+    }
+
+    if (weightedCandidates.length === 0) {
       return {
         recommended: false,
         alternatives: [],
@@ -171,7 +232,7 @@ class InterventionEngine {
     }
 
     // 4. Best candidate
-    const best = candidates[0];
+    const best = weightedCandidates[0];
     const bestType = best.type >= 0 && best.type < INTERVENTION_TYPES.length
       ? INTERVENTION_TYPES[best.type]
       : INTERVENTION_TYPES[0];
@@ -258,9 +319,12 @@ class InterventionEngine {
         escapeForce: best.escapeForce,
         escapeRatio: best.escapeRatio,
         reason: best.reason,
+        topologyProfile: topologyProfile,
+        topologyStrategy: topologyStrategy,
+        banditInfo: banditInfo,
         trajectoryComparison,
       },
-      alternatives: candidates
+      alternatives: weightedCandidates
         .slice(1, 4)
         .filter(c => c.type >= 0 && c.type < INTERVENTION_TYPES.length)
         .map(c => ({
@@ -357,6 +421,9 @@ class InterventionEngine {
           logger.warn('[InterventionEngine] B matrix update failed:', err);
         });
       }
+
+      // Phase 5: Invalidate bandit cache after new outcome
+      banditPolicy.invalidateCache(params.userId);
 
       return { updated: true, effectiveness };
     } catch (error) {

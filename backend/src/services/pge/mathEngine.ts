@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 1.0.0
+ * @version 3.0.0 — Phase 3: Topology Mapper + Phase 2: Intervention
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -1138,6 +1138,97 @@ export function findOptimalIntervention(
   return candidates.sort((a, b) => b.effectiveness - a.effectiveness);
 }
 
+// ════════════════════════════════════════════════════════════════
+// PHASE 4: TOPOLOGY-INTERVENTION STRATEGY MAPPING
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * TOPOLOGY → INTERVENTION STRATEGY MAP
+ * 
+ * Maps topology profiles to intervention type priority weights.
+ * Higher weight = higher priority for that intervention type.
+ * 
+ * ┌──────────────┬──────────┬──────────┬──────────┬──────────┐
+ * │ Profile      │ Cogn.Ref │ Social   │ Behav.   │ Emot.Reg │
+ * ├──────────────┼──────────┼──────────┼──────────┼──────────┤
+ * │ fragile      │ 0.6      │ 1.4      │ 0.7      │ 1.3      │
+ * │ chaotic      │ 0.8      │ 0.9      │ 0.7      │ 1.6      │
+ * │ stuck        │ 1.5      │ 1.0      │ 1.3      │ 0.8      │
+ * │ resilient    │ 1.1      │ 1.1      │ 1.4      │ 0.8      │
+ * │ transitional │ 1.2      │ 1.1      │ 1.0      │ 1.2      │
+ * └──────────────┴──────────┴──────────┴──────────┴──────────┘
+ * 
+ * Rationale:
+ * - fragile: Need safety → emotional_regulation + social_connection
+ * - chaotic: Need grounding → emotional_regulation (mindfulness, grounding)
+ * - stuck: Need disruption → cognitive_reframing + behavioral_activation
+ * - resilient: Capitalize → behavioral_activation + growth
+ * - transitional: Support change → cognitive_reframing + emotional_regulation
+ */
+export type TopologyProfile = 'fragile' | 'chaotic' | 'stuck' | 'resilient' | 'transitional';
+
+const TOPOLOGY_STRATEGY_MAP: Record<TopologyProfile, [number, number, number, number]> = {
+  fragile:      [0.6, 1.4, 0.7, 1.3], // social + emotional first
+  chaotic:      [0.8, 0.9, 0.7, 1.6], // emotional regulation dominant
+  stuck:        [1.5, 1.0, 1.3, 0.8], // cognitive + behavioral to break patterns
+  resilient:    [1.1, 1.1, 1.4, 0.8], // behavioral activation to grow
+  transitional: [1.2, 1.1, 1.0, 1.2], // balanced with cognitive + emotional
+};
+
+const TOPOLOGY_STRATEGY_REASONS: Record<TopologyProfile, string> = {
+  fragile: 'Hồ sơ topology mong manh — ưu tiên kết nối xã hội & điều chỉnh cảm xúc để xây dựng an toàn.',
+  chaotic: 'Hồ sơ topology hỗn loạn — ưu tiên grounding & điều chỉnh cảm xúc để ổn định hệ thống.',
+  stuck: 'Hồ sơ topology mắc kẹt — ưu tiên tái cấu trúc nhận thức & kích hoạt hành vi để phá vỡ mẫu hình.',
+  resilient: 'Hồ sơ topology kiên cường — ưu tiên kích hoạt hành vi để phát huy thế mạnh & phát triển.',
+  transitional: 'Hồ sơ topology chuyển đổi — chiến lược cân bằng nhận thức & cảm xúc để hỗ trợ quá trình thay đổi.',
+};
+
+/**
+ * Get intervention type priority weights based on topology profile.
+ * Returns 4 weights corresponding to [cognitive, social, behavioral, emotional].
+ */
+export function getTopologyWeights(profile: TopologyProfile): [number, number, number, number] {
+  return TOPOLOGY_STRATEGY_MAP[profile] ?? [1.0, 1.0, 1.0, 1.0];
+}
+
+/**
+ * Get strategy reasoning based on topology profile.
+ */
+export function getTopologyStrategyReason(profile: TopologyProfile): string {
+  return TOPOLOGY_STRATEGY_REASONS[profile] ?? '';
+}
+
+/**
+ * Apply topology weights to intervention candidates.
+ * Boosts effectiveness of interventions aligned with topology strategy.
+ * 
+ * effectivenessNew = effectiveness * (0.6 + 0.4 * weight)
+ * 
+ * This ensures baseline interventions are still considered (60% base),
+ * but topology-aligned ones get a significant boost (up to ~124% of original).
+ */
+export function applyTopologyWeights(
+  candidates: InterventionCandidate[],
+  profile: TopologyProfile,
+): InterventionCandidate[] {
+  const weights = getTopologyWeights(profile);
+  const strategyReason = getTopologyStrategyReason(profile);
+
+  return candidates.map(c => {
+    if (c.type < 0 || c.type >= weights.length) {
+      // Composite interventions — apply average weight of constituent types
+      return c;
+    }
+    const w = weights[c.type];
+    const boostedEffectiveness = Math.min(1, c.effectiveness * (0.6 + 0.4 * w));
+    return {
+      ...c,
+      effectiveness: boostedEffectiveness,
+      reason: `${c.reason} | ${strategyReason}`,
+    };
+  }).sort((a, b) => b.effectiveness - a.effectiveness);
+}
+
 /**
  * Generate Vietnamese explanation for why an intervention is recommended
  */
@@ -1387,4 +1478,754 @@ export function analyzeTrajectoryWarning(trajectory: Vec[]): {
   }
 
   return { warning: false };
+}
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 3 — TOPOLOGY MAPPER: Fixed Points, Basins, Landscape
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Fixed-Point types for dynamical system analysis
+ */
+export interface FixedPoint {
+  state: Vec;                     // S* where F(S*) ≈ 0
+  type: 'stable' | 'unstable' | 'saddle'; // stability classification
+  eigenvalues: number[];          // real parts of eigenvalues of Jacobian
+  label: string;                  // human-readable attractor name
+  labelVi: string;                // Vietnamese label
+  basin?: number;                 // index of basin this point belongs to
+}
+
+export interface BasinCell {
+  x: number;    // PCA coordinate 1
+  y: number;    // PCA coordinate 2
+  basin: number; // which attractor this cell flows to (-1 = divergent)
+  energy: number; // potential energy at this point
+  forceX: number; // force vector X component (for phase portrait)
+  forceY: number; // force vector Y component
+}
+
+export interface TopologyData {
+  fixedPoints: FixedPoint[];
+  basins: BasinCell[];
+  pcaAxes: { pc1: Vec; pc2: Vec; mean: Vec }; // PCA projection info
+  gridSize: number;
+  userPosition: { x: number; y: number };     // user's current position in PCA space
+  userTrajectory: Array<{ x: number; y: number }>; // projected trajectory
+  bifurcationEvents: BifurcationEvent[];
+}
+
+export interface BifurcationEvent {
+  type: 'birth' | 'death' | 'merge' | 'split';
+  timestamp: number;
+  description: string;
+  descriptionVi: string;
+  affectedPoints: FixedPoint[];
+}
+
+// ─────────────────────────────────────────────
+// PCA — Simple 2-component Principal Component Analysis
+// ─────────────────────────────────────────────
+
+/**
+ * Compute 2-component PCA from a set of state vectors.
+ * Returns principal directions + mean for projection.
+ * 
+ * Uses power iteration on covariance matrix (no external libs).
+ */
+export function computePCA(states: Vec[]): { pc1: Vec; pc2: Vec; mean: Vec } {
+  const n = states[0]?.length || PSY_DIMENSION;
+  
+  // If not enough states, use preset axes (neg_mean vs pos_mean directions)
+  if (states.length < 3) {
+    const pc1 = zeros(n);
+    const pc2 = zeros(n);
+    // PC1: negative emotions direction
+    for (let i = 0; i < 8; i++) pc1[i] = 1 / Math.sqrt(8);
+    // PC2: positive emotions direction
+    for (let i = 8; i < 12; i++) pc2[i] = 1 / Math.sqrt(4);
+    return { pc1, pc2, mean: zeros(n) };
+  }
+
+  // Mean
+  const mean = zeros(n);
+  for (const s of states) for (let i = 0; i < n; i++) mean[i] += s[i];
+  for (let i = 0; i < n; i++) mean[i] /= states.length;
+
+  // Centered data
+  const centered = states.map(s => vecSub(s, mean));
+
+  // Covariance matrix C (n×n)
+  const C = zeroMat(n);
+  for (const c of centered) {
+    for (let i = 0; i < n; i++) {
+      for (let j = i; j < n; j++) {
+        C[i][j] += c[i] * c[j];
+        if (i !== j) C[j][i] += c[i] * c[j];
+      }
+    }
+  }
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      C[i][j] /= (states.length - 1);
+
+  // Power iteration for PC1
+  let v1 = Array.from({ length: n }, (_, i) => Math.sin(i + 1));
+  let norm1 = vecNorm(v1);
+  v1 = vecScale(v1, 1 / norm1);
+
+  for (let iter = 0; iter < 100; iter++) {
+    const Cv = matVec(C, v1);
+    norm1 = vecNorm(Cv);
+    if (norm1 < 1e-12) break;
+    v1 = vecScale(Cv, 1 / norm1);
+  }
+
+  // Deflation: C2 = C - λ1 * v1 * v1^T
+  const lambda1 = dot(matVec(C, v1), v1);
+  const C2 = C.map((row, i) => row.map((val, j) => val - lambda1 * v1[i] * v1[j]));
+
+  // Power iteration for PC2
+  let v2 = Array.from({ length: n }, (_, i) => Math.cos(i + 1));
+  let norm2 = vecNorm(v2);
+  v2 = vecScale(v2, 1 / norm2);
+
+  for (let iter = 0; iter < 100; iter++) {
+    const Cv = matVec(C2, v2);
+    norm2 = vecNorm(Cv);
+    if (norm2 < 1e-12) break;
+    v2 = vecScale(Cv, 1 / norm2);
+  }
+
+  // Ensure orthogonality
+  const proj = dot(v2, v1);
+  v2 = vecSub(v2, vecScale(v1, proj));
+  const n2 = vecNorm(v2);
+  if (n2 > 1e-12) v2 = vecScale(v2, 1 / n2);
+
+  return { pc1: v1, pc2: v2, mean };
+}
+
+/**
+ * Project a state vector onto 2D PCA space.
+ */
+export function projectToPCA(S: Vec, pca: { pc1: Vec; pc2: Vec; mean: Vec }): { x: number; y: number } {
+  const centered = vecSub(S, pca.mean);
+  return {
+    x: dot(centered, pca.pc1),
+    y: dot(centered, pca.pc2),
+  };
+}
+
+/**
+ * Reconstruct a full state vector from 2D PCA coordinates.
+ * S_approx = mean + x * pc1 + y * pc2
+ */
+export function reconstructFromPCA(
+  x: number, y: number,
+  pca: { pc1: Vec; pc2: Vec; mean: Vec },
+): Vec {
+  return vecClamp(
+    vecAdd(pca.mean, vecAdd(vecScale(pca.pc1, x), vecScale(pca.pc2, y)))
+  );
+}
+
+// ─────────────────────────────────────────────
+// Fixed-Point Finder (Newton-Raphson on dS/dt = (A-I)·S = 0)
+// ─────────────────────────────────────────────
+
+/**
+ * Find equilibria of the system dS/dt = (A-I)·S = 0.
+ * 
+ * For linear system S(t+1) = A·S(t), equilibrium when A·S* = S* → (A-I)·S* = 0.
+ * The origin is always an equilibrium. We also search for others by:
+ * 1. Starting from multiple initial conditions
+ * 2. Newton-Raphson: S_{k+1} = S_k - J(S_k)^{-1} · F(S_k)
+ *    where F(S) = (A-I)·S and J = A-I
+ * 3. Cluster nearby solutions
+ * 
+ * For our clamped [0,1] system, we also find boundary equilibria
+ * where states saturate at 0 or 1.
+ * 
+ * @param A — interaction matrix (24×24)
+ * @param numSeeds — number of random starting points
+ * @returns array of unique fixed points
+ */
+export function findFixedPoints(A: Mat, numSeeds = 20): FixedPoint[] {
+  const n = A.length;
+  
+  // J = A - I (Jacobian for linear system)
+  const J: Mat = A.map((row, i) => row.map((val, j) => val - (i === j ? 1 : 0)));
+  
+  const rawPoints: Vec[] = [];
+  
+  // Seed 0: origin (always equilibrium for linear system)
+  rawPoints.push(zeros(n));
+  
+  // Seed 1: positive attractor
+  rawPoints.push(positiveAttractor());
+  
+  // Generate diverse seeds
+  const seeds = generateDiverseSeeds(n, numSeeds);
+  
+  for (const seed of seeds) {
+    const fp = newtonRaphson(J, seed, 50);
+    if (fp) rawPoints.push(fp);
+  }
+  
+  // Also try: check if fixed PA-like state is stable under A
+  const paTrajectory = simulateTrajectory(positiveAttractor(), A, 100, 0.05);
+  const paConverged = paTrajectory[paTrajectory.length - 1];
+  rawPoints.push(paConverged);
+  
+  // Try known attractor archetypes as seeds
+  const archetypes = getAttractorArchetypes();
+  for (const arch of archetypes) {
+    const trajectory = simulateTrajectory(arch.state, A, 100, 0.05);
+    rawPoints.push(trajectory[trajectory.length - 1]);
+  }
+  
+  // Cluster nearby points (distance < 0.1)
+  const uniquePoints = clusterFixedPoints(rawPoints, 0.1);
+  
+  // Classify each point
+  return uniquePoints.map(state => classifyFixedPoint(state, A));
+}
+
+/**
+ * Newton-Raphson iteration for F(S) = J·S = 0 with clamping to [0,1].
+ * Returns converged point or null if divergent.
+ */
+function newtonRaphson(J: Mat, seed: Vec, maxIter: number): Vec | null {
+  const n = J.length;
+  let S = [...seed];
+  
+  // Try to invert J
+  const Jinv = invertMatrix(J);
+  if (!Jinv) {
+    // J is singular → use damped iteration: S_{k+1} = S_k - α·F(S_k)
+    const alpha = 0.01;
+    for (let iter = 0; iter < maxIter * 2; iter++) {
+      const F = matVec(J, S);
+      const fnorm = vecNorm(F);
+      if (fnorm < 1e-6) return vecClamp(S);
+      S = vecClamp(vecSub(S, vecScale(F, alpha)));
+    }
+    const finalF = matVec(J, S);
+    return vecNorm(finalF) < 0.01 ? vecClamp(S) : null;
+  }
+  
+  for (let iter = 0; iter < maxIter; iter++) {
+    const F = matVec(J, S);
+    const fnorm = vecNorm(F);
+    if (fnorm < 1e-6) return vecClamp(S);
+    
+    // S_{k+1} = S_k - J^{-1} · F(S_k)
+    const delta = matVec(Jinv, F);
+    S = vecClamp(vecSub(S, delta));
+  }
+  
+  const finalF = matVec(J, S);
+  return vecNorm(finalF) < 0.01 ? vecClamp(S) : null;
+}
+
+/**
+ * Generate diverse seed points for fixed-point search.
+ * Uses quasi-random (Halton-like) sequences across state space.
+ */
+function generateDiverseSeeds(n: number, count: number): Vec[] {
+  const seeds: Vec[] = [];
+  // Primes for Halton sequence
+  const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89];
+  
+  for (let k = 1; k <= count; k++) {
+    const seed = new Array(n);
+    for (let d = 0; d < n; d++) {
+      // Halton sequence for dimension d
+      const base = primes[d % primes.length];
+      let result = 0;
+      let f = 1;
+      let idx = k;
+      while (idx > 0) {
+        f /= base;
+        result += f * (idx % base);
+        idx = Math.floor(idx / base);
+      }
+      seed[d] = result;
+    }
+    seeds.push(seed);
+  }
+  return seeds;
+}
+
+/**
+ * Known attractor archetype states for seeding fixed-point search.
+ */
+function getAttractorArchetypes(): Array<{ state: Vec; label: string }> {
+  const n = PSY_DIMENSION;
+  
+  // Depression: high sadness/hopelessness, low everything positive
+  const depression = zeros(n);
+  depression[2] = 0.8; depression[7] = 0.7; depression[4] = 0.6;
+  depression[0] = 0.5; depression[1] = 0.4; depression[14] = 0.6;
+  depression[8] = 0.05; depression[19] = 0.1; depression[12] = 0.1;
+  
+  // Burnout: high stress/fatigue, depleted motivation
+  const burnout = zeros(n);
+  burnout[0] = 0.8; burnout[23] = 0.8; burnout[19] = 0.1;
+  burnout[1] = 0.5; burnout[14] = 0.5; burnout[15] = 0.2;
+  burnout[8] = 0.15; burnout[12] = 0.2;
+  
+  // Anxiety spiral: high anxiety/rumination/avoidance
+  const anxietySpiral = zeros(n);
+  anxietySpiral[1] = 0.8; anxietySpiral[14] = 0.7; anxietySpiral[16] = 0.6;
+  anxietySpiral[22] = 0.6; anxietySpiral[0] = 0.5; anxietySpiral[9] = 0.1;
+  
+  // Growth: high positive, low negative
+  const growth = zeros(n);
+  growth[8] = 0.8; growth[9] = 0.7; growth[10] = 0.7; growth[11] = 0.6;
+  growth[12] = 0.75; growth[13] = 0.7; growth[19] = 0.8;
+  growth[0] = 0.1; growth[1] = 0.1;
+  
+  // Disengagement: flat, low everything
+  const disengagement = new Array(n).fill(0.3);
+  disengagement[19] = 0.1; disengagement[17] = 0.1; disengagement[18] = 0.1;
+  
+  return [
+    { state: depression, label: 'depression' },
+    { state: burnout, label: 'burnout' },
+    { state: anxietySpiral, label: 'anxiety_spiral' },
+    { state: growth, label: 'growth' },
+    { state: disengagement, label: 'disengagement' },
+  ];
+}
+
+/**
+ * Cluster nearby fixed points (merge points closer than threshold).
+ */
+function clusterFixedPoints(points: Vec[], threshold: number): Vec[] {
+  const clusters: Vec[][] = [];
+  
+  for (const p of points) {
+    let merged = false;
+    for (const cluster of clusters) {
+      // Check distance to cluster centroid
+      const centroid = cluster[0].map((_, i) =>
+        cluster.reduce((sum, c) => sum + c[i], 0) / cluster.length
+      );
+      if (vecNorm(vecSub(p, centroid)) < threshold) {
+        cluster.push(p);
+        merged = true;
+        break;
+      }
+    }
+    if (!merged) clusters.push([p]);
+  }
+  
+  // Return centroids
+  return clusters.map(cluster => {
+    const n = cluster[0].length;
+    const centroid = zeros(n);
+    for (const p of cluster) for (let i = 0; i < n; i++) centroid[i] += p[i];
+    for (let i = 0; i < n; i++) centroid[i] /= cluster.length;
+    return vecClamp(centroid);
+  });
+}
+
+// ─────────────────────────────────────────────
+// Stability Classifier (Jacobian Eigenvalue Analysis)
+// ─────────────────────────────────────────────
+
+/**
+ * Classify a fixed point by computing eigenvalues of the Jacobian.
+ * 
+ * For S(t+1) = clamp(A·S(t)):
+ * - Jacobian at interior point = A
+ * - If all |eigenvalues(A)| < 1 → stable
+ * - If any |eigenvalue(A)| > 1 → unstable
+ * - Mixed → saddle
+ * 
+ * We approximate eigenvalues by power iteration + deflation.
+ */
+function classifyFixedPoint(state: Vec, A: Mat): FixedPoint {
+  const n = A.length;
+  
+  // Compute effective Jacobian at this point
+  // For clamped system: J[i][j] = A[i][j] if 0 < state[i] < 1, else 0
+  const Jeff: Mat = A.map((row, i) => {
+    if (state[i] <= 0.001 || state[i] >= 0.999) {
+      // Boundary: derivative is 0 (clamped)
+      return new Array(n).fill(0);
+    }
+    return [...row];
+  });
+  
+  // Compute eigenvalue magnitudes via iterative deflation
+  const eigenvalues = computeEigenvalues(Jeff, 6); // top 6
+  
+  // Classify stability
+  const maxEig = Math.max(...eigenvalues.map(Math.abs));
+  const minEig = Math.min(...eigenvalues.map(Math.abs));
+  
+  let type: 'stable' | 'unstable' | 'saddle';
+  if (maxEig < 1.0) {
+    type = 'stable';
+  } else if (minEig > 1.0) {
+    type = 'unstable';
+  } else {
+    type = 'saddle';
+  }
+  
+  // Label based on dominant variables
+  const label = labelFixedPoint(state);
+  const labelVi = labelFixedPointVi(state);
+  
+  return { state, type, eigenvalues, label, labelVi };
+}
+
+/**
+ * Compute top-k eigenvalues via power iteration + deflation.
+ */
+function computeEigenvalues(M: Mat, k: number): number[] {
+  const n = M.length;
+  const eigenvalues: number[] = [];
+  let currentM = M.map(r => [...r]);
+  
+  for (let i = 0; i < Math.min(k, n); i++) {
+    // Power iteration
+    let v = Array.from({ length: n }, (_, j) => Math.sin(j * (i + 1) + 1));
+    let vn = vecNorm(v);
+    if (vn < 1e-12) break;
+    v = vecScale(v, 1 / vn);
+    
+    let lambda = 0;
+    for (let iter = 0; iter < 80; iter++) {
+      const Mv = matVec(currentM, v);
+      lambda = dot(v, Mv);
+      vn = vecNorm(Mv);
+      if (vn < 1e-12) break;
+      v = vecScale(Mv, 1 / vn);
+    }
+    
+    eigenvalues.push(lambda);
+    
+    // Deflation: M = M - λ·v·vᵀ
+    currentM = currentM.map((row, ri) =>
+      row.map((val, ci) => val - lambda * v[ri] * v[ci])
+    );
+  }
+  
+  return eigenvalues;
+}
+
+/**
+ * Label a fixed point based on its state vector profile.
+ */
+function labelFixedPoint(state: Vec): string {
+  const neg = negativeMean(state);
+  const pos = positiveMean(state);
+  const allLow = state.every(v => v < 0.2);
+  
+  if (allLow || vecNorm(state) < 0.3) return 'origin';
+  
+  // Use existing detectAttractor for base label
+  const baseLabel = detectAttractor(state);
+  return baseLabel;
+}
+
+/**
+ * Vietnamese labels for fixed points.
+ */
+function labelFixedPointVi(state: Vec): string {
+  const label = labelFixedPoint(state);
+  const map: Record<string, string> = {
+    'origin': 'Gốc tọa độ (trạng thái trung lập)',
+    'depression': 'Hố trầm cảm',
+    'burnout': 'Vùng kiệt sức',
+    'anxiety_spiral': 'Xoáy lo âu',
+    'growth': 'Đỉnh phát triển',
+    'recovery': 'Vùng phục hồi',
+    'stable': 'Trạng thái ổn định',
+    'disengagement': 'Vùng rút lui',
+  };
+  return map[label] || 'Điểm cân bằng';
+}
+
+// ─────────────────────────────────────────────
+// Basin of Attraction Mapper
+// ─────────────────────────────────────────────
+
+/**
+ * Map basins of attraction by simulating trajectory from each grid cell.
+ * Projects onto 2D PCA space, simulates forward, and assigns to nearest attractor.
+ * 
+ * @param A — interaction matrix
+ * @param fixedPoints — known attractor states
+ * @param pca — PCA projection info
+ * @param gridSize — resolution of the grid (default 25 = 25×25)
+ * @param W — weight matrix for potential energy
+ */
+export function mapBasins(
+  A: Mat,
+  fixedPoints: FixedPoint[],
+  pca: { pc1: Vec; pc2: Vec; mean: Vec },
+  gridSize = 25,
+  W?: Mat,
+): BasinCell[] {
+  const weight = W ?? defaultWeightMatrix();
+  const stablePoints = fixedPoints.filter(fp => fp.type === 'stable');
+  const cells: BasinCell[] = [];
+  
+  // Determine grid range from PCA (centered on mean)
+  const range = 2.0; // [-2, 2] in PCA space
+  const step = (2 * range) / (gridSize - 1);
+  
+  for (let xi = 0; xi < gridSize; xi++) {
+    for (let yi = 0; yi < gridSize; yi++) {
+      const x = -range + xi * step;
+      const y = -range + yi * step;
+      
+      // Reconstruct full state from PCA coordinates
+      const S = reconstructFromPCA(x, y, pca);
+      
+      // Simulate trajectory to find where it converges
+      const trajectory = simulateTrajectory(S, A, 50, 0.05);
+      const finalState = trajectory[trajectory.length - 1];
+      
+      // Find nearest stable attractor
+      let basin = -1;
+      let minDist = Infinity;
+      for (let i = 0; i < stablePoints.length; i++) {
+        const dist = vecNorm(vecSub(finalState, stablePoints[i].state));
+        if (dist < minDist) {
+          minDist = dist;
+          basin = i;
+        }
+      }
+      // If too far from any attractor, mark as divergent
+      if (minDist > 1.0) basin = -1;
+      
+      // Compute potential energy and force at this point
+      const energy = potentialEnergy(S, weight);
+      const force = psychologicalForce(S, weight);
+      const projForce = projectToPCA(vecAdd(S, force), pca);
+      const projS = { x, y };
+      
+      cells.push({
+        x, y,
+        basin,
+        energy,
+        forceX: projForce.x - projS.x,
+        forceY: projForce.y - projS.y,
+      });
+    }
+  }
+  
+  return cells;
+}
+
+// ─────────────────────────────────────────────
+// Landscape Surface Generator
+// ─────────────────────────────────────────────
+
+/**
+ * Generate potential energy landscape on 2D PCA grid.
+ * Returns energy values for contour/heatmap visualization.
+ * 
+ * (Already included in mapBasins — energy field in BasinCell)
+ * This function provides a lightweight version (energy only).
+ */
+export function generateLandscapeSurface(
+  pca: { pc1: Vec; pc2: Vec; mean: Vec },
+  W?: Mat,
+  gridSize = 40,
+  range = 2.0,
+): { x: number[]; y: number[]; energy: number[][] } {
+  const weight = W ?? defaultWeightMatrix();
+  const xCoords: number[] = [];
+  const yCoords: number[] = [];
+  const energy: number[][] = [];
+  
+  const step = (2 * range) / (gridSize - 1);
+  
+  for (let xi = 0; xi < gridSize; xi++) {
+    const xVal = -range + xi * step;
+    xCoords.push(xVal);
+  }
+  for (let yi = 0; yi < gridSize; yi++) {
+    const yVal = -range + yi * step;
+    yCoords.push(yVal);
+  }
+  
+  for (let yi = 0; yi < gridSize; yi++) {
+    const row: number[] = [];
+    for (let xi = 0; xi < gridSize; xi++) {
+      const S = reconstructFromPCA(xCoords[xi], yCoords[yi], pca);
+      row.push(potentialEnergy(S, weight));
+    }
+    energy.push(row);
+  }
+  
+  return { x: xCoords, y: yCoords, energy };
+}
+
+// ─────────────────────────────────────────────
+// Phase Portrait Generator (Vector Field)
+// ─────────────────────────────────────────────
+
+/**
+ * Generate vector field for phase portrait visualization.
+ * At each grid point: compute dS/dt = (A-I)·S direction,
+ * project onto PCA space.
+ * 
+ * (Already included in mapBasins — forceX/forceY fields)
+ * This provides an optimized sparse version for arrow overlay.
+ */
+export function generatePhasePortrait(
+  A: Mat,
+  pca: { pc1: Vec; pc2: Vec; mean: Vec },
+  gridSize = 15,
+  range = 2.0,
+): Array<{ x: number; y: number; dx: number; dy: number; magnitude: number }> {
+  const arrows: Array<{ x: number; y: number; dx: number; dy: number; magnitude: number }> = [];
+  const step = (2 * range) / (gridSize - 1);
+  
+  // J = A - I
+  const n = A.length;
+  const J = A.map((row, i) => row.map((val, j) => val - (i === j ? 1 : 0)));
+  
+  for (let xi = 0; xi < gridSize; xi++) {
+    for (let yi = 0; yi < gridSize; yi++) {
+      const x = -range + xi * step;
+      const y = -range + yi * step;
+      
+      const S = reconstructFromPCA(x, y, pca);
+      
+      // dS/dt = (A-I)·S = J·S
+      const dS = matVec(J, S);
+      
+      // Project dS onto PCA
+      const dx = dot(dS, pca.pc1);
+      const dy = dot(dS, pca.pc2);
+      const magnitude = Math.sqrt(dx * dx + dy * dy);
+      
+      // Normalize arrows for visualization (cap magnitude)
+      const maxLen = step * 0.8;
+      const scale = magnitude > maxLen ? maxLen / magnitude : 1;
+      
+      arrows.push({
+        x, y,
+        dx: dx * scale,
+        dy: dy * scale,
+        magnitude,
+      });
+    }
+  }
+  
+  return arrows;
+}
+
+// ─────────────────────────────────────────────
+// Bifurcation Detection
+// ─────────────────────────────────────────────
+
+/**
+ * Detect bifurcation events by comparing fixed points between
+ * two interaction matrices (before/after matrix update).
+ * 
+ * Birth: new attractor appears
+ * Death: attractor disappears  
+ * Merge: two attractors collapse into one
+ * Split: one attractor splits into two
+ */
+export function detectBifurcation(
+  oldFixedPoints: FixedPoint[],
+  newFixedPoints: FixedPoint[],
+): BifurcationEvent[] {
+  const events: BifurcationEvent[] = [];
+  const threshold = 0.2; // distance threshold for matching
+  
+  // Match old → new points
+  const matched = new Set<number>();
+  const oldMatched = new Set<number>();
+  
+  for (let i = 0; i < oldFixedPoints.length; i++) {
+    let bestJ = -1;
+    let bestDist = Infinity;
+    for (let j = 0; j < newFixedPoints.length; j++) {
+      if (matched.has(j)) continue;
+      const dist = vecNorm(vecSub(oldFixedPoints[i].state, newFixedPoints[j].state));
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestJ = j;
+      }
+    }
+    if (bestDist < threshold && bestJ >= 0) {
+      matched.add(bestJ);
+      oldMatched.add(i);
+      
+      // Check stability change
+      if (oldFixedPoints[i].type !== newFixedPoints[bestJ].type) {
+        events.push({
+          type: 'split', // stability change is a local bifurcation
+          timestamp: Date.now(),
+          description: `Attractor "${oldFixedPoints[i].label}" changed stability: ${oldFixedPoints[i].type} → ${newFixedPoints[bestJ].type}`,
+          descriptionVi: `Điểm hút "${oldFixedPoints[i].labelVi}" thay đổi tính ổn định: ${oldFixedPoints[i].type} → ${newFixedPoints[bestJ].type}`,
+          affectedPoints: [oldFixedPoints[i], newFixedPoints[bestJ]],
+        });
+      }
+    }
+  }
+  
+  // Unmatched old points = deaths
+  for (let i = 0; i < oldFixedPoints.length; i++) {
+    if (!oldMatched.has(i)) {
+      events.push({
+        type: 'death',
+        timestamp: Date.now(),
+        description: `Attractor "${oldFixedPoints[i].label}" (${oldFixedPoints[i].type}) disappeared`,
+        descriptionVi: `Điểm hút "${oldFixedPoints[i].labelVi}" (${oldFixedPoints[i].type}) đã biến mất`,
+        affectedPoints: [oldFixedPoints[i]],
+      });
+    }
+  }
+  
+  // Unmatched new points = births
+  for (let j = 0; j < newFixedPoints.length; j++) {
+    if (!matched.has(j)) {
+      events.push({
+        type: 'birth',
+        timestamp: Date.now(),
+        description: `New attractor "${newFixedPoints[j].label}" (${newFixedPoints[j].type}) appeared`,
+        descriptionVi: `Điểm hút mới "${newFixedPoints[j].labelVi}" (${newFixedPoints[j].type}) xuất hiện`,
+        affectedPoints: [newFixedPoints[j]],
+      });
+    }
+  }
+  
+  // Detect merges: multiple old → single new
+  // (already captured as deaths + birth, but we can detect closeness)
+  const unmatched_old = [...oldMatched].length < oldFixedPoints.length;
+  const unmatched_new = matched.size < newFixedPoints.length;
+  if (oldFixedPoints.length > newFixedPoints.length + 1 && unmatched_old) {
+    events.push({
+      type: 'merge',
+      timestamp: Date.now(),
+      description: `Multiple attractors merged: ${oldFixedPoints.length} → ${newFixedPoints.length} fixed points`,
+      descriptionVi: `Nhiều điểm hút hợp nhất: ${oldFixedPoints.length} → ${newFixedPoints.length} điểm cố định`,
+      affectedPoints: oldFixedPoints.filter((_, i) => !oldMatched.has(i)),
+    });
+  }
+  
+  if (newFixedPoints.length > oldFixedPoints.length + 1 && unmatched_new) {
+    events.push({
+      type: 'split',
+      timestamp: Date.now(),
+      description: `Attractor split: ${oldFixedPoints.length} → ${newFixedPoints.length} fixed points`,
+      descriptionVi: `Điểm hút phân tách: ${oldFixedPoints.length} → ${newFixedPoints.length} điểm cố định`,
+      affectedPoints: newFixedPoints.filter((_, j) => !matched.has(j)),
+    });
+  }
+  
+  return events;
 }

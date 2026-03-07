@@ -16,13 +16,18 @@
  * POST /api/pge/intervention/outcome          — Record intervention outcome (Phase 2)
  * GET  /api/pge/es-trend/:userId              — Emotional Star score trend (Phase 2)
  * 
+ * GET  /api/pge/topology/:userId               — Psychological topology map (Phase 3)
+ * GET  /api/pge/topology/landscape/:userId      — Energy landscape surface (Phase 3)
+ * 
  * @module routes/pge
- * @version 2.0.0 — PGE Phase 2
+ * @version 3.0.0 — PGE Phase 3: Topology Mapper
  */
 
 import { Router, Request, Response } from 'express';
 import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
 import { interventionEngine } from '../services/pge/interventionEngine';
+import { topologyMapper } from '../services/pge/topologyMapper';
+import { banditPolicy } from '../services/pge/banditPolicy';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -483,6 +488,138 @@ router.get(
     } catch (error) {
       logger.error('[PGE Route] es-trend error:', error);
       res.status(500).json({ success: false, error: 'Failed to get ES trend' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /topology/:userId — Psychological Topology Map (Phase 3)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/topology/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+
+      const result = await topologyMapper.computeTopology(userId);
+
+      // Slim down data for transport (don't send full 24D state vectors for each basin cell)
+      const slimFixedPoints = result.topology.fixedPoints.map(fp => ({
+        type: fp.type,
+        label: fp.label,
+        labelVi: fp.labelVi,
+        basin: fp.basin,
+        eigenvalues: fp.eigenvalues.slice(0, 3), // top 3 only
+        position: result.topology.pcaAxes
+          ? {
+              x: fp.state.reduce((s, v, i) => s + v * result.topology.pcaAxes.pc1[i], 0)
+                - result.topology.pcaAxes.mean.reduce((s, v, i) => s + v * result.topology.pcaAxes.pc1[i], 0),
+              y: fp.state.reduce((s, v, i) => s + v * result.topology.pcaAxes.pc2[i], 0)
+                - result.topology.pcaAxes.mean.reduce((s, v, i) => s + v * result.topology.pcaAxes.pc2[i], 0),
+            }
+          : { x: 0, y: 0 },
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          fixedPoints: slimFixedPoints,
+          basins: result.topology.basins,
+          gridSize: result.topology.gridSize,
+          userPosition: result.topology.userPosition,
+          userTrajectory: result.topology.userTrajectory.slice(-30), // last 30 points
+          bifurcationEvents: result.topology.bifurcationEvents,
+          profile: result.profile,
+          phasePortrait: result.phasePortrait,
+        },
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] topology error:', error);
+      res.status(500).json({ success: false, error: 'Failed to compute topology' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /topology/landscape/:userId — Energy Landscape Surface (Phase 3)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/topology/landscape/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+
+      const result = await topologyMapper.computeTopology(userId);
+
+      res.json({
+        success: true,
+        data: {
+          landscape: result.landscape,
+          profile: result.profile,
+          userPosition: result.topology.userPosition,
+        },
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] landscape error:', error);
+      res.status(500).json({ success: false, error: 'Failed to compute landscape' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /bandit/:userId — Bandit RL Analytics (Phase 5)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/bandit/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const analytics = await banditPolicy.getAnalytics(userId);
+
+      res.json({
+        success: true,
+        data: analytics,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] bandit analytics error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get bandit analytics' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /bandit/select/:userId — Bandit Arm Selection (Phase 5)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/bandit/select/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const zone = (req.query.zone as string) || 'caution';
+      const ebhScore = parseFloat(req.query.ebh as string) || 0.5;
+      const topologyProfile = req.query.topology as string;
+
+      const result = await banditPolicy.selectArm(userId, {
+        topologyProfile,
+        zone,
+        ebhScore,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] bandit select error:', error);
+      res.status(500).json({ success: false, error: 'Failed to select bandit arm' });
     }
   }
 );

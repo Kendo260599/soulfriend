@@ -15,10 +15,10 @@
  * 9. Intervention Recommendation — can thiệp tối ưu (Phase 2)
  * 10. Trajectory Comparison — with/without intervention (Phase 2)
  * 
- * @version 2.0.0 — PGE Phase 2: Positive Attractor & Escape Force
+ * @version 3.0.0 — PGE Phase 3: Topology & Psychological Landscape
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
@@ -94,6 +94,9 @@ interface InterventionData {
     escapeForce: number;
     escapeRatio: number;
     reason: string;
+    topologyProfile?: string;
+    topologyStrategy?: string;
+    banditInfo?: string;
     trajectoryComparison?: {
       withoutIntervention: Array<{ step: number; ebhScore: number; esScore: number }>;
       withIntervention: Array<{ step: number; ebhScore: number; esScore: number }>;
@@ -136,6 +139,63 @@ interface PGESummary {
 }
 
 // ═══════════════════════════════════════════
+// PHASE 3: TOPOLOGY INTERFACES
+// ═══════════════════════════════════════════
+
+interface TopologyFixedPoint {
+  type: 'stable' | 'unstable' | 'saddle';
+  label: string;
+  labelVi: string;
+  basin: number;
+  eigenvalues: number[];
+  position: { x: number; y: number };
+}
+
+interface TopologyProfileInfo {
+  profile: 'fragile' | 'chaotic' | 'stuck' | 'resilient' | 'transitional';
+  confidence: number;
+  description: string;
+  dominantAttractor: any;
+  numStable: number;
+  numUnstable: number;
+  numSaddle: number;
+}
+
+interface BifurcationEventData {
+  type: 'birth' | 'death' | 'merge' | 'split';
+  timestamp: number;
+  description: string;
+  descriptionVi: string;
+}
+
+interface PhasePortraitArrow {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+}
+
+interface TopologyData {
+  fixedPoints: TopologyFixedPoint[];
+  gridSize: number;
+  userPosition: { x: number; y: number };
+  userTrajectory: Array<{ x: number; y: number }>;
+  bifurcationEvents: BifurcationEventData[];
+  profile: TopologyProfileInfo;
+  phasePortrait: PhasePortraitArrow[];
+}
+
+interface LandscapeData {
+  landscape: {
+    x: number[];
+    y: number[];
+    energy: number[][];
+  };
+  profile: TopologyProfileInfo;
+  userPosition: { x: number; y: number };
+}
+
+// ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
 
@@ -169,6 +229,20 @@ const ATTRACTOR_LABELS: Record<string, string> = {
   growth: '🌟 Phát triển',
 };
 
+const TOPOLOGY_PROFILE_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
+  fragile: { icon: '🥀', color: '#f44336', label: 'Mong manh' },
+  chaotic: { icon: '🌪️', color: '#ff5722', label: 'Hỗn loạn' },
+  stuck: { icon: '🪨', color: '#ff9800', label: 'Mắc kẹt' },
+  resilient: { icon: '💪', color: '#4caf50', label: 'Kiên cường' },
+  transitional: { icon: '🦋', color: '#2196f3', label: 'Chuyển đổi' },
+};
+
+const FIXEDPOINT_MARKERS: Record<string, { symbol: string; color: string }> = {
+  stable: { symbol: '⬤', color: '#4caf50' },
+  unstable: { symbol: '✕', color: '#f44336' },
+  saddle: { symbol: '◇', color: '#ff9800' },
+};
+
 // ═══════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════
@@ -178,9 +252,11 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
+  const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
+  const [landscapeData, setLandscapeData] = useState<LandscapeData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -221,6 +297,32 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchTopology = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const [topoRes, landRes] = await Promise.all([
+        fetch(`${API_URL}/api/pge/topology/${uid}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/api/pge/topology/landscape/${uid}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      if (!topoRes.ok) throw new Error(`Topology HTTP ${topoRes.status}`);
+      if (!landRes.ok) throw new Error(`Landscape HTTP ${landRes.status}`);
+      const topoJson = await topoRes.json();
+      const landJson = await landRes.json();
+      if (topoJson.success) setTopologyData(topoJson.data);
+      if (landJson.success) setLandscapeData(landJson.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -241,6 +343,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           <TabBtn active={view === 'detail'} onClick={() => setView('detail')}>
             🔬 Phân tích cá nhân
           </TabBtn>
+          <TabBtn active={view === 'topology'} onClick={() => setView('topology')}>
+            🗺️ Bản đồ tâm lý
+          </TabBtn>
         </TabRow>
       </Header>
 
@@ -248,13 +353,22 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
 
       {view === 'summary' ? (
         <SummaryView summary={summary} loading={loading} />
-      ) : (
+      ) : view === 'detail' ? (
         <DetailView
           fieldMap={fieldMap}
           loading={loading}
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchFieldMap(selectedUserId)}
+        />
+      ) : (
+        <TopologyView
+          topology={topologyData}
+          landscape={landscapeData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchTopology(selectedUserId)}
         />
       )}
     </Container>
@@ -440,6 +554,24 @@ const DetailView: React.FC<{
                 <InterventionReason>
                   💡 {fieldMap.intervention.intervention.reason}
                 </InterventionReason>
+
+                {fieldMap.intervention.intervention.topologyStrategy && (
+                  <TopoStrategyBanner>
+                    🗺️ <strong>Chiến lược Topology:</strong> {fieldMap.intervention.intervention.topologyStrategy}
+                    {fieldMap.intervention.intervention.topologyProfile && (
+                      <TopoStrategyBadge>
+                        {TOPOLOGY_PROFILE_CONFIG[fieldMap.intervention.intervention.topologyProfile]?.icon}{' '}
+                        {TOPOLOGY_PROFILE_CONFIG[fieldMap.intervention.intervention.topologyProfile]?.label}
+                      </TopoStrategyBadge>
+                    )}
+                  </TopoStrategyBanner>
+                )}
+
+                {fieldMap.intervention.intervention.banditInfo && (
+                  <BanditInfoBanner>
+                    🎰 <strong>Bandit RL:</strong> {fieldMap.intervention.intervention.banditInfo}
+                  </BanditInfoBanner>
+                )}
 
                 <InterventionMetrics>
                   <MetricItem>
@@ -713,6 +845,316 @@ const DetailView: React.FC<{
               </EBHHistoryGrid>
             </Section>
           )}
+        </>
+      )}
+    </>
+  );
+};
+
+// ═══════════════════════════════════════════
+// PHASE 3: TOPOLOGY VIEW
+// ═══════════════════════════════════════════
+
+function energyColor(t: number): string {
+  const colors = [
+    [26, 35, 126], [0, 150, 136], [76, 175, 80],
+    [255, 235, 59], [255, 152, 0], [244, 67, 54],
+  ];
+  const n = colors.length - 1;
+  const idx = Math.max(0, Math.min(n, t * n));
+  const lo = Math.floor(Math.min(idx, n - 1));
+  const hi = Math.min(lo + 1, n);
+  const f = idx - lo;
+  return `rgb(${Math.round(colors[lo][0] * (1 - f) + colors[hi][0] * f)},${Math.round(colors[lo][1] * (1 - f) + colors[hi][1] * f)},${Math.round(colors[lo][2] * (1 - f) + colors[hi][2] * f)})`;
+}
+
+function drawStarShape(ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerR: number, innerR: number) {
+  let rot = -Math.PI / 2;
+  const step = Math.PI / spikes;
+  ctx.beginPath();
+  for (let i = 0; i < spikes * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    ctx.lineTo(cx + Math.cos(rot) * r, cy + Math.sin(rot) * r);
+    rot += step;
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawLandscapeCanvas(
+  canvas: HTMLCanvasElement,
+  landscape: LandscapeData,
+  topology: TopologyData | null,
+) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const W = canvas.width;
+  const H = canvas.height;
+  const pad = 40;
+  const plotW = W - 2 * pad - 20; // leave room for legend bar
+  const plotH = H - 2 * pad;
+
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, W, H);
+
+  const { x: xs, y: ys, energy } = landscape.landscape;
+  const rows = energy.length;
+  const cols = energy[0]?.length || 0;
+  if (rows === 0 || cols === 0) return;
+
+  let minE = Infinity, maxE = -Infinity;
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < cols; j++) {
+      if (energy[i][j] < minE) minE = energy[i][j];
+      if (energy[i][j] > maxE) maxE = energy[i][j];
+    }
+  const rangeE = maxE - minE || 1;
+
+  const cellW = plotW / cols;
+  const cellH = plotH / rows;
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < cols; j++) {
+      ctx.fillStyle = energyColor((energy[i][j] - minE) / rangeE);
+      ctx.fillRect(pad + j * cellW, pad + i * cellH, cellW + 1, cellH + 1);
+    }
+
+  const xMin = xs[0], xMax = xs[xs.length - 1];
+  const yMin = ys[0], yMax = ys[ys.length - 1];
+  const mapX = (v: number) => pad + ((v - xMin) / (xMax - xMin || 1)) * plotW;
+  const mapY = (v: number) => pad + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+
+  if (topology) {
+    // Phase portrait arrows
+    if (topology.phasePortrait) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      topology.phasePortrait.forEach(a => {
+        const ax = mapX(a.x), ay = mapY(a.y);
+        const scale = 12;
+        const ex = ax + a.dx * scale, ey = ay - a.dy * scale;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ex, ey); ctx.stroke();
+        const angle = Math.atan2(ey - ay, ex - ax);
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - 4 * Math.cos(angle - 0.4), ey - 4 * Math.sin(angle - 0.4));
+        ctx.lineTo(ex - 4 * Math.cos(angle + 0.4), ey - 4 * Math.sin(angle + 0.4));
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fill();
+      });
+    }
+
+    // User trajectory
+    if (topology.userTrajectory?.length > 1) {
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 2]);
+      ctx.beginPath();
+      topology.userTrajectory.forEach((pt, i) => {
+        const px = mapX(pt.x), py = mapY(pt.y);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#00e5ff';
+      topology.userTrajectory.forEach(pt => {
+        ctx.beginPath();
+        ctx.arc(mapX(pt.x), mapY(pt.y), 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Fixed points
+    topology.fixedPoints.forEach(fp => {
+      const fx = mapX(fp.position.x), fy = mapY(fp.position.y);
+      if (fp.type === 'stable') {
+        ctx.shadowColor = '#4caf50'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#4caf50';
+        ctx.beginPath(); ctx.arc(fx, fy, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      } else if (fp.type === 'unstable') {
+        ctx.strokeStyle = '#f44336'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(fx - 6, fy - 6); ctx.lineTo(fx + 6, fy + 6);
+        ctx.moveTo(fx + 6, fy - 6); ctx.lineTo(fx - 6, fy + 6);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = '#ff9800';
+        ctx.beginPath();
+        ctx.moveTo(fx, fy - 8); ctx.lineTo(fx + 6, fy);
+        ctx.lineTo(fx, fy + 8); ctx.lineTo(fx - 6, fy);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(fp.labelVi || fp.label, fx, fy - 12);
+    });
+
+    // User position star
+    if (topology.userPosition) {
+      const ux = mapX(topology.userPosition.x), uy = mapY(topology.userPosition.y);
+      ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 15;
+      ctx.fillStyle = '#00e5ff';
+      drawStarShape(ctx, ux, uy, 5, 10, 5);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Bạn ở đây', ux, uy - 14);
+    }
+  }
+
+  // Axes labels
+  ctx.fillStyle = '#aaa'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('PC1 — Thành phần chính 1', W / 2, H - 5);
+  ctx.save();
+  ctx.translate(12, H / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('PC2 — Thành phần chính 2', 0, 0);
+  ctx.restore();
+
+  // Color legend bar
+  const legX = W - pad + 4;
+  for (let i = 0; i < plotH; i++) {
+    ctx.fillStyle = energyColor(1 - i / plotH);
+    ctx.fillRect(legX, pad + i, 12, 1);
+  }
+  ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('Cao', legX, pad - 4);
+  ctx.fillText('Thấp', legX, pad + plotH + 12);
+}
+
+const TopologyView: React.FC<{
+  topology: TopologyData | null;
+  landscape: LandscapeData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+}> = ({ topology, landscape, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!landscape || !canvasRef.current) return;
+    drawLandscapeCanvas(canvasRef.current, landscape, topology);
+  }, [landscape, topology]);
+
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để xem bản đồ tâm lý..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading}>
+          {loading ? '⏳' : '🗺️'} Phân tích topology
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang tính toán bản đồ tâm lý...</LoadingText>}
+
+      {topology && !loading && (
+        <>
+          {/* Topology Profile Card */}
+          <TopoProfileCard color={TOPOLOGY_PROFILE_CONFIG[topology.profile.profile]?.color || '#999'}>
+            <TopoProfileIcon>
+              {TOPOLOGY_PROFILE_CONFIG[topology.profile.profile]?.icon || '❓'}
+            </TopoProfileIcon>
+            <TopoProfileInfo>
+              <TopoProfileTitle>
+                Hồ sơ topology: {TOPOLOGY_PROFILE_CONFIG[topology.profile.profile]?.label || topology.profile.profile}
+              </TopoProfileTitle>
+              <TopoProfileDesc>{topology.profile.description}</TopoProfileDesc>
+              <TopoProfileMeta>
+                Độ tin cậy: {Math.round(topology.profile.confidence * 100)}% | 
+                Ổn định: {topology.profile.numStable} | 
+                Bất ổn: {topology.profile.numUnstable} | 
+                Yên ngựa: {topology.profile.numSaddle}
+              </TopoProfileMeta>
+            </TopoProfileInfo>
+          </TopoProfileCard>
+
+          {/* Energy Landscape Canvas */}
+          <Section>
+            <SectionTitle>🗺️ Bản đồ năng lượng tâm lý — Psychological Landscape</SectionTitle>
+            <LandscapeWrapper>
+              <LandscapeCanvas ref={canvasRef} width={560} height={480} />
+              <LandscapeLegendBox>
+                <LegendTitle>Chú giải</LegendTitle>
+                <LegendRow><LegendDot color="#4caf50" /> Attractor ổn định</LegendRow>
+                <LegendRow><LegendX /> Điểm bất ổn</LegendRow>
+                <LegendRow><LegendDiamond /> Điểm yên ngựa</LegendRow>
+                <LegendRow><LegendStar /> Vị trí hiện tại</LegendRow>
+                <LegendRow><LegendLine /> Quỹ đạo gần đây</LegendRow>
+                <LegendRow><LegendArrowIcon /> Trường lực</LegendRow>
+              </LandscapeLegendBox>
+            </LandscapeWrapper>
+          </Section>
+
+          {/* Fixed Points Table */}
+          <Section>
+            <SectionTitle>📍 Điểm cố định — Attractors & Repellers</SectionTitle>
+            <FixedPointGrid>
+              {topology.fixedPoints.map((fp, i) => (
+                <FixedPointCard key={i} fpType={fp.type}>
+                  <FPMarker color={FIXEDPOINT_MARKERS[fp.type]?.color || '#999'}>
+                    {FIXEDPOINT_MARKERS[fp.type]?.symbol || '?'}
+                  </FPMarker>
+                  <FPInfo>
+                    <FPName>{fp.labelVi || fp.label}</FPName>
+                    <FPType>{fp.type === 'stable' ? '🟢 Ổn định' : fp.type === 'unstable' ? '🔴 Bất ổn' : '🟡 Yên ngựa'}</FPType>
+                    <FPEigen>λ: [{fp.eigenvalues.map(e => e.toFixed(2)).join(', ')}]</FPEigen>
+                    <FPPosition>PCA: ({fp.position.x.toFixed(2)}, {fp.position.y.toFixed(2)})</FPPosition>
+                  </FPInfo>
+                </FixedPointCard>
+              ))}
+            </FixedPointGrid>
+          </Section>
+
+          {/* Bifurcation Events */}
+          {topology.bifurcationEvents.length > 0 && (
+            <Section>
+              <SectionTitle>⚡ Sự kiện phân nhánh (Bifurcation)</SectionTitle>
+              <BifurcationList>
+                {topology.bifurcationEvents.map((ev, i) => (
+                  <BifurcationItem key={i} evType={ev.type}>
+                    <BifIcon>
+                      {ev.type === 'birth' ? '🌱' : ev.type === 'death' ? '💀' : ev.type === 'merge' ? '🔗' : '✂️'}
+                    </BifIcon>
+                    <BifContent>
+                      <BifDesc>{ev.descriptionVi || ev.description}</BifDesc>
+                      <BifTime>{new Date(ev.timestamp).toLocaleString('vi-VN')}</BifTime>
+                    </BifContent>
+                  </BifurcationItem>
+                ))}
+              </BifurcationList>
+            </Section>
+          )}
+
+          {/* Basin Statistics */}
+          <Section>
+            <SectionTitle>🌊 Thống kê điểm cố định</SectionTitle>
+            <StatsGrid>
+              <StatCard color="#6a1b9a">
+                <StatValue>{topology.fixedPoints.filter(f => f.type === 'stable').length}</StatValue>
+                <StatLabel>Attractor ổn định</StatLabel>
+              </StatCard>
+              <StatCard color="#f44336">
+                <StatValue>{topology.fixedPoints.filter(f => f.type === 'unstable').length}</StatValue>
+                <StatLabel>Repeller bất ổn</StatLabel>
+              </StatCard>
+              <StatCard color="#ff9800">
+                <StatValue>{topology.fixedPoints.filter(f => f.type === 'saddle').length}</StatValue>
+                <StatLabel>Điểm yên ngựa</StatLabel>
+              </StatCard>
+              <StatCard color="#2196f3">
+                <StatValue>{topology.userTrajectory.length}</StatValue>
+                <StatLabel>Điểm quỹ đạo</StatLabel>
+              </StatCard>
+            </StatsGrid>
+          </Section>
         </>
       )}
     </>
@@ -1210,6 +1652,40 @@ const InterventionReason = styled.div`
   border-left: 4px solid #66bb6a;
 `;
 
+const TopoStrategyBanner = styled.div`
+  background: linear-gradient(135deg, #e3f2fd, #e8eaf6);
+  border: 1px solid #90caf9;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  color: #1565c0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+const TopoStrategyBadge = styled.span`
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: rgba(21,101,192,0.1);
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: auto;
+`;
+
+const BanditInfoBanner = styled.div`
+  background: linear-gradient(135deg, #fce4ec, #f3e5f5);
+  border: 1px solid #ce93d8;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: #6a1b9a;
+`;
+
 const InterventionMetrics = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1402,5 +1878,168 @@ const ESInfoValue = styled.div<{ good: boolean }>`
   font-weight: bold;
   color: ${p => p.good ? '#2e7d32' : '#ff5722'};
 `;
+
+// ═══════════════════════════════════════════
+// PHASE 3: TOPOLOGY STYLED COMPONENTS
+// ═══════════════════════════════════════════
+
+const TopoProfileCard = styled.div<{ color: string }>`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, ${p => p.color}10, ${p => p.color}25);
+  border: 2px solid ${p => p.color}40;
+  margin-bottom: 20px;
+  animation: ${fadeIn} 0.4s ease;
+`;
+
+const TopoProfileIcon = styled.div`font-size: 3rem;`;
+const TopoProfileInfo = styled.div`flex: 1;`;
+const TopoProfileTitle = styled.div`
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #333;
+`;
+const TopoProfileDesc = styled.div`
+  font-size: 0.9rem;
+  color: #555;
+  margin: 4px 0;
+`;
+const TopoProfileMeta = styled.div`
+  font-size: 0.75rem;
+  color: #999;
+`;
+
+const LandscapeWrapper = styled.div`
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+`;
+
+const LandscapeCanvas = styled.canvas`
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  max-width: 100%;
+`;
+
+const LandscapeLegendBox = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  min-width: 160px;
+`;
+
+const LegendTitle = styled.div`
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+`;
+
+const LegendRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #555;
+  margin-bottom: 6px;
+`;
+
+const LegendDot = styled.div<{ color: string }>`
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: ${p => p.color};
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px ${p => p.color};
+`;
+
+const LegendX = styled.div`
+  width: 12px; height: 12px;
+  position: relative;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 2px;
+    background: #f44336;
+    top: 50%;
+    left: -1px;
+  }
+  &::before { transform: rotate(45deg); }
+  &::after { transform: rotate(-45deg); }
+`;
+
+const LegendDiamond = styled.div`
+  width: 10px; height: 10px;
+  background: #ff9800;
+  transform: rotate(45deg);
+`;
+
+const LegendStar = styled.div`
+  color: #00e5ff;
+  font-size: 14px;
+  &::after { content: '★'; }
+`;
+
+const LegendLine = styled.div`
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed #00e5ff;
+`;
+
+const LegendArrowIcon = styled.div`
+  color: rgba(150,150,150,0.8);
+  font-size: 12px;
+  &::after { content: '→'; }
+`;
+
+const FixedPointGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+`;
+
+const FixedPointCard = styled.div<{ fpType: string }>`
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: ${p => p.fpType === 'stable' ? '#f1f8e9' : p.fpType === 'unstable' ? '#ffebee' : '#fff8e1'};
+  border-left: 4px solid ${p => p.fpType === 'stable' ? '#4caf50' : p.fpType === 'unstable' ? '#f44336' : '#ff9800'};
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+`;
+
+const FPMarker = styled.div<{ color: string }>`
+  font-size: 1.5rem;
+  color: ${p => p.color};
+  width: 30px;
+  text-align: center;
+  flex-shrink: 0;
+`;
+
+const FPInfo = styled.div`flex: 1;`;
+const FPName = styled.div`font-size: 0.9rem; font-weight: bold; color: #333;`;
+const FPType = styled.div`font-size: 0.75rem; color: #666; margin: 2px 0;`;
+const FPEigen = styled.div`font-size: 0.7rem; color: #999; font-family: monospace;`;
+const FPPosition = styled.div`font-size: 0.65rem; color: #bbb; font-family: monospace;`;
+
+const BifurcationList = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const BifurcationItem = styled.div<{ evType: string }>`
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: ${p => p.evType === 'birth' ? '#e8f5e9' : p.evType === 'death' ? '#ffebee' : '#fff3e0'};
+  border-left: 3px solid ${p => p.evType === 'birth' ? '#4caf50' : p.evType === 'death' ? '#f44336' : '#ff9800'};
+`;
+
+const BifIcon = styled.div`font-size: 1.3rem;`;
+const BifContent = styled.div`flex: 1;`;
+const BifDesc = styled.div`font-size: 0.85rem; color: #333;`;
+const BifTime = styled.div`font-size: 0.7rem; color: #999; margin-top: 4px;`;
 
 export default PGEDashboard;

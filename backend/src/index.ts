@@ -60,6 +60,7 @@ import v5LearningPipelineRoutes from './routes/v5/learningPipeline';
 import v5AnalyticsRoutes from './routes/v5/analytics';
 import v5KnowledgeGraphRoutes from './routes/v5/knowledgeGraph';
 import v5ExperimentRoutes from './routes/v5/experiments';
+import v5SystemHealthRoutes from './routes/v5/systemHealth';
 
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
@@ -323,6 +324,7 @@ app.use('/api/v5/learning', v5LearningPipelineRoutes);
 app.use('/api/v5/analytics', v5AnalyticsRoutes);
 app.use('/api/v5/knowledge-graph', v5KnowledgeGraphRoutes);
 app.use('/api/v5/experiments', v5ExperimentRoutes);
+app.use('/api/v5/health', v5SystemHealthRoutes);
 
 // 🧪 TEST: QStash Testing Endpoints (Development ONLY)
 if (config.NODE_ENV === 'development') {
@@ -637,31 +639,86 @@ const startServer = async () => {
         // V5 REACTIVE EVENT HANDLERS
         // ================================
 
-        // Khi nhận feedback tiêu cực → đánh dấu cần expert review
+        // Khi nhận feedback tiêu cực → đánh dấu cần expert review trong DB
         eventQueueService.subscribe('feedback.received', async (data: any) => {
           if (data.rating === 'not_helpful' || data.emotionChange === 'feel_worse') {
             console.log('⚠️ [V5 Reactive] Negative feedback → flagging for expert review');
+            try {
+              const InteractionEvent = (await import('./models/InteractionEvent')).default;
+              if (data.interactionId) {
+                await InteractionEvent.findByIdAndUpdate(data.interactionId, {
+                  $set: { 'metadata.needsExpertReview': true, 'metadata.flagReason': 'negative_feedback' },
+                });
+              }
+            } catch (err) {
+              console.warn('⚠️ [V5 Reactive] Failed to flag interaction:', err instanceof Error ? err.message : err);
+            }
           }
         });
 
-        // Khi evaluation score thấp → tự động flag
+        // Khi evaluation score thấp → flag + persist
         eventQueueService.subscribe('evaluation.completed', async (data: any) => {
           if (data.score !== undefined && data.score < 0.5) {
-            console.log('⚠️ [V5 Reactive] Low evaluation score:', data.score, '→ needs review');
-          }
-          if (data.needsReview) {
-            console.log('🔍 [V5 Reactive] Evaluation flagged for human review');
+            console.log('⚠️ [V5 Reactive] Low evaluation score:', data.score, '→ flagging for review');
+            try {
+              const InteractionEvent = (await import('./models/InteractionEvent')).default;
+              if (data.interactionId) {
+                await InteractionEvent.findByIdAndUpdate(data.interactionId, {
+                  $set: { 'metadata.needsExpertReview': true, 'metadata.flagReason': 'low_eval_score', 'metadata.evalScore': data.score },
+                });
+              }
+            } catch (err) {
+              console.warn('⚠️ [V5 Reactive] Failed to flag low-score interaction:', err instanceof Error ? err.message : err);
+            }
           }
         });
 
-        // Khi phát hiện crisis → alert
+        // Khi phát hiện crisis → persist SafetyLog + email notification
         eventQueueService.subscribe('crisis.detected', async (data: any) => {
           console.log('🚨 [V5 Reactive] CRISIS DETECTED:', data.crisisLevel, 'user:', data.userId);
+          try {
+            const { SafetyLog } = await import('./models/SafetyLog');
+            await SafetyLog.create({
+              eventType: 'crisis_detected',
+              sessionId: data.sessionId,
+              userId: data.userId,
+              violations: [{ rule: 'crisis_escalation', severity: 'critical', description: 'Crisis level: ' + data.crisisLevel }],
+              violationCount: 1,
+              actionTaken: 'escalated',
+              crisisLevel: data.crisisLevel,
+              riskLevel: data.riskLevel,
+            });
+            // Gửi email thông báo (nếu expert emails configured)
+            const expertEmails = process.env.EXPERT_NOTIFICATION_EMAILS?.split(',').filter(Boolean) || [];
+            if (expertEmails.length > 0) {
+              const { emailService } = await import('./services/emailService');
+              await emailService.send({
+                to: expertEmails,
+                subject: '🚨 [SoulFriend V5] Crisis Detected - ' + data.crisisLevel,
+                html: '<h2>🚨 Crisis Alert</h2><p><b>User:</b> ' + data.userId + '</p><p><b>Level:</b> ' + data.crisisLevel + '</p><p><b>Session:</b> ' + data.sessionId + '</p><p>Vui lòng kiểm tra Expert Dashboard ngay.</p>',
+              });
+            }
+          } catch (err) {
+            console.warn('⚠️ [V5 Reactive] Crisis handling failed:', err instanceof Error ? err.message : err);
+          }
         });
 
-        // Khi guardrail bị vi phạm → log chi tiết
+        // Khi guardrail bị vi phạm → persist SafetyLog
         eventQueueService.subscribe('guardrail.violated', async (data: any) => {
           console.log('🛡️ [V5 Reactive] GUARDRAIL VIOLATED:', data.violations?.length, 'violations');
+          try {
+            const { SafetyLog } = await import('./models/SafetyLog');
+            await SafetyLog.create({
+              eventType: 'guardrail_violation',
+              sessionId: data.sessionId,
+              userId: data.userId,
+              violations: data.violations || [],
+              violationCount: data.violations?.length || 0,
+              actionTaken: data.violations?.some((v: any) => v.severity === 'block') ? 'blocked' : 'sanitized',
+            });
+          } catch (err) {
+            console.warn('⚠️ [V5 Reactive] SafetyLog persist failed:', err instanceof Error ? err.message : err);
+          }
         });
 
         // ================================

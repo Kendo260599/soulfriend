@@ -16,6 +16,10 @@ import { interactionCaptureService } from './interactionCaptureService';
 import { safetyGuardrailService } from './safetyGuardrailService';
 import { responseEvaluationService } from './responseEvaluationService';
 import { eventQueueService } from './eventQueueService';
+import { SafetyLog } from '../models/SafetyLog';
+
+// Configurable evaluation sampling rate (env: V5_EVAL_SAMPLE_RATE, default: 0.5 = 50%)
+const EVAL_SAMPLE_RATE = Math.min(1, Math.max(0, parseFloat(process.env.V5_EVAL_SAMPLE_RATE || '0.5')));
 
 class V5IntegrationService {
   /**
@@ -44,6 +48,16 @@ class V5IntegrationService {
           violations: result.violations,
           timestamp: new Date().toISOString(),
         }).catch(() => {});
+
+        // Persist safety violation to DB for audit trail
+        SafetyLog.create({
+          eventType: 'guardrail_violation',
+          violations: result.violations,
+          violationCount: result.violations.length,
+          actionTaken: result.violations.some(v => v.severity === 'block') ? 'blocked' : 'sanitized',
+          originalResponse: aiResponse.substring(0, 500),
+          sanitizedResponse: result.sanitizedResponse?.substring(0, 500),
+        }).catch(err => logger.warn('[V5 Safety] Failed to persist SafetyLog:', err));
 
         // Block critical violations, use sanitized for warnings
         const hasCritical = result.violations.some(v => v.severity === 'block');
@@ -162,8 +176,8 @@ class V5IntegrationService {
     userMessage: string;
     aiResponse: string;
   }): Promise<void> {
-    // Sample rate: evaluate ~20% of interactions
-    if (Math.random() > 0.2) {
+    // Configurable sample rate (default 50%, env V5_EVAL_SAMPLE_RATE)
+    if (Math.random() > EVAL_SAMPLE_RATE) {
       return;
     }
 

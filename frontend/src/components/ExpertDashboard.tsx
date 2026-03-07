@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import ExpertReviewPanel from './ExpertReviewPanel';
+import ImpactDashboard from './ImpactDashboard';
 import '../styles/ExpertDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
@@ -55,7 +56,7 @@ const ExpertDashboard: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [availability, setAvailability] = useState('available');
-  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review'>('crisis');
+  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact'>('crisis');
 
   // Load expert info from localStorage
   useEffect(() => {
@@ -146,7 +147,15 @@ const ExpertDashboard: React.FC = () => {
     // Session history
     socket.on('session_history', (data: any) => {
       console.log('📜 Session history:', data);
-      // TODO: Display session history
+      if (data.messages && Array.isArray(data.messages)) {
+        const historyMessages: Message[] = data.messages.map((m: any) => ({
+          from: m.from || 'user' as const,
+          message: m.message || m.text || '',
+          timestamp: new Date(m.timestamp || Date.now()),
+          expertName: m.expertName,
+        }));
+        setMessages(prev => [...historyMessages, ...prev]);
+      }
     });
 
     // Intervention closed confirmation
@@ -341,10 +350,24 @@ const ExpertDashboard: React.FC = () => {
         >
           🧠 V5 AI Review
         </button>
+        <button
+          onClick={() => setDashboardTab('impact')}
+          style={{
+            padding: '12px 24px', border: 'none', background: 'none', cursor: 'pointer',
+            fontWeight: dashboardTab === 'impact' ? 600 : 400, fontSize: 14,
+            color: dashboardTab === 'impact' ? '#34a853' : '#666',
+            borderBottom: `3px solid ${dashboardTab === 'impact' ? '#34a853' : 'transparent'}`,
+            marginBottom: -2,
+          }}
+        >
+          📊 Impact Analytics
+        </button>
       </div>
 
       {dashboardTab === 'review' ? (
         <ExpertReviewPanel />
+      ) : dashboardTab === 'impact' ? (
+        <ImpactDashboard />
       ) : (
       <div className="dashboard-content">
         {/* Alerts Sidebar */}

@@ -230,6 +230,7 @@ const ExpertReviewPanel: React.FC = () => {
   const [stats, setStats] = useState<ReviewStats>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('expertToken');
@@ -243,32 +244,21 @@ const ExpertReviewPanel: React.FC = () => {
   const loadPending = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await fetch(`${API_URL}/api/v5/learning/interactions/review?limit=20`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
         const json = await res.json();
         setPendingInteractions(json.data || []);
+      } else {
+        setLoadError(`API trả về lỗi: ${res.status} ${res.statusText}`);
+        setPendingInteractions([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Failed to load pending interactions:', err);
-      // Demo data
-      setPendingInteractions([
-        {
-          _id: 'demo_1', sessionId: 'sess_001', userId: 'user_abc',
-          userText: 'Tôi cảm thấy rất buồn và cô đơn, không biết nói chuyện với ai...',
-          aiResponse: 'Mình hiểu cảm giác cô đơn rất nặng nề. Cảm ơn bạn đã chia sẻ...',
-          riskLevel: 'MODERATE', sentiment: 'sad', sentimentScore: -0.6,
-          conversationDepth: 3, timestamp: new Date().toISOString(),
-        },
-        {
-          _id: 'demo_2', sessionId: 'sess_002', userId: 'user_def',
-          userText: 'Áp lực công việc quá lớn, tôi muốn bỏ hết mọi thứ...',
-          aiResponse: 'Mình nghe thấy bạn đang rất kiệt sức. Áp lực công việc có thể khiến ta...',
-          riskLevel: 'HIGH', sentiment: 'stressed', sentimentScore: -0.8,
-          conversationDepth: 5, timestamp: new Date(Date.now() - 3600000).toISOString(),
-        },
-      ]);
+      setLoadError(err.message || 'Không thể kết nối tới server');
+      setPendingInteractions([]);
     } finally {
       setLoading(false);
     }
@@ -407,6 +397,20 @@ const ExpertReviewPanel: React.FC = () => {
           <div style={{ width: '35%', minWidth: '280px' }}>
             {loading && pendingInteractions.length === 0 ? (
               <EmptyState>Đang tải...</EmptyState>
+            ) : loadError ? (
+              <EmptyState>
+                <h3>⚠️ Không thể tải dữ liệu</h3>
+                <p style={{ color: '#d32f2f', fontSize: 13 }}>{loadError}</p>
+                <button
+                  onClick={loadPending}
+                  style={{
+                    marginTop: 12, padding: '8px 20px', background: '#4285f4', color: '#fff',
+                    border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
+                  }}
+                >
+                  Thử lại
+                </button>
+              </EmptyState>
             ) : pendingInteractions.length === 0 ? (
               <EmptyState>
                 <h3>✅ Không có interaction cần review</h3>

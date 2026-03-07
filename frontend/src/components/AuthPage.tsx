@@ -212,6 +212,25 @@ const AuthPage: React.FC = () => {
       return;
     }
 
+    if (mode === 'register') {
+      if (password.length < 8) {
+        setError('Mật khẩu tối thiểu 8 ký tự');
+        return;
+      }
+      if (!/[a-z]/.test(password)) {
+        setError('Mật khẩu phải có ít nhất 1 chữ thường (a-z)');
+        return;
+      }
+      if (!/[A-Z]/.test(password)) {
+        setError('Mật khẩu phải có ít nhất 1 chữ hoa (A-Z)');
+        return;
+      }
+      if (!/\d/.test(password)) {
+        setError('Mật khẩu phải có ít nhất 1 chữ số (0-9)');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const result =

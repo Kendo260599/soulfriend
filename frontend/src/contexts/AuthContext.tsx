@@ -10,6 +10,27 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 
 const API_URL = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
 
+/**
+ * Fetch with retry logic for Render cold start (free tier sleeps after inactivity)
+ * Retries up to 2 times with increasing delay
+ */
+async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), attempt === 0 ? 15000 : 30000);
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (err: any) {
+      if (attempt === retries) throw err;
+      // Wait before retry (2s, 5s)
+      await new Promise(r => setTimeout(r, attempt === 0 ? 2000 : 5000));
+    }
+  }
+  throw new Error('Network request failed');
+}
+
 interface UserData {
   id: string;
   email: string;
@@ -72,13 +93,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/v2/auth/login`, {
+      const response = await fetchWithRetry(`${API_URL}/api/v2/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      if (!response.ok && response.status >= 500) {
+        return { success: false, error: 'Máy chủ đang khởi động lại, vui lòng thử lại sau 30 giây' };
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        return { success: false, error: 'Máy chủ trả về phản hồi không hợp lệ. Thử lại sau.' };
+      }
 
       if (data.success) {
         setToken(data.token);
@@ -89,20 +119,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         return { success: false, error: data.message || data.errors?.[0] || 'Đăng nhập thất bại' };
       }
-    } catch {
-      return { success: false, error: 'Không thể kết nối máy chủ' };
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, error: 'Máy chủ phản hồi quá chậm (đang khởi động). Vui lòng thử lại.' };
+      }
+      return { success: false, error: 'Không thể kết nối máy chủ. Kiểm tra kết nối mạng và thử lại.' };
     }
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
+    // Frontend validation
+    if (password.length < 8) {
+      return { success: false, error: 'Mật khẩu tối thiểu 8 ký tự' };
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return { success: false, error: 'Mật khẩu phải có chữ hoa, chữ thường và số' };
+    }
+
     try {
-      const response = await fetch(`${API_URL}/api/v2/auth/register`, {
+      const response = await fetchWithRetry(`${API_URL}/api/v2/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      if (!response.ok && response.status >= 500) {
+        return { success: false, error: 'Máy chủ đang khởi động lại, vui lòng thử lại sau 30 giây' };
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        return { success: false, error: 'Máy chủ trả về phản hồi không hợp lệ. Thử lại sau.' };
+      }
 
       if (data.success) {
         setToken(data.token);
@@ -113,8 +163,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         return { success: false, error: data.message || data.errors?.[0] || 'Đăng ký thất bại' };
       }
-    } catch {
-      return { success: false, error: 'Không thể kết nối máy chủ' };
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        return { success: false, error: 'Máy chủ phản hồi quá chậm (đang khởi động). Vui lòng thử lại.' };
+      }
+      return { success: false, error: 'Không thể kết nối máy chủ. Kiểm tra kết nối mạng và thử lại.' };
     }
   }, []);
 

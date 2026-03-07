@@ -8,7 +8,7 @@
  * Dự đoán trạng thái tương lai, phát hiện emotional black hole.
  * 
  * @module models/PsychologicalTrajectory
- * @version 1.0.0 — PGE Phase 1
+ * @version 2.0.0 — PGE Phase 6: Predictive Early Warning
  */
 
 import mongoose, { Document, Schema } from 'mongoose';
@@ -44,7 +44,27 @@ export interface IPsychologicalTrajectory extends Document {
   earlyWarning: boolean;
   warningType?: 'approaching_attractor' | 'increasing_inertia' | 'loop_strengthening' | 'hope_depleting';
   warningMessage?: string;
-  
+
+  // Phase 6: Predictive forecast
+  forecast?: {
+    csdIndex: number;            // composite CSD indicator [0,1]
+    csdLevel: 'low' | 'moderate' | 'high' | 'critical';
+    trendDirection: 'improving' | 'stable' | 'deteriorating';
+    trendStrength: number;
+    compositeRisk: number;       // overall risk [0,1]
+    alertLevel: 'none' | 'watch' | 'warning' | 'alert';
+    alertMessage: string;
+    horizons: Array<{
+      days: number;
+      predictedEBH: number;
+      predictedZone: string;
+      confidenceLow: number;
+      confidenceHigh: number;
+      riskProbability: number;
+      criticalProbability: number;
+    }>;
+  };
+
   // Confidence
   matrixVersion: number;      // which InteractionMatrix version was used
   confidence: number;         // [0,1]
@@ -87,7 +107,13 @@ const PsychologicalTrajectorySchema = new Schema<IPsychologicalTrajectory>(
       enum: ['approaching_attractor', 'increasing_inertia', 'loop_strengthening', 'hope_depleting'],
     },
     warningMessage: String,
-    
+
+    // Phase 6: Predictive forecast
+    forecast: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+
     matrixVersion: { type: Number, default: 1 },
     confidence: { type: Number, default: 0.5 },
   },

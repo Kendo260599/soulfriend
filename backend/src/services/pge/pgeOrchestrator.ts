@@ -36,6 +36,7 @@ import {
   computeESScore, distanceToAttractor, escapeForceRequired,
 } from './mathEngine';
 import { interventionEngine } from './interventionEngine';
+import { forecastEngine } from './forecastEngine';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -92,6 +93,7 @@ class PGEOrchestrator {
     };
     trajectory?: Array<{ step: number; ebhScore: number; zone: string }>;
     intervention?: any;
+    forecast?: any;
   }> {
     const { userId, sessionId, messageIndex, userMessage } = params;
 
@@ -176,6 +178,9 @@ class PGEOrchestrator {
         confidence: extraction.confidence,
       });
 
+      // Invalidate forecast cache (new state means old forecast is stale)
+      forecastEngine.invalidateCache(userId);
+
       // ════════════════════════════════════════════
       // STEP 8: Simulate Trajectory & Generate Warning
       // ════════════════════════════════════════════
@@ -223,6 +228,24 @@ class PGEOrchestrator {
           matrixVersion: matrix.version,
           confidence: extraction.confidence * 0.8, // trajectory confidence < extraction confidence
         });
+      }
+
+      // ════════════════════════════════════════════
+      // STEP 8.5: Predictive Early Warning — Forecast (Phase 6)
+      // ════════════════════════════════════════════
+      let forecastData: any = null;
+      try {
+        forecastData = await forecastEngine.generateForecast(userId);
+        // Attach forecast to the last trajectory record (if one was saved)
+        if (forecastData && forecastData.alertLevel !== 'none') {
+          await PsychologicalTrajectory.findOneAndUpdate(
+            { userId },
+            { $set: { forecast: forecastData } },
+            { sort: { simulatedAt: -1 } },
+          );
+        }
+      } catch (err) {
+        logger.warn('[PGE] Forecast generation failed:', err instanceof Error ? err.message : err);
       }
 
       // ════════════════════════════════════════════
@@ -282,6 +305,7 @@ class PGEOrchestrator {
         attractorState,
         warning: earlyWarning.warning,
         interventionRecommended: !!interventionRecommendation?.recommended,
+        forecastAlert: forecastData?.alertLevel || 'none',
       });
 
       return {
@@ -302,6 +326,7 @@ class PGEOrchestrator {
           zone: t.zone,
         })),
         intervention: interventionRecommendation,
+        forecast: forecastData,
       };
     } catch (error) {
       logger.error('[PGE] processMessage failed:', error);
@@ -497,6 +522,7 @@ class PGEOrchestrator {
       timeInZones: Record<string, number>;
       dominantEmotions: Array<{ emotion: string; count: number }>;
     };
+    forecast?: any;
   }> {
     const since = new Date(Date.now() - days * 24 * 3600 * 1000);
 
@@ -620,6 +646,7 @@ class PGEOrchestrator {
         timeInZones,
         dominantEmotions,
       },
+      forecast: (trajectory as any)?.forecast ?? null,
     };
   }
 

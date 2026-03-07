@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 3.0.0 — Phase 3: Topology Mapper + Phase 2: Intervention
+ * @version 4.0.0 — Phase 6: Predictive Early Warning + Phase 3-5
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -2228,4 +2228,469 @@ export function detectBifurcation(
   }
   
   return events;
+}
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 6 — PREDICTIVE EARLY WARNING SYSTEM
+// Critical Slowing Down (CSD) indicators, time-series forecasting,
+// risk probability estimation, composite warning index.
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * CSD Indicators — Critical Slowing Down metrics
+ * Dynamical systems theory: before a tipping point, variance ↑ and
+ * autocorrelation at lag-1 ↑ (system takes longer to recover).
+ */
+export interface CSDIndicators {
+  variance: number;              // recent window variance of EBH
+  varianceTrend: number;         // slope of variance over sliding windows (>0 = growing)
+  autocorrelation: number;       // lag-1 autocorrelation of EBH series
+  autocorrelationTrend: number;  // slope of AC over sliding windows
+  flickering: boolean;           // rapid zone transitions detected
+  flickeringCount: number;       // number of zone changes in recent window
+  skewness: number;              // right-skew = pulling toward higher EBH
+  compositeIndex: number;        // weighted CSD index [0,1]
+  interpretation: string;        // Vietnamese human-readable
+  interpretationLevel: 'low' | 'moderate' | 'high' | 'critical';
+}
+
+/**
+ * Forecast point at a specific horizon
+ */
+export interface ForecastPoint {
+  horizon: number;               // days ahead
+  horizonLabel: string;          // "1 ngày", "3 ngày", "7 ngày"
+  predictedEBH: number;         // point forecast
+  predictedZone: string;
+  confidenceLow: number;        // 90% CI lower bound
+  confidenceHigh: number;       // 90% CI upper bound
+  riskProbability: number;      // P(zone >= 'risk') at this horizon
+  criticalProbability: number;  // P(zone >= 'critical') at this horizon
+}
+
+/**
+ * Full forecast result
+ */
+export interface ForecastResult {
+  userId: string;
+  generatedAt: number;
+  currentEBH: number;
+  currentZone: string;
+  csd: CSDIndicators;
+  forecasts: ForecastPoint[];
+  trendDirection: 'improving' | 'stable' | 'deteriorating';
+  trendStrength: number;         // magnitude of trend [0,1]
+  compositeRisk: number;         // overall risk score [0,1]
+  alertLevel: 'none' | 'watch' | 'warning' | 'alert';
+  alertMessage: string;          // Vietnamese
+  recommendations: string[];     // Vietnamese actionable items
+}
+
+// ─────────────────────────────────────────────
+// Sliding window variance & autocorrelation
+// ─────────────────────────────────────────────
+
+/**
+ * Compute variance of a numeric series.
+ */
+export function seriesVariance(xs: number[]): number {
+  if (xs.length < 2) return 0;
+  const mu = xs.reduce((a, b) => a + b, 0) / xs.length;
+  return xs.reduce((a, x) => a + (x - mu) ** 2, 0) / (xs.length - 1);
+}
+
+/**
+ * Compute lag-1 autocorrelation of a series.
+ * AC(1) = Cov(x_t, x_{t-1}) / Var(x)
+ */
+export function lag1Autocorrelation(xs: number[]): number {
+  if (xs.length < 3) return 0;
+  const mu = xs.reduce((a, b) => a + b, 0) / xs.length;
+  let cov = 0, v = 0;
+  for (let i = 1; i < xs.length; i++) {
+    cov += (xs[i] - mu) * (xs[i - 1] - mu);
+    v += (xs[i] - mu) ** 2;
+  }
+  v += (xs[0] - mu) ** 2;
+  return v > 1e-12 ? cov / v : 0;
+}
+
+/**
+ * Compute skewness of a series (Fisher's).
+ */
+export function seriesSkewness(xs: number[]): number {
+  if (xs.length < 3) return 0;
+  const n = xs.length;
+  const mu = xs.reduce((a, b) => a + b, 0) / n;
+  const s2 = xs.reduce((a, x) => a + (x - mu) ** 2, 0) / (n - 1);
+  const s = Math.sqrt(s2);
+  if (s < 1e-12) return 0;
+  const m3 = xs.reduce((a, x) => a + ((x - mu) / s) ** 3, 0) / n;
+  return m3;
+}
+
+/**
+ * Linear regression slope of a series (OLS).
+ * Returns slope β₁ where y = β₀ + β₁·x
+ */
+export function linearSlope(ys: number[]): number {
+  const n = ys.length;
+  if (n < 2) return 0;
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (let i = 0; i < n; i++) {
+    sx += i;
+    sy += ys[i];
+    sxx += i * i;
+    sxy += i * ys[i];
+  }
+  const denom = n * sxx - sx * sx;
+  return Math.abs(denom) < 1e-12 ? 0 : (n * sxy - sx * sy) / denom;
+}
+
+/**
+ * Compute CSD indicators from a time series of EBH scores and zones.
+ * 
+ * @param ebhSeries — EBH scores ordered oldest→newest
+ * @param zoneSeries — corresponding zones
+ * @param windowSize — sliding window for variance/AC trends (default 5)
+ */
+export function computeCSDIndicators(
+  ebhSeries: number[],
+  zoneSeries: string[],
+  windowSize: number = 5,
+): CSDIndicators {
+  const n = ebhSeries.length;
+
+  // Base metrics on full series
+  const variance = seriesVariance(ebhSeries);
+  const ac = lag1Autocorrelation(ebhSeries);
+  const skewness = seriesSkewness(ebhSeries);
+
+  // Sliding window trends
+  let varianceTrend = 0;
+  let acTrend = 0;
+  if (n >= windowSize * 2) {
+    const varWindows: number[] = [];
+    const acWindows: number[] = [];
+    for (let i = 0; i <= n - windowSize; i++) {
+      const window = ebhSeries.slice(i, i + windowSize);
+      varWindows.push(seriesVariance(window));
+      acWindows.push(lag1Autocorrelation(window));
+    }
+    varianceTrend = linearSlope(varWindows);
+    acTrend = linearSlope(acWindows);
+  }
+
+  // Flickering: count zone transitions in recent window
+  const recentZones = zoneSeries.slice(-Math.min(10, n));
+  let transitions = 0;
+  for (let i = 1; i < recentZones.length; i++) {
+    if (recentZones[i] !== recentZones[i - 1]) transitions++;
+  }
+  const flickering = transitions >= 3;
+
+  // Composite CSD index [0,1]
+  // Weighted combination: variance trend (0.25), AC trend (0.25), 
+  // absolute AC (0.2), flickering (0.15), skewness (0.15)
+  const normVarTrend = Math.min(1, Math.max(0, varianceTrend * 20)); // scale up
+  const normAcTrend = Math.min(1, Math.max(0, acTrend * 10));
+  const normAc = Math.min(1, Math.max(0, ac));
+  const normFlicker = flickering ? Math.min(1, transitions / 5) : 0;
+  const normSkew = Math.min(1, Math.max(0, skewness / 2)); // positive skew = bad
+
+  const compositeIndex = Math.min(1,
+    0.25 * normVarTrend +
+    0.25 * normAcTrend +
+    0.20 * normAc +
+    0.15 * normFlicker +
+    0.15 * normSkew
+  );
+
+  // Interpretation
+  let level: CSDIndicators['interpretationLevel'];
+  let interpretation: string;
+  if (compositeIndex < 0.2) {
+    level = 'low';
+    interpretation = 'Hệ thống ổn định, không có dấu hiệu chuyển pha.';
+  } else if (compositeIndex < 0.45) {
+    level = 'moderate';
+    interpretation = 'Phát hiện một số dấu hiệu bất ổn. Cần theo dõi thêm.';
+  } else if (compositeIndex < 0.7) {
+    level = 'high';
+    interpretation = 'Cảnh báo: Nhiều chỉ số CSD tăng cao. Hệ thống có thể đang tiến gần điểm chuyển pha.';
+  } else {
+    level = 'critical';
+    interpretation = 'NGUY HIỂM: Chỉ số CSD rất cao. Hệ thống rất có thể sắp chuyển pha sang trạng thái tiêu cực.';
+  }
+
+  return {
+    variance,
+    varianceTrend,
+    autocorrelation: ac,
+    autocorrelationTrend: acTrend,
+    flickering,
+    flickeringCount: transitions,
+    skewness,
+    compositeIndex,
+    interpretation,
+    interpretationLevel: level,
+  };
+}
+
+// ─────────────────────────────────────────────
+// Double Exponential Smoothing (Holt's method)
+// ─────────────────────────────────────────────
+
+/**
+ * Holt's Double Exponential Smoothing for time series with trend.
+ * 
+ * Level:   L(t) = α·y(t) + (1-α)·(L(t-1) + T(t-1))
+ * Trend:   T(t) = β·(L(t) - L(t-1)) + (1-β)·T(t-1)
+ * Forecast: F(t+h) = L(t) + h·T(t)
+ * 
+ * @param series — historical values (oldest→newest)
+ * @param horizons — array of steps ahead to forecast
+ * @param alpha — smoothing factor for level (0,1), default 0.3
+ * @param beta — smoothing factor for trend (0,1), default 0.1
+ * @returns predicted values at each horizon + fitted residuals for CI
+ */
+export function holtForecast(
+  series: number[],
+  horizons: number[],
+  alpha: number = 0.3,
+  beta: number = 0.1,
+): { predictions: number[]; residuals: number[]; level: number; trend: number } {
+  if (series.length < 2) {
+    const val = series[0] ?? 0;
+    return {
+      predictions: horizons.map(() => val),
+      residuals: [0],
+      level: val,
+      trend: 0,
+    };
+  }
+
+  // Initialize: L(0) = y(0), T(0) = y(1) - y(0)
+  let L = series[0];
+  let T = series[1] - series[0];
+  const residuals: number[] = [];
+
+  for (let t = 1; t < series.length; t++) {
+    const prevL = L;
+    L = alpha * series[t] + (1 - alpha) * (L + T);
+    T = beta * (L - prevL) + (1 - beta) * T;
+    const fitted = prevL + T;
+    residuals.push(series[t] - fitted);
+  }
+
+  // Forecast at each horizon
+  const predictions = horizons.map(h => {
+    const pred = L + h * T;
+    return Math.max(0, Math.min(1, pred)); // clamp to [0,1] for EBH
+  });
+
+  return { predictions, residuals, level: L, trend: T };
+}
+
+/**
+ * Estimate confidence intervals from residuals using standard deviation.
+ * 90% CI: ±1.645σ, widening with sqrt(h) for increasing uncertainty.
+ */
+export function forecastConfidenceInterval(
+  prediction: number,
+  residuals: number[],
+  horizon: number,
+  zScore: number = 1.645, // 90% CI
+): { low: number; high: number } {
+  const sigma = Math.sqrt(seriesVariance(residuals));
+  const width = zScore * sigma * Math.sqrt(horizon);
+  return {
+    low: Math.max(0, prediction - width),
+    high: Math.min(1, prediction + width),
+  };
+}
+
+// ─────────────────────────────────────────────
+// Risk Probability Estimation
+// ─────────────────────────────────────────────
+
+/** EBH threshold for each risk zone */
+const ZONE_THRESHOLDS = {
+  risk: 0.5,      // EBH >= 0.5 → risk zone
+  critical: 0.7,  // EBH >= 0.7 → critical
+  black_hole: 0.85, // EBH >= 0.85 → black hole
+};
+
+/**
+ * Estimate probability of entering a zone using forecast distribution.
+ * Assumes forecast ~ Normal(prediction, sigma²·h).
+ * P(EBH >= threshold) = 1 - Φ((threshold - prediction) / (sigma·√h))
+ */
+export function estimateZoneRiskProbability(
+  prediction: number,
+  residuals: number[],
+  horizon: number,
+  threshold: number,
+): number {
+  const sigma = Math.sqrt(seriesVariance(residuals));
+  if (sigma < 1e-8) {
+    // No variance → deterministic comparison
+    return prediction >= threshold ? 1.0 : 0.0;
+  }
+  const se = sigma * Math.sqrt(Math.max(1, horizon));
+  const z = (threshold - prediction) / se;
+  // Use standard normal CDF approximation (Abramowitz & Stegun)
+  return 1 - normalCDF(z);
+}
+
+/**
+ * Standard normal CDF approximation.
+ * Abramowitz & Stegun formula 26.2.17 — max error 7.5×10⁻⁸.
+ */
+export function normalCDF(x: number): number {
+  if (x < -8) return 0;
+  if (x > 8) return 1;
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const absX = Math.abs(x);
+  const t = 1.0 / (1.0 + p * absX);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX / 2);
+  return 0.5 * (1.0 + sign * y);
+}
+
+// ─────────────────────────────────────────────
+// Trend Detection
+// ─────────────────────────────────────────────
+
+/**
+ * Detect trend direction and strength from EBH series.
+ */
+export function detectTrend(ebhSeries: number[]): {
+  direction: 'improving' | 'stable' | 'deteriorating';
+  strength: number;
+} {
+  if (ebhSeries.length < 3) return { direction: 'stable', strength: 0 };
+
+  const slope = linearSlope(ebhSeries);
+  const range = Math.max(...ebhSeries) - Math.min(...ebhSeries);
+  
+  // Normalize strength relative to range
+  const strength = range > 0.01 ? Math.min(1, Math.abs(slope) / range * ebhSeries.length) : 0;
+
+  if (slope < -0.005 && strength > 0.1) return { direction: 'improving', strength };
+  if (slope > 0.005 && strength > 0.1) return { direction: 'deteriorating', strength };
+  return { direction: 'stable', strength };
+}
+
+// ─────────────────────────────────────────────
+// Composite Risk Score & Alert Level
+// ─────────────────────────────────────────────
+
+/**
+ * Compute composite risk score combining:
+ * - Current EBH (30%)
+ * - CSD composite index (25%)
+ * - Trend strength × direction (20%)
+ * - Max forecast risk probability (25%)
+ */
+export function computeCompositeRisk(
+  currentEBH: number,
+  csdIndex: number,
+  trendDirection: string,
+  trendStrength: number,
+  maxRiskProb: number,
+): number {
+  const trendFactor = trendDirection === 'deteriorating' ? trendStrength :
+                      trendDirection === 'improving'     ? -trendStrength * 0.5 : 0;
+  
+  return Math.min(1, Math.max(0,
+    0.30 * currentEBH +
+    0.25 * csdIndex +
+    0.20 * Math.max(0, trendFactor) +
+    0.25 * maxRiskProb
+  ));
+}
+
+/**
+ * Determine alert level from composite risk.
+ */
+export function getAlertLevel(compositeRisk: number): 'none' | 'watch' | 'warning' | 'alert' {
+  if (compositeRisk < 0.20) return 'none';
+  if (compositeRisk < 0.40) return 'watch';
+  if (compositeRisk < 0.65) return 'warning';
+  return 'alert';
+}
+
+/**
+ * Generate Vietnamese alert message for given level.
+ */
+export function getAlertMessage(
+  level: string,
+  trendDirection: string,
+  csdLevel: string,
+  maxRiskProb: number,
+  horizonLabel: string,
+): string {
+  switch (level) {
+    case 'none':
+      return 'Trạng thái ổn định. Không phát hiện nguy cơ đáng lo ngại.';
+    case 'watch':
+      return `Cần theo dõi: ${trendDirection === 'deteriorating' ? 'Xu hướng xấu đi.' : 'Một số chỉ số bất thường.'} Xác suất rủi ro ${(maxRiskProb * 100).toFixed(0)}% trong ${horizonLabel}.`;
+    case 'warning':
+      return `CẢNH BÁO: ${csdLevel === 'high' || csdLevel === 'critical' ? 'Chỉ số CSD cao — hệ thống có thể sắp chuyển pha.' : 'Xu hướng xấu đi rõ rệt.'} Xác suất rủi ro ${(maxRiskProb * 100).toFixed(0)}% trong ${horizonLabel}. Cần can thiệp.`;
+    case 'alert':
+      return `🚨 BÁO ĐỘNG: Nguy cơ rất cao. Xác suất chuyển vùng nguy hiểm ${(maxRiskProb * 100).toFixed(0)}% trong ${horizonLabel}. Cần can thiệp NGAY.`;
+    default:
+      return '';
+  }
+}
+
+/**
+ * Generate actionable recommendations based on alert level and CSD.
+ */
+export function generateForecastRecommendations(
+  alertLevel: string,
+  csd: CSDIndicators,
+  trendDirection: string,
+  currentZone: string,
+): string[] {
+  const recs: string[] = [];
+
+  if (alertLevel === 'none') {
+    recs.push('Tiếp tục duy trì thói quen chăm sóc sức khỏe tâm lý hiện tại.');
+    return recs;
+  }
+
+  // CSD-based
+  if (csd.varianceTrend > 0.01) {
+    recs.push('Biến động cảm xúc đang tăng — thực hành kỹ thuật điều hòa cảm xúc (hít thở sâu, grounding).');
+  }
+  if (csd.autocorrelation > 0.6) {
+    recs.push('Cảm xúc tiêu cực bám dai — cần phá vỡ chu kỳ bằng hoạt động thể chất hoặc kết nối xã hội.');
+  }
+  if (csd.flickering) {
+    recs.push('Trạng thái tâm lý dao động mạnh — giảm các yếu tố kích thích, tạo routine ổn định.');
+  }
+
+  // Trend-based
+  if (trendDirection === 'deteriorating') {
+    recs.push('Xu hướng xấu đi — xem xét các nguồn stress gần đây và tìm cách giải quyết.');
+  }
+
+  // Zone-based
+  if (currentZone === 'risk' || currentZone === 'critical' || currentZone === 'black_hole') {
+    recs.push('Hiện đang trong vùng nguy hiểm — liên hệ chuyên gia tâm lý hoặc đường dây nóng 1800-599-920.');
+  }
+
+  // Alert-level specific
+  if (alertLevel === 'warning' || alertLevel === 'alert') {
+    recs.push('Ưu tiên giấc ngủ, dinh dưỡng và vận động trong vài ngày tới.');
+    recs.push('Chia sẻ với người thân tin cậy về tình trạng hiện tại.');
+  }
+  if (alertLevel === 'alert') {
+    recs.push('Đề nghị tham vấn chuyên gia sức khỏe tâm thần trong 24-48 giờ tới.');
+  }
+
+  return recs;
 }

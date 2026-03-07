@@ -19,8 +19,14 @@
  * GET  /api/pge/topology/:userId               — Psychological topology map (Phase 3)
  * GET  /api/pge/topology/landscape/:userId      — Energy landscape surface (Phase 3)
  * 
+ * GET  /api/pge/bandit/:userId                 — Bandit RL analytics (Phase 5)
+ * GET  /api/pge/bandit/select/:userId          — Bandit arm selection (Phase 5)
+ * 
+ * GET  /api/pge/forecast/:userId               — Predictive forecast + CSD + risk (Phase 6)
+ * GET  /api/pge/csd/:userId                    — CSD early warning indicators (Phase 6)
+ * 
  * @module routes/pge
- * @version 3.0.0 — PGE Phase 3: Topology Mapper
+ * @version 4.0.0 — PGE Phase 6: Predictive Early Warning System
  */
 
 import { Router, Request, Response } from 'express';
@@ -28,6 +34,7 @@ import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
 import { interventionEngine } from '../services/pge/interventionEngine';
 import { topologyMapper } from '../services/pge/topologyMapper';
 import { banditPolicy } from '../services/pge/banditPolicy';
+import { forecastEngine } from '../services/pge/forecastEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -620,6 +627,52 @@ router.get(
     } catch (error) {
       logger.error('[PGE Route] bandit select error:', error);
       res.status(500).json({ success: false, error: 'Failed to select bandit arm' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /forecast/:userId — Predictive Forecast (Phase 6)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/forecast/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const forecast = await forecastEngine.generateForecast(userId);
+
+      res.json({
+        success: true,
+        data: forecast,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] forecast error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate forecast' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /csd/:userId — CSD Early Warning Indicators (Phase 6)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/csd/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const csd = await forecastEngine.getCSDIndicators(userId);
+
+      res.json({
+        success: true,
+        data: csd,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] CSD indicators error:', error);
+      res.status(500).json({ success: false, error: 'Failed to compute CSD indicators' });
     }
   }
 );

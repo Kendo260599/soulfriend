@@ -14,8 +14,9 @@
  * 8. Early warning — cảnh báo sớm
  * 9. Intervention Recommendation — can thiệp tối ưu (Phase 2)
  * 10. Trajectory Comparison — with/without intervention (Phase 2)
+ * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
  * 
- * @version 3.0.0 — PGE Phase 3: Topology & Psychological Landscape
+ * @version 4.0.0 — PGE Phase 6: Predictive Early Warning System
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -196,6 +197,44 @@ interface LandscapeData {
 }
 
 // ═══════════════════════════════════════════
+// PHASE 6: FORECAST INTERFACES
+// ═══════════════════════════════════════════
+
+interface ForecastHorizon {
+  label: string;
+  days: number;
+  steps: number;
+  points: Array<{
+    step: number;
+    predicted: number;
+    lower: number;
+    upper: number;
+  }>;
+  finalPredicted: number;
+  finalLower: number;
+  finalUpper: number;
+  riskProbability: number;
+}
+
+interface ForecastData {
+  currentEBH: number;
+  dataPoints: number;
+  sufficient: boolean;
+  csdIndex: number;
+  csdLevel: string;
+  varianceTrend: number;
+  acTrend: number;
+  flickeringDetected: boolean;
+  trendDirection: string;
+  trendStrength: number;
+  compositeRisk: number;
+  alertLevel: string;
+  alertMessage: string;
+  recommendations: string[];
+  horizons: ForecastHorizon[];
+}
+
+// ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
 
@@ -252,11 +291,12 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
   const [landscapeData, setLandscapeData] = useState<LandscapeData | null>(null);
+  const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -323,6 +363,24 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchForecast = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/forecast/${uid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setForecastData(data.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -346,6 +404,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           <TabBtn active={view === 'topology'} onClick={() => setView('topology')}>
             🗺️ Bản đồ tâm lý
           </TabBtn>
+          <TabBtn active={view === 'forecast'} onClick={() => setView('forecast')}>
+            🔮 Dự báo sớm
+          </TabBtn>
         </TabRow>
       </Header>
 
@@ -361,7 +422,7 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchFieldMap(selectedUserId)}
         />
-      ) : (
+      ) : view === 'topology' ? (
         <TopologyView
           topology={topologyData}
           landscape={landscapeData}
@@ -369,6 +430,14 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchTopology(selectedUserId)}
+        />
+      ) : (
+        <ForecastView
+          forecast={forecastData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchForecast(selectedUserId)}
         />
       )}
     </Container>
@@ -1155,6 +1224,193 @@ const TopologyView: React.FC<{
               </StatCard>
             </StatsGrid>
           </Section>
+        </>
+      )}
+    </>
+  );
+};
+
+// ═══════════════════════════════════════════
+// PHASE 6: FORECAST VIEW
+// ═══════════════════════════════════════════
+
+const ALERT_CONFIG: Record<string, { color: string; bg: string; icon: string; label: string }> = {
+  none: { color: '#4caf50', bg: '#e8f5e9', icon: '🟢', label: 'Bình thường' },
+  watch: { color: '#2196f3', bg: '#e3f2fd', icon: '🔵', label: 'Theo dõi' },
+  warning: { color: '#ff9800', bg: '#fff3e0', icon: '🟠', label: 'Cảnh báo' },
+  alert: { color: '#f44336', bg: '#ffebee', icon: '🔴', label: 'Báo động' },
+};
+
+const CSD_LEVEL_CONFIG: Record<string, { color: string; label: string }> = {
+  low: { color: '#4caf50', label: 'Thấp — hệ thống ổn định' },
+  moderate: { color: '#ff9800', label: 'Trung bình — có dấu hiệu chậm phục hồi' },
+  high: { color: '#f44336', label: 'Cao — cảnh báo sớm chuyển pha' },
+  critical: { color: '#9c27b0', label: 'Nghiêm trọng — nguy cơ sụp đổ hệ thống' },
+};
+
+const ForecastView: React.FC<{
+  forecast: ForecastData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+}> = ({ forecast, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để xem dự báo..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading}>
+          {loading ? '⏳' : '🔮'} Dự báo
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang phân tích dữ liệu và tạo dự báo...</LoadingText>}
+
+      {forecast && !loading && (
+        <>
+          {/* Alert Banner */}
+          <ForecastAlertBanner
+            bg={ALERT_CONFIG[forecast.alertLevel]?.bg || '#e8f5e9'}
+            color={ALERT_CONFIG[forecast.alertLevel]?.color || '#4caf50'}
+          >
+            <ForecastAlertIcon>{ALERT_CONFIG[forecast.alertLevel]?.icon || '⚪'}</ForecastAlertIcon>
+            <ForecastAlertContent>
+              <ForecastAlertTitle>
+                Mức cảnh báo: {ALERT_CONFIG[forecast.alertLevel]?.label || forecast.alertLevel}
+              </ForecastAlertTitle>
+              <ForecastAlertMsg>{forecast.alertMessage}</ForecastAlertMsg>
+            </ForecastAlertContent>
+            <ForecastRiskGauge>
+              <ForecastRiskLabel>Rủi ro tổng hợp</ForecastRiskLabel>
+              <ForecastRiskValue risk={forecast.compositeRisk}>
+                {Math.round(forecast.compositeRisk * 100)}%
+              </ForecastRiskValue>
+            </ForecastRiskGauge>
+          </ForecastAlertBanner>
+
+          {/* Insufficient data notice */}
+          {!forecast.sufficient && (
+            <EmptyText>
+              ⚠️ Chưa đủ dữ liệu ({forecast.dataPoints} điểm). Cần tối thiểu 5 trạng thái để dự báo chính xác.
+            </EmptyText>
+          )}
+
+          {/* CSD Indicators */}
+          <Section>
+            <SectionTitle>📡 Chỉ số Critical Slowing Down (CSD)</SectionTitle>
+            <ForecastStatsGrid>
+              <ForecastStatCard
+                color={CSD_LEVEL_CONFIG[forecast.csdLevel]?.color || '#999'}
+              >
+                <ForecastStatValue>{(forecast.csdIndex * 100).toFixed(0)}%</ForecastStatValue>
+                <ForecastStatLabel>CSD Index</ForecastStatLabel>
+                <ForecastStatMeta>{CSD_LEVEL_CONFIG[forecast.csdLevel]?.label}</ForecastStatMeta>
+              </ForecastStatCard>
+              <ForecastStatCard color={forecast.varianceTrend > 0 ? '#f44336' : '#4caf50'}>
+                <ForecastStatValue>{forecast.varianceTrend > 0 ? '↑' : '↓'} {Math.abs(forecast.varianceTrend).toFixed(3)}</ForecastStatValue>
+                <ForecastStatLabel>Xu hướng phương sai</ForecastStatLabel>
+                <ForecastStatMeta>{forecast.varianceTrend > 0 ? 'Tăng — hệ thống mất ổn định' : 'Giảm — hệ thống ổn định'}</ForecastStatMeta>
+              </ForecastStatCard>
+              <ForecastStatCard color={forecast.acTrend > 0 ? '#f44336' : '#4caf50'}>
+                <ForecastStatValue>{forecast.acTrend > 0 ? '↑' : '↓'} {Math.abs(forecast.acTrend).toFixed(3)}</ForecastStatValue>
+                <ForecastStatLabel>Xu hướng tự tương quan</ForecastStatLabel>
+                <ForecastStatMeta>{forecast.acTrend > 0 ? 'Tăng — phục hồi chậm lại' : 'Giảm — phục hồi nhanh'}</ForecastStatMeta>
+              </ForecastStatCard>
+              <ForecastStatCard color={forecast.flickeringDetected ? '#f44336' : '#4caf50'}>
+                <ForecastStatValue>{forecast.flickeringDetected ? '⚡ Có' : '✓ Không'}</ForecastStatValue>
+                <ForecastStatLabel>Hiện tượng nhấp nháy</ForecastStatLabel>
+                <ForecastStatMeta>{forecast.flickeringDetected ? 'Dao động bất thường — dấu hiệu chuyển pha' : 'Không phát hiện dao động bất thường'}</ForecastStatMeta>
+              </ForecastStatCard>
+            </ForecastStatsGrid>
+          </Section>
+
+          {/* Trend & EBH */}
+          <Section>
+            <SectionTitle>📊 Xu hướng & EBH hiện tại</SectionTitle>
+            <ForecastStatsGrid>
+              <ForecastStatCard color={forecast.trendDirection === 'improving' ? '#4caf50' : forecast.trendDirection === 'deteriorating' ? '#f44336' : '#ff9800'}>
+                <ForecastStatValue>
+                  {forecast.trendDirection === 'improving' ? '📈 Tích cực' : forecast.trendDirection === 'deteriorating' ? '📉 Tiêu cực' : '➡️ Ổn định'}
+                </ForecastStatValue>
+                <ForecastStatLabel>Xu hướng</ForecastStatLabel>
+                <ForecastStatMeta>Mức độ: {Math.round(forecast.trendStrength * 100)}%</ForecastStatMeta>
+              </ForecastStatCard>
+              <ForecastStatCard color={forecast.currentEBH > 0.6 ? '#f44336' : forecast.currentEBH > 0.3 ? '#ff9800' : '#4caf50'}>
+                <ForecastStatValue>{forecast.currentEBH.toFixed(3)}</ForecastStatValue>
+                <ForecastStatLabel>EBH hiện tại</ForecastStatLabel>
+                <ForecastStatMeta>Dữ liệu: {forecast.dataPoints} trạng thái</ForecastStatMeta>
+              </ForecastStatCard>
+            </ForecastStatsGrid>
+          </Section>
+
+          {/* Forecast Horizons */}
+          {forecast.horizons && forecast.horizons.length > 0 && (
+            <Section>
+              <SectionTitle>🔮 Dự báo EBH theo thời gian</SectionTitle>
+              <HorizonGrid>
+                {forecast.horizons.map((h, i) => (
+                  <HorizonCard key={i} risk={h.riskProbability}>
+                    <HorizonHeader>
+                      <HorizonLabel>{h.label}</HorizonLabel>
+                      <HorizonDays>{h.days} ngày</HorizonDays>
+                    </HorizonHeader>
+                    <HorizonBody>
+                      <HorizonMetric>
+                        <HorizonMetricLabel>Dự đoán EBH</HorizonMetricLabel>
+                        <HorizonMetricValue color={h.finalPredicted > 0.6 ? '#f44336' : h.finalPredicted > 0.3 ? '#ff9800' : '#4caf50'}>
+                          {h.finalPredicted.toFixed(3)}
+                        </HorizonMetricValue>
+                      </HorizonMetric>
+                      <HorizonMetric>
+                        <HorizonMetricLabel>Khoảng tin cậy 90%</HorizonMetricLabel>
+                        <HorizonMetricValue color="#666">
+                          [{h.finalLower.toFixed(3)} — {h.finalUpper.toFixed(3)}]
+                        </HorizonMetricValue>
+                      </HorizonMetric>
+                      <HorizonMetric>
+                        <HorizonMetricLabel>P(vùng nguy hiểm)</HorizonMetricLabel>
+                        <HorizonMetricValue color={h.riskProbability > 0.5 ? '#f44336' : h.riskProbability > 0.2 ? '#ff9800' : '#4caf50'}>
+                          {Math.round(h.riskProbability * 100)}%
+                        </HorizonMetricValue>
+                      </HorizonMetric>
+                    </HorizonBody>
+                    {/* Mini bar chart for trajectory points */}
+                    <HorizonTrajectory>
+                      {h.points.map((p, j) => (
+                        <HorizonBar key={j}
+                          height={Math.max(5, p.predicted * 100)}
+                          color={p.predicted > 0.6 ? '#f44336' : p.predicted > 0.3 ? '#ff9800' : '#4caf50'}
+                          title={`Step ${p.step}: ${p.predicted.toFixed(3)} [${p.lower.toFixed(3)}—${p.upper.toFixed(3)}]`}
+                        />
+                      ))}
+                    </HorizonTrajectory>
+                  </HorizonCard>
+                ))}
+              </HorizonGrid>
+            </Section>
+          )}
+
+          {/* Recommendations */}
+          {forecast.recommendations && forecast.recommendations.length > 0 && (
+            <Section>
+              <SectionTitle>💡 Khuyến nghị hành động</SectionTitle>
+              <RecommendationList>
+                {forecast.recommendations.map((rec, i) => (
+                  <RecommendationItem key={i}>
+                    <RecommendationIcon>
+                      {i === 0 ? '🎯' : i === 1 ? '📋' : i === 2 ? '🛡️' : '💬'}
+                    </RecommendationIcon>
+                    <RecommendationText>{rec}</RecommendationText>
+                  </RecommendationItem>
+                ))}
+              </RecommendationList>
+            </Section>
+          )}
         </>
       )}
     </>
@@ -2041,5 +2297,104 @@ const BifIcon = styled.div`font-size: 1.3rem;`;
 const BifContent = styled.div`flex: 1;`;
 const BifDesc = styled.div`font-size: 0.85rem; color: #333;`;
 const BifTime = styled.div`font-size: 0.7rem; color: #999; margin-top: 4px;`;
+
+// ═══════════════════════════════════════════
+// PHASE 6: FORECAST STYLED COMPONENTS
+// ═══════════════════════════════════════════
+
+const ForecastAlertBanner = styled.div<{ bg: string; color: string }>`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 16px;
+  background: ${p => p.bg};
+  border-left: 6px solid ${p => p.color};
+  margin-bottom: 20px;
+  animation: ${fadeIn} 0.4s ease;
+`;
+const ForecastAlertIcon = styled.div`font-size: 2.5rem;`;
+const ForecastAlertContent = styled.div`flex: 1;`;
+const ForecastAlertTitle = styled.div`font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 4px;`;
+const ForecastAlertMsg = styled.div`font-size: 0.9rem; color: #555; line-height: 1.5;`;
+const ForecastRiskGauge = styled.div`text-align: center; min-width: 90px;`;
+const ForecastRiskLabel = styled.div`font-size: 0.7rem; color: #888; margin-bottom: 4px;`;
+const ForecastRiskValue = styled.div<{ risk: number }>`
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: ${p => p.risk > 0.7 ? '#f44336' : p.risk > 0.4 ? '#ff9800' : '#4caf50'};
+`;
+
+const ForecastStatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+`;
+const ForecastStatCard = styled.div<{ color: string }>`
+  padding: 18px;
+  border-radius: 14px;
+  background: white;
+  border-top: 4px solid ${p => p.color};
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  animation: ${fadeIn} 0.3s ease;
+`;
+const ForecastStatValue = styled.div`font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 4px;`;
+const ForecastStatLabel = styled.div`font-size: 0.85rem; color: #666; font-weight: 600;`;
+const ForecastStatMeta = styled.div`font-size: 0.72rem; color: #999; margin-top: 6px; line-height: 1.4;`;
+
+const HorizonGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+`;
+const HorizonCard = styled.div<{ risk: number }>`
+  padding: 20px;
+  border-radius: 16px;
+  background: white;
+  border-left: 5px solid ${p => p.risk > 0.5 ? '#f44336' : p.risk > 0.2 ? '#ff9800' : '#4caf50'};
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  animation: ${fadeIn} 0.4s ease;
+`;
+const HorizonHeader = styled.div`display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;`;
+const HorizonLabel = styled.div`font-size: 1.1rem; font-weight: bold; color: #333;`;
+const HorizonDays = styled.div`font-size: 0.8rem; color: #999; background: #f5f5f5; padding: 3px 10px; border-radius: 12px;`;
+const HorizonBody = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const HorizonMetric = styled.div`display: flex; justify-content: space-between; align-items: center;`;
+const HorizonMetricLabel = styled.div`font-size: 0.8rem; color: #777;`;
+const HorizonMetricValue = styled.div<{ color: string }>`font-size: 0.95rem; font-weight: bold; color: ${p => p.color};`;
+
+const HorizonTrajectory = styled.div`
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 60px;
+  margin-top: 14px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+`;
+const HorizonBar = styled.div<{ height: number; color: string }>`
+  flex: 1;
+  height: ${p => p.height}%;
+  background: ${p => p.color};
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height 0.3s ease;
+  cursor: help;
+  &:hover { opacity: 0.8; }
+`;
+
+const RecommendationList = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const RecommendationItem = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  border-left: 4px solid #2196f3;
+  animation: ${fadeIn} 0.3s ease;
+`;
+const RecommendationIcon = styled.div`font-size: 1.3rem; flex-shrink: 0;`;
+const RecommendationText = styled.div`font-size: 0.9rem; color: #333; line-height: 1.5;`;
 
 export default PGEDashboard;

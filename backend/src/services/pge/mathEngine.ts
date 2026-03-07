@@ -724,6 +724,622 @@ export function findDominantEmotion(S: Vec): string {
   return PSY_VARIABLES[maxIdx];
 }
 
+// ════════════════════════════════════════════════════════════════
+// POSITIVE ATTRACTOR & ESCAPE FORCE (PGE Phase 2)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Positive Attractor S_PA — "Emotional Star" target state.
+ * Trạng thái mục tiêu lý tưởng: negative thấp, positive cao,
+ * cognitive/behavioral/social tích cực.
+ * 
+ * S_PA = [stress=0.05, anxiety=0.05, sadness=0.05, anger=0.02,
+ *         loneliness=0.05, shame=0.02, guilt=0.02, hopelessness=0.01,
+ *         hope=0.85, calmness=0.80, joy=0.75, gratitude=0.70,
+ *         selfWorth=0.80, selfEfficacy=0.75, rumination=0.05, cognitiveClarity=0.80,
+ *         avoidance=0.05, helpSeeking=0.65, socialEngagement=0.70, motivation=0.80,
+ *         trustInOthers=0.65, perceivedSupport=0.70, fearOfJudgment=0.05,
+ *         mentalFatigue=0.05]
+ */
+export function positiveAttractor(): Vec {
+  return [
+    // Negative emotions — rất thấp
+    0.05, 0.05, 0.05, 0.02, 0.05, 0.02, 0.02, 0.01,
+    // Positive emotions — cao
+    0.85, 0.80, 0.75, 0.70,
+    // Cognition — tích cực
+    0.80, 0.75, 0.05, 0.80,
+    // Behavioral — active
+    0.05, 0.65, 0.70, 0.80,
+    // Social — connected
+    0.65, 0.70, 0.05,
+    // Energy — refreshed
+    0.05,
+  ];
+}
+
+/**
+ * Emotional Star Score — đo khoảng cách đến Positive Attractor.
+ * 
+ * ES = η·Hope + θ·SelfWorth + λ·Support − μ·Stress
+ *    + ε·Motivation + ζ·Calmness − ι·Hopelessness
+ * 
+ * Trả về [0, 1], cao = gần Emotional Star hơn.
+ */
+export function computeESScore(S: Vec): number {
+  // Coefficients
+  const eta = 0.20;     // Hope weight
+  const theta = 0.15;   // SelfWorth weight
+  const lambda = 0.12;  // PerceivedSupport weight
+  const mu = 0.12;      // Stress penalty
+  const epsilon = 0.12; // Motivation weight
+  const zeta = 0.10;    // Calmness weight
+  const iota = 0.10;    // Hopelessness penalty
+  const kappa = 0.09;   // Joy weight
+
+  // Variable indices from PSY_VARIABLES
+  const hope = S[8];
+  const selfWorth = S[12];
+  const perceivedSupport = S[21];
+  const stress = S[0];
+  const motivation = S[19];
+  const calmness = S[9];
+  const hopelessness = S[7];
+  const joy = S[10];
+
+  const raw = eta * hope + theta * selfWorth + lambda * perceivedSupport
+            - mu * stress + epsilon * motivation + zeta * calmness
+            - iota * hopelessness + kappa * joy;
+
+  return Math.max(0, Math.min(1, raw));
+}
+
+/**
+ * Khoảng cách đến Positive Attractor: ||S − S_PA||
+ */
+export function distanceToAttractor(S: Vec): number {
+  const PA = positiveAttractor();
+  return vecNorm(vecSub(S, PA));
+}
+
+/**
+ * Internal Attractor Force — lực hút của EBH giữ user lại.
+ * ||A·S|| — càng lớn thì user bị hút về attractor tiêu cực càng mạnh.
+ */
+export function internalAttractorForce(A: Mat, S: Vec): number {
+  return vecNorm(matVec(A, S));
+}
+
+/**
+ * Escape Force Required — lực cần thiết để thoát khỏi EBH.
+ * ||B·I|| > ||A·S|| thì mới escape được.
+ * Trả về: { required: ||A·S||, direction: −A·S (normalized) }
+ */
+export function escapeForceRequired(A: Mat, S: Vec): {
+  required: number;
+  direction: Vec;
+} {
+  const AS = matVec(A, S);
+  const norm = vecNorm(AS);
+  // Direction to escape = opposite of gravitational pull
+  const direction = norm > 1e-12
+    ? vecScale(AS, -1 / norm)
+    : zeros();
+
+  return { required: norm, direction };
+}
+
+/**
+ * Compute escape force achieved by intervention: ||B·I||
+ */
+export function escapeForceAchieved(B: Mat, I: Vec): number {
+  return vecNorm(matVec(B, I));
+}
+
+// ════════════════════════════════════════════════════════════════
+// INTERVENTION MATRIX B (24×4)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Default Intervention Matrix B[24×4].
+ * Maps 4 intervention types → changes in 24 psychological variables.
+ * 
+ * Columns: [cognitive_reframing, social_connection, behavioral_activation, emotional_regulation]
+ * Rows: 24 PSY_VARIABLES
+ * 
+ * B[i][j] = expected change in variable i per unit of intervention j
+ * Positive = increases the variable, Negative = decreases it.
+ * 
+ * Ý nghĩa: Khi áp dụng cognitive_reframing (cột 0) với cường độ I[0]:
+ *   - rumination giảm (B[14][0] = -0.4)
+ *   - cognitiveClarity tăng (B[15][0] = +0.35)
+ *   - selfWorth tăng (B[12][0] = +0.3)
+ *   - hopelessness giảm (B[7][0] = -0.35)
+ *   etc.
+ */
+export function defaultInterventionMatrix(): Mat {
+  // 24 rows × 4 columns
+  const B: Mat = Array.from({ length: PSY_DIMENSION }, () => new Array(4).fill(0));
+
+  // Helper: set B[varIdx][interventionIdx] = weight
+  function set(variable: string, intervention: number, weight: number) {
+    const idx = PSY_VARIABLES.indexOf(variable as any);
+    if (idx >= 0) B[idx][intervention] = weight;
+  }
+
+  // ── Column 0: Cognitive Reframing ──
+  // Targets: rumination↓, cognitiveClarity↑, selfWorth↑, hopelessness↓, selfEfficacy↑
+  set('rumination', 0, -0.40);
+  set('cognitiveClarity', 0, 0.35);
+  set('selfWorth', 0, 0.30);
+  set('hopelessness', 0, -0.35);
+  set('selfEfficacy', 0, 0.25);
+  set('hope', 0, 0.30);
+  set('guilt', 0, -0.20);
+  set('shame', 0, -0.25);
+  set('stress', 0, -0.15);
+  set('anxiety', 0, -0.15);
+  set('sadness', 0, -0.10);
+
+  // ── Column 1: Social Connection ──
+  // Targets: loneliness↓, perceivedSupport↑, socialEngagement↑, trustInOthers↑
+  set('loneliness', 1, -0.45);
+  set('perceivedSupport', 1, 0.40);
+  set('socialEngagement', 1, 0.40);
+  set('trustInOthers', 1, 0.30);
+  set('helpSeeking', 1, 0.25);
+  set('hope', 1, 0.20);
+  set('joy', 1, 0.25);
+  set('gratitude', 1, 0.20);
+  set('fearOfJudgment', 1, -0.20);
+  set('avoidance', 1, -0.25);
+  set('sadness', 1, -0.15);
+
+  // ── Column 2: Behavioral Activation ──
+  // Targets: motivation↑, avoidance↓, mentalFatigue↓, selfEfficacy↑
+  set('motivation', 2, 0.40);
+  set('avoidance', 2, -0.40);
+  set('mentalFatigue', 2, -0.25);
+  set('selfEfficacy', 2, 0.30);
+  set('joy', 2, 0.25);
+  set('hope', 2, 0.20);
+  set('sadness', 2, -0.20);
+  set('hopelessness', 2, -0.20);
+  set('stress', 2, -0.10);
+  set('socialEngagement', 2, 0.15);
+  set('calmness', 2, 0.10);
+
+  // ── Column 3: Emotional Regulation ──
+  // Targets: anxiety↓, stress↓, calmness↑, anger↓, mentalFatigue↓
+  set('anxiety', 3, -0.40);
+  set('stress', 3, -0.40);
+  set('calmness', 3, 0.40);
+  set('anger', 3, -0.30);
+  set('mentalFatigue', 3, -0.20);
+  set('cognitiveClarity', 3, 0.20);
+  set('rumination', 3, -0.25);
+  set('fearOfJudgment', 3, -0.15);
+  set('hope', 3, 0.15);
+  set('selfWorth', 3, 0.10);
+  set('gratitude', 3, 0.15);
+
+  return B;
+}
+
+// ════════════════════════════════════════════════════════════════
+// INTERVENTION VECTORS (Predefined I vectors)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Predefined single-intervention vectors.
+ * Each focuses on one intervention type with intensity 1.0.
+ */
+export function interventionVector(type: number, intensity = 1.0): Vec {
+  const I = new Array(4).fill(0);
+  I[type] = intensity;
+  return I;
+}
+
+/**
+ * Composite intervention: multiple types with varying intensities.
+ */
+export function compositeIntervention(intensities: number[]): Vec {
+  return intensities.slice(0, 4).concat(new Array(Math.max(0, 4 - intensities.length)).fill(0));
+}
+
+// ════════════════════════════════════════════════════════════════
+// OPTIMAL INTERVENTION SEARCH
+// ════════════════════════════════════════════════════════════════
+
+export interface InterventionCandidate {
+  type: number;                // intervention index 0-3
+  typeName: string;            // human-readable name
+  intensity: number;           // intervention intensity
+  interventionVec: Vec;        // 4D intervention vector  
+  predictedState: Vec;         // predicted state after intervention
+  predictedEBH: number;        // predicted EBH after
+  predictedES: number;         // predicted ES after
+  distanceToPA: number;        // ||S_predicted − S_PA||
+  escapeForce: number;         // ||B·I|| — force generated
+  escapeRatio: number;         // ||B·I|| / ||A·S|| — escape ratio
+  effectiveness: number;       // combined effectiveness score [0, 1]
+  reason: string;              // explanation in Vietnamese  
+}
+
+const INTERVENTION_NAMES = [
+  'cognitive_reframing',
+  'social_connection', 
+  'behavioral_activation',
+  'emotional_regulation',
+];
+
+const INTERVENTION_LABELS_VN = [
+  'Tái cấu trúc nhận thức',
+  'Kết nối xã hội',
+  'Kích hoạt hành vi',
+  'Điều chỉnh cảm xúc',
+];
+
+/**
+ * Find optimal intervention to minimize ||S(t+k) − S_PA||.
+ * 
+ * Algorithm:
+ * 1. For each intervention type i ∈ {0,1,2,3}:
+ *    - Create I = [0,...,intensity,...,0] at position i
+ *    - Simulate: S_future = simulateTrajectory(S, A, steps, dt, I, B)
+ *    - Compute d_i = ||S_future[-1] − S_PA||
+ * 2. Also try composite interventions (2 types combined)
+ * 3. Return sorted by effectiveness
+ * 
+ * @param S — current state (24D)
+ * @param A — interaction matrix (24×24)
+ * @param B — intervention matrix (24×4), optional (uses default)
+ * @param steps — simulation steps (default 5)
+ * @param dt — time step (default 0.1)
+ * @param intensityLevels — intensities to try (default [0.5, 0.7, 1.0])
+ */
+export function findOptimalIntervention(
+  S: Vec,
+  A: Mat,
+  B?: Mat,
+  steps = 5,
+  dt = 0.1,
+  intensityLevels = [0.5, 0.7, 1.0],
+): InterventionCandidate[] {
+  const interventionB = B ?? defaultInterventionMatrix();
+  const S_PA = positiveAttractor();
+  const W = defaultWeightMatrix();
+  const { required: internalForce } = escapeForceRequired(A, S);
+
+  const candidates: InterventionCandidate[] = [];
+
+  // Current state metrics (baseline)
+  const currentEBH = computeEBHScore({
+    loopStrength: 0, // simplified — use 0 for comparison
+    negativeInertia: 0,
+    potentialEnergy: potentialEnergy(S, W),
+    hopeLevel: S[8],
+  });
+  const currentES = computeESScore(S);
+  const currentDist = distanceToAttractor(S);
+
+  // ── Single interventions ──
+  for (let type = 0; type < 4; type++) {
+    for (const intensity of intensityLevels) {
+      const I = interventionVector(type, intensity);
+      
+      // Simulate trajectory with intervention
+      const trajectory = simulateTrajectory(S, A, steps, dt, I, interventionB);
+      const predictedState = trajectory[trajectory.length - 1];
+
+      // Compute metrics
+      const predU = potentialEnergy(predictedState, W);
+      const predEBH = computeEBHScore({
+        loopStrength: 0,
+        negativeInertia: 0,
+        potentialEnergy: predU,
+        hopeLevel: predictedState[8],
+      });
+      const predES = computeESScore(predictedState);
+      const predDist = distanceToAttractor(predictedState);
+      const force = escapeForceAchieved(interventionB, I);
+      const ratio = internalForce > 1e-12 ? force / internalForce : force;
+
+      // Effectiveness = weighted combination of improvements
+      const ebhImprovement = Math.max(0, currentEBH - predEBH); // lower EBH = better
+      const esImprovement = Math.max(0, predES - currentES);     // higher ES = better
+      const distImprovement = Math.max(0, currentDist - predDist); // closer to PA = better
+      const effectiveness = Math.min(1,
+        0.35 * (ebhImprovement / Math.max(0.01, currentEBH)) +
+        0.30 * (esImprovement / Math.max(0.01, 1 - currentES)) +
+        0.20 * (distImprovement / Math.max(0.01, currentDist)) +
+        0.15 * Math.min(1, ratio)
+      );
+
+      candidates.push({
+        type,
+        typeName: INTERVENTION_NAMES[type],
+        intensity,
+        interventionVec: I,
+        predictedState,
+        predictedEBH: predEBH,
+        predictedES: predES,
+        distanceToPA: predDist,
+        escapeForce: force,
+        escapeRatio: ratio,
+        effectiveness,
+        reason: generateInterventionReason(type, S, effectiveness, ratio),
+      });
+    }
+  }
+
+  // ── Top-2 composite interventions ──
+  // Find best 2 single types, combine them
+  const bestByType = new Map<number, InterventionCandidate>();
+  for (const c of candidates) {
+    const existing = bestByType.get(c.type);
+    if (!existing || c.effectiveness > existing.effectiveness) {
+      bestByType.set(c.type, c);
+    }
+  }
+  const sortedTypes = [...bestByType.entries()]
+    .sort((a, b) => b[1].effectiveness - a[1].effectiveness);
+
+  if (sortedTypes.length >= 2) {
+    const [type1, best1] = sortedTypes[0];
+    const [type2, best2] = sortedTypes[1];
+    const compositeI = compositeIntervention([0, 0, 0, 0].map((_, i) => {
+      if (i === type1) return best1.intensity * 0.6;
+      if (i === type2) return best2.intensity * 0.4;
+      return 0;
+    }));
+
+    const trajectory = simulateTrajectory(S, A, steps, dt, compositeI, interventionB);
+    const predictedState = trajectory[trajectory.length - 1];
+    const predU = potentialEnergy(predictedState, W);
+    const predEBH = computeEBHScore({
+      loopStrength: 0,
+      negativeInertia: 0,
+      potentialEnergy: predU,
+      hopeLevel: predictedState[8],
+    });
+    const predES = computeESScore(predictedState);
+    const predDist = distanceToAttractor(predictedState);
+    const force = escapeForceAchieved(interventionB, compositeI);
+    const ratio = internalForce > 1e-12 ? force / internalForce : force;
+
+    const ebhImprovement = Math.max(0, currentEBH - predEBH);
+    const esImprovement = Math.max(0, predES - currentES);
+    const distImprovement = Math.max(0, currentDist - predDist);
+    const effectiveness = Math.min(1,
+      0.35 * (ebhImprovement / Math.max(0.01, currentEBH)) +
+      0.30 * (esImprovement / Math.max(0.01, 1 - currentES)) +
+      0.20 * (distImprovement / Math.max(0.01, currentDist)) +
+      0.15 * Math.min(1, ratio)
+    );
+
+    candidates.push({
+      type: -1, // composite
+      typeName: `${INTERVENTION_NAMES[type1]}+${INTERVENTION_NAMES[type2]}`,
+      intensity: 1.0,
+      interventionVec: compositeI,
+      predictedState,
+      predictedEBH: predEBH,
+      predictedES: predES,
+      distanceToPA: predDist,
+      escapeForce: force,
+      escapeRatio: ratio,
+      effectiveness,
+      reason: `Kết hợp ${INTERVENTION_LABELS_VN[type1]} và ${INTERVENTION_LABELS_VN[type2]} để tối đa hóa hiệu quả thoát khỏi vùng nguy hiểm.`,
+    });
+  }
+
+  // Sort by effectiveness (descending)
+  return candidates.sort((a, b) => b.effectiveness - a.effectiveness);
+}
+
+/**
+ * Generate Vietnamese explanation for why an intervention is recommended
+ */
+function generateInterventionReason(type: number, S: Vec, effectiveness: number, escapeRatio: number): string {
+  const reasons: string[][] = [
+    // cognitive_reframing
+    [
+      'Suy nghĩ lặp đang cao, cần tái cấu trúc nhận thức để phá vỡ vòng lặp tiêu cực.',
+      'Cảm giác tuyệt vọng cao — thay đổi góc nhìn sẽ giúp tìm lại hy vọng.',
+      'Giá trị bản thân thấp — cần thách thức các suy nghĩ tự phê phán.',
+    ],
+    // social_connection
+    [
+      'Cô đơn đang cao, kết nối xã hội sẽ giúp giảm cảm giác bị cô lập.',
+      'Hỗ trợ xã hội thấp — cần tăng cường kết nối với người thân, bạn bè.',
+      'Né tránh xã hội đang cao — khuyến khích tham gia hoạt động nhóm nhỏ.',
+    ],
+    // behavioral_activation
+    [
+      'Động lực thấp, cần kích hoạt hành vi để phá vỡ chu trình trì hoãn.',
+      'Né tránh cao — chia nhỏ mục tiêu và thực hiện từng bước nhỏ sẽ giúp tăng tự tin.',
+      'Mệt mỏi tinh thần cao — hoạt động thể chất nhẹ sẽ giúp phục hồi năng lượng.',
+    ],
+    // emotional_regulation
+    [
+      'Lo âu và căng thẳng đang cao, cần kỹ thuật thư giãn để ổn định cảm xúc.',
+      'Tức giận đang cao — hít thở sâu và mindfulness sẽ giúp điều chỉnh.',
+      'Cần grounding techniques để quay về hiện tại và giảm suy nghĩ lặp.',
+    ],
+  ];
+
+  if (type < 0 || type >= reasons.length) return '';
+
+  // Pick reason based on dominant variable for this intervention type
+  const dominantVars = [
+    [S[14], S[7], S[12]],  // rumination, hopelessness, selfWorth (for cognitive)
+    [S[4], S[21], S[16]],  // loneliness, perceivedSupport(inverted), avoidance (for social)
+    [S[19], S[16], S[23]], // motivation(inverted), avoidance, mentalFatigue (for behavioral)
+    [S[1], S[0], S[3]],   // anxiety, stress, anger (for emotional)
+  ];
+
+  const vars = dominantVars[type];
+  let maxIdx = 0;
+  let maxVal = vars[0];
+  for (let i = 1; i < vars.length; i++) {
+    // For positive variables (like motivation), invert the check
+    const check = type === 2 && i === 0 ? 1 - vars[i] : vars[i];
+    if (check > maxVal) {
+      maxVal = check;
+      maxIdx = i;
+    }
+  }
+
+  return reasons[type][maxIdx];
+}
+
+/**
+ * Simulate trajectory WITH and WITHOUT intervention for comparison.
+ * Returns both trajectories for visualization.
+ */
+export function compareTrajectories(
+  S: Vec,
+  A: Mat,
+  B: Mat,
+  I: Vec,
+  steps = 10,
+  dt = 0.1,
+): { withoutIntervention: Vec[]; withIntervention: Vec[] } {
+  return {
+    withoutIntervention: simulateTrajectory(S, A, steps, dt),
+    withIntervention: simulateTrajectory(S, A, steps, dt, I, B),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// INTERVENTION MATRIX LEARNING (B matrix from outcomes)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Learn Intervention Matrix B from historical intervention outcomes.
+ * 
+ * Given (preState, intervention, postState) triples:
+ *   ΔS = postState - preState - A·preState·Δt  (residual after natural dynamics)
+ *   ΔS ≈ B·I·Δt → B ≈ (ΔS/Δt) · I_pseudo_inverse
+ * 
+ * Uses ridge regression per-row:
+ *   B[i,:] = (IᵀI + λI)⁻¹ · Iᵀ · ΔS[i,:]
+ * 
+ * @param outcomes — array of { preState, postState, interventionVec }
+ * @param A — interaction matrix (to remove natural dynamics)
+ * @param dt — time step used between pre and post
+ * @param lambda — regularization
+ */
+export function learnInterventionMatrix(
+  outcomes: Array<{ preState: Vec; postState: Vec; interventionVec: Vec }>,
+  A: Mat,
+  dt = 1.0,
+  lambda = 0.1,
+): { matrix: Mat; loss: number } {
+  if (outcomes.length < 3) {
+    return { matrix: defaultInterventionMatrix(), loss: 0 };
+  }
+
+  const n = PSY_DIMENSION; // 24
+  const m = 4; // intervention dimension
+  const T = outcomes.length;
+
+  // Compute residuals: ΔS_residual = (postState - preState)/dt - A·preState
+  const residuals: Vec[] = outcomes.map(o => {
+    const naturalDynamics = matVec(A, o.preState);
+    const rawChange = vecScale(vecSub(o.postState, o.preState), 1 / dt);
+    return vecSub(rawChange, naturalDynamics);
+  });
+
+  // Intervention vectors (T × m)
+  const interventions: Vec[] = outcomes.map(o => o.interventionVec);
+
+  // IᵀI (m×m) + λI
+  const ItI: Mat = Array.from({ length: m }, () => new Array(m).fill(0));
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < m; j++) {
+      let sum = 0;
+      for (let t = 0; t < T; t++) sum += interventions[t][i] * interventions[t][j];
+      ItI[i][j] = sum;
+    }
+    ItI[i][i] += lambda; // regularization
+  }
+
+  // Invert IᵀI (4×4 — small, easy)
+  const inv = invertSmallMatrix(ItI);
+  if (!inv) {
+    return { matrix: defaultInterventionMatrix(), loss: 0 };
+  }
+
+  // For each row i of B:
+  // Iᵀ·residuals[:,i] (m×1), then B[i,:] = inv · Iᵀ·res
+  const B: Mat = Array.from({ length: n }, () => new Array(m).fill(0));
+  let totalLoss = 0;
+
+  for (let i = 0; i < n; i++) {
+    const ItRes = new Array(m).fill(0);
+    for (let j = 0; j < m; j++) {
+      let sum = 0;
+      for (let t = 0; t < T; t++) sum += interventions[t][j] * residuals[t][i];
+      ItRes[j] = sum;
+    }
+    // B[i,:] = inv · ItRes
+    for (let j = 0; j < m; j++) {
+      let sum = 0;
+      for (let k = 0; k < m; k++) sum += inv[j][k] * ItRes[k];
+      B[i][j] = sum;
+    }
+
+    // Compute loss for this row
+    for (let t = 0; t < T; t++) {
+      let predicted = 0;
+      for (let j = 0; j < m; j++) predicted += B[i][j] * interventions[t][j];
+      const diff = residuals[t][i] - predicted;
+      totalLoss += diff * diff;
+    }
+  }
+
+  totalLoss /= (T * n);
+  return { matrix: B, loss: totalLoss };
+}
+
+/**
+ * Invert a small matrix (4×4) using Gauss-Jordan.
+ */
+function invertSmallMatrix(M: Mat): Mat | null {
+  const n = M.length;
+  const aug: number[][] = M.map((row, i) => [
+    ...row.map(v => v),
+    ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)),
+  ]);
+
+  for (let col = 0; col < n; col++) {
+    let maxVal = Math.abs(aug[col][col]);
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(aug[row][col]) > maxVal) {
+        maxVal = Math.abs(aug[row][col]);
+        maxRow = row;
+      }
+    }
+    if (maxVal < 1e-12) return null;
+    [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+    const pivot = aug[col][col];
+    for (let j = 0; j < 2 * n; j++) aug[col][j] /= pivot;
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const factor = aug[row][col];
+      for (let j = 0; j < 2 * n; j++) aug[row][j] -= factor * aug[col][j];
+    }
+  }
+  return aug.map(row => row.slice(n));
+}
+
+// ════════════════════════════════════════════════════════════════
+// EARLY WARNING & TRAJECTORY ANALYSIS
+// ════════════════════════════════════════════════════════════════
+
 /**
  * Generate early warning from trajectory
  */

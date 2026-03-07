@@ -6,13 +6,16 @@
  * Hiển thị:
  * 1. Psychological Field Map — radar chart 24 biến tâm lý
  * 2. EBH Score gauge — Emotional Black Hole score
- * 3. Zone indicator — trạng thái hiện tại  
- * 4. Feedback loops — vòng lặp tự củng cố
- * 5. Trajectory prediction — quỹ đạo cảm xúc
- * 6. EBH trend over time — xu hướng
- * 7. Early warning — cảnh báo sớm
+ * 3. ES Score gauge — Emotional Star score (Phase 2)
+ * 4. Zone indicator — trạng thái hiện tại  
+ * 5. Feedback loops — vòng lặp tự củng cố
+ * 6. Trajectory prediction — quỹ đạo cảm xúc
+ * 7. EBH trend over time — xu hướng
+ * 8. Early warning — cảnh báo sớm
+ * 9. Intervention Recommendation — can thiệp tối ưu (Phase 2)
+ * 10. Trajectory Comparison — with/without intervention (Phase 2)
  * 
- * @version 1.0.0
+ * @version 2.0.0 — PGE Phase 2: Positive Attractor & Escape Force
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -45,9 +48,13 @@ interface FieldMapData {
   currentState: StateVector | null;
   currentZone: string;
   currentEBH: number;
+  currentES: number;
+  distanceToPA: number;
+  escapeForceRequired: number;
   stateHistory: Array<{
     timestamp: string;
     ebhScore: number;
+    esScore: number;
     zone: string;
     dominantEmotion: string;
     stateVector: StateVector;
@@ -64,11 +71,46 @@ interface FieldMapData {
     earlyWarning: boolean;
     warningMessage?: string;
   } | null;
+  intervention: InterventionData | null;
   statistics: {
     averageEBH: number;
     maxEBH: number;
+    averageES: number;
     timeInZones: Record<string, number>;
     dominantEmotions: Array<{ emotion: string; count: number }>;
+  };
+}
+
+interface InterventionData {
+  recommended: boolean;
+  intervention?: {
+    type: string;
+    typeName: string;
+    description: string;
+    intensity: number;
+    predictedEBH: number;
+    predictedES: number;
+    effectiveness: number;
+    escapeForce: number;
+    escapeRatio: number;
+    reason: string;
+    trajectoryComparison?: {
+      withoutIntervention: Array<{ step: number; ebhScore: number; esScore: number }>;
+      withIntervention: Array<{ step: number; ebhScore: number; esScore: number }>;
+    };
+  };
+  alternatives?: Array<{
+    type: string;
+    typeName: string;
+    effectiveness: number;
+    reason: string;
+  }>;
+  currentMetrics?: {
+    ebhScore: number;
+    esScore: number;
+    distanceToPA: number;
+    escapeForceRequired: number;
+    zone: string;
   };
 }
 
@@ -352,17 +394,23 @@ const DetailView: React.FC<{
             <StateIconBig>{ZONE_CONFIG[fieldMap.currentZone]?.icon || '⚪'}</StateIconBig>
             <StateInfo>
               <ZoneTitle>{ZONE_CONFIG[fieldMap.currentZone]?.label || 'Chưa xác định'}</ZoneTitle>
-              <EBHBig>EBH Score: <strong>{fieldMap.currentEBH.toFixed(3)}</strong></EBHBig>
+              <EBHBig>EBH Score: <strong>{fieldMap.currentEBH.toFixed(3)}</strong> | ES Score: <strong style={{ color: '#4caf50' }}>{(fieldMap.currentES ?? 0).toFixed(3)}</strong></EBHBig>
               {fieldMap.trajectory && (
                 <AttractorBadge>
                   {ATTRACTOR_LABELS[fieldMap.trajectory.predictedAttractor] || fieldMap.trajectory.predictedAttractor}
                 </AttractorBadge>
               )}
             </StateInfo>
-            <EBHGauge score={fieldMap.currentEBH}>
-              <GaugeFill score={fieldMap.currentEBH} />
-              <GaugeLabel>{Math.round(fieldMap.currentEBH * 100)}%</GaugeLabel>
-            </EBHGauge>
+            <GaugeRow>
+              <EBHGauge score={fieldMap.currentEBH}>
+                <GaugeFill score={fieldMap.currentEBH} />
+                <GaugeLabel>⚫{Math.round(fieldMap.currentEBH * 100)}%</GaugeLabel>
+              </EBHGauge>
+              <ESGauge score={fieldMap.currentES ?? 0}>
+                <GaugeFillES score={fieldMap.currentES ?? 0} />
+                <GaugeLabel>⭐{Math.round((fieldMap.currentES ?? 0) * 100)}%</GaugeLabel>
+              </ESGauge>
+            </GaugeRow>
           </CurrentStateCard>
 
           {/* Early Warning */}
@@ -370,6 +418,149 @@ const DetailView: React.FC<{
             <WarningBanner>
               ⚠️ <strong>CẢNH BÁO SỚM:</strong> {fieldMap.trajectory.warningMessage}
             </WarningBanner>
+          )}
+
+          {/* ═══ PHASE 2: Intervention Recommendation ═══ */}
+          {fieldMap.intervention?.recommended && fieldMap.intervention.intervention && (
+            <InterventionSection>
+              <SectionTitle>💫 Can thiệp tối ưu — Escape Force</SectionTitle>
+              <InterventionCard>
+                <InterventionHeader>
+                  <InterventionIcon>🎯</InterventionIcon>
+                  <InterventionInfo>
+                    <InterventionName>{fieldMap.intervention.intervention.typeName}</InterventionName>
+                    <InterventionDesc>{fieldMap.intervention.intervention.description}</InterventionDesc>
+                  </InterventionInfo>
+                  <EffectivenessGauge>
+                    <EffLabel>Hiệu quả</EffLabel>
+                    <EffValue>{Math.round(fieldMap.intervention.intervention.effectiveness * 100)}%</EffValue>
+                  </EffectivenessGauge>
+                </InterventionHeader>
+
+                <InterventionReason>
+                  💡 {fieldMap.intervention.intervention.reason}
+                </InterventionReason>
+
+                <InterventionMetrics>
+                  <MetricItem>
+                    <MetricLabel>Escape Force</MetricLabel>
+                    <MetricValue>{fieldMap.intervention.intervention.escapeForce.toFixed(2)}</MetricValue>
+                  </MetricItem>
+                  <MetricItem>
+                    <MetricLabel>Escape Ratio</MetricLabel>
+                    <MetricValue style={{ color: fieldMap.intervention.intervention.escapeRatio > 1 ? '#4caf50' : '#ff5722' }}>
+                      {fieldMap.intervention.intervention.escapeRatio.toFixed(2)}
+                      {fieldMap.intervention.intervention.escapeRatio > 1 ? ' ✓' : ' ✗'}
+                    </MetricValue>
+                  </MetricItem>
+                  <MetricItem>
+                    <MetricLabel>EBH dự đoán</MetricLabel>
+                    <MetricValue>{fieldMap.intervention.intervention.predictedEBH.toFixed(3)}</MetricValue>
+                  </MetricItem>
+                  <MetricItem>
+                    <MetricLabel>ES dự đoán</MetricLabel>
+                    <MetricValue style={{ color: '#4caf50' }}>{fieldMap.intervention.intervention.predictedES.toFixed(3)}</MetricValue>
+                  </MetricItem>
+                </InterventionMetrics>
+
+                {/* Trajectory Comparison */}
+                {fieldMap.intervention.intervention.trajectoryComparison && (
+                  <TrajectoryComparison>
+                    <TrajectoryTitle>📈 So sánh quỹ đạo: Có vs Không can thiệp</TrajectoryTitle>
+                    <TrajectoryGrid>
+                      {fieldMap.intervention.intervention.trajectoryComparison.withoutIntervention.map((point, i) => {
+                        const withInt = fieldMap.intervention?.intervention?.trajectoryComparison?.withIntervention[i];
+                        return (
+                          <TrajectoryRow key={i}>
+                            <TrajectoryStep>t+{i}</TrajectoryStep>
+                            <TrajectoryBarGroup>
+                              <TrajectoryBarLabel>Không can thiệp</TrajectoryBarLabel>
+                              <TrajectoryBarOuter>
+                                <TrajectoryBarInner width={point.ebhScore * 100} color="#f44336" />
+                              </TrajectoryBarOuter>
+                              <TrajectoryBarVal>{point.ebhScore.toFixed(3)}</TrajectoryBarVal>
+                            </TrajectoryBarGroup>
+                            <TrajectoryBarGroup>
+                              <TrajectoryBarLabel>Có can thiệp</TrajectoryBarLabel>
+                              <TrajectoryBarOuter>
+                                <TrajectoryBarInner width={(withInt?.ebhScore ?? 0) * 100} color="#4caf50" />
+                              </TrajectoryBarOuter>
+                              <TrajectoryBarVal>{(withInt?.ebhScore ?? 0).toFixed(3)}</TrajectoryBarVal>
+                            </TrajectoryBarGroup>
+                          </TrajectoryRow>
+                        );
+                      })}
+                    </TrajectoryGrid>
+                  </TrajectoryComparison>
+                )}
+              </InterventionCard>
+
+              {/* Alternative Interventions */}
+              {fieldMap.intervention.alternatives && fieldMap.intervention.alternatives.length > 0 && (
+                <AlternativesSection>
+                  <AlternativesTitle>Phương án thay thế</AlternativesTitle>
+                  <AlternativesGrid>
+                    {fieldMap.intervention.alternatives.map((alt, i) => (
+                      <AlternativeCard key={i}>
+                        <AltName>{alt.typeName}</AltName>
+                        <AltEff>Hiệu quả: {Math.round(alt.effectiveness * 100)}%</AltEff>
+                        <AltReason>{alt.reason}</AltReason>
+                      </AlternativeCard>
+                    ))}
+                  </AlternativesGrid>
+                </AlternativesSection>
+              )}
+
+              {/* Escape Force Analysis */}
+              {fieldMap.intervention.currentMetrics && (
+                <EscapeForceSection>
+                  <EscapeTitle>🚀 Phân tích Escape Force</EscapeTitle>
+                  <EscapeMetrics>
+                    <EscapeItem>
+                      <EscapeLabel>Khoảng cách đến Emotional Star</EscapeLabel>
+                      <EscapeBar>
+                        <EscapeBarFill width={Math.min(100, fieldMap.intervention.currentMetrics.distanceToPA * 30)} color="#ff9800" />
+                      </EscapeBar>
+                      <EscapeValue>{fieldMap.intervention.currentMetrics.distanceToPA.toFixed(2)}</EscapeValue>
+                    </EscapeItem>
+                    <EscapeItem>
+                      <EscapeLabel>Lực thoát cần thiết (||A·S||)</EscapeLabel>
+                      <EscapeBar>
+                        <EscapeBarFill width={Math.min(100, fieldMap.intervention.currentMetrics.escapeForceRequired * 15)} color="#f44336" />
+                      </EscapeBar>
+                      <EscapeValue>{fieldMap.intervention.currentMetrics.escapeForceRequired.toFixed(2)}</EscapeValue>
+                    </EscapeItem>
+                  </EscapeMetrics>
+                </EscapeForceSection>
+              )}
+            </InterventionSection>
+          )}
+
+          {/* ES Score (even when no intervention) */}
+          {!fieldMap.intervention?.recommended && (fieldMap.currentES ?? 0) > 0 && (
+            <Section>
+              <SectionTitle>⭐ Emotional Star Score</SectionTitle>
+              <ESInfoCard>
+                <ESInfoRow>
+                  <ESInfoLabel>ES Score hiện tại</ESInfoLabel>
+                  <ESInfoValue good={(fieldMap.currentES ?? 0) > 0.5}>
+                    {(fieldMap.currentES ?? 0).toFixed(3)}
+                  </ESInfoValue>
+                </ESInfoRow>
+                <ESInfoRow>
+                  <ESInfoLabel>Khoảng cách đến Emotional Star</ESInfoLabel>
+                  <ESInfoValue good={fieldMap.distanceToPA < 2}>
+                    {(fieldMap.distanceToPA ?? 0).toFixed(2)}
+                  </ESInfoValue>
+                </ESInfoRow>
+                <ESInfoRow>
+                  <ESInfoLabel>Escape Force cần thiết</ESInfoLabel>
+                  <ESInfoValue good={(fieldMap.escapeForceRequired ?? 0) < 1}>
+                    {(fieldMap.escapeForceRequired ?? 0).toFixed(2)}
+                  </ESInfoValue>
+                </ESInfoRow>
+              </ESInfoCard>
+            </Section>
           )}
 
           {/* Psychological Radar */}
@@ -413,6 +604,10 @@ const DetailView: React.FC<{
               <StatCard color="#f44336">
                 <StatValue>{fieldMap.statistics.maxEBH.toFixed(3)}</StatValue>
                 <StatLabel>EBH cao nhất</StatLabel>
+              </StatCard>
+              <StatCard color="#4caf50">
+                <StatValue>{(fieldMap.statistics.averageES ?? 0).toFixed(3)}</StatValue>
+                <StatLabel>ES trung bình ⭐</StatLabel>
               </StatCard>
               <StatCard color="#2196f3">
                 <StatValue>{fieldMap.stateHistory.length}</StatValue>
@@ -919,5 +1114,293 @@ const EBHBarInner = styled.div<{ width: number; color: string }>`
 `;
 const EBHVal = styled.div`width: 36px; font-size: 0.7rem; text-align: right; color: #555;`;
 const EBHZone = styled.div<{ color: string }>`width: 20px; text-align: center;`;
+
+// ═══════════════════════════════════════════
+// PHASE 2 STYLED COMPONENTS
+// ═══════════════════════════════════════════
+
+// Gauge Row (EBH + ES side by side)
+const GaugeRow = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+`;
+
+// ES Gauge (green — opposite of EBH)
+const ESGauge = styled.div<{ score: number }>`
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: conic-gradient(
+    ${p => p.score >= 0.7 ? '#2e7d32' : p.score >= 0.5 ? '#4caf50' : p.score >= 0.3 ? '#ff9800' : '#f44336'} ${p => p.score * 360}deg,
+    #eee ${p => p.score * 360}deg
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+`;
+
+const GaugeFillES = styled.div<{ score: number }>`
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: white;
+`;
+
+// Intervention Section
+const InterventionSection = styled.div`
+  margin-bottom: 24px;
+  animation: ${fadeIn} 0.4s ease;
+`;
+
+const InterventionCard = styled.div`
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  border: 2px solid #66bb6a;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+`;
+
+const InterventionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+
+const InterventionIcon = styled.div`font-size: 2.5rem;`;
+
+const InterventionInfo = styled.div`flex: 1;`;
+
+const InterventionName = styled.div`
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2e7d32;
+`;
+
+const InterventionDesc = styled.div`
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 4px;
+`;
+
+const EffectivenessGauge = styled.div`
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+`;
+
+const EffLabel = styled.div`font-size: 0.7rem; color: #888;`;
+const EffValue = styled.div`
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #2e7d32;
+`;
+
+const InterventionReason = styled.div`
+  background: white;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #333;
+  border-left: 4px solid #66bb6a;
+`;
+
+const InterventionMetrics = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+const MetricItem = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+`;
+
+const MetricLabel = styled.div`font-size: 0.65rem; color: #888;`;
+const MetricValue = styled.div`font-size: 1.1rem; font-weight: bold; color: #333;`;
+
+// Trajectory Comparison
+const TrajectoryComparison = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+`;
+
+const TrajectoryTitle = styled.div`
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+`;
+
+const TrajectoryGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const TrajectoryRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TrajectoryStep = styled.div`
+  width: 30px;
+  font-size: 0.7rem;
+  color: #999;
+  text-align: center;
+  font-weight: bold;
+`;
+
+const TrajectoryBarGroup = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const TrajectoryBarLabel = styled.div`
+  width: 80px;
+  font-size: 0.6rem;
+  color: #888;
+  text-align: right;
+`;
+
+const TrajectoryBarOuter = styled.div`
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+const TrajectoryBarInner = styled.div<{ width: number; color: string }>`
+  height: 100%;
+  width: ${p => Math.min(100, p.width)}%;
+  background: ${p => p.color};
+  border-radius: 4px;
+  transition: width 0.5s ease;
+`;
+
+const TrajectoryBarVal = styled.div`
+  width: 36px;
+  font-size: 0.65rem;
+  text-align: right;
+  color: #555;
+`;
+
+// Alternatives
+const AlternativesSection = styled.div`margin-bottom: 12px;`;
+const AlternativesTitle = styled.div`
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 8px;
+`;
+
+const AlternativesGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+`;
+
+const AlternativeCard = styled.div`
+  background: #f5f5f5;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+`;
+
+const AltName = styled.div`font-size: 0.85rem; font-weight: bold; color: #555;`;
+const AltEff = styled.div`font-size: 0.75rem; color: #4caf50; margin: 4px 0;`;
+const AltReason = styled.div`font-size: 0.7rem; color: #888;`;
+
+// Escape Force Section
+const EscapeForceSection = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+`;
+
+const EscapeTitle = styled.div`
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+`;
+
+const EscapeMetrics = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const EscapeItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const EscapeLabel = styled.div`
+  width: 180px;
+  font-size: 0.8rem;
+  color: #555;
+`;
+
+const EscapeBar = styled.div`
+  flex: 1;
+  height: 12px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+`;
+
+const EscapeBarFill = styled.div<{ width: number; color: string }>`
+  height: 100%;
+  width: ${p => Math.min(100, p.width)}%;
+  background: ${p => p.color};
+  border-radius: 6px;
+`;
+
+const EscapeValue = styled.div`
+  width: 40px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #333;
+  text-align: right;
+`;
+
+// ES Info Card (when no intervention needed)
+const ESInfoCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+`;
+
+const ESInfoRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  &:last-child { border-bottom: none; }
+`;
+
+const ESInfoLabel = styled.div`font-size: 0.85rem; color: #555;`;
+const ESInfoValue = styled.div<{ good: boolean }>`
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: ${p => p.good ? '#2e7d32' : '#ff5722'};
+`;
 
 export default PGEDashboard;

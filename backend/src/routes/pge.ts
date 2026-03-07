@@ -4,29 +4,36 @@
  * Psychological Gravity Engine — REST API Endpoints
  * 
  * Endpoints:
- * GET  /api/pge/field-map/:userId          — Psychological field map (states, matrix, trajectory)
- * GET  /api/pge/ebh-trend/:userId          — EBH score trend over time
- * GET  /api/pge/session/:userId/:sessionId  — Session state evolution
- * GET  /api/pge/state/:userId/current       — Current (latest) state
- * POST /api/pge/analyze                     — Analyze text (one-shot, for testing)
- * POST /api/pge/retrain-population          — Retrain population matrix (admin)
- * GET  /api/pge/summary                     — System-wide PGE statistics
+ * GET  /api/pge/field-map/:userId             — Psychological field map (states, matrix, trajectory, intervention)
+ * GET  /api/pge/ebh-trend/:userId             — EBH score trend over time
+ * GET  /api/pge/session/:userId/:sessionId    — Session state evolution
+ * GET  /api/pge/state/:userId/current         — Current (latest) state
+ * POST /api/pge/analyze                       — Analyze text (one-shot, for testing)
+ * POST /api/pge/retrain-population            — Retrain population matrix (admin)
+ * GET  /api/pge/summary                       — System-wide PGE statistics
+ * GET  /api/pge/intervention/:userId          — Get intervention recommendation (Phase 2)
+ * GET  /api/pge/intervention/history/:userId  — Get intervention history (Phase 2)
+ * POST /api/pge/intervention/outcome          — Record intervention outcome (Phase 2)
+ * GET  /api/pge/es-trend/:userId              — Emotional Star score trend (Phase 2)
  * 
  * @module routes/pge
- * @version 1.0.0
+ * @version 2.0.0 — PGE Phase 2
  */
 
 import { Router, Request, Response } from 'express';
 import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
+import { interventionEngine } from '../services/pge/interventionEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
   defaultWeightMatrix, findDominantEmotion, detectAttractor,
-  negativeInertia,
+  negativeInertia, computeESScore, distanceToAttractor,
+  defaultInteractionMatrix,
 } from '../services/pge/mathEngine';
 import { PsychologicalState } from '../models/PsychologicalState';
 import { InteractionMatrix } from '../models/InteractionMatrix';
 import { PsychologicalTrajectory } from '../models/PsychologicalTrajectory';
+import { InterventionRecord } from '../models/InterventionRecord';
 import { authenticateExpert } from './expertAuth';
 import { logger } from '../utils/logger';
 
@@ -294,6 +301,188 @@ router.get(
     } catch (error) {
       logger.error('[PGE Route] summary error:', error);
       res.status(500).json({ success: false, error: 'Failed to get summary' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /intervention/:userId — Get Intervention Recommendation (Phase 2)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/intervention/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+
+      // Get current state
+      const latest = await PsychologicalState.findOne({ userId })
+        .sort({ timestamp: -1 })
+        .lean();
+
+      if (!latest) {
+        return res.json({
+          success: true,
+          data: { recommended: false, message: 'No psychological state available for intervention analysis' },
+        });
+      }
+
+      // Get interaction matrix
+      const matrixDoc = await InteractionMatrix.findOne({
+        userId,
+        scope: 'individual',
+      }).sort({ version: -1 }).lean();
+
+      const A = matrixDoc?.matrix ?? defaultInteractionMatrix();
+      const S = stateToVec(latest.stateVector);
+
+      const recommendation = await interventionEngine.getRecommendation({
+        userId,
+        sessionId: latest.sessionId,
+        currentState: S,
+        interactionMatrix: A,
+        ebhScore: latest.ebhScore,
+        zone: latest.zone,
+        loopStrength: latest.loopStrength,
+        negativeInertia: latest.negativeInertia,
+      });
+
+      res.json({
+        success: true,
+        data: recommendation,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] intervention error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get intervention recommendation' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /intervention/history/:userId — Intervention History (Phase 2)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/intervention/history/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+
+      const history = await interventionEngine.getInterventionHistory(userId, limit);
+
+      res.json({
+        success: true,
+        data: history,
+        meta: { userId, limit },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] intervention history error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get intervention history' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// POST /intervention/outcome — Record Intervention Outcome (Phase 2)
+// ════════════════════════════════════════════════════════════════
+router.post(
+  '/intervention/outcome',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId, sessionId, postState, postEBH } = req.body;
+
+      if (!userId || !sessionId) {
+        return res.status(400).json({ success: false, error: 'userId and sessionId are required' });
+      }
+
+      // Get interaction matrix 
+      const matrixDoc = await InteractionMatrix.findOne({
+        userId,
+        scope: 'individual',
+      }).sort({ version: -1 }).lean();
+
+      const A = matrixDoc?.matrix ?? defaultInteractionMatrix();
+
+      // If postState not provided, get from latest PsychologicalState
+      let postVec: number[];
+      let ebh: number;
+
+      if (postState && Array.isArray(postState) && postState.length === 24) {
+        postVec = postState;
+        ebh = postEBH ?? 0;
+      } else {
+        const latest = await PsychologicalState.findOne({ userId, sessionId })
+          .sort({ timestamp: -1 })
+          .lean();
+        if (!latest) {
+          return res.status(404).json({ success: false, error: 'No post-intervention state found' });
+        }
+        postVec = stateToVec(latest.stateVector);
+        ebh = latest.ebhScore;
+      }
+
+      const result = await interventionEngine.recordOutcome({
+        userId,
+        sessionId,
+        postState: postVec,
+        postEBH: ebh,
+        interactionMatrix: A,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      logger.error('[PGE Route] intervention outcome error:', error);
+      res.status(500).json({ success: false, error: 'Failed to record outcome' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /es-trend/:userId — Emotional Star Score Trend (Phase 2)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/es-trend/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const days = parseInt(req.query.days as string) || 30;
+      const since = new Date(Date.now() - days * 24 * 3600 * 1000);
+
+      const states = await PsychologicalState.find({
+        userId,
+        timestamp: { $gte: since },
+      })
+      .sort({ timestamp: 1 })
+      .limit(200)
+      .select('stateVector ebhScore timestamp zone')
+      .lean();
+
+      const trend = states.map(s => {
+        const vec = stateToVec(s.stateVector);
+        return {
+          timestamp: s.timestamp,
+          esScore: Number(computeESScore(vec).toFixed(3)),
+          ebhScore: s.ebhScore,
+          distanceToPA: Number(distanceToAttractor(vec).toFixed(3)),
+          zone: s.zone,
+        };
+      });
+
+      res.json({
+        success: true,
+        data: trend,
+        meta: { userId, days, points: trend.length },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] es-trend error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get ES trend' });
     }
   }
 );

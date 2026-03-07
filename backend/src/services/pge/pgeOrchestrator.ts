@@ -10,13 +10,15 @@
  * 5. EBH Detection: Emotional Black Hole scoring
  * 6. Trajectory Simulation: S(t+k) prediction
  * 7. Early Warning: cảnh báo sớm
+ * 8. Intervention Recommendation: Positive Attractor & Escape Force (Phase 2)
+ * 9. Intervention Outcome Tracking & B-matrix Learning
  * 
  * Luồng xử lý:
  * - ASYNC (fire-and-forget after each chat message)
  * - Kết quả lưu MongoDB → frontend query qua API
  * 
  * @module services/pge/pgeOrchestrator
- * @version 1.0.0
+ * @version 2.0.0 — PGE Phase 2: Positive Attractor & Escape Force
  */
 
 import { logger } from '../../utils/logger';
@@ -31,7 +33,9 @@ import {
   simulateTrajectory, analyzeTrajectoryWarning,
   learnInteractionMatrix, defaultInteractionMatrix,
   spectralRadius, defaultWeightMatrix, Vec,
+  computeESScore, distanceToAttractor, escapeForceRequired,
 } from './mathEngine';
+import { interventionEngine } from './interventionEngine';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -75,6 +79,9 @@ class PGEOrchestrator {
     potentialEnergy: number;
     forceNorm: number;
     ebhScore: number;
+    esScore: number;
+    distanceToPA: number;
+    escapeForceRequired: number;
     zone: string;
     dominantEmotion: string;
     attractorState: string;
@@ -84,6 +91,7 @@ class PGEOrchestrator {
       message?: string;
     };
     trajectory?: Array<{ step: number; ebhScore: number; zone: string }>;
+    intervention?: any;
   }> {
     const { userId, sessionId, messageIndex, userMessage } = params;
 
@@ -218,7 +226,44 @@ class PGEOrchestrator {
       }
 
       // ════════════════════════════════════════════
-      // STEP 9: Background Matrix Update
+      // STEP 9: Intervention Recommendation (Phase 2)
+      // ════════════════════════════════════════════
+      let interventionRecommendation: any = null;
+      const esScore = computeESScore(S);
+      const dPA = distanceToAttractor(S);
+      const { required: reqForce } = escapeForceRequired(A, S);
+
+      // Record outcome of previous intervention (if any)
+      interventionEngine.recordOutcome({
+        userId,
+        sessionId,
+        postState: S,
+        postEBH: ebhScore,
+        interactionMatrix: A,
+      }).catch(err => {
+        logger.warn('[PGE] Intervention outcome recording failed:', err instanceof Error ? err.message : err);
+      });
+
+      // Get new recommendation if needed
+      if (ebhScore >= 0.3 || zone !== 'safe') {
+        try {
+          interventionRecommendation = await interventionEngine.getRecommendation({
+            userId,
+            sessionId,
+            currentState: S,
+            interactionMatrix: A,
+            ebhScore,
+            zone,
+            loopStrength,
+            negativeInertia: inertia,
+          });
+        } catch (err) {
+          logger.warn('[PGE] Intervention recommendation failed:', err instanceof Error ? err.message : err);
+        }
+      }
+
+      // ════════════════════════════════════════════
+      // STEP 10: Background Matrix Update
       // ════════════════════════════════════════════
       // Only retrain matrix periodically (every 10 messages)
       if (messageIndex > 0 && messageIndex % 10 === 0 && historyVecs.length >= MIN_STATES_FOR_LEARNING) {
@@ -231,10 +276,12 @@ class PGEOrchestrator {
         userId: userId.substring(0, 8),
         sessionId: sessionId.substring(0, 8),
         ebhScore: ebhScore.toFixed(3),
+        esScore: esScore.toFixed(3),
         zone,
         dominantEmotion,
         attractorState,
         warning: earlyWarning.warning,
+        interventionRecommended: !!interventionRecommendation?.recommended,
       });
 
       return {
@@ -242,6 +289,9 @@ class PGEOrchestrator {
         potentialEnergy: U,
         forceNorm: fNorm,
         ebhScore,
+        esScore,
+        distanceToPA: dPA,
+        escapeForceRequired: reqForce,
         zone,
         dominantEmotion,
         attractorState,
@@ -251,6 +301,7 @@ class PGEOrchestrator {
           ebhScore: t.ebhScore,
           zone: t.zone,
         })),
+        intervention: interventionRecommendation,
       };
     } catch (error) {
       logger.error('[PGE] processMessage failed:', error);
@@ -396,15 +447,19 @@ class PGEOrchestrator {
   // ════════════════════════════════════════════════════════════════
 
   /**
-   * Get user's psychological field map (recent states, trajectory, EBH trend)
+   * Get user's psychological field map (recent states, trajectory, EBH trend, intervention)
    */
   async getFieldMap(userId: string, days = 30): Promise<{
     currentState: IStateVector | null;
     currentZone: string;
     currentEBH: number;
+    currentES: number;
+    distanceToPA: number;
+    escapeForceRequired: number;
     stateHistory: Array<{
       timestamp: Date;
       ebhScore: number;
+      esScore: number;
       zone: string;
       dominantEmotion: string;
       stateVector: IStateVector;
@@ -421,9 +476,24 @@ class PGEOrchestrator {
       earlyWarning: boolean;
       warningMessage?: string;
     } | null;
+    intervention: {
+      recommended: boolean;
+      type?: string;
+      typeName?: string;
+      description?: string;
+      effectiveness?: number;
+      escapeForce?: number;
+      escapeRatio?: number;
+      reason?: string;
+      predictedEBH?: number;
+      predictedES?: number;
+      trajectoryComparison?: any;
+      alternatives?: Array<{ type: string; typeName: string; effectiveness: number; reason: string }>;
+    } | null;
     statistics: {
       averageEBH: number;
       maxEBH: number;
+      averageES: number;
       timeInZones: Record<string, number>;
       dominantEmotions: Array<{ emotion: string; count: number }>;
     };
@@ -480,13 +550,49 @@ class PGEOrchestrator {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // ES scores
+    const esScores = states.map(s => computeESScore(stateToVec(s.stateVector)));
+    const avgES = esScores.length > 0
+      ? esScores.reduce((s, v) => s + v, 0) / esScores.length
+      : 0;
+
+    // Current ES & PA metrics
+    const currentVec = current ? stateToVec(current.stateVector) : null;
+    const currentES = currentVec ? computeESScore(currentVec) : 0;
+    const currentDistPA = currentVec ? distanceToAttractor(currentVec) : 0;
+
+    // Escape force required
+    const A = matrixDoc?.matrix ?? defaultInteractionMatrix();
+    const currentEscapeForce = currentVec ? escapeForceRequired(A, currentVec).required : 0;
+
+    // Intervention recommendation (if in danger zone)
+    let interventionData: any = null;
+    if (current && current.ebhScore >= 0.3 && currentVec) {
+      try {
+        interventionData = await interventionEngine.getRecommendation({
+          userId,
+          sessionId: current.sessionId,
+          currentState: currentVec,
+          interactionMatrix: A,
+          ebhScore: current.ebhScore,
+          zone: current.zone,
+        });
+      } catch (err) {
+        logger.warn('[PGE] getFieldMap intervention failed:', err);
+      }
+    }
+
     return {
       currentState: current?.stateVector ?? null,
       currentZone: current?.zone ?? 'unknown',
       currentEBH: current?.ebhScore ?? 0,
-      stateHistory: states.map(s => ({
+      currentES,
+      distanceToPA: currentDistPA,
+      escapeForceRequired: currentEscapeForce,
+      stateHistory: states.map((s, i) => ({
         timestamp: s.timestamp,
         ebhScore: s.ebhScore,
+        esScore: esScores[i] ?? 0,
         zone: s.zone,
         dominantEmotion: s.dominantEmotion,
         stateVector: s.stateVector,
@@ -506,9 +612,11 @@ class PGEOrchestrator {
         earlyWarning: trajectory.earlyWarning,
         warningMessage: trajectory.warningMessage,
       } : null,
+      intervention: interventionData,
       statistics: {
         averageEBH: Number(avgEBH.toFixed(3)),
         maxEBH: Number(maxEBH.toFixed(3)),
+        averageES: Number(avgES.toFixed(3)),
         timeInZones,
         dominantEmotions,
       },

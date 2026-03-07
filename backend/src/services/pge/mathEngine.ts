@@ -241,7 +241,8 @@ export function negativeInertia(stateHistory: Vec[]): number {
  */
 export function spectralRadius(A: Mat, iterations = 50): number {
   const n = A.length;
-  let v = Array.from({ length: n }, () => Math.random());
+  // Deterministic initial vector (seeded by dimension to avoid random fluctuation)
+  let v = Array.from({ length: n }, (_, i) => Math.sin(i + 1) * 0.5 + 0.5);
   let vNorm = vecNorm(v);
   v = vecScale(v, 1 / vNorm);
 
@@ -299,8 +300,9 @@ export function detectFeedbackLoops(
         const canonical = canonicalizeCycle(cyclePath);
         if (!visited.has(canonical)) {
           visited.add(canonical);
-          const totalWeight = [...weights, edge.weight].reduce((s, w) => s + w, 0);
-          const avgWeight = totalWeight / weights.length + 1;
+          const allWeights = [...weights, edge.weight];
+          const totalWeight = allWeights.reduce((s, w) => s + w, 0);
+          const avgWeight = totalWeight / allWeights.length;
           loops.push({
             path: cyclePath.map(i => PSY_VARIABLES[i]),
             totalWeight,

@@ -12,8 +12,22 @@ import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
 import { RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
 
-// PGE: Track message index per session
+// PGE: Track message index per session (with max size to prevent memory leak)
+const SESSION_INDEX_MAX_SIZE = 5000;
 const sessionMessageIndex = new Map<string, number>();
+
+/** Cleanup old session indices when map grows too large */
+function cleanupSessionIndex(): void {
+  if (sessionMessageIndex.size > SESSION_INDEX_MAX_SIZE) {
+    // Remove oldest half (Map preserves insertion order)
+    const toRemove = Math.floor(SESSION_INDEX_MAX_SIZE / 2);
+    const keys = sessionMessageIndex.keys();
+    for (let i = 0; i < toRemove; i++) {
+      const key = keys.next().value;
+      if (key) sessionMessageIndex.delete(key);
+    }
+  }
+}
 
 export class ChatbotController {
   private chatbotService: ChatbotService;
@@ -94,6 +108,7 @@ export class ChatbotController {
       }).catch(() => {});
 
       // PGE: Psychological Gravity Engine — extract emotions, compute EBH, simulate trajectory (ASYNC)
+      cleanupSessionIndex();
       const msgIdx = sessionMessageIndex.get(effectiveSessionId) ?? 0;
       sessionMessageIndex.set(effectiveSessionId, msgIdx + 1);
       pgeOrchestrator.processMessage({
@@ -409,6 +424,7 @@ export class ChatbotController {
       }).catch(() => {});
 
       // PGE: Psychological Gravity Engine — extract emotions, compute EBH, simulate trajectory (ASYNC)
+      cleanupSessionIndex();
       const memMsgIdx = sessionMessageIndex.get(effectiveSessionId) ?? 0;
       sessionMessageIndex.set(effectiveSessionId, memMsgIdx + 1);
       pgeOrchestrator.processMessage({

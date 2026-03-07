@@ -15,8 +15,9 @@
  * 9. Intervention Recommendation — can thiệp tối ưu (Phase 2)
  * 10. Trajectory Comparison — with/without intervention (Phase 2)
  * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
+ * 12. Session Analytics — Adaptive Session Manager (Phase 7)
  * 
- * @version 4.0.0 — PGE Phase 6: Predictive Early Warning System
+ * @version 5.0.0 — PGE Phase 7: Adaptive Session Manager
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -235,6 +236,45 @@ interface ForecastData {
 }
 
 // ═══════════════════════════════════════════
+// PHASE 7: SESSION ANALYTICS INTERFACES
+// ═══════════════════════════════════════════
+
+interface SessionAnalyticsData {
+  totalSessions: number;
+  recentSessions: Array<{
+    sessionId: string;
+    date: string;
+    sessionType: string;
+    deltaEBH: number;
+    effectiveness: number;
+    engagementLevel: string;
+    duration: number;
+    messageCount: number;
+    trend: string;
+  }>;
+  patterns: {
+    avgEffectiveness: number;
+    avgDuration: number;
+    avgDeltaEBH: number;
+    avgRecoveryRate: number;
+    bestSessionType: string;
+    mostCommonType: string;
+    sessionTypeDistribution: Record<string, number>;
+    engagementDistribution: Record<string, number>;
+  };
+  optimalHours: number[];
+  readiness: {
+    score: number;
+    recommendation: string;
+  };
+  recoveryTrend: Array<{
+    date: string;
+    recoveryRate: number;
+    effectiveness: number;
+  }>;
+}
+
+// ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
 
@@ -291,12 +331,13 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
   const [landscapeData, setLandscapeData] = useState<LandscapeData | null>(null);
   const [forecastData, setForecastData] = useState<ForecastData | null>(null);
+  const [sessionAnalytics, setSessionAnalytics] = useState<SessionAnalyticsData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -381,6 +422,24 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchSessionAnalytics = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/session-analytics/${uid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setSessionAnalytics(data.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -407,6 +466,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           <TabBtn active={view === 'forecast'} onClick={() => setView('forecast')}>
             🔮 Dự báo sớm
           </TabBtn>
+          <TabBtn active={view === 'sessions'} onClick={() => setView('sessions')}>
+            📅 Phiên tâm lý
+          </TabBtn>
         </TabRow>
       </Header>
 
@@ -431,13 +493,21 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchTopology(selectedUserId)}
         />
-      ) : (
+      ) : view === 'forecast' ? (
         <ForecastView
           forecast={forecastData}
           loading={loading}
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchForecast(selectedUserId)}
+        />
+      ) : (
+        <SessionView
+          analytics={sessionAnalytics}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchSessionAnalytics(selectedUserId)}
         />
       )}
     </Container>
@@ -1410,6 +1480,196 @@ const ForecastView: React.FC<{
                 ))}
               </RecommendationList>
             </Section>
+          )}
+        </>
+      )}
+    </>
+  );
+};
+
+// ═══════════════════════════════════════════
+// SESSION VIEW COMPONENT
+// ═══════════════════════════════════════════
+
+const SESSION_TYPE_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
+  crisis: { icon: '🚨', color: '#f44336', label: 'Khủng hoảng' },
+  intervention: { icon: '💊', color: '#ff9800', label: 'Can thiệp' },
+  maintenance: { icon: '🔧', color: '#2196f3', label: 'Duy trì' },
+  growth: { icon: '🌱', color: '#4caf50', label: 'Phát triển' },
+};
+
+const SessionView: React.FC<{
+  analytics: SessionAnalyticsData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+}> = ({ analytics, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để xem phiên tâm lý..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading}>
+          {loading ? '⏳' : '📅'} Phân tích
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang phân tích dữ liệu phiên...</LoadingText>}
+
+      {analytics && !loading && (
+        <>
+          {/* Readiness Gauge */}
+          <SessionReadinessCard>
+            <SessionReadinessLeft>
+              <SessionReadinessCircle score={analytics.readiness.score}>
+                <SessionReadinessValue>{Math.round(analytics.readiness.score * 100)}</SessionReadinessValue>
+                <SessionReadinessUnit>%</SessionReadinessUnit>
+              </SessionReadinessCircle>
+              <SessionReadinessLabel>Mức sẵn sàng</SessionReadinessLabel>
+            </SessionReadinessLeft>
+            <SessionReadinessRight>
+              <SessionReadinessRec>{analytics.readiness.recommendation}</SessionReadinessRec>
+            </SessionReadinessRight>
+          </SessionReadinessCard>
+
+          {/* Pattern Stats */}
+          {analytics.patterns && (
+            <Section>
+              <SectionTitle>📊 Thống kê tổng quan</SectionTitle>
+              <SessionStatsGrid>
+                <SessionStatCard>
+                  <SessionStatIcon>🎯</SessionStatIcon>
+                  <SessionStatValue>{Math.round(analytics.patterns.avgEffectiveness * 100)}%</SessionStatValue>
+                  <SessionStatLabel>Hiệu quả TB</SessionStatLabel>
+                </SessionStatCard>
+                <SessionStatCard>
+                  <SessionStatIcon>⏱️</SessionStatIcon>
+                  <SessionStatValue>{Math.round(analytics.patterns.avgDuration)}p</SessionStatValue>
+                  <SessionStatLabel>Thời lượng TB</SessionStatLabel>
+                </SessionStatCard>
+                <SessionStatCard>
+                  <SessionStatIcon>{analytics.patterns.avgDeltaEBH < 0 ? '📉' : '📈'}</SessionStatIcon>
+                  <SessionStatValue style={{ color: analytics.patterns.avgDeltaEBH < 0 ? '#4caf50' : '#f44336' }}>
+                    {analytics.patterns.avgDeltaEBH < 0 ? '' : '+'}{(analytics.patterns.avgDeltaEBH * 100).toFixed(1)}
+                  </SessionStatValue>
+                  <SessionStatLabel>ΔEBH TB (%)</SessionStatLabel>
+                </SessionStatCard>
+                <SessionStatCard>
+                  <SessionStatIcon>💪</SessionStatIcon>
+                  <SessionStatValue>{(analytics.patterns.avgRecoveryRate * 100).toFixed(1)}</SessionStatValue>
+                  <SessionStatLabel>Tốc độ phục hồi</SessionStatLabel>
+                </SessionStatCard>
+              </SessionStatsGrid>
+            </Section>
+          )}
+
+          {/* Session Type Distribution */}
+          {analytics.patterns?.sessionTypeDistribution && (
+            <Section>
+              <SectionTitle>📋 Phân bố loại phiên</SectionTitle>
+              <SessionTypeGrid>
+                {Object.entries(analytics.patterns.sessionTypeDistribution).map(([type, count]) => {
+                  const cfg = SESSION_TYPE_CONFIG[type] || { icon: '❓', color: '#999', label: type };
+                  return (
+                    <SessionTypeCard key={type} borderColor={cfg.color}>
+                      <SessionTypeIcon>{cfg.icon}</SessionTypeIcon>
+                      <SessionTypeCount>{count as number}</SessionTypeCount>
+                      <SessionTypeLabel>{cfg.label}</SessionTypeLabel>
+                    </SessionTypeCard>
+                  );
+                })}
+              </SessionTypeGrid>
+            </Section>
+          )}
+
+          {/* Optimal Hours */}
+          {analytics.optimalHours && analytics.optimalHours.length > 0 && (
+            <Section>
+              <SectionTitle>🕐 Giờ vàng (hiệu quả cao nhất)</SectionTitle>
+              <OptimalHoursRow>
+                {analytics.optimalHours.map((h, i) => (
+                  <OptimalHourBadge key={i} rank={i}>
+                    {h}:00
+                  </OptimalHourBadge>
+                ))}
+              </OptimalHoursRow>
+            </Section>
+          )}
+
+          {/* Recovery Trend */}
+          {analytics.recoveryTrend && analytics.recoveryTrend.length > 0 && (
+            <Section>
+              <SectionTitle>📈 Xu hướng phục hồi (EMA)</SectionTitle>
+              <RecoveryTrendRow>
+                {analytics.recoveryTrend.map((v, i) => (
+                  <RecoveryTrendBar key={i}
+                    height={Math.max(8, v.effectiveness * 120)}
+                    color={v.effectiveness > 0.6 ? '#4caf50' : v.effectiveness > 0.3 ? '#ff9800' : '#f44336'}
+                    title={`Phiên ${i + 1}: Hiệu quả ${(v.effectiveness * 100).toFixed(0)}% | Phục hồi ${(v.recoveryRate * 100).toFixed(0)}%`}
+                  />
+                ))}
+              </RecoveryTrendRow>
+              <RecoveryTrendLegend>
+                <span>← Cũ nhất</span>
+                <span>Mới nhất →</span>
+              </RecoveryTrendLegend>
+            </Section>
+          )}
+
+          {/* Recent Sessions Table */}
+          {analytics.recentSessions && analytics.recentSessions.length > 0 && (
+            <Section>
+              <SectionTitle>📜 Lịch sử phiên gần đây ({analytics.recentSessions.length})</SectionTitle>
+              <SessionTableWrapper>
+                <SessionTable>
+                  <thead>
+                    <tr>
+                      <SessionTh>Loại</SessionTh>
+                      <SessionTh>Thời lượng</SessionTh>
+                      <SessionTh>ΔEBH</SessionTh>
+                      <SessionTh>Hiệu quả</SessionTh>
+                      <SessionTh>Tin nhắn</SessionTh>
+                      <SessionTh>Độ tương tác</SessionTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.recentSessions.map((s, i) => {
+                      const cfg = SESSION_TYPE_CONFIG[s.sessionType] || { icon: '❓', color: '#999', label: s.sessionType };
+                      return (
+                        <SessionTr key={i}>
+                          <SessionTd>
+                            <SessionTypeBadge color={cfg.color}>{cfg.icon} {cfg.label}</SessionTypeBadge>
+                          </SessionTd>
+                          <SessionTd>{Math.round(s.duration)}p</SessionTd>
+                          <SessionTd style={{ color: s.deltaEBH < 0 ? '#4caf50' : s.deltaEBH > 0 ? '#f44336' : '#888' }}>
+                            {s.deltaEBH < 0 ? '' : '+'}{(s.deltaEBH * 100).toFixed(1)}%
+                          </SessionTd>
+                          <SessionTd>
+                            <EffectivenessBar>
+                              <EffectivenessFill width={s.effectiveness * 100}
+                                color={s.effectiveness > 0.6 ? '#4caf50' : s.effectiveness > 0.3 ? '#ff9800' : '#f44336'}
+                              />
+                            </EffectivenessBar>
+                            <small>{Math.round(s.effectiveness * 100)}%</small>
+                          </SessionTd>
+                          <SessionTd>{s.messageCount}</SessionTd>
+                          <SessionTd>{s.engagementLevel}</SessionTd>
+                        </SessionTr>
+                      );
+                    })}
+                  </tbody>
+                </SessionTable>
+              </SessionTableWrapper>
+            </Section>
+          )}
+
+          {analytics.recentSessions && analytics.recentSessions.length === 0 && (
+            <EmptyText>Chưa có phiên nào được ghi nhận. Hãy trò chuyện để bắt đầu!</EmptyText>
           )}
         </>
       )}
@@ -2396,5 +2656,99 @@ const RecommendationItem = styled.div`
 `;
 const RecommendationIcon = styled.div`font-size: 1.3rem; flex-shrink: 0;`;
 const RecommendationText = styled.div`font-size: 0.9rem; color: #333; line-height: 1.5;`;
+
+// ═══════════════════════════════════════════
+// SESSION STYLED COMPONENTS
+// ═══════════════════════════════════════════
+
+const SessionReadinessCard = styled.div`
+  display: flex; gap: 24px; align-items: center;
+  background: linear-gradient(135deg, #f3e5f5, #e8eaf6);
+  border-radius: 20px; padding: 24px 28px; margin-bottom: 20px;
+  animation: ${fadeIn} 0.4s ease;
+`;
+const SessionReadinessLeft = styled.div`display: flex; flex-direction: column; align-items: center; gap: 8px;`;
+const SessionReadinessCircle = styled.div<{ score: number }>`
+  width: 90px; height: 90px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: conic-gradient(
+    ${p => p.score > 0.6 ? '#4caf50' : p.score > 0.3 ? '#ff9800' : '#f44336'} ${p => p.score * 360}deg,
+    #e0e0e0 ${p => p.score * 360}deg
+  );
+  position: relative;
+  &::after {
+    content: ''; position: absolute; width: 72px; height: 72px; border-radius: 50%; background: #fff;
+  }
+`;
+const SessionReadinessValue = styled.div`font-size: 1.5rem; font-weight: bold; z-index: 1; color: #333;`;
+const SessionReadinessUnit = styled.div`font-size: 0.7rem; z-index: 1; color: #666; margin-top: -4px;`;
+const SessionReadinessLabel = styled.div`font-size: 0.85rem; color: #666; font-weight: 500;`;
+const SessionReadinessRight = styled.div`flex: 1;`;
+const SessionReadinessRec = styled.div`
+  font-size: 0.95rem; color: #444; line-height: 1.6;
+  background: rgba(255,255,255,0.7); padding: 14px 18px; border-radius: 12px;
+`;
+
+const SessionStatsGrid = styled.div`display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;`;
+const SessionStatCard = styled.div`
+  background: #fff; border-radius: 14px; padding: 18px 14px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.2s;
+  &:hover { transform: translateY(-2px); }
+`;
+const SessionStatIcon = styled.div`font-size: 1.6rem; margin-bottom: 6px;`;
+const SessionStatValue = styled.div`font-size: 1.4rem; font-weight: bold; color: #333;`;
+const SessionStatLabel = styled.div`font-size: 0.78rem; color: #888; margin-top: 4px;`;
+
+const SessionTypeGrid = styled.div`display: flex; gap: 14px; flex-wrap: wrap;`;
+const SessionTypeCard = styled.div<{ borderColor: string }>`
+  background: #fff; border-radius: 14px; padding: 16px 20px; text-align: center;
+  border-left: 4px solid ${p => p.borderColor}; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  min-width: 110px; flex: 1;
+`;
+const SessionTypeIcon = styled.div`font-size: 1.5rem; margin-bottom: 4px;`;
+const SessionTypeCount = styled.div`font-size: 1.6rem; font-weight: bold; color: #333;`;
+const SessionTypeLabel = styled.div`font-size: 0.8rem; color: #888;`;
+
+const OptimalHoursRow = styled.div`display: flex; gap: 10px; flex-wrap: wrap;`;
+const OptimalHourBadge = styled.div<{ rank: number }>`
+  background: ${p => p.rank === 0 ? 'linear-gradient(135deg, #ffd700, #ffb300)' : p.rank === 1 ? 'linear-gradient(135deg, #c0c0c0, #9e9e9e)' : 'linear-gradient(135deg, #cd7f32, #a0522d)'};
+  color: #fff; font-weight: bold; padding: 10px 20px; border-radius: 20px; font-size: 1.1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+`;
+
+const RecoveryTrendRow = styled.div`
+  display: flex; align-items: flex-end; gap: 4px; height: 80px; padding: 0 4px;
+  background: #fafafa; border-radius: 10px; overflow: hidden;
+`;
+const RecoveryTrendBar = styled.div<{ height: number; color: string }>`
+  flex: 1; min-width: 6px; max-width: 20px; height: ${p => p.height}px;
+  background: ${p => p.color}; border-radius: 3px 3px 0 0; transition: height 0.3s;
+  cursor: help; &:hover { opacity: 0.7; }
+`;
+const RecoveryTrendLegend = styled.div`
+  display: flex; justify-content: space-between; font-size: 0.7rem; color: #aaa; margin-top: 4px;
+`;
+
+const SessionTableWrapper = styled.div`overflow-x: auto; border-radius: 12px;`;
+const SessionTable = styled.table`width: 100%; border-collapse: collapse; font-size: 0.88rem;`;
+const SessionTh = styled.th`
+  text-align: left; padding: 10px 12px; background: #f5f5f5; color: #555;
+  font-weight: 600; font-size: 0.8rem; border-bottom: 2px solid #e0e0e0;
+`;
+const SessionTr = styled.tr`
+  &:nth-child(even) { background: #fafafa; }
+  &:hover { background: #f0f0ff; }
+`;
+const SessionTd = styled.td`padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle;`;
+const SessionTypeBadge = styled.span<{ color: string }>`
+  display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.78rem;
+  background: ${p => p.color}20; color: ${p => p.color}; font-weight: 600;
+`;
+const EffectivenessBar = styled.div`
+  width: 60px; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px;
+`;
+const EffectivenessFill = styled.div<{ width: number; color: string }>`
+  height: 100%; width: ${p => p.width}%; background: ${p => p.color}; border-radius: 3px; transition: width 0.3s;
+`;
 
 export default PGEDashboard;

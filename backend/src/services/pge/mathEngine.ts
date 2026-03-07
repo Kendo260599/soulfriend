@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 4.0.0 — Phase 6: Predictive Early Warning + Phase 3-5
+ * @version 5.0.0 — Phase 7: Adaptive Session Manager + Phase 3-6
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -2693,4 +2693,232 @@ export function generateForecastRecommendations(
   }
 
   return recs;
+}
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 7: ADAPTIVE SESSION MANAGER — Session Metrics
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Compute session-level EBH delta.
+ * Negative = improved, Positive = worsened.
+ */
+export function computeSessionDelta(
+  ebhScores: number[]
+): { deltaEBH: number; minEBH: number; maxEBH: number; trend: string } {
+  if (ebhScores.length === 0) return { deltaEBH: 0, minEBH: 0, maxEBH: 0, trend: 'stable' };
+  const startEBH = ebhScores[0];
+  const endEBH = ebhScores[ebhScores.length - 1];
+  const delta = endEBH - startEBH;
+  const minEBH = Math.min(...ebhScores);
+  const maxEBH = Math.max(...ebhScores);
+  const trend = delta < -0.05 ? 'improving' : delta > 0.05 ? 'deteriorating' : 'stable';
+  return { deltaEBH: delta, minEBH, maxEBH, trend };
+}
+
+/**
+ * Count messages until user first reaches a safe-ish zone.
+ * Returns -1 if user never reached zone threshold.
+ */
+export function messagesToRecovery(
+  ebhScores: number[],
+  threshold: number = 0.3
+): number {
+  // If user starts below threshold, they're already safe
+  if (ebhScores.length === 0 || ebhScores[0] <= threshold) return 0;
+  for (let i = 1; i < ebhScores.length; i++) {
+    if (ebhScores[i] <= threshold) return i;
+  }
+  return -1; // never recovered
+}
+
+/**
+ * Compute engagement level from message count and session duration.
+ * Uses messages-per-minute as proxy for user engagement.
+ */
+export function computeEngagementLevel(
+  messageCount: number,
+  durationMinutes: number
+): 'low' | 'medium' | 'high' {
+  if (durationMinutes <= 0 || messageCount <= 1) return 'low';
+  const rate = messageCount / durationMinutes;
+  // < 0.5 msg/min = low, 0.5-2 = medium, >2 = high
+  if (rate < 0.5) return 'low';
+  if (rate <= 2.0) return 'medium';
+  return 'high';
+}
+
+/**
+ * Session effectiveness score [0, 1].
+ * Combines EBH improvement, ES improvement, and recovery speed.
+ */
+export function sessionEffectivenessScore(params: {
+  startEBH: number;
+  endEBH: number;
+  startES: number;
+  endES: number;
+  messageCount: number;
+  recovered: boolean;
+}): number {
+  const { startEBH, endEBH, startES, endES, messageCount, recovered } = params;
+
+  // EBH improvement component (0-0.4) — lower EBH is better
+  const ebhDelta = startEBH - endEBH; // positive = improved
+  const ebhScore = Math.max(0, Math.min(0.4, ebhDelta * 0.8));
+
+  // ES improvement component (0-0.3) — higher ES is better
+  const esDelta = endES - startES; // positive = improved
+  const esScore = Math.max(0, Math.min(0.3, esDelta * 0.6));
+
+  // Recovery component (0-0.2)
+  const recoveryScore = recovered ? 0.2 : 0;
+
+  // Efficiency component (0-0.1) — fewer messages = more efficient
+  const efficiencyScore = messageCount > 0
+    ? Math.max(0, 0.1 * (1 - Math.min(messageCount, 30) / 30))
+    : 0;
+
+  return Math.min(1, ebhScore + esScore + recoveryScore + efficiencyScore);
+}
+
+/**
+ * Exponential Moving Average for time series.
+ * alpha ∈ (0, 1): higher = more weight on recent values.
+ */
+export function exponentialMovingAverage(
+  values: number[],
+  alpha: number = 0.3
+): number[] {
+  if (values.length === 0) return [];
+  const ema: number[] = [values[0]];
+  for (let i = 1; i < values.length; i++) {
+    ema.push(alpha * values[i] + (1 - alpha) * ema[i - 1]);
+  }
+  return ema;
+}
+
+/**
+ * Estimate recovery rate: how many EBH points per message the user recovers.
+ * Positive = faster recovery. Averaged over sessions.
+ */
+export function estimateRecoveryRate(
+  sessionDeltas: Array<{ deltaEBH: number; messageCount: number }>
+): number {
+  const validSessions = sessionDeltas.filter(s => s.deltaEBH < 0 && s.messageCount > 1);
+  if (validSessions.length === 0) return 0;
+  const rates = validSessions.map(s => Math.abs(s.deltaEBH) / s.messageCount);
+  return rates.reduce((sum, r) => sum + r, 0) / rates.length;
+}
+
+/**
+ * Classify session type based on initial state and trajectory.
+ */
+export function classifySessionType(
+  startEBH: number,
+  startZone: string,
+  trend: string
+): 'crisis' | 'intervention' | 'maintenance' | 'growth' {
+  if (startZone === 'critical' || startZone === 'black_hole') return 'crisis';
+  if (startZone === 'risk' || startEBH >= 0.5) return 'intervention';
+  if (trend === 'improving' && startEBH < 0.3) return 'growth';
+  return 'maintenance';
+}
+
+/**
+ * Predict optimal engagement window.
+ * Uses hourly session effectiveness patterns to find best hours.
+ * Returns array of recommended hours [0-23] sorted by effectiveness.
+ */
+export function predictOptimalHours(
+  sessionHistory: Array<{ hour: number; effectiveness: number }>
+): number[] {
+  if (sessionHistory.length === 0) return [9, 14, 20]; // defaults: morning, afternoon, evening
+
+  // Group by hour
+  const hourMap: Record<number, number[]> = {};
+  for (const s of sessionHistory) {
+    if (!hourMap[s.hour]) hourMap[s.hour] = [];
+    hourMap[s.hour].push(s.effectiveness);
+  }
+
+  // Average effectiveness per hour
+  const hourAvg: Array<{ hour: number; avg: number }> = [];
+  for (const [hour, effs] of Object.entries(hourMap)) {
+    const avg = effs.reduce((s, v) => s + v, 0) / effs.length;
+    hourAvg.push({ hour: parseInt(hour), avg });
+  }
+
+  // Sort by effectiveness descending
+  hourAvg.sort((a, b) => b.avg - a.avg);
+  return hourAvg.slice(0, 3).map(h => h.hour);
+}
+
+/**
+ * Session readiness score [0, 1].
+ * Assesses whether the user is ready for a productive session.
+ * Factors: time since last session, last session result, current forecast.
+ */
+export function sessionReadinessScore(params: {
+  hoursSinceLastSession: number;
+  lastSessionEffectiveness: number;
+  currentEBH: number;
+  forecastAlertLevel: string;
+}): { score: number; recommendation: string } {
+  const { hoursSinceLastSession, lastSessionEffectiveness, currentEBH, forecastAlertLevel } = params;
+
+  // Time factor (0-0.3): optimal ~12-48h spacing
+  let timeFactor: number;
+  if (hoursSinceLastSession < 2) timeFactor = 0.05;      // too soon
+  else if (hoursSinceLastSession < 12) timeFactor = 0.15; // soon but ok
+  else if (hoursSinceLastSession <= 48) timeFactor = 0.3; // optimal
+  else if (hoursSinceLastSession <= 168) timeFactor = 0.2; // a bit late
+  else timeFactor = 0.1; // too long since last
+
+  // Momentum factor (0-0.3): recent progress carries forward
+  const momentumFactor = Math.min(0.3, lastSessionEffectiveness * 0.5);
+
+  // Need factor (0-0.25): higher EBH = more need for session
+  const needFactor = Math.min(0.25, currentEBH * 0.4);
+
+  // Urgency factor (0-0.15): forecast-driven
+  let urgencyFactor = 0;
+  if (forecastAlertLevel === 'alert') urgencyFactor = 0.15;
+  else if (forecastAlertLevel === 'warning') urgencyFactor = 0.1;
+  else if (forecastAlertLevel === 'watch') urgencyFactor = 0.05;
+
+  const score = Math.min(1, timeFactor + momentumFactor + needFactor + urgencyFactor);
+
+  // Generate recommendation
+  let recommendation: string;
+  if (score >= 0.7) recommendation = 'Thời điểm rất tốt để bắt đầu phiên tâm lý mới.';
+  else if (score >= 0.5) recommendation = 'Có thể bắt đầu phiên mới — hiệu quả trung bình.';
+  else if (score >= 0.3) recommendation = 'Chưa phải thời điểm lý tưởng — hãy thử lại sau vài giờ.';
+  else recommendation = 'Nên nghỉ ngơi trước khi bắt đầu phiên tiếp theo.';
+
+  return { score, recommendation };
+}
+
+/**
+ * Compute session depth: how deeply user engaged with their emotions.
+ * Based on variance of state vector changes within session.
+ */
+export function computeSessionDepth(
+  stateVectors: Vec[]
+): number {
+  if (stateVectors.length < 2) return 0;
+
+  // Compute deltas between consecutive states
+  const deltas: number[] = [];
+  for (let i = 1; i < stateVectors.length; i++) {
+    const diff = stateVectors[i].reduce(
+      (sum, v, j) => sum + Math.abs(v - stateVectors[i - 1][j]), 0
+    ) / stateVectors[i].length;
+    deltas.push(diff);
+  }
+
+  // Higher average delta = deeper engagement
+  const avgDelta = deltas.reduce((s, v) => s + v, 0) / deltas.length;
+
+  // Normalize to [0, 1]: delta of 0.15 per dimension ≈ deep engagement
+  return Math.min(1, avgDelta / 0.15);
 }

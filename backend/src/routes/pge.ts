@@ -25,8 +25,12 @@
  * GET  /api/pge/forecast/:userId               — Predictive forecast + CSD + risk (Phase 6)
  * GET  /api/pge/csd/:userId                    — CSD early warning indicators (Phase 6)
  * 
+ * GET  /api/pge/session-analytics/:userId       — Session patterns & engagement insights (Phase 7)
+ * GET  /api/pge/readiness/:userId               — Session readiness score (Phase 7)
+ * POST /api/pge/finalize-session                — Finalize a completed session (Phase 7)
+ * 
  * @module routes/pge
- * @version 4.0.0 — PGE Phase 6: Predictive Early Warning System
+ * @version 5.0.0 — PGE Phase 7: Adaptive Session Manager
  */
 
 import { Router, Request, Response } from 'express';
@@ -35,6 +39,7 @@ import { interventionEngine } from '../services/pge/interventionEngine';
 import { topologyMapper } from '../services/pge/topologyMapper';
 import { banditPolicy } from '../services/pge/banditPolicy';
 import { forecastEngine } from '../services/pge/forecastEngine';
+import { sessionManager } from '../services/pge/sessionManager';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -673,6 +678,80 @@ router.get(
     } catch (error) {
       logger.error('[PGE Route] CSD indicators error:', error);
       res.status(500).json({ success: false, error: 'Failed to compute CSD indicators' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /session-analytics/:userId — Session Patterns & Insights (Phase 7)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/session-analytics/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const analytics = await sessionManager.getSessionAnalytics(userId);
+
+      res.json({
+        success: true,
+        data: analytics,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] session analytics error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get session analytics' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// GET /readiness/:userId — Session Readiness Score (Phase 7)
+// ════════════════════════════════════════════════════════════════
+router.get(
+  '/readiness/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const readiness = await sessionManager.assessReadiness(userId);
+
+      res.json({
+        success: true,
+        data: readiness,
+        meta: { userId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] readiness error:', error);
+      res.status(500).json({ success: false, error: 'Failed to assess readiness' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// POST /finalize-session — Finalize a Completed Session (Phase 7)
+// ════════════════════════════════════════════════════════════════
+router.post(
+  '/finalize-session',
+  authenticateExpert,
+  async (req: Request, res: Response) => {
+    try {
+      const { userId, sessionId } = req.body;
+      if (!userId || !sessionId) {
+        res.status(400).json({ success: false, error: 'userId and sessionId required' });
+        return;
+      }
+
+      const metrics = await sessionManager.finalizeSession(userId, sessionId);
+
+      res.json({
+        success: true,
+        data: metrics,
+        meta: { userId, sessionId, generatedAt: new Date().toISOString() },
+      });
+    } catch (error) {
+      logger.error('[PGE Route] finalize-session error:', error);
+      res.status(500).json({ success: false, error: 'Failed to finalize session' });
     }
   }
 );

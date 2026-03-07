@@ -37,6 +37,7 @@ import {
 } from './mathEngine';
 import { interventionEngine } from './interventionEngine';
 import { forecastEngine } from './forecastEngine';
+import { sessionManager } from './sessionManager';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -180,6 +181,7 @@ class PGEOrchestrator {
 
       // Invalidate forecast cache (new state means old forecast is stale)
       forecastEngine.invalidateCache(userId);
+      sessionManager.invalidateCache(userId);
 
       // ════════════════════════════════════════════
       // STEP 8: Simulate Trajectory & Generate Warning

@@ -62,6 +62,9 @@ import v5KnowledgeGraphRoutes from './routes/v5/knowledgeGraph';
 import v5ExperimentRoutes from './routes/v5/experiments';
 import v5SystemHealthRoutes from './routes/v5/systemHealth';
 
+// PGE Routes — Psychological Gravity Engine
+import pgeRoutes from './routes/pge';
+
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
 import './models/Expert';
@@ -79,6 +82,11 @@ import './models/EvaluationScore';
 import './models/UserFeedback';
 import './models/ExpertReview';
 import './models/TrainingDataset';
+
+// PGE Models — Psychological Gravity Engine
+import './models/PsychologicalState';
+import './models/InteractionMatrix';
+import './models/PsychologicalTrajectory';
 
 // Services
 import emailService from './services/emailService';
@@ -325,6 +333,9 @@ app.use('/api/v5/analytics', v5AnalyticsRoutes);
 app.use('/api/v5/knowledge-graph', v5KnowledgeGraphRoutes);
 app.use('/api/v5/experiments', v5ExperimentRoutes);
 app.use('/api/v5/health', v5SystemHealthRoutes);
+
+// 🧠 PGE: Psychological Gravity Engine Routes
+app.use('/api/pge', pgeRoutes);
 
 // 🧪 TEST: QStash Testing Endpoints (Development ONLY)
 if (config.NODE_ENV === 'development') {

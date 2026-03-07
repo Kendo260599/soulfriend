@@ -8,8 +8,12 @@ import { ChatbotService } from '../services/chatbotService';
 import { EnhancedChatbotService } from '../services/enhancedChatbotService';
 import { memoryAwareChatbotService } from '../services/memoryAwareChatbotService';
 import { v5IntegrationService } from '../services/v5IntegrationService';
+import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
 import { RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
+
+// PGE: Track message index per session
+const sessionMessageIndex = new Map<string, number>();
 
 export class ChatbotController {
   private chatbotService: ChatbotService;
@@ -88,6 +92,18 @@ export class ChatbotController {
         intent: response.intent,
         crisisLevel: response.crisisLevel,
       }).catch(() => {});
+
+      // PGE: Psychological Gravity Engine — extract emotions, compute EBH, simulate trajectory (ASYNC)
+      const msgIdx = sessionMessageIndex.get(effectiveSessionId) ?? 0;
+      sessionMessageIndex.set(effectiveSessionId, msgIdx + 1);
+      pgeOrchestrator.processMessage({
+        userId: effectiveUserId,
+        sessionId: effectiveSessionId,
+        messageIndex: msgIdx,
+        userMessage: message,
+      }).catch(err => {
+        logger.debug('[PGE] processMessage failed (non-critical):', err instanceof Error ? err.message : err);
+      });
     } catch (error) {
       logger.error('Error processing chatbot message:', error);
       next(error);
@@ -391,6 +407,18 @@ export class ChatbotController {
         intent: response.intent,
         crisisLevel: response.crisisLevel,
       }).catch(() => {});
+
+      // PGE: Psychological Gravity Engine — extract emotions, compute EBH, simulate trajectory (ASYNC)
+      const memMsgIdx = sessionMessageIndex.get(effectiveSessionId) ?? 0;
+      sessionMessageIndex.set(effectiveSessionId, memMsgIdx + 1);
+      pgeOrchestrator.processMessage({
+        userId,
+        sessionId: effectiveSessionId,
+        messageIndex: memMsgIdx,
+        userMessage: message,
+      }).catch(err => {
+        logger.debug('[PGE] processMessage failed (non-critical):', err instanceof Error ? err.message : err);
+      });
     } catch (error) {
       logger.error('Error processing memory-aware chatbot message:', error);
       next(error);

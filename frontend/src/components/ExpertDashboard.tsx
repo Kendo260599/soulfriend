@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import ExpertReviewPanel from './ExpertReviewPanel';
 import ImpactDashboard from './ImpactDashboard';
+import PGEDashboard from './PGEDashboard';
 import '../styles/ExpertDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
@@ -56,7 +57,7 @@ const ExpertDashboard: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [availability, setAvailability] = useState('available');
-  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact'>('crisis');
+  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact' | 'pge'>('crisis');
 
   // Load expert info from localStorage
   useEffect(() => {
@@ -362,12 +363,26 @@ const ExpertDashboard: React.FC = () => {
         >
           📊 Impact Analytics
         </button>
+        <button
+          onClick={() => setDashboardTab('pge')}
+          style={{
+            padding: '12px 24px', border: 'none', background: 'none', cursor: 'pointer',
+            fontWeight: dashboardTab === 'pge' ? 600 : 400, fontSize: 14,
+            color: dashboardTab === 'pge' ? '#6a1b9a' : '#666',
+            borderBottom: `3px solid ${dashboardTab === 'pge' ? '#6a1b9a' : 'transparent'}`,
+            marginBottom: -2,
+          }}
+        >
+          🧲 PGE Engine
+        </button>
       </div>
 
       {dashboardTab === 'review' ? (
         <ExpertReviewPanel />
       ) : dashboardTab === 'impact' ? (
         <ImpactDashboard />
+      ) : dashboardTab === 'pge' ? (
+        <PGEDashboard />
       ) : (
       <div className="dashboard-content">
         {/* Alerts Sidebar */}

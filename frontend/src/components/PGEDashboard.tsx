@@ -17,7 +17,7 @@
  * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
  * 12. Session Analytics — Adaptive Session Manager (Phase 7)
  * 
- * @version 7.0.0 — PGE Phase 9: Narrative Intelligence
+ * @version 8.0.0 — PGE Phase 10: Resilience & Growth Dynamics
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -364,6 +364,52 @@ interface NarrativeDashboardData {
   };
 }
 
+interface ResilienceDashboardData {
+  resilience: {
+    userId: string;
+    resilienceIndex: number;
+    bounceBackRate: number;
+    growthVelocity: number;
+    stabilityIndex: number;
+    protectiveStrength: number;
+    relapseProbability: number;
+    growthPhase: string;
+    currentZone: string;
+    currentEBH: number;
+  };
+  milestones: Array<{
+    type: string;
+    index: number;
+    fromValue: number;
+    toValue: number;
+    significance: number;
+    description: string;
+  }>;
+  protectiveFactors: Array<{
+    category: string;
+    name: string;
+    strength: number;
+    activationFrequency: number;
+    ebhImpact: number;
+    confidence: number;
+  }>;
+  recoveryTrajectory: {
+    expectedCurve: number[];
+    actualCurve: number[];
+    deviation: number;
+    phase: string;
+    projectedSessionsToSafe: number | null;
+    baselineEBH: number;
+    currentEBH: number;
+  };
+  escapeVelocity: {
+    escapeVelocity: number;
+    currentMomentum: number;
+    sufficient: boolean;
+  };
+  dimensionGrowth: Array<{ dimension: string; momentum: number }>;
+}
+
 // ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
@@ -421,7 +467,7 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative' | 'resilience'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
@@ -430,6 +476,7 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
   const [sessionAnalytics, setSessionAnalytics] = useState<SessionAnalyticsData | null>(null);
   const [cohortData, setCohortData] = useState<CohortDashboardData | null>(null);
   const [narrativeData, setNarrativeData] = useState<NarrativeDashboardData | null>(null);
+  const [resilienceData, setResilienceData] = useState<ResilienceDashboardData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -594,6 +641,25 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchResilienceDashboard = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/resilience/dashboard/${encodeURIComponent(uid)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setResilienceData(data.data);
+      else setError(data.error || 'Failed to fetch resilience data');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -628,6 +694,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           </TabBtn>
           <TabBtn active={view === 'narrative'} onClick={() => setView('narrative')}>
             📖 Câu chuyện
+          </TabBtn>
+          <TabBtn active={view === 'resilience'} onClick={() => setView('resilience')}>
+            🌱 Phục hồi
           </TabBtn>
         </TabRow>
       </Header>
@@ -678,13 +747,21 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onSearch={() => fetchCohortDashboard(selectedUserId || undefined)}
           onGenerateSnapshot={generateSnapshot}
         />
-      ) : (
+      ) : view === 'narrative' ? (
         <NarrativeView
           data={narrativeData}
           loading={loading}
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchNarrativeDashboard(selectedUserId)}
+        />
+      ) : (
+        <ResilienceView
+          data={resilienceData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchResilienceDashboard(selectedUserId)}
         />
       )}
     </Container>
@@ -3516,5 +3593,359 @@ const NarrMemoryItem = styled.div`
 const NarrMemoryType = styled.div`font-weight: 600; font-size: 0.85rem; text-transform: capitalize;`;
 const NarrMemoryCount = styled.div`font-size: 1.1rem; font-weight: 700; color: #7c4dff; margin: 4px 0;`;
 const NarrMemoryConf = styled.div`font-size: 0.72rem; color: #999;`;
+
+// ═══════════════════════════════════════════
+// RESILIENCE VIEW
+// ═══════════════════════════════════════════
+
+const GROWTH_PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
+  decline: { icon: '📉', label: 'Suy giảm', color: '#f44336' },
+  stagnation: { icon: '⏸️', label: 'Đình trệ', color: '#ff9800' },
+  early_growth: { icon: '🌱', label: 'Tăng trưởng sớm', color: '#8bc34a' },
+  acceleration: { icon: '🚀', label: 'Tăng tốc', color: '#2196f3' },
+  consolidation: { icon: '🏗️', label: 'Củng cố', color: '#673ab7' },
+  mastery: { icon: '🌟', label: 'Làm chủ', color: '#ffc107' },
+};
+
+const RECOVERY_PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
+  ahead: { icon: '🏃', label: 'Vượt kỳ vọng', color: '#4caf50' },
+  on_track: { icon: '✅', label: 'Đúng tiến độ', color: '#2196f3' },
+  behind: { icon: '⚠️', label: 'Chậm tiến độ', color: '#ff9800' },
+  stalled: { icon: '🛑', label: 'Đình trệ', color: '#f44336' },
+};
+
+const MILESTONE_ICONS: Record<string, string> = {
+  zone_upgrade: '⬆️',
+  breakthrough: '💥',
+  stability_achieved: '🏠',
+};
+
+const ResCard = styled.div`
+  background: #fff; border-radius: 16px; padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px;
+`;
+const ResCardTitle = styled.h3`
+  font-size: 1.05rem; font-weight: 700; margin: 0 0 14px 0; color: #333;
+`;
+const ResOverviewGrid = styled.div`
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+`;
+const ResGaugeBox = styled.div`
+  text-align: center; padding: 16px; background: #fafafa; border-radius: 14px;
+`;
+const ResGaugeCircle = styled.div<{ pct: number; clr: string }>`
+  width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 10px;
+  background: conic-gradient(${p => p.clr} ${p => p.pct * 360}deg, #eee ${p => p.pct * 360}deg);
+  display: flex; align-items: center; justify-content: center;
+`;
+const ResGaugeInner = styled.div`
+  width: 72px; height: 72px; border-radius: 50%; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 700; color: #333;
+`;
+const ResGaugeLabel = styled.div`font-size: 0.82rem; color: #777; margin-top: 4px;`;
+const ResBadge = styled.span<{ bg: string }>`
+  display: inline-block; padding: 4px 12px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 600; color: #fff; background: ${p => p.bg};
+`;
+const ResMetricRow = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const ResMetricItem = styled.div`display: flex; align-items: center; gap: 10px;`;
+const ResMetricLabel = styled.span`min-width: 130px; font-size: 0.85rem; font-weight: 500; color: #555;`;
+const ResMetricBarBg = styled.div`flex: 1; height: 12px; background: #eee; border-radius: 6px; overflow: hidden;`;
+const ResMetricBarFill = styled.div`height: 100%; border-radius: 6px; transition: width 0.4s ease;`;
+const ResMetricVal = styled.span`min-width: 45px; text-align: right; font-size: 0.82rem; font-weight: 600; color: #333;`;
+
+const ResMilestoneList = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const ResMilestoneItem = styled.div`
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+  background: #fafafa; border-radius: 10px; border-left: 4px solid #7c4dff;
+`;
+const ResMilestoneIcon = styled.span`font-size: 1.3rem; margin-top: 2px;`;
+const ResMilestoneTitle = styled.div`font-weight: 600; font-size: 0.9rem; color: #333;`;
+const ResMilestoneDesc = styled.div`font-size: 0.82rem; color: #555; margin-top: 2px;`;
+const ResMilestoneMeta = styled.div`font-size: 0.72rem; color: #999; margin-top: 4px;`;
+
+const ResFactorList = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+const ResFactorItem = styled.div`
+  padding: 12px 16px; background: #fafafa; border-radius: 10px;
+`;
+const ResFactorHeader = styled.div`display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;`;
+const ResFactorName = styled.span`font-weight: 600; font-size: 0.9rem; color: #333;`;
+const ResFactorCat = styled.span`font-size: 0.72rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px;`;
+const ResFactorBarBg = styled.div`height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-bottom: 4px;`;
+const ResFactorBarFill = styled.div`height: 100%; border-radius: 4px;`;
+const ResFactorMeta = styled.div`font-size: 0.72rem; color: #888;`;
+
+const ResTrajRow = styled.div`display: flex; align-items: center; gap: 16px; flex-wrap: wrap;`;
+const ResTrajStat = styled.div`
+  flex: 1; min-width: 120px; text-align: center; padding: 14px;
+  background: #fafafa; border-radius: 12px;
+`;
+const ResTrajLabel = styled.div`font-size: 0.78rem; color: #777; margin-bottom: 4px;`;
+const ResTrajValue = styled.div`font-size: 1.2rem; font-weight: 700; color: #333;`;
+
+const ResEscapeRow = styled.div`display: flex; gap: 16px; flex-wrap: wrap;`;
+const ResEscapeBox = styled.div`
+  flex: 1; min-width: 140px; text-align: center; padding: 16px;
+  background: #fafafa; border-radius: 12px;
+`;
+const ResEscapeLabel = styled.div`font-size: 0.78rem; color: #777; margin-bottom: 4px;`;
+const ResEscapeValue = styled.div`font-size: 1.3rem; font-weight: 700;`;
+
+const ResDimGrid = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const ResDimItem = styled.div`display: flex; align-items: center; gap: 10px;`;
+const ResDimLabel = styled.span`min-width: 130px; font-size: 0.83rem; font-weight: 500; color: #555;`;
+const ResDimBarBg = styled.div`flex: 1; height: 10px; background: #eee; border-radius: 5px; overflow: hidden; position: relative;`;
+const ResDimBarCenter = styled.div`
+  position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #ccc;
+`;
+const ResDimBarFill = styled.div`
+  position: absolute; top: 0; height: 100%; border-radius: 5px; transition: all 0.4s ease;
+`;
+const ResDimVal = styled.span`min-width: 50px; text-align: right; font-size: 0.78rem; font-weight: 600;`;
+
+const ResilienceView: React.FC<{
+  data: ResilienceDashboardData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+}> = ({ data, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  const gpCfg = (phase: string) => GROWTH_PHASE_LABELS[phase] || { icon: '❓', label: phase, color: '#999' };
+  const rpCfg = (phase: string) => RECOVERY_PHASE_LABELS[phase] || { icon: '❓', label: phase, color: '#999' };
+  const znCfg = (z: string) => ZONE_CONFIG[z] || ZONE_CONFIG.unknown;
+
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để phân tích phục hồi..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading || !selectedUserId}>
+          {loading ? '⏳' : '🌱'} Phân tích
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang phân tích khả năng phục hồi...</LoadingText>}
+
+      {!data && !loading && (
+        <EmptyText>Nhập User ID và nhấn "🌱 Phân tích" để xem resilience & growth dynamics.</EmptyText>
+      )}
+
+      {data && !loading && (() => {
+        const r = data.resilience;
+        const gp = gpCfg(r.growthPhase);
+        const zn = znCfg(r.currentZone);
+        return (
+          <>
+            {/* ── RESILIENCE OVERVIEW ── */}
+            <ResCard>
+              <ResCardTitle>🛡️ Tổng quan Resilience</ResCardTitle>
+              <ResOverviewGrid>
+                <ResGaugeBox>
+                  <ResGaugeCircle pct={r.resilienceIndex} clr={r.resilienceIndex > 0.6 ? '#4caf50' : r.resilienceIndex > 0.3 ? '#ff9800' : '#f44336'}>
+                    <ResGaugeInner>{(r.resilienceIndex * 100).toFixed(0)}%</ResGaugeInner>
+                  </ResGaugeCircle>
+                  <ResGaugeLabel>Chỉ số phục hồi</ResGaugeLabel>
+                  <div style={{ marginTop: 8 }}>
+                    <ResBadge bg={gp.color}>{gp.icon} {gp.label}</ResBadge>
+                  </div>
+                </ResGaugeBox>
+                <ResGaugeBox>
+                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>{zn.icon}</div>
+                  <div style={{ fontWeight: 700, fontSize: '1.1rem', color: zn.color }}>{zn.label}</div>
+                  <ResGaugeLabel>EBH: {r.currentEBH.toFixed(3)}</ResGaugeLabel>
+                  <div style={{ marginTop: 10 }}>
+                    <ResGaugeLabel>Nguy cơ tái phát</ResGaugeLabel>
+                    <div style={{
+                      fontSize: '1.3rem', fontWeight: 700,
+                      color: r.relapseProbability > 0.6 ? '#f44336' : r.relapseProbability > 0.3 ? '#ff9800' : '#4caf50'
+                    }}>
+                      {(r.relapseProbability * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                </ResGaugeBox>
+              </ResOverviewGrid>
+            </ResCard>
+
+            {/* ── CORE METRICS ── */}
+            <ResCard>
+              <ResCardTitle>📊 Chỉ số cốt lõi</ResCardTitle>
+              <ResMetricRow>
+                {[
+                  { label: 'Bounce-back', value: r.bounceBackRate, color: '#4caf50' },
+                  { label: 'Tốc độ tăng trưởng', value: Math.max(0, (r.growthVelocity + 1) / 2), color: '#2196f3', raw: r.growthVelocity.toFixed(3) },
+                  { label: 'Ổn định', value: r.stabilityIndex, color: '#673ab7' },
+                  { label: 'Yếu tố bảo vệ', value: r.protectiveStrength, color: '#ff9800' },
+                ].map((m, i) => (
+                  <ResMetricItem key={i}>
+                    <ResMetricLabel>{m.label}</ResMetricLabel>
+                    <ResMetricBarBg>
+                      <ResMetricBarFill style={{ width: `${m.value * 100}%`, background: m.color }} />
+                    </ResMetricBarBg>
+                    <ResMetricVal>{m.raw ?? (m.value * 100).toFixed(0) + '%'}</ResMetricVal>
+                  </ResMetricItem>
+                ))}
+              </ResMetricRow>
+            </ResCard>
+
+            {/* ── RECOVERY TRAJECTORY ── */}
+            <ResCard>
+              <ResCardTitle>📈 Quỹ đạo phục hồi</ResCardTitle>
+              {(() => {
+                const t = data.recoveryTrajectory;
+                const rp = rpCfg(t.phase);
+                return (
+                  <>
+                    <div style={{ marginBottom: 12 }}>
+                      <ResBadge bg={rp.color}>{rp.icon} {rp.label}</ResBadge>
+                    </div>
+                    <ResTrajRow>
+                      <ResTrajStat>
+                        <ResTrajLabel>Baseline EBH</ResTrajLabel>
+                        <ResTrajValue>{t.baselineEBH.toFixed(3)}</ResTrajValue>
+                      </ResTrajStat>
+                      <ResTrajStat>
+                        <ResTrajLabel>Hiện tại</ResTrajLabel>
+                        <ResTrajValue>{t.currentEBH.toFixed(3)}</ResTrajValue>
+                      </ResTrajStat>
+                      <ResTrajStat>
+                        <ResTrajLabel>Độ lệch</ResTrajLabel>
+                        <ResTrajValue style={{ color: t.deviation > 0 ? '#4caf50' : t.deviation < -0.1 ? '#f44336' : '#ff9800' }}>
+                          {t.deviation > 0 ? '+' : ''}{(t.deviation * 100).toFixed(1)}%
+                        </ResTrajValue>
+                      </ResTrajStat>
+                      {t.projectedSessionsToSafe !== null && (
+                        <ResTrajStat>
+                          <ResTrajLabel>Sessions → Safe</ResTrajLabel>
+                          <ResTrajValue>{t.projectedSessionsToSafe}</ResTrajValue>
+                        </ResTrajStat>
+                      )}
+                    </ResTrajRow>
+                  </>
+                );
+              })()}
+            </ResCard>
+
+            {/* ── GROWTH MILESTONES ── */}
+            <ResCard>
+              <ResCardTitle>🏆 Cột mốc tăng trưởng ({data.milestones.length})</ResCardTitle>
+              {data.milestones.length === 0 ? (
+                <EmptyText>Chưa đạt cột mốc nào. Cần thêm dữ liệu phiên.</EmptyText>
+              ) : (
+                <ResMilestoneList>
+                  {data.milestones.slice(0, 20).map((ms, i) => (
+                    <ResMilestoneItem key={i}>
+                      <ResMilestoneIcon>{MILESTONE_ICONS[ms.type] || '🎯'}</ResMilestoneIcon>
+                      <div>
+                        <ResMilestoneTitle>{ms.description}</ResMilestoneTitle>
+                        <ResMilestoneDesc>
+                          {ms.fromValue.toFixed(3)} → {ms.toValue.toFixed(3)}
+                        </ResMilestoneDesc>
+                        <ResMilestoneMeta>
+                          Tầm quan trọng: {(ms.significance * 100).toFixed(0)}% • Phiên #{ms.index}
+                        </ResMilestoneMeta>
+                      </div>
+                    </ResMilestoneItem>
+                  ))}
+                </ResMilestoneList>
+              )}
+            </ResCard>
+
+            {/* ── PROTECTIVE FACTORS ── */}
+            <ResCard>
+              <ResCardTitle>🛡️ Yếu tố bảo vệ ({data.protectiveFactors.length})</ResCardTitle>
+              {data.protectiveFactors.length === 0 ? (
+                <EmptyText>Chưa phát hiện yếu tố bảo vệ nào.</EmptyText>
+              ) : (
+                <ResFactorList>
+                  {data.protectiveFactors.map((pf, i) => (
+                    <ResFactorItem key={i}>
+                      <ResFactorHeader>
+                        <ResFactorName>{pf.name}</ResFactorName>
+                        <ResFactorCat>{pf.category}</ResFactorCat>
+                      </ResFactorHeader>
+                      <ResFactorBarBg>
+                        <ResFactorBarFill style={{
+                          width: `${pf.strength * 100}%`,
+                          background: pf.strength > 0.7 ? '#4caf50' : pf.strength > 0.4 ? '#ff9800' : '#f44336',
+                        }} />
+                      </ResFactorBarBg>
+                      <ResFactorMeta>
+                        Cường độ: {(pf.strength * 100).toFixed(0)}%
+                        • Tần suất: {pf.activationFrequency}
+                        • EBH impact: {pf.ebhImpact > 0 ? '+' : ''}{pf.ebhImpact.toFixed(3)}
+                        • Tin cậy: {(pf.confidence * 100).toFixed(0)}%
+                      </ResFactorMeta>
+                    </ResFactorItem>
+                  ))}
+                </ResFactorList>
+              )}
+            </ResCard>
+
+            {/* ── ESCAPE VELOCITY ── */}
+            <ResCard>
+              <ResCardTitle>🚀 Escape Velocity</ResCardTitle>
+              <ResEscapeRow>
+                <ResEscapeBox>
+                  <ResEscapeLabel>Escape Velocity cần thiết</ResEscapeLabel>
+                  <ResEscapeValue style={{ color: '#555' }}>{data.escapeVelocity.escapeVelocity.toFixed(3)}</ResEscapeValue>
+                </ResEscapeBox>
+                <ResEscapeBox>
+                  <ResEscapeLabel>Momentum hiện tại</ResEscapeLabel>
+                  <ResEscapeValue style={{ color: data.escapeVelocity.sufficient ? '#4caf50' : '#f44336' }}>
+                    {data.escapeVelocity.currentMomentum.toFixed(3)}
+                  </ResEscapeValue>
+                </ResEscapeBox>
+                <ResEscapeBox>
+                  <ResEscapeLabel>Đủ để thoát?</ResEscapeLabel>
+                  <ResEscapeValue style={{ color: data.escapeVelocity.sufficient ? '#4caf50' : '#f44336' }}>
+                    {data.escapeVelocity.sufficient ? '✅ Đủ' : '❌ Chưa đủ'}
+                  </ResEscapeValue>
+                </ResEscapeBox>
+              </ResEscapeRow>
+            </ResCard>
+
+            {/* ── DIMENSIONAL GROWTH ── */}
+            <ResCard>
+              <ResCardTitle>📐 Tăng trưởng theo chiều kích</ResCardTitle>
+              {data.dimensionGrowth.length === 0 ? (
+                <EmptyText>Chưa có dữ liệu theo chiều kích.</EmptyText>
+              ) : (
+                <ResDimGrid>
+                  {data.dimensionGrowth.map((dg, i) => {
+                    const momNorm = Math.max(-1, Math.min(1, dg.momentum));
+                    const pct = Math.abs(momNorm) * 50;
+                    const isPos = momNorm >= 0;
+                    return (
+                      <ResDimItem key={i}>
+                        <ResDimLabel>{PSY_LABELS[dg.dimension] || dg.dimension}</ResDimLabel>
+                        <ResDimBarBg>
+                          <ResDimBarCenter />
+                          <ResDimBarFill style={{
+                            left: isPos ? '50%' : `${50 - pct}%`,
+                            width: `${pct}%`,
+                            background: isPos ? '#4caf50' : '#f44336',
+                          }} />
+                        </ResDimBarBg>
+                        <ResDimVal style={{ color: isPos ? '#4caf50' : '#f44336' }}>
+                          {momNorm > 0 ? '+' : ''}{momNorm.toFixed(3)}
+                        </ResDimVal>
+                      </ResDimItem>
+                    );
+                  })}
+                </ResDimGrid>
+              )}
+            </ResCard>
+          </>
+        );
+      })()}
+    </>
+  );
+};
 
 export default PGEDashboard;

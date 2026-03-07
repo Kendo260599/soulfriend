@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 7.0.0 — Phase 9: Narrative Intelligence + Phase 3-8
+ * @version 8.0.0 — Phase 10: Resilience & Growth Dynamics + Phase 3-9
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -3423,4 +3423,410 @@ export function themeEmotionCorrelation(
       return { theme, avgEBH, occurrences: stats.count, impact };
     })
     .sort((a, b) => b.avgEBH - a.avgEBH);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██████  PHASE 10: RESILIENCE & GROWTH DYNAMICS
+// ════════════════════════════════════════════════════════════════
+
+export type GrowthPhase = 'decline' | 'stagnation' | 'early_growth' | 'acceleration' | 'consolidation' | 'mastery';
+
+export interface GrowthMilestone {
+  type: 'zone_upgrade' | 'resilience_gain' | 'breakthrough' | 'stability_achieved' | 'protective_activated';
+  index: number;
+  fromValue: number;
+  toValue: number;
+  significance: number;
+  description: string;
+}
+
+export interface ProtectiveFactor {
+  category: 'behavioral' | 'cognitive' | 'social' | 'narrative' | 'intervention';
+  name: string;
+  strength: number;
+  activationFrequency: number;
+  ebhImpact: number;
+  confidence: number;
+}
+
+/**
+ * Compute bounce-back rate from EBH dips.
+ * Detects local peaks (dips = high EBH) and measures how quickly EBH decreases afterward.
+ * Returns 0-1 where 1 = instant recovery, 0 = no recovery.
+ */
+export function computeBounceBackRate(ebhSeries: number[], windowSize: number = 5): number {
+  if (ebhSeries.length < windowSize * 2) return 0.5;
+
+  const recoveryRates: number[] = [];
+
+  for (let i = windowSize; i < ebhSeries.length - windowSize; i++) {
+    // Detect local peak (dip in wellbeing = high EBH)
+    const before = ebhSeries.slice(i - windowSize, i);
+    const after = ebhSeries.slice(i + 1, i + 1 + windowSize);
+    const avgBefore = before.reduce((s, v) => s + v, 0) / before.length;
+    const avgAfter = after.reduce((s, v) => s + v, 0) / after.length;
+
+    if (ebhSeries[i] > avgBefore + 0.05 && ebhSeries[i] > avgAfter + 0.05) {
+      // Found a dip peak — measure recovery speed
+      const peakEBH = ebhSeries[i];
+      let recoverySteps = 0;
+      for (let j = i + 1; j < Math.min(i + windowSize * 2, ebhSeries.length); j++) {
+        recoverySteps++;
+        if (ebhSeries[j] < peakEBH * 0.7) break; // recovered 30%+
+      }
+      recoveryRates.push(1 - (recoverySteps / (windowSize * 2)));
+    }
+  }
+
+  if (recoveryRates.length === 0) {
+    // No dips detected — check if consistently low (good) or high (bad)
+    const avgEBH = ebhSeries.reduce((s, v) => s + v, 0) / ebhSeries.length;
+    return avgEBH < 0.3 ? 0.8 : 0.4;
+  }
+
+  return Math.max(0, Math.min(1, recoveryRates.reduce((s, v) => s + v, 0) / recoveryRates.length));
+}
+
+/**
+ * Compute growth velocity using exponential moving average of EBH changes.
+ * Positive velocity = EBH decreasing (improving).
+ * Returns value in [-1, 1].
+ */
+export function computeGrowthVelocity(ebhSeries: number[], alpha: number = 0.3): number {
+  if (ebhSeries.length < 3) return 0;
+
+  let emaVelocity = 0;
+  for (let i = 1; i < ebhSeries.length; i++) {
+    const delta = ebhSeries[i - 1] - ebhSeries[i]; // positive = improving
+    emaVelocity = alpha * delta + (1 - alpha) * emaVelocity;
+  }
+
+  return Math.max(-1, Math.min(1, emaVelocity * 5)); // scale to [-1, 1]
+}
+
+/**
+ * Compute stability index from recent EBH variance.
+ * High stability + low EBH = genuine resilience.
+ * Returns 0-1.
+ */
+export function computeStabilityIndex(ebhSeries: number[], recentWindow: number = 10): number {
+  if (ebhSeries.length < 3) return 0.5;
+
+  const recent = ebhSeries.slice(-Math.min(recentWindow, ebhSeries.length));
+  const mean = recent.reduce((s, v) => s + v, 0) / recent.length;
+  const variance = recent.reduce((s, v) => s + (v - mean) ** 2, 0) / recent.length;
+
+  // Low variance = high stability. Scale: var=0 → 1.0, var=0.1 → ~0.37
+  return Math.exp(-variance * 10);
+}
+
+/**
+ * Detect growth milestones from state history.
+ * Identifies zone upgrades, sustained improvements, and breakthrough moments.
+ */
+export function detectGrowthMilestones(
+  states: Array<{ ebhScore: number; zone: string; index: number }>
+): GrowthMilestone[] {
+  if (states.length < 5) return [];
+
+  const milestones: GrowthMilestone[] = [];
+  const ZONE_ORDER = ['black_hole', 'critical', 'risk', 'caution', 'safe'];
+
+  // 1) Zone upgrades
+  for (let i = 1; i < states.length; i++) {
+    const prevRank = ZONE_ORDER.indexOf(states[i - 1].zone);
+    const currRank = ZONE_ORDER.indexOf(states[i].zone);
+    if (currRank > prevRank && prevRank >= 0) {
+      milestones.push({
+        type: 'zone_upgrade',
+        index: states[i].index,
+        fromValue: states[i - 1].ebhScore,
+        toValue: states[i].ebhScore,
+        significance: (currRank - prevRank) / (ZONE_ORDER.length - 1),
+        description: `Vượt từ ${states[i - 1].zone} lên ${states[i].zone}`,
+      });
+    }
+  }
+
+  // 2) Breakthrough: largest single-step EBH drop
+  let maxDrop = 0, maxDropIdx = -1;
+  for (let i = 1; i < states.length; i++) {
+    const drop = states[i - 1].ebhScore - states[i].ebhScore;
+    if (drop > maxDrop) { maxDrop = drop; maxDropIdx = i; }
+  }
+  if (maxDrop > 0.1 && maxDropIdx >= 0) {
+    milestones.push({
+      type: 'breakthrough',
+      index: states[maxDropIdx].index,
+      fromValue: states[maxDropIdx - 1].ebhScore,
+      toValue: states[maxDropIdx].ebhScore,
+      significance: Math.min(1, maxDrop * 2),
+      description: `Bước ngoặt: EBH giảm ${(maxDrop * 100).toFixed(0)}%`,
+    });
+  }
+
+  // 3) Stability achieved: 5+ consecutive states in same safe/caution zone
+  let streakStart = 0;
+  for (let i = 1; i < states.length; i++) {
+    if (states[i].zone !== states[streakStart].zone) {
+      const streakLen = i - streakStart;
+      if (streakLen >= 5 && ['safe', 'caution'].includes(states[streakStart].zone)) {
+        milestones.push({
+          type: 'stability_achieved',
+          index: states[streakStart].index,
+          fromValue: states[streakStart].ebhScore,
+          toValue: states[i - 1].ebhScore,
+          significance: Math.min(1, streakLen / 10),
+          description: `Ổn định ${streakLen} phiên trong vùng ${states[streakStart].zone}`,
+        });
+      }
+      streakStart = i;
+    }
+  }
+
+  return milestones.sort((a, b) => b.significance - a.significance);
+}
+
+/**
+ * Model expected recovery trajectory using logistic curve.
+ * Compares to actual trajectory and classifies progress.
+ */
+export function modelRecoveryTrajectory(
+  ebhSeries: number[],
+  baselineEBH: number,
+  targetEBH: number = 0.2
+): {
+  expectedCurve: number[];
+  actualCurve: number[];
+  deviation: number;
+  phase: 'ahead' | 'on_track' | 'behind' | 'stalled';
+  projectedSessionsToSafe: number | null;
+} {
+  const n = ebhSeries.length;
+  if (n < 3) return { expectedCurve: [], actualCurve: ebhSeries, deviation: 0, phase: 'on_track', projectedSessionsToSafe: null };
+
+  // Logistic decay model: E(t) = target + (baseline - target) / (1 + e^(k*(t - t0)))
+  const k = 0.15;  // growth rate
+  const t0 = n * 0.5; // midpoint
+  const range = baselineEBH - targetEBH;
+
+  const expectedCurve = Array.from({ length: n }, (_, t) =>
+    targetEBH + range / (1 + Math.exp(k * (t - t0)))
+  );
+
+  // Deviation: mean difference (negative = ahead of expected)
+  let totalDev = 0;
+  for (let i = 0; i < n; i++) {
+    totalDev += ebhSeries[i] - expectedCurve[i];
+  }
+  const deviation = totalDev / n;
+
+  // Classify phase
+  const recentActual = ebhSeries.slice(-3).reduce((s, v) => s + v, 0) / 3;
+  const recentExpected = expectedCurve.slice(-3).reduce((s, v) => s + v, 0) / 3;
+  const recentDelta = recentActual - recentExpected;
+
+  let phase: 'ahead' | 'on_track' | 'behind' | 'stalled';
+  if (recentDelta < -0.05) phase = 'ahead';
+  else if (recentDelta < 0.05) phase = 'on_track';
+  else if (computeGrowthVelocity(ebhSeries.slice(-5)) > -0.02) phase = 'stalled';
+  else phase = 'behind';
+
+  // Project sessions to safe zone using current velocity
+  let projectedSessionsToSafe: number | null = null;
+  if (recentActual > targetEBH) {
+    const velocity = computeGrowthVelocity(ebhSeries.slice(-10));
+    if (velocity > 0.01) {
+      projectedSessionsToSafe = Math.ceil((recentActual - targetEBH) / (velocity * 0.2));
+      if (projectedSessionsToSafe > 200) projectedSessionsToSafe = null;
+    }
+  } else {
+    projectedSessionsToSafe = 0;
+  }
+
+  return { expectedCurve, actualCurve: ebhSeries, deviation, phase, projectedSessionsToSafe };
+}
+
+/**
+ * Composite resilience index combining bounce-back, stability, growth, and protective strength.
+ * Returns 0-1.
+ */
+export function computeResilienceIndex(params: {
+  bounceBackRate: number;
+  growthVelocity: number;
+  stabilityIndex: number;
+  protectiveStrength: number;
+}): number {
+  const { bounceBackRate, growthVelocity, stabilityIndex, protectiveStrength } = params;
+
+  // Normalize growthVelocity from [-1,1] to [0,1]
+  const normalizedGrowth = (growthVelocity + 1) / 2;
+
+  // Weighted combination
+  const resilience =
+    0.30 * bounceBackRate +
+    0.25 * normalizedGrowth +
+    0.25 * stabilityIndex +
+    0.20 * protectiveStrength;
+
+  return Math.max(0, Math.min(1, resilience));
+}
+
+/**
+ * Classify growth phase based on EBH trajectory and resilience.
+ */
+export function classifyGrowthPhase(
+  ebhSeries: number[],
+  resilienceIndex: number
+): GrowthPhase {
+  if (ebhSeries.length < 3) return 'stagnation';
+
+  const velocity = computeGrowthVelocity(ebhSeries);
+  const recentAvg = ebhSeries.slice(-5).reduce((s, v) => s + v, 0) / Math.min(5, ebhSeries.length);
+
+  if (velocity < -0.1) return 'decline';
+  if (velocity < 0.02 && resilienceIndex < 0.4) return 'stagnation';
+  if (velocity >= 0.02 && velocity < 0.15) return 'early_growth';
+  if (velocity >= 0.15) return 'acceleration';
+  if (recentAvg < 0.25 && resilienceIndex > 0.7) return 'mastery';
+  if (resilienceIndex > 0.6 && velocity >= 0) return 'consolidation';
+
+  return 'stagnation';
+}
+
+/**
+ * Estimate relapse probability based on resilience and CSD warning signals.
+ * Returns 0-1.
+ */
+export function estimateRelapseProbability(params: {
+  resilienceIndex: number;
+  recentVarianceTrend: number;   // positive = increasing variance = bad
+  recentAutoCorrelation: number; // higher = more persistent patterns = bad
+  currentZone: string;
+}): number {
+  const { resilienceIndex, recentVarianceTrend, recentAutoCorrelation, currentZone } = params;
+
+  const zoneRisk: Record<string, number> = {
+    safe: 0.05, caution: 0.2, risk: 0.5, critical: 0.75, black_hole: 0.9,
+  };
+
+  const baseRisk = zoneRisk[currentZone] ?? 0.3;
+  const varianceContribution = Math.max(0, recentVarianceTrend) * 0.5;
+  const acContribution = Math.max(0, recentAutoCorrelation - 0.5) * 0.3;
+  const resilienceProtection = resilienceIndex * 0.4;
+
+  const prob = baseRisk + varianceContribution + acContribution - resilienceProtection;
+  return Math.max(0, Math.min(1, prob));
+}
+
+/**
+ * Identify protective factors from theme + intervention + EBH correlation.
+ * Positive factors = those present when EBH decreases.
+ */
+export function identifyProtectiveFactors(
+  timeline: Array<{ themes: string[]; ebhScore: number; interventionType?: string }>,
+  overallAvgEBH: number
+): ProtectiveFactor[] {
+  if (timeline.length < 5) return [];
+
+  const factorStats: Record<string, { totalImpact: number; count: number; recoveryCount: number }> = {};
+
+  for (let i = 1; i < timeline.length; i++) {
+    const ebhDelta = timeline[i].ebhScore - timeline[i - 1].ebhScore; // negative = improvement
+    const isRecovery = ebhDelta < -0.03;
+
+    // Themes as factors
+    for (const theme of timeline[i].themes) {
+      const key = `narrative:${theme}`;
+      if (!factorStats[key]) factorStats[key] = { totalImpact: 0, count: 0, recoveryCount: 0 };
+      factorStats[key].totalImpact += ebhDelta;
+      factorStats[key].count++;
+      if (isRecovery) factorStats[key].recoveryCount++;
+    }
+
+    // Intervention as factor
+    if (timeline[i].interventionType) {
+      const key = `intervention:${timeline[i].interventionType}`;
+      if (!factorStats[key]) factorStats[key] = { totalImpact: 0, count: 0, recoveryCount: 0 };
+      factorStats[key].totalImpact += ebhDelta;
+      factorStats[key].count++;
+      if (isRecovery) factorStats[key].recoveryCount++;
+    }
+  }
+
+  return Object.entries(factorStats)
+    .filter(([_, s]) => s.count >= 3) // minimum appearances
+    .map(([key, stats]) => {
+      const [catStr, name] = key.split(':');
+      const category = catStr as ProtectiveFactor['category'];
+      const avgImpact = stats.totalImpact / stats.count;
+      const activationFreq = stats.count / timeline.length;
+
+      return {
+        category,
+        name,
+        strength: Math.max(0, Math.min(1, -avgImpact * 5)), // negative impact = protective
+        activationFrequency: activationFreq,
+        ebhImpact: avgImpact,
+        confidence: Math.min(0.95, 0.3 + stats.count * 0.05),
+      };
+    })
+    .filter(f => f.strength > 0.1) // only meaningful protective factors
+    .sort((a, b) => b.strength - a.strength);
+}
+
+/**
+ * Compute escape velocity: is current growth momentum sufficient to escape
+ * the gravitational pull of negative attractors?
+ * Uses kinetic energy (growth momentum) vs potential energy (residual gravity).
+ */
+export function computeEscapeVelocity(
+  currentState: Vec,
+  growthVelocity: number,
+  interactionMatrix: Mat
+): { escapeVelocity: number; currentMomentum: number; sufficient: boolean } {
+  // Potential energy = gravitational pull toward attractors
+  const pe = potentialEnergy(currentState, interactionMatrix);
+  const normalizedPE = Math.abs(pe) / (currentState.length * 10); // normalize
+
+  // Kinetic energy = growth momentum
+  const ke = Math.max(0, growthVelocity); // only positive momentum counts
+
+  // Escape velocity threshold
+  const escapeVelocity = Math.sqrt(2 * normalizedPE);
+
+  return {
+    escapeVelocity,
+    currentMomentum: ke,
+    sufficient: ke >= escapeVelocity * 0.8, // 80% threshold for practical purposes
+  };
+}
+
+/**
+ * Compute growth momentum across dimensions.
+ * Returns a vector showing direction of growth per psychological variable.
+ * Positive values = improving, negative = worsening.
+ */
+export function computeGrowthMomentum(stateHistory: Vec[], windowSize: number = 5): Vec {
+  if (stateHistory.length < 2) return stateHistory[0]?.map(() => 0) || [];
+
+  const recent = stateHistory.slice(-Math.min(windowSize, stateHistory.length));
+  const dim = recent[0].length;
+  const momentum: number[] = new Array(dim).fill(0);
+
+  for (let d = 0; d < dim; d++) {
+    // Weighted linear regression slope per dimension
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    for (let i = 0; i < recent.length; i++) {
+      sumX += i;
+      sumY += recent[i][d];
+      sumXY += i * recent[i][d];
+      sumX2 += i * i;
+    }
+    const n = recent.length;
+    const denom = n * sumX2 - sumX * sumX;
+    momentum[d] = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+  }
+
+  return momentum;
 }

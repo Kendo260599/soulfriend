@@ -46,6 +46,7 @@ import { forecastEngine } from '../services/pge/forecastEngine';
 import { sessionManager } from '../services/pge/sessionManager';
 import { cohortEngine } from '../services/pge/cohortEngine';
 import { narrativeIntelligenceEngine } from '../services/pge/narrativeIntelligenceEngine';
+import { resilienceEngine } from '../services/pge/resilienceEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -935,6 +936,95 @@ router.get('/narrative/dashboard/:userId',
     } catch (error) {
       logger.error('[PGE Route] narrative dashboard error:', error);
       res.status(500).json({ success: false, error: 'Failed to generate narrative dashboard' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// ██████  PHASE 10: RESILIENCE & GROWTH ENDPOINTS
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * GET /resilience/:userId — Full resilience profile
+ */
+router.get('/resilience/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const profile = await resilienceEngine.getResilienceProfile(userId);
+      res.json({ success: true, data: profile });
+    } catch (error) {
+      logger.error('[PGE Route] resilience profile error:', error);
+      res.status(500).json({ success: false, error: 'Failed to compute resilience profile' });
+    }
+  }
+);
+
+/**
+ * GET /resilience/milestones/:userId — Growth milestones
+ */
+router.get('/resilience/milestones/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const milestones = await resilienceEngine.getGrowthMilestones(userId);
+      res.json({ success: true, data: milestones });
+    } catch (error) {
+      logger.error('[PGE Route] milestones error:', error);
+      res.status(500).json({ success: false, error: 'Failed to detect milestones' });
+    }
+  }
+);
+
+/**
+ * GET /resilience/protective/:userId — Protective factors
+ */
+router.get('/resilience/protective/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const factors = await resilienceEngine.getProtectiveFactors(userId);
+      res.json({ success: true, data: factors });
+    } catch (error) {
+      logger.error('[PGE Route] protective factors error:', error);
+      res.status(500).json({ success: false, error: 'Failed to identify protective factors' });
+    }
+  }
+);
+
+/**
+ * GET /resilience/trajectory/:userId — Recovery trajectory
+ */
+router.get('/resilience/trajectory/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const trajectory = await resilienceEngine.getRecoveryTrajectory(userId);
+      res.json({ success: true, data: trajectory });
+    } catch (error) {
+      logger.error('[PGE Route] trajectory error:', error);
+      res.status(500).json({ success: false, error: 'Failed to model recovery trajectory' });
+    }
+  }
+);
+
+/**
+ * GET /resilience/dashboard/:userId — Complete growth dashboard
+ */
+router.get('/resilience/dashboard/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const dashboard = await resilienceEngine.getGrowthDashboard(userId);
+      res.json({ success: true, data: dashboard });
+    } catch (error) {
+      logger.error('[PGE Route] growth dashboard error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate growth dashboard' });
     }
   }
 );

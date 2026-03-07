@@ -40,6 +40,7 @@ import { forecastEngine } from './forecastEngine';
 import { sessionManager } from './sessionManager';
 import { cohortEngine } from './cohortEngine';
 import { narrativeIntelligenceEngine } from './narrativeIntelligenceEngine';
+import { resilienceEngine } from './resilienceEngine';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -186,6 +187,7 @@ class PGEOrchestrator {
       sessionManager.invalidateCache(userId);
       cohortEngine.invalidateCache();
       narrativeIntelligenceEngine.invalidateCache(userId);
+      resilienceEngine.invalidateCache(userId);
 
       // ════════════════════════════════════════════
       // STEP 8: Simulate Trajectory & Generate Warning

@@ -17,7 +17,7 @@
  * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
  * 12. Session Analytics — Adaptive Session Manager (Phase 7)
  * 
- * @version 8.0.0 — PGE Phase 10: Resilience & Growth Dynamics
+ * @version 9.0.0 — PGE Phase 11: Adaptive Treatment Planning
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -410,6 +410,69 @@ interface ResilienceDashboardData {
   dimensionGrowth: Array<{ dimension: string; momentum: number }>;
 }
 
+interface ClinicalDashboardData {
+  plan: {
+    userId: string;
+    goals: Array<{
+      id: string;
+      dimension: string;
+      dimensionLabel: string;
+      priority: number;
+      urgency: number;
+      impact: number;
+      tractability: number;
+      currentValue: number;
+      targetValue: number;
+      progress: number;
+      status: 'active' | 'completed' | 'deferred';
+    }>;
+    timeline: {
+      estimatedSessions: number;
+      weeklyMilestones: number[][];
+      confidence: number;
+    };
+    growthPhase: string;
+    currentZone: string;
+    currentEBH: number;
+    generatedAt: string;
+  };
+  briefing: {
+    userId: string;
+    priority: 'routine' | 'elevated' | 'urgent';
+    focusAreas: string[];
+    lastSessionDelta: number;
+    daysSinceLastSession: number;
+    currentZone: string;
+    currentEBH: number;
+    alertLevel: string;
+    activeGoals: number;
+    completedGoals: number;
+    topChanges: Array<{ dimension: string; label: string; change: number }>;
+    recommendations: string[];
+  };
+  discharge: {
+    userId: string;
+    score: number;
+    ready: boolean;
+    blockers: string[];
+    resilienceIndex: number;
+    stabilityIndex: number;
+    relapseProbability: number;
+    growthPhase: string;
+    sessionsInSafeZone: number;
+    goalCompletionRatio: number;
+  };
+  adaptation: {
+    shouldAdapt: boolean;
+    urgency: 'low' | 'medium' | 'high';
+    reason: string;
+  };
+  goalProgress: {
+    overallProgress: number;
+    dimensionProgress: Record<string, number>;
+  };
+}
+
 // ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
@@ -467,7 +530,7 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative' | 'resilience'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative' | 'resilience' | 'treatment'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
@@ -477,6 +540,7 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
   const [cohortData, setCohortData] = useState<CohortDashboardData | null>(null);
   const [narrativeData, setNarrativeData] = useState<NarrativeDashboardData | null>(null);
   const [resilienceData, setResilienceData] = useState<ResilienceDashboardData | null>(null);
+  const [treatmentData, setTreatmentData] = useState<ClinicalDashboardData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -660,6 +724,25 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchTreatmentDashboard = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/treatment/dashboard/${encodeURIComponent(uid)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setTreatmentData(data.data);
+      else setError(data.error || 'Failed to fetch treatment data');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -697,6 +780,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           </TabBtn>
           <TabBtn active={view === 'resilience'} onClick={() => setView('resilience')}>
             🌱 Phục hồi
+          </TabBtn>
+          <TabBtn active={view === 'treatment'} onClick={() => setView('treatment')}>
+            🎯 Kế hoạch
           </TabBtn>
         </TabRow>
       </Header>
@@ -755,13 +841,21 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchNarrativeDashboard(selectedUserId)}
         />
-      ) : (
+      ) : view === 'resilience' ? (
         <ResilienceView
           data={resilienceData}
           loading={loading}
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchResilienceDashboard(selectedUserId)}
+        />
+      ) : (
+        <TreatmentView
+          data={treatmentData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchTreatmentDashboard(selectedUserId)}
         />
       )}
     </Container>
@@ -3941,6 +4035,348 @@ const ResilienceView: React.FC<{
                 </ResDimGrid>
               )}
             </ResCard>
+          </>
+        );
+      })()}
+    </>
+  );
+};
+
+// ═══════════════════════════════════════════
+// TREATMENT VIEW (Phase 11)
+// ═══════════════════════════════════════════
+
+const BRIEFING_PRIORITY_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
+  routine: { icon: '✅', label: 'Thường lệ', color: '#4caf50' },
+  elevated: { icon: '⚡', label: 'Nâng cao', color: '#ff9800' },
+  urgent: { icon: '🚨', label: 'Khẩn cấp', color: '#f44336' },
+};
+
+const ADAPTATION_URGENCY_CONFIG: Record<string, { icon: string; color: string }> = {
+  low: { icon: '🟢', color: '#4caf50' },
+  medium: { icon: '🟡', color: '#ff9800' },
+  high: { icon: '🔴', color: '#f44336' },
+};
+
+const TxCard = styled.div`
+  background: #fff; border-radius: 16px; padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px;
+`;
+const TxCardTitle = styled.h3`
+  font-size: 1.05rem; font-weight: 700; margin: 0 0 14px 0; color: #333;
+`;
+const TxBriefingHeader = styled.div<{ bg: string }>`
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+  border-radius: 12px; margin-bottom: 14px;
+  background: ${p => p.bg}15; border-left: 4px solid ${p => p.bg};
+`;
+const TxBriefingIcon = styled.span`font-size: 1.5rem;`;
+const TxBriefingLabel = styled.div`font-weight: 700; font-size: 1rem;`;
+const TxBriefingSub = styled.div`font-size: 0.82rem; color: #666; margin-top: 2px;`;
+const TxRecommList = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const TxRecommItem = styled.div`
+  padding: 10px 14px; background: #fafafa; border-radius: 10px;
+  font-size: 0.88rem; color: #444;
+`;
+const TxChangeGrid = styled.div`display: flex; flex-direction: column; gap: 6px;`;
+const TxChangeItem = styled.div`
+  display: flex; align-items: center; gap: 10px; font-size: 0.85rem;
+`;
+const TxChangeDim = styled.span`min-width: 120px; font-weight: 500; color: #555;`;
+const TxChangeVal = styled.span<{ positive: boolean }>`
+  font-weight: 600; color: ${p => p.positive ? '#4caf50' : '#f44336'};
+`;
+
+const TxGoalList = styled.div`display: flex; flex-direction: column; gap: 12px;`;
+const TxGoalItem = styled.div<{ completed: boolean }>`
+  padding: 14px 18px; background: ${p => p.completed ? '#e8f5e9' : '#fafafa'};
+  border-radius: 12px; border-left: 4px solid ${p => p.completed ? '#4caf50' : '#2196f3'};
+  opacity: ${p => p.completed ? 0.7 : 1};
+`;
+const TxGoalHeader = styled.div`display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;`;
+const TxGoalName = styled.span`font-weight: 700; font-size: 0.95rem; color: #333;`;
+const TxGoalStatus = styled.span<{ completed: boolean }>`
+  font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+  color: #fff; background: ${p => p.completed ? '#4caf50' : '#2196f3'};
+`;
+const TxGoalBarBg = styled.div`height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin: 6px 0;`;
+const TxGoalBarFill = styled.div`height: 100%; border-radius: 4px; transition: width 0.4s ease;`;
+const TxGoalMeta = styled.div`font-size: 0.75rem; color: #888; display: flex; gap: 12px; flex-wrap: wrap;`;
+
+const TxStatsRow = styled.div`display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px;`;
+const TxStatBox = styled.div`
+  flex: 1; min-width: 110px; text-align: center; padding: 14px;
+  background: #fafafa; border-radius: 12px;
+`;
+const TxStatLabel = styled.div`font-size: 0.75rem; color: #777; margin-bottom: 4px;`;
+const TxStatValue = styled.div`font-size: 1.2rem; font-weight: 700; color: #333;`;
+
+const TxDischargeGauge = styled.div`
+  text-align: center; padding: 20px;
+`;
+const TxDischargeMeter = styled.div`
+  position: relative; width: 140px; height: 70px; margin: 0 auto 12px;
+  border-radius: 70px 70px 0 0; overflow: hidden; background: #eee;
+`;
+const TxDischargeFill = styled.div<{ pct: number; clr: string }>`
+  position: absolute; bottom: 0; left: 0; width: 100%;
+  height: ${p => p.pct * 100}%; background: ${p => p.clr};
+  transition: height 0.5s ease;
+`;
+const TxDischargeScore = styled.div`
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  font-size: 1.4rem; font-weight: 700; color: #333;
+`;
+const TxBlockerList = styled.div`display: flex; flex-direction: column; gap: 6px; margin-top: 12px;`;
+const TxBlockerItem = styled.div`
+  padding: 8px 14px; background: #fff3e0; border-radius: 8px;
+  font-size: 0.82rem; color: #e65100; display: flex; align-items: center; gap: 8px;
+`;
+
+const TxAdaptBanner = styled.div<{ bg: string }>`
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+  border-radius: 12px; background: ${p => p.bg}15; border: 1px solid ${p => p.bg}40;
+`;
+
+const TxProgressGrid = styled.div`display: flex; flex-direction: column; gap: 8px;`;
+const TxProgressItem = styled.div`display: flex; align-items: center; gap: 10px;`;
+const TxProgressLabel = styled.span`min-width: 130px; font-size: 0.83rem; font-weight: 500; color: #555;`;
+const TxProgressBarBg = styled.div`flex: 1; height: 10px; background: #eee; border-radius: 5px; overflow: hidden;`;
+const TxProgressBarFill = styled.div`height: 100%; border-radius: 5px; transition: width 0.4s ease;`;
+const TxProgressVal = styled.span`min-width: 40px; text-align: right; font-size: 0.78rem; font-weight: 600;`;
+
+const TreatmentView: React.FC<{
+  data: ClinicalDashboardData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (v: string) => void;
+  onSearch: () => void;
+}> = ({ data, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  const bpCfg = (p: string) => BRIEFING_PRIORITY_CONFIG[p] || BRIEFING_PRIORITY_CONFIG.routine;
+  const znCfg = (z: string) => ZONE_CONFIG[z] || ZONE_CONFIG.unknown;
+
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID để xem kế hoạch điều trị..."
+          onKeyDown={e => e.key === 'Enter' && onSearch()}
+        />
+        <SearchBtn onClick={onSearch} disabled={loading || !selectedUserId}>
+          {loading ? '⏳' : '🎯'} Phân tích
+        </SearchBtn>
+      </SearchRow>
+
+      {loading && <LoadingText>Đang tạo kế hoạch điều trị lâm sàng...</LoadingText>}
+
+      {!data && !loading && (
+        <EmptyText>Nhập User ID và nhấn "🎯 Phân tích" để xem kế hoạch điều trị.</EmptyText>
+      )}
+
+      {data && !loading && (() => {
+        const b = data.briefing;
+        const bp = bpCfg(b.priority);
+        const zn = znCfg(b.currentZone);
+        const d_score = data.discharge;
+        const adapt = data.adaptation;
+        const adaptCfg = ADAPTATION_URGENCY_CONFIG[adapt.urgency] || ADAPTATION_URGENCY_CONFIG.low;
+
+        return (
+          <>
+            {/* ── SESSION BRIEFING ── */}
+            <TxCard>
+              <TxCardTitle>📋 Briefing trước phiên</TxCardTitle>
+              <TxBriefingHeader bg={bp.color}>
+                <TxBriefingIcon>{bp.icon}</TxBriefingIcon>
+                <div>
+                  <TxBriefingLabel>Mức ưu tiên: {bp.label}</TxBriefingLabel>
+                  <TxBriefingSub>
+                    {zn.icon} {zn.label} • EBH: {b.currentEBH.toFixed(3)}
+                    {b.daysSinceLastSession > 0 && ` • ${b.daysSinceLastSession} ngày kể từ phiên trước`}
+                  </TxBriefingSub>
+                </div>
+              </TxBriefingHeader>
+
+              {b.topChanges.length > 0 && (
+                <>
+                  <TxCardTitle style={{ fontSize: '0.9rem', marginTop: 12 }}>📊 Thay đổi gần đây</TxCardTitle>
+                  <TxChangeGrid>
+                    {b.topChanges.map((c, i) => (
+                      <TxChangeItem key={i}>
+                        <TxChangeDim>{c.label}</TxChangeDim>
+                        <TxChangeVal positive={c.change < 0}>
+                          {c.change > 0 ? '+' : ''}{c.change.toFixed(3)}
+                        </TxChangeVal>
+                      </TxChangeItem>
+                    ))}
+                  </TxChangeGrid>
+                </>
+              )}
+
+              {b.recommendations.length > 0 && (
+                <>
+                  <TxCardTitle style={{ fontSize: '0.9rem', marginTop: 14 }}>💡 Khuyến nghị</TxCardTitle>
+                  <TxRecommList>
+                    {b.recommendations.map((r, i) => (
+                      <TxRecommItem key={i}>{r}</TxRecommItem>
+                    ))}
+                  </TxRecommList>
+                </>
+              )}
+
+              {b.focusAreas.length > 0 && (
+                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {b.focusAreas.map((f, i) => (
+                    <span key={i} style={{
+                      padding: '4px 12px', borderRadius: 16, background: '#e3f2fd',
+                      fontSize: '0.8rem', fontWeight: 500, color: '#1565c0',
+                    }}>{f}</span>
+                  ))}
+                </div>
+              )}
+            </TxCard>
+
+            {/* ── TREATMENT GOALS ── */}
+            <TxCard>
+              <TxCardTitle>
+                🎯 Mục tiêu điều trị ({data.plan.goals.filter(g => g.status === 'active').length} đang hoạt động / {data.plan.goals.length} tổng)
+              </TxCardTitle>
+              <TxStatsRow>
+                <TxStatBox>
+                  <TxStatLabel>Tiến độ tổng</TxStatLabel>
+                  <TxStatValue style={{ color: '#2196f3' }}>
+                    {(data.goalProgress.overallProgress * 100).toFixed(0)}%
+                  </TxStatValue>
+                </TxStatBox>
+                <TxStatBox>
+                  <TxStatLabel>Phiên ước lượng</TxStatLabel>
+                  <TxStatValue>{data.plan.timeline.estimatedSessions}</TxStatValue>
+                </TxStatBox>
+                <TxStatBox>
+                  <TxStatLabel>Tin cậy</TxStatLabel>
+                  <TxStatValue>{(data.plan.timeline.confidence * 100).toFixed(0)}%</TxStatValue>
+                </TxStatBox>
+              </TxStatsRow>
+
+              {data.plan.goals.length === 0 ? (
+                <EmptyText>Chưa đủ dữ liệu để tạo mục tiêu. Cần ≥ 5 phiên.</EmptyText>
+              ) : (
+                <TxGoalList>
+                  {data.plan.goals.map((goal, i) => (
+                    <TxGoalItem key={i} completed={goal.status === 'completed'}>
+                      <TxGoalHeader>
+                        <TxGoalName>{goal.dimensionLabel}</TxGoalName>
+                        <TxGoalStatus completed={goal.status === 'completed'}>
+                          {goal.status === 'completed' ? '✅ Hoàn thành' : '🔄 Đang theo dõi'}
+                        </TxGoalStatus>
+                      </TxGoalHeader>
+                      <TxGoalBarBg>
+                        <TxGoalBarFill style={{
+                          width: `${goal.progress * 100}%`,
+                          background: goal.progress > 0.7 ? '#4caf50' : goal.progress > 0.3 ? '#ff9800' : '#2196f3',
+                        }} />
+                      </TxGoalBarBg>
+                      <TxGoalMeta>
+                        <span>Tiến độ: {(goal.progress * 100).toFixed(0)}%</span>
+                        <span>Hiện tại: {goal.currentValue.toFixed(2)}</span>
+                        <span>Mục tiêu: {goal.targetValue.toFixed(2)}</span>
+                        <span>Ưu tiên: {(goal.priority * 100).toFixed(0)}%</span>
+                      </TxGoalMeta>
+                    </TxGoalItem>
+                  ))}
+                </TxGoalList>
+              )}
+            </TxCard>
+
+            {/* ── GOAL PROGRESS BY DIMENSION ── */}
+            {Object.keys(data.goalProgress.dimensionProgress).length > 0 && (
+              <TxCard>
+                <TxCardTitle>📐 Tiến độ theo chiều kích</TxCardTitle>
+                <TxProgressGrid>
+                  {Object.entries(data.goalProgress.dimensionProgress)
+                    .sort(([, a], [, b]) => a - b)
+                    .map(([dim, prog], i) => (
+                      <TxProgressItem key={i}>
+                        <TxProgressLabel>{PSY_LABELS[dim] || dim}</TxProgressLabel>
+                        <TxProgressBarBg>
+                          <TxProgressBarFill style={{
+                            width: `${Math.max(0, Math.min(100, prog * 100))}%`,
+                            background: prog > 0.7 ? '#4caf50' : prog > 0.3 ? '#ff9800' : '#f44336',
+                          }} />
+                        </TxProgressBarBg>
+                        <TxProgressVal>{(prog * 100).toFixed(0)}%</TxProgressVal>
+                      </TxProgressItem>
+                    ))}
+                </TxProgressGrid>
+              </TxCard>
+            )}
+
+            {/* ── PLAN ADAPTATION ── */}
+            <TxCard>
+              <TxCardTitle>🔄 Điều chỉnh kế hoạch</TxCardTitle>
+              <TxAdaptBanner bg={adaptCfg.color}>
+                <span style={{ fontSize: '1.3rem' }}>{adaptCfg.icon}</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                    {adapt.shouldAdapt ? 'Cần điều chỉnh kế hoạch' : 'Kế hoạch đang hiệu quả'}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#666', marginTop: 2 }}>
+                    {adapt.reason}
+                  </div>
+                </div>
+              </TxAdaptBanner>
+            </TxCard>
+
+            {/* ── DISCHARGE READINESS ── */}
+            <TxCard>
+              <TxCardTitle>🏥 Sẵn sàng xuất viện</TxCardTitle>
+              <TxDischargeGauge>
+                <TxDischargeMeter>
+                  <TxDischargeFill
+                    pct={d_score.score}
+                    clr={d_score.ready ? '#4caf50' : d_score.score > 0.5 ? '#ff9800' : '#f44336'}
+                  />
+                  <TxDischargeScore>{(d_score.score * 100).toFixed(0)}%</TxDischargeScore>
+                </TxDischargeMeter>
+                <div style={{
+                  fontSize: '1.1rem', fontWeight: 700, marginTop: 8,
+                  color: d_score.ready ? '#4caf50' : '#f44336',
+                }}>
+                  {d_score.ready ? '✅ Sẵn sàng xuất viện' : '⏳ Chưa sẵn sàng'}
+                </div>
+              </TxDischargeGauge>
+
+              <TxStatsRow>
+                <TxStatBox>
+                  <TxStatLabel>Phục hồi</TxStatLabel>
+                  <TxStatValue>{(d_score.resilienceIndex * 100).toFixed(0)}%</TxStatValue>
+                </TxStatBox>
+                <TxStatBox>
+                  <TxStatLabel>Ổn định</TxStatLabel>
+                  <TxStatValue>{(d_score.stabilityIndex * 100).toFixed(0)}%</TxStatValue>
+                </TxStatBox>
+                <TxStatBox>
+                  <TxStatLabel>Tái phát</TxStatLabel>
+                  <TxStatValue style={{ color: d_score.relapseProbability > 0.3 ? '#f44336' : '#4caf50' }}>
+                    {(d_score.relapseProbability * 100).toFixed(0)}%
+                  </TxStatValue>
+                </TxStatBox>
+                <TxStatBox>
+                  <TxStatLabel>Phiên safe zone</TxStatLabel>
+                  <TxStatValue>{d_score.sessionsInSafeZone}</TxStatValue>
+                </TxStatBox>
+              </TxStatsRow>
+
+              {d_score.blockers.length > 0 && (
+                <TxBlockerList>
+                  {d_score.blockers.map((bl, i) => (
+                    <TxBlockerItem key={i}>⚠️ {bl}</TxBlockerItem>
+                  ))}
+                </TxBlockerList>
+              )}
+            </TxCard>
           </>
         );
       })()}

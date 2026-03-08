@@ -47,6 +47,7 @@ import { sessionManager } from '../services/pge/sessionManager';
 import { cohortEngine } from '../services/pge/cohortEngine';
 import { narrativeIntelligenceEngine } from '../services/pge/narrativeIntelligenceEngine';
 import { resilienceEngine } from '../services/pge/resilienceEngine';
+import { treatmentPlanEngine } from '../services/pge/treatmentPlanEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -1025,6 +1026,94 @@ router.get('/resilience/dashboard/:userId',
     } catch (error) {
       logger.error('[PGE Route] growth dashboard error:', error);
       res.status(500).json({ success: false, error: 'Failed to generate growth dashboard' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════
+// TREATMENT PLAN ENDPOINTS (Phase 11)
+// ════════════════════════════════════════════
+
+router.get('/treatment/plan/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const plan = await treatmentPlanEngine.generateTreatmentPlan(userId);
+      res.json({ success: true, data: plan });
+    } catch (error) {
+      logger.error('[PGE Route] treatment plan error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate treatment plan' });
+    }
+  }
+);
+
+router.get('/treatment/briefing/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const briefing = await treatmentPlanEngine.generateSessionBriefing(userId);
+      res.json({ success: true, data: briefing });
+    } catch (error) {
+      logger.error('[PGE Route] session briefing error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate session briefing' });
+    }
+  }
+);
+
+router.get('/treatment/goals/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const progress = await treatmentPlanEngine.trackGoalProgress(userId);
+      res.json({ success: true, data: progress });
+    } catch (error) {
+      logger.error('[PGE Route] goal progress error:', error);
+      res.status(500).json({ success: false, error: 'Failed to track goal progress' });
+    }
+  }
+);
+
+router.get('/treatment/discharge/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const assessment = await treatmentPlanEngine.assessDischargeReadiness(userId);
+      res.json({ success: true, data: assessment });
+    } catch (error) {
+      logger.error('[PGE Route] discharge readiness error:', error);
+      res.status(500).json({ success: false, error: 'Failed to assess discharge readiness' });
+    }
+  }
+);
+
+router.get('/treatment/adaptation/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const adaptation = await treatmentPlanEngine.checkPlanAdaptation(userId);
+      res.json({ success: true, data: adaptation });
+    } catch (error) {
+      logger.error('[PGE Route] plan adaptation error:', error);
+      res.status(500).json({ success: false, error: 'Failed to check plan adaptation' });
+    }
+  }
+);
+
+router.get('/treatment/dashboard/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const dashboard = await treatmentPlanEngine.getClinicalDashboard(userId);
+      res.json({ success: true, data: dashboard });
+    } catch (error) {
+      logger.error('[PGE Route] clinical dashboard error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate clinical dashboard' });
     }
   }
 );

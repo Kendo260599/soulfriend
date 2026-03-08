@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 8.0.0 — Phase 10: Resilience & Growth Dynamics + Phase 3-9
+ * @version 9.0.0 — Phase 11: Adaptive Treatment Planning + Phase 3-10
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -3829,4 +3829,292 @@ export function computeGrowthMomentum(stateHistory: Vec[], windowSize: number = 
   }
 
   return momentum;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PHASE 11: ADAPTIVE TREATMENT PLANNING & CLINICAL INTELLIGENCE
+// ═══════════════════════════════════════════════════════════════════════
+
+export interface PrioritizedGoal {
+  dimension: string;
+  priority: number;       // 0-1 composite
+  urgency: number;        // how bad right now
+  impact: number;         // how much improvement possible
+  tractability: number;   // how responsive to intervention
+  currentValue: number;
+  targetValue: number;
+}
+
+export interface GoalTimeline {
+  estimatedSessions: number;
+  weeklyMilestones: Vec[];
+  confidence: number;
+}
+
+export interface GoalProgress {
+  overallProgress: number;
+  dimensionProgress: Record<string, number>;
+}
+
+export interface DischargeReadiness {
+  score: number;          // 0-1
+  ready: boolean;
+  blockers: string[];
+}
+
+export interface PlanAdaptation {
+  shouldAdapt: boolean;
+  urgency: 'low' | 'medium' | 'high';
+  reason: string;
+}
+
+export interface SessionBriefingScore {
+  priority: 'routine' | 'elevated' | 'urgent';
+  focusAreas: string[];
+}
+
+/**
+ * Multi-criteria treatment priority ranking.
+ * Priority = 0.4 * urgency + 0.35 * impact + 0.25 * tractability
+ */
+export function computeTreatmentPriority(
+  currentState: Vec,
+  targetState: Vec,
+  interventionResponsiveness: number[], // per-dimension responsiveness 0-1
+): PrioritizedGoal[] {
+  const dim = Math.min(currentState.length, targetState.length);
+  const goals: PrioritizedGoal[] = [];
+
+  for (let d = 0; d < dim; d++) {
+    const gap = Math.abs(currentState[d] - targetState[d]);
+    if (gap < 0.01) continue; // already at target
+
+    // Urgency: how far from target (normalized)
+    const urgency = Math.min(1, gap);
+
+    // Impact: how much room for improvement from current toward target
+    const impact = Math.min(1, gap / Math.max(0.01, Math.abs(targetState[d])));
+
+    // Tractability: how responsive this dimension is to interventions
+    const tractability = interventionResponsiveness[d] ?? 0.5;
+
+    const priority = 0.4 * urgency + 0.35 * impact + 0.25 * tractability;
+
+    goals.push({
+      dimension: String(d),
+      priority: Math.min(1, Math.max(0, priority)),
+      urgency,
+      impact,
+      tractability,
+      currentValue: currentState[d],
+      targetValue: targetState[d],
+    });
+  }
+
+  goals.sort((a, b) => b.priority - a.priority);
+  return goals;
+}
+
+/**
+ * Projects logistic recovery curve toward target.
+ * Returns estimated sessions and weekly milestone vectors.
+ */
+export function generateGoalTimeline(
+  currentState: Vec,
+  targetState: Vec,
+  recoveryRate: number,        // from recovery trajectory modeling
+  growthVelocity: number,      // from resilience engine
+  sessionFrequency: number,    // sessions per week
+): GoalTimeline {
+  const dim = currentState.length;
+  const effectiveRate = Math.max(0.01, recoveryRate * (1 + growthVelocity));
+
+  // Estimate sessions via max dimension gap
+  let maxGap = 0;
+  for (let d = 0; d < dim; d++) {
+    maxGap = Math.max(maxGap, Math.abs(currentState[d] - targetState[d]));
+  }
+
+  // Logistic growth: sessions = ln(maxGap / threshold) / effectiveRate
+  const threshold = 0.05;
+  const estimatedSessions = maxGap > threshold
+    ? Math.ceil(Math.log(maxGap / threshold) / effectiveRate)
+    : 1;
+
+  // Generate weekly milestones
+  const totalWeeks = Math.max(1, Math.ceil(estimatedSessions / Math.max(1, sessionFrequency)));
+  const milestones: Vec[] = [];
+
+  for (let w = 0; w <= totalWeeks; w++) {
+    const t = w / totalWeeks;
+    const logistic = 1 / (1 + Math.exp(-6 * (t - 0.5))); // S-curve 0→1
+    const milestone = currentState.map((c, d) => c + (targetState[d] - c) * logistic);
+    milestones.push(milestone);
+  }
+
+  // Confidence based on data quality and rate stability
+  const confidence = Math.min(1, 0.3 + effectiveRate * 2 + (growthVelocity > 0 ? 0.2 : 0));
+
+  return { estimatedSessions, weeklyMilestones: milestones, confidence: Math.min(1, confidence) };
+}
+
+/**
+ * Vector projection: how far along baseline→target is the current state.
+ * Returns overall progress (0-1) and per-dimension progress.
+ */
+export function computeGoalProgress(
+  baselineState: Vec,
+  currentState: Vec,
+  targetState: Vec,
+  dimensionNames: string[],
+): GoalProgress {
+  const dim = baselineState.length;
+  let totalTravel = 0, totalDistance = 0;
+  const dimensionProgress: Record<string, number> = {};
+
+  for (let d = 0; d < dim; d++) {
+    const fullDist = targetState[d] - baselineState[d];
+    const traveled = currentState[d] - baselineState[d];
+
+    const progress = Math.abs(fullDist) > 0.001
+      ? Math.min(1, Math.max(0, traveled / fullDist))
+      : 1; // already at target
+
+    const name = dimensionNames[d] ?? `dim_${d}`;
+    dimensionProgress[name] = progress;
+    totalTravel += traveled * traveled;
+    totalDistance += fullDist * fullDist;
+  }
+
+  const overallProgress = totalDistance > 0.001
+    ? Math.min(1, Math.max(0, Math.sqrt(totalTravel) / Math.sqrt(totalDistance)))
+    : 1;
+
+  return { overallProgress, dimensionProgress };
+}
+
+/**
+ * Composite discharge readiness score.
+ * Uses clinical gating: all critical factors must pass minimum thresholds.
+ */
+export function computeDischargeReadiness(params: {
+  resilienceIndex: number;
+  stabilityIndex: number;
+  relapseProbability: number;
+  growthPhase: GrowthPhase;
+  ebhScore: number;
+  sessionsInSafeZone: number;
+  goalCompletionRatio: number;
+}): DischargeReadiness {
+  const blockers: string[] = [];
+
+  // Gates — must meet these minimums
+  if (params.resilienceIndex < 0.5) blockers.push('Chỉ số phục hồi thấp (< 50%)');
+  if (params.stabilityIndex < 0.6) blockers.push('Chưa đủ ổn định (< 60%)');
+  if (params.relapseProbability > 0.3) blockers.push('Nguy cơ tái phát cao (> 30%)');
+  if (params.ebhScore > 0.3) blockers.push('EBH score vẫn cao (> 0.3)');
+  if (params.sessionsInSafeZone < 3) blockers.push('Cần ≥ 3 phiên liên tiếp trong vùng an toàn');
+  if (params.goalCompletionRatio < 0.7) blockers.push('Chưa hoàn thành đủ mục tiêu (< 70%)');
+
+  const phaseScore: Record<string, number> = {
+    decline: 0, stagnation: 0.1, early_growth: 0.3,
+    acceleration: 0.5, consolidation: 0.8, mastery: 1.0,
+  };
+
+  if ((phaseScore[params.growthPhase] ?? 0) < 0.5)
+    blockers.push(`Giai đoạn tăng trưởng chưa đủ (${params.growthPhase})`);
+
+  // Composite score
+  const score = Math.min(1, Math.max(0,
+    0.20 * params.resilienceIndex +
+    0.15 * params.stabilityIndex +
+    0.20 * (1 - params.relapseProbability) +
+    0.15 * (1 - Math.min(1, params.ebhScore)) +
+    0.10 * Math.min(1, params.sessionsInSafeZone / 5) +
+    0.10 * params.goalCompletionRatio +
+    0.10 * (phaseScore[params.growthPhase] ?? 0)
+  ));
+
+  return { score, ready: blockers.length === 0 && score >= 0.7, blockers };
+}
+
+/**
+ * Determines when a treatment plan needs revision.
+ */
+export function computePlanAdaptation(params: {
+  forecastTrend: 'improving' | 'stable' | 'worsening';
+  actualVsExpected: number;   // deviation from recovery trajectory
+  newRiskFactors: boolean;
+  interventionEffectiveness: number; // 0-1
+}): PlanAdaptation {
+  let score = 0;
+  const reasons: string[] = [];
+
+  if (params.forecastTrend === 'worsening') { score += 0.4; reasons.push('Xu hướng dự báo xấu đi'); }
+  if (params.actualVsExpected < -0.15) { score += 0.3; reasons.push('Chậm hơn quỹ đạo kỳ vọng'); }
+  if (params.newRiskFactors) { score += 0.2; reasons.push('Phát hiện yếu tố rủi ro mới'); }
+  if (params.interventionEffectiveness < 0.3) { score += 0.1; reasons.push('Can thiệp hiện tại kém hiệu quả'); }
+
+  const urgency: PlanAdaptation['urgency'] = score > 0.6 ? 'high' : score > 0.3 ? 'medium' : 'low';
+
+  return {
+    shouldAdapt: score > 0.25,
+    urgency,
+    reason: reasons.length > 0 ? reasons.join('; ') : 'Kế hoạch đang diễn ra tốt',
+  };
+}
+
+/**
+ * Ranks session urgency and generates focus areas.
+ */
+export function computeSessionBriefingScore(params: {
+  lastSessionDelta: number;     // EBH change since last session
+  daysSinceLastSession: number;
+  currentZone: string;
+  alertLevel: string;           // from forecast
+  activeGoals: number;
+  completedGoals: number;
+  topRiskDimensions: string[];  // top dimensions with concerning scores
+}): SessionBriefingScore {
+  let urgencyScore = 0;
+  const focusAreas: string[] = [];
+
+  // Zone urgency
+  const zoneWeights: Record<string, number> = {
+    safe: 0, caution: 0.2, risk: 0.4, critical: 0.7, black_hole: 1.0,
+  };
+  urgencyScore += (zoneWeights[params.currentZone] ?? 0) * 0.3;
+
+  // Delta urgency
+  if (params.lastSessionDelta > 0.1) {
+    urgencyScore += 0.2;
+    focusAreas.push('EBH tăng kể từ phiên trước');
+  }
+
+  // Gap urgency
+  if (params.daysSinceLastSession > 14) {
+    urgencyScore += 0.15;
+    focusAreas.push('Khoảng cách phiên dài');
+  }
+
+  // Alert urgency
+  if (params.alertLevel === 'high' || params.alertLevel === 'critical') {
+    urgencyScore += 0.25;
+    focusAreas.push('Cảnh báo sớm từ dự báo');
+  }
+
+  // Risk dimensions
+  if (params.topRiskDimensions.length > 0) {
+    focusAreas.push(...params.topRiskDimensions.slice(0, 3));
+  }
+
+  // Goal status
+  if (params.activeGoals > 0 && params.completedGoals === 0) {
+    focusAreas.push('Chưa hoàn thành mục tiêu nào');
+  }
+
+  const priority: SessionBriefingScore['priority'] =
+    urgencyScore > 0.5 ? 'urgent' : urgencyScore > 0.25 ? 'elevated' : 'routine';
+
+  return { priority, focusAreas };
 }

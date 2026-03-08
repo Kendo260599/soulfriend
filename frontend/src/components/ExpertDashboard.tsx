@@ -49,6 +49,7 @@ const ExpertDashboard: React.FC = () => {
   const navigate = useNavigate();
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeInterventionRef = useRef<HITLAlert | null>(null);
 
   const [expertInfo, setExpertInfo] = useState<ExpertInfo | null>(null);
   const [alerts, setAlerts] = useState<HITLAlert[]>([]);
@@ -61,6 +62,11 @@ const ExpertDashboard: React.FC = () => {
   const [monitoringUsers, setMonitoringUsers] = useState<any[]>([]);
   const [monitoringAlerts, setMonitoringAlerts] = useState<any[]>([]);
   const [monitoringStats, setMonitoringStats] = useState<any>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    activeInterventionRef.current = activeIntervention;
+  }, [activeIntervention]);
 
   // Load expert info from localStorage
   useEffect(() => {
@@ -131,7 +137,8 @@ const ExpertDashboard: React.FC = () => {
     // User message during intervention
     socket.on('user_message', (data: any) => {
       console.log('💬 User message:', data);
-      if (activeIntervention && data.alertId === activeIntervention.alertId) {
+      const currentIntervention = activeInterventionRef.current;
+      if (currentIntervention && data.alertId === currentIntervention.alertId) {
         setMessages((prev) => [
           ...prev,
           {
@@ -209,7 +216,7 @@ const ExpertDashboard: React.FC = () => {
       console.log('🔌 Disconnecting Socket.io...');
       socket.disconnect();
     };
-  }, [expertInfo, activeIntervention]);
+  }, [expertInfo]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

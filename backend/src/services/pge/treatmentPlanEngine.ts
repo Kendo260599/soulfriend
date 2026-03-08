@@ -185,7 +185,7 @@ class TreatmentPlanEngine {
 
     const currentVec = stateToVec(currentState.stateVector);
     const baselineVec = stateToVec(baselineState.stateVector);
-    const ebhScore = currentState.stateVector?.EBH ?? 0.5;
+    const ebhScore = currentState.ebhScore ?? 0.5;
     const zone = classifyZone(ebhScore);
 
     // Get intervention responsiveness per dimension
@@ -307,7 +307,7 @@ class TreatmentPlanEngine {
 
     const currentState = states[0] as any; // most recent
     const currentVec = stateToVec(currentState.stateVector);
-    const ebhScore = currentState.stateVector?.EBH ?? 0.5;
+    const ebhScore = currentState.ebhScore ?? 0.5;
     const zone = classifyZone(ebhScore);
 
     // Delta since last session
@@ -318,7 +318,7 @@ class TreatmentPlanEngine {
     if (states.length >= 2) {
       const prevState = states[1] as any;
       const prevVec = stateToVec(prevState.stateVector);
-      const prevEBH = prevState.stateVector?.EBH ?? 0.5;
+      const prevEBH = prevState.ebhScore ?? 0.5;
       lastSessionDelta = ebhScore - prevEBH;
 
       const now = new Date(currentState.createdAt).getTime();
@@ -420,7 +420,7 @@ class TreatmentPlanEngine {
     // Count consecutive sessions in safe zone
     let sessionsInSafeZone = 0;
     for (let i = states.length - 1; i >= 0; i--) {
-      const ebh = (states[i] as any).stateVector?.EBH ?? 0.5;
+      const ebh = (states[i] as any).ebhScore ?? 0.5;
       if (classifyZone(ebh) === 'safe') sessionsInSafeZone++;
       else break;
     }
@@ -446,7 +446,7 @@ class TreatmentPlanEngine {
       }
     } catch { /* fallback */ }
 
-    const currentEBH = (states[states.length - 1] as any).stateVector?.EBH ?? 0.5;
+    const currentEBH = (states[states.length - 1] as any).ebhScore ?? 0.5;
 
     const result = computeDischargeReadiness({
       resilienceIndex, stabilityIndex, relapseProbability,

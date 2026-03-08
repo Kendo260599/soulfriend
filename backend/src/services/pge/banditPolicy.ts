@@ -106,6 +106,7 @@ interface BanditResult {
 
 class BanditPolicy {
   private cache: Map<string, { stats: ArmStats[]; total: number; timestamp: number }> = new Map();
+  private static readonly MAX_CACHE_SIZE = 200;
 
   /**
    * Select the best intervention arm using Thompson Sampling + UCB.
@@ -242,6 +243,10 @@ class BanditPolicy {
 
       const total = allRecords.length;
       this.cache.set(ctxKey, { stats, total, timestamp: Date.now() });
+      if (this.cache.size > BanditPolicy.MAX_CACHE_SIZE) {
+        const oldest = this.cache.keys().next().value;
+        if (oldest) this.cache.delete(oldest);
+      }
 
       return { stats, total };
     } catch (error) {

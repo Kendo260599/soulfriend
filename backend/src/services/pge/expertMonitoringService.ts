@@ -65,6 +65,7 @@ class ExpertMonitoringService {
 
   private static readonly MAX_ALERT_HISTORY = 500;
   private static readonly MAX_EBH_HISTORY = 50;
+  private static readonly MAX_TRACKED_USERS = 300;
 
   /**
    * Attach WebSocket broadcast function.
@@ -120,6 +121,11 @@ class ExpertMonitoringService {
         previousState: null,
       };
       this.trackedUsers.set(userId, tracking);
+      // Evict oldest tracked user if over limit
+      if (this.trackedUsers.size > ExpertMonitoringService.MAX_TRACKED_USERS) {
+        const oldest = this.trackedUsers.keys().next().value;
+        if (oldest && oldest !== userId) this.trackedUsers.delete(oldest);
+      }
     }
 
     const prevState = tracking.previousState;

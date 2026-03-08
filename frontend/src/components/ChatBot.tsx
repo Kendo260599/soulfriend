@@ -467,6 +467,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<string>(localStorage.getItem('userId') || `user_${Date.now()}`);
   const sessionIdRef = useRef<string>(localStorage.getItem('sessionId') || `session_${Date.now()}`);
+  const msgIdCounter = useRef(0);
+  const nextMsgId = (prefix = 'msg') => `${prefix}_${Date.now()}_${msgIdCounter.current++}`;
   const { processMessage, isProcessing } = useAI();
   
   // Save userId and sessionId to localStorage
@@ -476,9 +478,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   }, []);
 
   // Socket.io connection for real-time expert intervention
+  // Keep socket alive regardless of chat open/close to receive expert messages
   useEffect(() => {
-    if (!isOpen) return; // Only connect when chatbot is open
-
     console.log('🔌 Connecting to Socket.io (user namespace)...');
 
     const socket = io(API_URL + '/user', {
@@ -512,7 +513,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
       // Add system message
       const systemMessage: ChatMessage = {
-        id: `system_${Date.now()}`,
+        id: `system_${nextMsgId('sys')}`,
         text: data.message,
         isBot: true,
         timestamp: new Date(data.timestamp),
@@ -525,7 +526,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       console.log('💬 Expert message:', data);
 
       const expertMessage: ChatMessage = {
-        id: `expert_${Date.now()}`,
+        id: `expert_${nextMsgId('exp')}`,
         text: `👨‍⚕️ **${data.expertName}**: ${data.message}`,
         isBot: true,
         timestamp: new Date(data.timestamp),
@@ -540,7 +541,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       setExpertName(null);
 
       const systemMessage: ChatMessage = {
-        id: `system_${Date.now()}`,
+        id: nextMsgId('sys'),
         text: data.message,
         isBot: true,
         timestamp: new Date(data.timestamp),
@@ -558,7 +559,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       console.log('🔌 Disconnecting Socket.io...');
       socket.disconnect();
     };
-  }, [isOpen]);
+  }, []); // Mount-only: socket stays connected across open/close
 
   // Load conversation history from localStorage
   useEffect(() => {
@@ -801,7 +802,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       const botResponse = await generateBotResponse(originalMessage);
       
       const botMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: nextMsgId('bot'),
         text: botResponse.text,
         isBot: true,
         timestamp: new Date()
@@ -810,7 +811,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
       if (botResponse.crisisDetected) {
         const crisisMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: nextMsgId('crisis'),
           text: "🚨 CẢNH BÁO: Tôi phát hiện dấu hiệu khủng hoảng. Hãy tìm kiếm sự hỗ trợ chuyên nghiệp ngay lập tức!",
           isBot: true,
           timestamp: new Date()
@@ -823,7 +824,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           botResponse.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n');
         
         const recommendationsMessage: ChatMessage = {
-          id: (Date.now() + 2).toString(),
+          id: nextMsgId('rec'),
           text: recommendationsText,
           isBot: true,
           timestamp: new Date()
@@ -836,7 +837,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           botResponse.nextActions.map(action => `• ${action}`).join('\n');
         
         const nextActionsMessage: ChatMessage = {
-          id: (Date.now() + 3).toString(),
+          id: nextMsgId('action'),
           text: nextActionsText,
           isBot: true,
           timestamp: new Date()
@@ -858,7 +859,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     if (!inputValue.trim()) return;
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: nextMsgId('user'),
       text: inputValue,
       isBot: false,
       timestamp: new Date(),
@@ -906,7 +907,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       
       // Thêm tin nhắn phản hồi chính
       const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: nextMsgId('bot'),
         text: botResponse.text,
         isBot: true,
         timestamp: new Date()
@@ -916,7 +917,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       // Nếu phát hiện khủng hoảng, thêm tin nhắn cảnh báo
       if (botResponse.crisisDetected) {
         const crisisMessage: ChatMessage = {
-          id: (Date.now() + 2).toString(),
+          id: nextMsgId('crisis'),
           text: "🚨 CẢNH BÁO: Tôi phát hiện dấu hiệu khủng hoảng. Hãy tìm kiếm sự hỗ trợ chuyên nghiệp ngay lập tức!",
           isBot: true,
           timestamp: new Date()
@@ -930,7 +931,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           botResponse.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n');
         
         const recommendationsMessage: ChatMessage = {
-          id: (Date.now() + 3).toString(),
+          id: nextMsgId('rec'),
           text: recommendationsText,
           isBot: true,
           timestamp: new Date()
@@ -944,7 +945,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           botResponse.nextActions.map(action => `• ${action}`).join('\n');
         
         const nextActionsMessage: ChatMessage = {
-          id: (Date.now() + 4).toString(),
+          id: nextMsgId('action'),
           text: nextActionsText,
           isBot: true,
           timestamp: new Date()
@@ -958,7 +959,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       setLastError(errorMsg);
       
       const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: nextMsgId('err'),
         text: "Xin lỗi, tôi đang gặp vấn đề kỹ thuật. Bạn có thể thử lại bằng cách nhấn nút retry bên dưới.",
         isBot: true,
         timestamp: new Date()
@@ -1131,7 +1132,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         <MessageInput
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
           placeholder="Nhập câu hỏi về sức khỏe tâm lý..."
           disabled={isTyping || !isOnline}
         />

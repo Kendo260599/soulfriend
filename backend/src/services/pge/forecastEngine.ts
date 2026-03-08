@@ -61,6 +61,14 @@ const MAX_HISTORY = 100;
 
 class ForecastEngineService {
   private cache: Map<string, { result: ForecastResult; expiry: number }> = new Map();
+  private static readonly MAX_CACHE_SIZE = 200;
+
+  private evictIfNeeded(): void {
+    if (this.cache.size > ForecastEngineService.MAX_CACHE_SIZE) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest) this.cache.delete(oldest);
+    }
+  }
 
   /**
    * Generate full forecast for a user.
@@ -84,6 +92,7 @@ class ForecastEngineService {
     if (states.length < MIN_SERIES_LENGTH) {
       const result = this.buildInsufficientDataResult(userId, states);
       this.cache.set(userId, { result, expiry: Date.now() + CACHE_TTL_MS });
+      this.evictIfNeeded();
       return result;
     }
 
@@ -160,6 +169,7 @@ class ForecastEngineService {
 
     // Cache result
     this.cache.set(userId, { result, expiry: Date.now() + CACHE_TTL_MS });
+    this.evictIfNeeded();
 
     logger.info('[ForecastEngine] Forecast generated', {
       userId: userId.substring(0, 8),

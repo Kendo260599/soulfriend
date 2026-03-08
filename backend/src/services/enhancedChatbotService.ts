@@ -104,6 +104,8 @@ export class EnhancedChatbotService {
   public sessions: Map<string, EnhancedChatSession> = new Map();
   public messages: Map<string, EnhancedChatMessage[]> = new Map();
   private interactionHistory: any[] = [];
+  private static readonly MAX_SESSIONS = 500;
+  private static readonly MAX_MESSAGES_PER_SESSION = 200;
 
   constructor() {
     this.openAIService = openAIService;
@@ -593,6 +595,15 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
     // existingState.lastUpdate = data.timestamp; // Removed as it doesn't exist in interface
 
     this.sessions.set(sessionId, existingState);
+
+    // Evict oldest sessions if over limit
+    if (this.sessions.size > EnhancedChatbotService.MAX_SESSIONS) {
+      const oldest = this.sessions.keys().next().value;
+      if (oldest) {
+        this.sessions.delete(oldest);
+        this.messages.delete(oldest);
+      }
+    }
   }
 
   private logInteraction(
@@ -654,6 +665,10 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
 
     const messages = this.messages.get(sessionId) || [];
     messages.push(message);
+    // Keep only recent messages per session
+    if (messages.length > EnhancedChatbotService.MAX_MESSAGES_PER_SESSION) {
+      messages.splice(0, messages.length - EnhancedChatbotService.MAX_MESSAGES_PER_SESSION);
+    }
     this.messages.set(sessionId, messages);
 
     // Cập nhật session

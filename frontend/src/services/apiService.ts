@@ -25,8 +25,10 @@ class ApiService {
     // Request interceptor
     this.axiosInstance.interceptors.request.use(
       (config) => {
-        // Add auth token if available
-        const token = localStorage.getItem('adminToken');
+        // Add auth token if available (check all token types)
+        const token = localStorage.getItem('adminToken') 
+          || localStorage.getItem('expertToken') 
+          || localStorage.getItem('sf_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }

@@ -793,7 +793,8 @@ This case requires IMMEDIATE attention.
     if (clinicalMemberId) {
       alert.acknowledgedBy = clinicalMemberId;
     }
-    this.alertCache.set(alertId, alert);
+    // Remove resolved alert from cache (no longer active)
+    this.alertCache.delete(alertId);
 
     // Persist to MongoDB
     CriticalAlertModel.findOneAndUpdate(

@@ -64,11 +64,22 @@ class CohortEngineService {
     try {
       logger.info('[CohortEngine] Generating population snapshot', { k });
 
-      // 1) Get distinct users with states
-      const userIds: string[] = await PsychologicalState.distinct('userId');
+      // 1) Get distinct users with states (limit to most recent active users)
+      let userIds: string[] = await PsychologicalState.distinct('userId');
       if (userIds.length < MIN_USERS_FOR_CLUSTERING) {
         logger.info('[CohortEngine] Not enough users for clustering', { count: userIds.length });
         return { success: false, message: `Need at least ${MIN_USERS_FOR_CLUSTERING} users, found ${userIds.length}` };
+      }
+
+      // Cap to prevent OOM on large datasets
+      if (userIds.length > 500) {
+        // Get most recently active users
+        const recentUsers = await PsychologicalState.aggregate([
+          { $group: { _id: '$userId', lastActive: { $max: '$timestamp' } } },
+          { $sort: { lastActive: -1 } },
+          { $limit: 500 },
+        ]);
+        userIds = recentUsers.map((u: any) => u._id);
       }
 
       // 2) Compute mean state vector per user + latest EBH

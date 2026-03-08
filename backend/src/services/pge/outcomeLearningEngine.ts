@@ -167,8 +167,8 @@ class OutcomeLearningEngine {
 
     const baselineVec = stateToVec(baselineState.stateVector);
     const currentVec = stateToVec(currentState.stateVector);
-    const baselineEBH = baselineState.stateVector?.EBH ?? 0.5;
-    const currentEBH = currentState.stateVector?.EBH ?? 0.5;
+    const baselineEBH = baselineState.ebhScore ?? 0.5;
+    const currentEBH = currentState.ebhScore ?? 0.5;
 
     // Target: ideal safe state
     const targetVec = PSY_VARIABLES.map(v => {
@@ -241,7 +241,7 @@ class OutcomeLearningEngine {
       if (preState && postState) {
         const preVec = stateToVec((preState as any).stateVector);
         const postVec = stateToVec((postState as any).stateVector);
-        const zone = classifyZone((preState as any).stateVector?.EBH ?? 0.5);
+        const zone = classifyZone((preState as any).ebhScore ?? 0.5);
 
         if (!byType[type]) byType[type] = [];
         byType[type].push({ pre: preVec, post: postVec, zone });
@@ -312,7 +312,7 @@ class OutcomeLearningEngine {
     const states = await PsychologicalState.find({ userId })
       .sort({ createdAt: 1 }).limit(MAX_STATES).lean();
 
-    const actualTrajectory = states.map(s => (s as any).stateVector?.EBH ?? 0.5);
+    const actualTrajectory = states.map(s => (s as any).ebhScore ?? 0.5);
 
     // Get predicted trajectory from forecast engine
     let predictedTrajectory: number[] = [];
@@ -460,11 +460,11 @@ class OutcomeLearningEngine {
         .sort({ createdAt: -1 }).limit(20).lean();
 
       if (states.length > 0) {
-        currentEBH = (states[0] as any).stateVector?.EBH ?? 0.5;
+        currentEBH = (states[0] as any).ebhScore ?? 0.5;
         zone = classifyZone(currentEBH);
 
         // Volatility: std dev of recent EBH
-        const recentEBH = states.slice(0, 10).map(s => (s as any).stateVector?.EBH ?? 0.5);
+        const recentEBH = states.slice(0, 10).map(s => (s as any).ebhScore ?? 0.5);
         const mean = recentEBH.reduce((s, v) => s + v, 0) / recentEBH.length;
         recentVolatility = Math.sqrt(
           recentEBH.reduce((s, v) => s + (v - mean) ** 2, 0) / recentEBH.length
@@ -536,8 +536,8 @@ class OutcomeLearningEngine {
       return { userProgressRate: 0, cohortAvgProgressRate: 0, percentile: 50, fasterThanAvg: false };
     }
 
-    const userEBHStart = (userStates[0] as any).stateVector?.EBH ?? 0.5;
-    const userEBHCurrent = (userStates[userStates.length - 1] as any).stateVector?.EBH ?? 0.5;
+    const userEBHStart = (userStates[0] as any).ebhScore ?? 0.5;
+    const userEBHCurrent = (userStates[userStates.length - 1] as any).ebhScore ?? 0.5;
 
     // Get all users' progress rates for comparison
     const allUsers = await PsychologicalState.distinct('userId');
@@ -546,12 +546,12 @@ class OutcomeLearningEngine {
     for (const uid of allUsers) {
       if (uid === userId) continue;
       const uStates = await PsychologicalState.find({ userId: uid })
-        .sort({ createdAt: 1 }).select('stateVector.EBH createdAt')
+        .sort({ createdAt: 1 }).select('ebhScore createdAt')
         .limit(MAX_STATES).lean();
 
       if (uStates.length >= MIN_STATES) {
-        const startEBH = (uStates[0] as any).stateVector?.EBH ?? 0.5;
-        const endEBH = (uStates[uStates.length - 1] as any).stateVector?.EBH ?? 0.5;
+        const startEBH = (uStates[0] as any).ebhScore ?? 0.5;
+        const endEBH = (uStates[uStates.length - 1] as any).ebhScore ?? 0.5;
         const rate = (startEBH - endEBH) / uStates.length;
         cohortRates.push(rate);
       }

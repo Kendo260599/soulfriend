@@ -311,8 +311,8 @@ class ClinicalReportService {
         crisisEpisodes: crisisStates.length,
         lastCrisisDate: crisisStates[crisisStates.length - 1]?.timestamp || null,
         forecast: forecast ? {
-          predictions: forecast.predictions?.slice(0, 3) || [],
-          riskLevel: forecast.riskLevel || 'unknown',
+          predictions: forecast.forecasts?.slice(0, 3) || [],
+          riskLevel: forecast.alertLevel || 'unknown',
           csdIndex: forecast.csdIndex ?? null,
           alertLevel: forecast.alertLevel || 'none',
         } : { message: 'Không có dự báo' },

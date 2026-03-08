@@ -113,6 +113,7 @@ const PSY_LABELS_SHORT = [
 
 class ResilienceEngineService {
   private cache: Map<string, { data: any; ts: number }> = new Map();
+  private static readonly MAX_CACHE_SIZE = 200;
 
   private getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
@@ -122,6 +123,10 @@ class ResilienceEngineService {
 
   private setCache(key: string, data: any): void {
     this.cache.set(key, { data, ts: Date.now() });
+    if (this.cache.size > ResilienceEngineService.MAX_CACHE_SIZE) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest) this.cache.delete(oldest);
+    }
   }
 
   invalidateCache(userId?: string): void {
@@ -176,9 +181,9 @@ class ResilienceEngineService {
         return empty;
       }
 
-      const ebhSeries = states.map((s: any) => s.stateVector?.EBH ?? 0.5);
+      const ebhSeries = states.map((s: any) => s.ebhScore ?? 0.5);
       const latestState = states[states.length - 1] as any;
-      const currentEBH = latestState.stateVector?.EBH ?? 0.5;
+      const currentEBH = latestState.ebhScore ?? 0.5;
       const currentZone = classifyZone(currentEBH);
 
       const bounceBackRate = computeBounceBackRate(ebhSeries);
@@ -269,8 +274,8 @@ class ResilienceEngineService {
 
       const states = await this.getUserStates(userId);
       const stateData = states.map((s: any, i: number) => ({
-        ebhScore: s.stateVector?.EBH ?? 0.5,
-        zone: classifyZone(s.stateVector?.EBH ?? 0.5),
+        ebhScore: s.ebhScore ?? 0.5,
+        zone: classifyZone(s.ebhScore ?? 0.5),
         index: s.messageIndex ?? i,
       }));
 
@@ -309,7 +314,7 @@ class ResilienceEngineService {
           .lean(),
       ]);
 
-      const ebhSeries = states.map((s: any) => s.stateVector?.EBH ?? 0.5);
+      const ebhSeries = states.map((s: any) => s.ebhScore ?? 0.5);
       const overallAvgEBH = ebhSeries.reduce((s: number, v: number) => s + v, 0) / (ebhSeries.length || 1);
 
       // Build timeline: themes + interventions + EBH per step
@@ -355,7 +360,7 @@ class ResilienceEngineService {
       logger.info('[ResilienceEngine] Modeling recovery trajectory', { userId });
 
       const states = await this.getUserStates(userId);
-      const ebhSeries = states.map((s: any) => s.stateVector?.EBH ?? 0.5);
+      const ebhSeries = states.map((s: any) => s.ebhScore ?? 0.5);
 
       const baselineEBH = ebhSeries.length > 0 ? ebhSeries[0] : 0.5;
       const currentEBH = ebhSeries.length > 0 ? ebhSeries[ebhSeries.length - 1] : 0.5;
@@ -391,7 +396,7 @@ class ResilienceEngineService {
       logger.info('[ResilienceEngine] Computing escape velocity', { userId });
 
       const states = await this.getUserStates(userId);
-      const ebhSeries = states.map((s: any) => s.stateVector?.EBH ?? 0.5);
+      const ebhSeries = states.map((s: any) => s.ebhScore ?? 0.5);
       const growthVelocity = computeGrowthVelocity(ebhSeries);
 
       // Get latest state vector and interaction matrix

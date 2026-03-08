@@ -116,6 +116,7 @@ export interface NarrativeInsight {
 
 class NarrativeIntelligenceEngineService {
   private cache: Map<string, { data: any; ts: number }> = new Map();
+  private static readonly MAX_CACHE_SIZE = 200;
 
   private getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
@@ -125,6 +126,10 @@ class NarrativeIntelligenceEngineService {
 
   private setCache(key: string, data: any): void {
     this.cache.set(key, { data, ts: Date.now() });
+    if (this.cache.size > NarrativeIntelligenceEngineService.MAX_CACHE_SIZE) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest) this.cache.delete(oldest);
+    }
   }
 
   invalidateCache(userId?: string): void {
@@ -280,10 +285,10 @@ class NarrativeIntelligenceEngineService {
 
       const states = await PsychologicalState.find({ userId })
         .sort({ messageIndex: 1 })
-        .select('stateVector.EBH createdAt messageIndex')
+        .select('ebhScore createdAt messageIndex')
         .lean();
 
-      const ebhScores = states.map((s: any) => s.stateVector?.EBH ?? 0.5);
+      const ebhScores = states.map((s: any) => s.ebhScore ?? 0.5);
       const timestamps = states.map((s: any) => s.createdAt || new Date());
 
       const rawArcs = detectStoryArcs(ebhScores, STORY_ARC_WINDOW);
@@ -340,7 +345,7 @@ class NarrativeIntelligenceEngineService {
       // Get psychological states aligned in time
       const states = await PsychologicalState.find({ userId })
         .sort({ messageIndex: 1 })
-        .select('stateVector.EBH messageIndex')
+        .select('ebhScore messageIndex')
         .lean();
 
       const messages = logs
@@ -361,7 +366,7 @@ class NarrativeIntelligenceEngineService {
       const perMessageThemes = messages.map(m => extractThemes(m));
 
       // Align EBH scores (may differ in count; truncate to the shorter)
-      const ebhScores = states.map((s: any) => s.stateVector?.EBH ?? 0.5);
+      const ebhScores = states.map((s: any) => s.ebhScore ?? 0.5);
       const len = Math.min(perMessageThemes.length, ebhScores.length);
       const alignedThemes = perMessageThemes.slice(0, len);
       const alignedEBH = ebhScores.slice(0, len);

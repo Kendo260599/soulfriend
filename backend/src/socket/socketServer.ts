@@ -270,7 +270,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
   expertNamespace.use(authenticateSocket);
 
   expertNamespace.on('connection', (socket: Socket) => {
-    const { expertId, expertName } = socket.handshake.query as { expertId?: string; expertName?: string };
+    const expertId = (socket.handshake.auth?.expertId || socket.handshake.query?.expertId) as string | undefined;
+    const expertName = (socket.handshake.auth?.expertName || socket.handshake.query?.expertName) as string | undefined;
 
     if (!expertId || !expertName) {
       logger.warn('Expert connected without credentials');

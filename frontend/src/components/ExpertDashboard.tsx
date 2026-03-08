@@ -131,8 +131,6 @@ const ExpertDashboard: React.FC = () => {
     const socket = io(API_URL + '/expert', {
       auth: {
         token,
-      },
-      query: {
         expertId: expertInfo.id,
         expertName: expertInfo.name,
       },

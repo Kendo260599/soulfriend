@@ -50,6 +50,8 @@ import { resilienceEngine } from '../services/pge/resilienceEngine';
 import { treatmentPlanEngine } from '../services/pge/treatmentPlanEngine';
 import { outcomeLearningEngine } from '../services/pge/outcomeLearningEngine';
 import { expertMonitoringService } from '../services/pge/expertMonitoringService';
+import { clinicalReportService } from '../services/pge/clinicalReportService';
+import { pdfGeneratorService } from '../services/pge/pdfGeneratorService';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -1332,6 +1334,58 @@ router.put('/monitoring/thresholds',
     } catch (error) {
       logger.error('[PGE Route] monitoring thresholds update error:', error);
       res.status(500).json({ success: false, error: 'Failed to update thresholds' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 14: CLINICAL REPORTING
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * GET /report/generate/:userId — Generate clinical report JSON
+ * Query: ?days=30 (default 30)
+ */
+router.get('/report/generate/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const days = Math.min(Math.max(parseInt(req.query.days as string) || 30, 1), 365);
+      const expertId = (req as any).expert?.id || 'unknown';
+
+      const report = await clinicalReportService.generateReport(userId, expertId, days);
+      res.json({ success: true, data: report });
+    } catch (error) {
+      logger.error('[PGE Route] report generate error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate report' });
+    }
+  }
+);
+
+/**
+ * GET /report/pdf/:userId — Generate and download clinical PDF
+ * Query: ?days=30 (default 30)
+ */
+router.get('/report/pdf/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const days = Math.min(Math.max(parseInt(req.query.days as string) || 30, 1), 365);
+      const expertId = (req as any).expert?.id || 'unknown';
+
+      const report = await clinicalReportService.generateReport(userId, expertId, days);
+      const doc = pdfGeneratorService.generatePDF(report);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="clinical-report-${userId}-${report.reportId}.pdf"`);
+
+      doc.pipe(res);
+      doc.end();
+    } catch (error) {
+      logger.error('[PGE Route] report PDF error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate PDF' });
     }
   }
 );

@@ -57,7 +57,7 @@ const ExpertDashboard: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [availability, setAvailability] = useState('available');
-  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact' | 'pge' | 'monitor'>('crisis');
+  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact' | 'pge' | 'monitor' | 'report'>('crisis');
   const [monitoringUsers, setMonitoringUsers] = useState<any[]>([]);
   const [monitoringAlerts, setMonitoringAlerts] = useState<any[]>([]);
   const [monitoringStats, setMonitoringStats] = useState<any>(null);
@@ -443,6 +443,18 @@ const ExpertDashboard: React.FC = () => {
         >
           📡 Monitor
         </button>
+        <button
+          onClick={() => setDashboardTab('report')}
+          style={{
+            padding: '12px 24px', border: 'none', background: 'none', cursor: 'pointer',
+            fontWeight: dashboardTab === 'report' ? 600 : 400, fontSize: 14,
+            color: dashboardTab === 'report' ? '#00695c' : '#666',
+            borderBottom: `3px solid ${dashboardTab === 'report' ? '#00695c' : 'transparent'}`,
+            marginBottom: -2,
+          }}
+        >
+          📄 Báo Cáo
+        </button>
       </div>
 
       {dashboardTab === 'review' ? (
@@ -457,6 +469,8 @@ const ExpertDashboard: React.FC = () => {
           alerts={monitoringAlerts}
           stats={monitoringStats}
         />
+      ) : dashboardTab === 'report' ? (
+        <ClinicalReportView />
       ) : (
       <div className="dashboard-content">
         {/* Alerts Sidebar */}
@@ -742,6 +756,380 @@ const AlertCard: React.FC<{ alert: any }> = ({ alert }) => {
     </div>
   );
 };
+
+// ════════════════════════════════════════════════════════════════
+// CLINICAL REPORT VIEW (Phase 14)
+// ════════════════════════════════════════════════════════════════
+
+const REPORT_ZONE_LABELS: Record<string, string> = {
+  safe: 'An toàn', caution: 'Cảnh báo', risk: 'Rủi ro', critical: 'Nghiêm trọng', black_hole: 'Hố đen',
+};
+const REPORT_ZONE_COLORS: Record<string, string> = {
+  safe: '#4caf50', caution: '#ff9800', risk: '#f44336', critical: '#b71c1c', black_hole: '#000',
+};
+
+const ClinicalReportView: React.FC = () => {
+  const [userId, setUserId] = useState('');
+  const [days, setDays] = useState(30);
+  const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState('');
+
+  const token = localStorage.getItem('expertToken');
+
+  const generateReport = async () => {
+    if (!userId.trim()) { setError('Vui lòng nhập mã bệnh nhân'); return; }
+    setLoading(true); setError(''); setReport(null);
+    try {
+      const res = await fetch(`${API_URL}/api/pge/report/generate/${encodeURIComponent(userId.trim())}?days=${days}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) { setReport(json.data); }
+      else { setError(json.error || 'Lỗi tạo báo cáo'); }
+    } catch (e: any) { setError(e.message || 'Lỗi kết nối'); }
+    setLoading(false);
+  };
+
+  const downloadPDF = async () => {
+    if (!userId.trim()) return;
+    setDownloading(true); setError('');
+    try {
+      const res = await fetch(`${API_URL}/api/pge/report/pdf/${encodeURIComponent(userId.trim())}?days=${days}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { setError('Lỗi tải PDF'); setDownloading(false); return; }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clinical-report-${userId.trim()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (e: any) { setError(e.message || 'Lỗi tải PDF'); }
+    setDownloading(false);
+  };
+
+  return (
+    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      <h2 style={{ color: '#00695c', marginBottom: 20 }}>📄 Báo Cáo Lâm Sàng</h2>
+
+      {/* Input form */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 24, flexWrap: 'wrap' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, color: '#666', marginBottom: 4 }}>Mã bệnh nhân (userId)</label>
+          <input
+            value={userId} onChange={e => setUserId(e.target.value)}
+            placeholder="Nhập userId..."
+            style={{ padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, width: 300 }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, color: '#666', marginBottom: 4 }}>Thời gian (ngày)</label>
+          <select value={days} onChange={e => setDays(Number(e.target.value))}
+            style={{ padding: '8px 12px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14 }}>
+            <option value={7}>7 ngày</option>
+            <option value={14}>14 ngày</option>
+            <option value={30}>30 ngày</option>
+            <option value={60}>60 ngày</option>
+            <option value={90}>90 ngày</option>
+          </select>
+        </div>
+        <button onClick={generateReport} disabled={loading}
+          style={{ padding: '8px 20px', background: '#00695c', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}>
+          {loading ? '⏳ Đang tạo...' : '🔍 Tạo Báo Cáo'}
+        </button>
+        <button onClick={downloadPDF} disabled={downloading || !userId.trim()}
+          style={{ padding: '8px 20px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}>
+          {downloading ? '⏳ Đang tải...' : '📥 Tải PDF'}
+        </button>
+      </div>
+
+      {error && <div style={{ padding: 12, background: '#ffebee', color: '#c62828', borderRadius: 6, marginBottom: 16 }}>{error}</div>}
+
+      {/* Report Preview */}
+      {report && (
+        <div style={{ border: '1px solid #e0e0e0', borderRadius: 8, overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ background: '#00695c', color: '#fff', padding: '16px 24px' }}>
+            <h3 style={{ margin: 0 }}>Báo Cáo Lâm Sàng — {report.reportId}</h3>
+            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+              {new Date(report.periodStart).toLocaleDateString('vi')} → {new Date(report.periodEnd).toLocaleDateString('vi')}
+            </div>
+          </div>
+
+          {/* Overview */}
+          <ReportSection title={report.sections.overview.title}>
+            <ReportTable rows={[
+              ['Tổng phiên', report.sections.overview.data.totalSessions],
+              ['Tổng tin nhắn', report.sections.overview.data.totalMessages],
+              ['Vùng hiện tại', REPORT_ZONE_LABELS[report.sections.overview.data.currentZone] || report.sections.overview.data.currentZone],
+              ['EBH hiện tại', `${(report.sections.overview.data.currentEBH * 100).toFixed(1)}%`],
+              ['Cảm xúc chính', report.sections.overview.data.currentDominantEmotion],
+            ]} />
+          </ReportSection>
+
+          {/* EBH Trend */}
+          <ReportSection title={report.sections.ebhTrend.title}>
+            {(() => {
+              const d = report.sections.ebhTrend.data;
+              const trendLabel = d.ebh?.trend === 'improving' ? '📈 Cải thiện' : d.ebh?.trend === 'worsening' ? '📉 Xấu đi' : '➡️ Ổn định';
+              return <>
+                <ReportTable rows={[
+                  ['Xu hướng', trendLabel],
+                  ['EBH trung bình', `${(d.ebh?.average * 100).toFixed(1)}%`],
+                  ['EBH thấp nhất', `${(d.ebh?.min * 100).toFixed(1)}%`],
+                  ['EBH cao nhất', `${(d.ebh?.max * 100).toFixed(1)}%`],
+                  ['ES trung bình', `${(d.es?.average * 100).toFixed(1)}%`],
+                ]} />
+                {d.weeklyAverages?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>EBH theo tuần:</div>
+                    {d.weeklyAverages.map((w: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, width: 60 }}>Tuần {w.week}</span>
+                        <div style={{ flex: 1, height: 16, background: '#e0e0e0', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ width: `${w.avg * 100}%`, height: '100%', background: w.avg > 0.7 ? '#d32f2f' : w.avg > 0.5 ? '#f57c00' : '#4caf50', borderRadius: 3 }} />
+                        </div>
+                        <span style={{ fontSize: 11, width: 50 }}>{(w.avg * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Zone Distribution */}
+          <ReportSection title={report.sections.zoneDistribution.title}>
+            {(() => {
+              const d = report.sections.zoneDistribution.data;
+              return <>
+                <div style={{ fontSize: 12, marginBottom: 12 }}>Chuyển vùng: {d.transitions} lần | Vùng phổ biến: {REPORT_ZONE_LABELS[d.mostFrequentZone] || d.mostFrequentZone}</div>
+                {['safe', 'caution', 'risk', 'critical', 'black_hole'].map(z => (
+                  <div key={z} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, width: 90, color: REPORT_ZONE_COLORS[z] }}>{REPORT_ZONE_LABELS[z]}</span>
+                    <div style={{ flex: 1, height: 16, background: '#e0e0e0', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${d.percentages?.[z] || 0}%`, height: '100%', background: REPORT_ZONE_COLORS[z], borderRadius: 3 }} />
+                    </div>
+                    <span style={{ fontSize: 11, width: 70 }}>{d.percentages?.[z] || 0}% ({d.counts?.[z] || 0})</span>
+                  </div>
+                ))}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Emotional Profile */}
+          <ReportSection title={report.sections.emotionalProfile.title}>
+            {report.sections.emotionalProfile.data.message ? (
+              <p style={{ color: '#999' }}>{report.sections.emotionalProfile.data.message}</p>
+            ) : (() => {
+              const d = report.sections.emotionalProfile.data;
+              const groupLabels: Record<string, string> = {
+                negativeEmotions: 'Cảm xúc tiêu cực', positiveEmotions: 'Cảm xúc tích cực',
+                cognition: 'Nhận thức', behavioral: 'Hành vi', social: 'Xã hội', energy: 'Năng lượng',
+              };
+              return <>
+                {d.groupAverages && Object.entries(d.groupAverages).map(([g, v]: [string, any]) => (
+                  <div key={g} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, width: 130 }}>{groupLabels[g] || g}</span>
+                    <div style={{ flex: 1, height: 14, background: '#e0e0e0', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${v * 100}%`, height: '100%', background: g === 'negativeEmotions' ? (v > 0.5 ? '#d32f2f' : '#4caf50') : (v > 0.5 ? '#4caf50' : '#ff9800'), borderRadius: 3 }} />
+                    </div>
+                    <span style={{ fontSize: 11, width: 50 }}>{(v * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
+                {d.topDominantEmotions?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Top cảm xúc chính:</div>
+                    {d.topDominantEmotions.map((e: any, i: number) => (
+                      <div key={i} style={{ fontSize: 11, marginBottom: 2 }}>• {e.emotion}: {e.count} lần ({e.percentage}%)</div>
+                    ))}
+                  </div>
+                )}
+                {d.highRiskDimensions?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#d32f2f', marginBottom: 6 }}>⚠ Chiều rủi ro cao (&gt;60%):</div>
+                    {d.highRiskDimensions.map((dim: any, i: number) => (
+                      <div key={i} style={{ fontSize: 11, color: '#d32f2f', marginBottom: 2 }}>⚠ {dim.dimension}: {(dim.averageValue * 100).toFixed(1)}%</div>
+                    ))}
+                  </div>
+                )}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Risk Assessment */}
+          <ReportSection title={report.sections.riskAssessment.title}>
+            {(() => {
+              const d = report.sections.riskAssessment.data;
+              const riskLabels: Record<string, string> = { high: '🔴 CAO', moderate: '🟠 TRUNG BÌNH', low: '🟡 THẤP', minimal: '🟢 TỐI THIỂU' };
+              const riskColors: Record<string, string> = { high: '#d32f2f', moderate: '#f57c00', low: '#4285f4', minimal: '#4caf50' };
+              return <>
+                <div style={{ fontSize: 16, fontWeight: 700, color: riskColors[d.riskLevel] || '#333', marginBottom: 12 }}>
+                  Mức rủi ro: {riskLabels[d.riskLevel] || d.riskLevel}
+                </div>
+                <ReportTable rows={[
+                  ['EBH hiện tại', `${(d.currentEBH * 100).toFixed(1)}%`],
+                  ['Vùng hiện tại', REPORT_ZONE_LABELS[d.currentZone] || d.currentZone],
+                  ['EBH TB gần đây', `${(d.recentAverageEBH * 100).toFixed(1)}%`],
+                  ['Số lần khủng hoảng', d.crisisEpisodes],
+                  ['Khủng hoảng gần nhất', d.lastCrisisDate ? new Date(d.lastCrisisDate).toLocaleDateString('vi') : 'Chưa có'],
+                ]} />
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Treatment Progress */}
+          <ReportSection title={report.sections.treatmentProgress.title}>
+            {report.sections.treatmentProgress.data.message ? (
+              <p style={{ color: '#999' }}>{report.sections.treatmentProgress.data.message}</p>
+            ) : (() => {
+              const d = report.sections.treatmentProgress.data;
+              return <>
+                <ReportTable rows={[
+                  ['Giai đoạn', d.currentPhase || 'N/A'],
+                  ['Tiến độ tổng', `${Math.round((d.overallProgress || 0) * 100)}%`],
+                  ['Tần suất phiên', d.sessionFrequency || 'N/A'],
+                  ...(d.dischargeReadiness != null ? [['Sẵn sàng xuất viện', `${Math.round(d.dischargeReadiness * 100)}%`] as [string, any]] : []),
+                ]} />
+                {d.goals?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Mục tiêu điều trị:</div>
+                    {d.goals.map((g: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, width: 150 }}>{g.name}</span>
+                        <div style={{ flex: 1, height: 14, background: '#e0e0e0', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ width: `${(g.progress || 0) * 100}%`, height: '100%', background: g.progress > 0.7 ? '#4caf50' : g.progress > 0.4 ? '#ff9800' : '#d32f2f', borderRadius: 3 }} />
+                        </div>
+                        <span style={{ fontSize: 11, width: 40 }}>{Math.round((g.progress || 0) * 100)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Resilience Profile */}
+          <ReportSection title={report.sections.resilienceProfile.title}>
+            {report.sections.resilienceProfile.data.message ? (
+              <p style={{ color: '#999' }}>{report.sections.resilienceProfile.data.message}</p>
+            ) : (() => {
+              const d = report.sections.resilienceProfile.data;
+              return <>
+                <ReportTable rows={[
+                  ['Chỉ số phục hồi', `${Math.round((d.resilienceIndex || 0) * 100)}%`],
+                  ['Giai đoạn tăng trưởng', d.growthPhase || 'N/A'],
+                  ['Quỹ đạo', d.trajectory || 'N/A'],
+                ]} />
+                {d.protectiveFactors?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#2e7d32', marginBottom: 6 }}>Yếu tố bảo vệ:</div>
+                    {d.protectiveFactors.slice(0, 5).map((f: any, i: number) => (
+                      <div key={i} style={{ fontSize: 11, color: '#2e7d32', marginBottom: 2 }}>✓ {typeof f === 'string' ? f : f.name || JSON.stringify(f)}</div>
+                    ))}
+                  </div>
+                )}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Narrative Insights */}
+          <ReportSection title={report.sections.narrativeInsights.title}>
+            {report.sections.narrativeInsights.data.message ? (
+              <p style={{ color: '#999' }}>{report.sections.narrativeInsights.data.message}</p>
+            ) : (() => {
+              const d = report.sections.narrativeInsights.data;
+              return <>
+                {d.keyThemes?.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Chủ đề chính:</div>
+                    {d.keyThemes.map((t: any, i: number) => (
+                      <div key={i} style={{ fontSize: 11, marginBottom: 2 }}>• {typeof t === 'string' ? t : t.theme || JSON.stringify(t)}</div>
+                    ))}
+                  </div>
+                )}
+                {d.riskTopics?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#d32f2f', marginBottom: 6 }}>Chủ đề rủi ro:</div>
+                    {d.riskTopics.map((r: any, i: number) => (
+                      <div key={i} style={{ fontSize: 11, color: '#d32f2f', marginBottom: 2 }}>⚠ {typeof r === 'string' ? r : r.topic || JSON.stringify(r)}</div>
+                    ))}
+                  </div>
+                )}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Intervention Summary */}
+          <ReportSection title={report.sections.interventionSummary.title}>
+            {(() => {
+              const d = report.sections.interventionSummary.data;
+              const intLabels: Record<string, string> = {
+                cognitive_reframing: 'Tái cấu trúc nhận thức', social_connection: 'Kết nối xã hội',
+                behavioral_activation: 'Kích hoạt hành vi', emotional_regulation: 'Điều chỉnh cảm xúc',
+              };
+              return <>
+                <div style={{ fontSize: 13, marginBottom: 8 }}>Tổng số can thiệp: <strong>{d.totalInterventions}</strong></div>
+                {d.totalInterventions > 0 && <>
+                  <div style={{ fontSize: 12, marginBottom: 8 }}>Hiệu quả EBH TB: {(d.overallEBHEffect * 100).toFixed(1)}% | Loại hiệu quả nhất: {intLabels[d.mostEffectiveType] || d.mostEffectiveType}</div>
+                  {d.byType?.map((t: any, i: number) => (
+                    <div key={i} style={{ fontSize: 11, marginBottom: 2 }}>
+                      • {intLabels[t.type] || t.type}: {t.count} lần, hiệu quả {(t.avgEffectiveness * 100).toFixed(1)}%
+                    </div>
+                  ))}
+                </>}
+              </>;
+            })()}
+          </ReportSection>
+
+          {/* Recommendations */}
+          <ReportSection title={report.sections.recommendations.title}>
+            {(() => {
+              const d = report.sections.recommendations.data;
+              const priLabels: Record<string, string> = { high: '🔴 CAO', moderate: '🟠 TRUNG BÌNH', low: '🟢 THẤP' };
+              const priColors: Record<string, string> = { high: '#d32f2f', moderate: '#f57c00', low: '#4caf50' };
+              return <>
+                <div style={{ fontSize: 14, fontWeight: 700, color: priColors[d.priority] || '#333', marginBottom: 12 }}>
+                  Mức ưu tiên: {priLabels[d.priority] || d.priority}
+                </div>
+                {d.recommendations?.map((r: string, i: number) => (
+                  <div key={i} style={{ fontSize: 12, padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    {i + 1}. {r}
+                  </div>
+                ))}
+              </>;
+            })()}
+          </ReportSection>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ReportSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div style={{ borderBottom: '1px solid #e0e0e0' }}>
+    <div style={{ background: '#e8f5e9', padding: '10px 24px', fontWeight: 600, fontSize: 13, color: '#1b5e20' }}>{title}</div>
+    <div style={{ padding: '16px 24px' }}>{children}</div>
+  </div>
+);
+
+const ReportTable: React.FC<{ rows: [string, any][] }> = ({ rows }) => (
+  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+    <tbody>
+      {rows.map(([label, value], i) => (
+        <tr key={i} style={{ background: i % 2 === 0 ? '#fafafa' : '#fff' }}>
+          <td style={{ padding: '6px 8px', color: '#555', width: '40%' }}>{label}</td>
+          <td style={{ padding: '6px 8px', fontWeight: 500 }}>{value}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
 
 export default ExpertDashboard;
 

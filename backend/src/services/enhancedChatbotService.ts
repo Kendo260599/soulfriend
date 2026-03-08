@@ -129,7 +129,30 @@ export class EnhancedChatbotService {
         mode: mode || 'default',
       });
 
-      // 0. EM-style mode check
+      // 0. Special keyword trigger
+      const lowerMsg = message.toLowerCase().trim();
+      if (lowerMsg.includes('chun ơi') || lowerMsg.includes('anh ơi')) {
+        const reply = 'Ơi anh đây 💙';
+        await this.saveMessage(sessionId, userId, message, 'user');
+        await this.saveMessage(sessionId, userId, reply, 'bot');
+        return {
+          message: reply,
+          response: reply,
+          intent: 'greeting',
+          confidence: 1.0,
+          suggestions: [],
+          riskLevel: RiskLevel.LOW,
+          crisisLevel: 'low',
+          qualityScore: 1.0,
+          disclaimer: '',
+          followUpActions: [],
+          emergencyContacts: [],
+          nextActions: [],
+          aiGenerated: false,
+        };
+      }
+
+      // 0b. EM-style mode check
       if (mode === 'em_style') {
         try {
           const { emStyleReasoner } = await import('./emStyleReasoner');

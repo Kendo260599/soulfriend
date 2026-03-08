@@ -660,6 +660,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   };
 
   const generateBotResponse = async (userMessage: string): Promise<{ text: string; crisisDetected: boolean; recommendations: string[]; nextActions: string[] }> => {
+    // Special keyword trigger
+    const lowerMsg = userMessage.toLowerCase().trim();
+    if (lowerMsg.includes('chun ơi') || lowerMsg.includes('anh ơi')) {
+      return { text: 'Ơi anh đây 💙', crisisDetected: false, recommendations: [], nextActions: [] };
+    }
+
     // Tạo user profile từ test results
     const userProfile = {
       age: undefined, // Có thể lấy từ user data nếu có

@@ -111,7 +111,8 @@ const VIETNAMESE_LEXICON = {
     'di xa day', 'nghi den cai chet',
     'khong muon ton tai', 'muon bien mat vinh vien', 'ket thuc tat ca',
     'khong con ly do song', 'muon thoat khoi cuoc song nay',
-    'muon chet di', 'khong muon song nua',
+    'muon chet di', 'khong muon song nua', 'de chet', 'cho chet',
+    'di vinh vien', 'vinh biet',
   ],
 
   // Planning indicators (require combination with intent/means)
@@ -371,7 +372,7 @@ const CATEGORY_WEIGHTS: Record<ModerationSignal['category'], number> = {
  * Aggregate signals into risk level and score
  * Uses weighted scoring with thresholds
  */
-function aggregateSignals(signals: ModerationSignal[]): {
+function aggregateSignals(signals: ModerationSignal[], normalizedText: string = ''): {
   riskLevel: RiskLevel;
   riskScore: number;
 } {
@@ -396,13 +397,16 @@ function aggregateSignals(signals: ModerationSignal[]): {
   const hasNSSI = categories.has('nssi');
 
   // Critical: Direct intent + another signal, OR plan + means, 
-  // OR farewell + direct_intent, OR very high score
+  // OR farewell + direct_intent, OR nssi with intent words, OR very high score
+  const hasIntentWord = normalizedText.includes('muon') || normalizedText.includes('se ');
   const isCritical =
     (hasDirectIntent && (hasPlan || hasMeans || hasTimeframe || hasFarewell || hasNSSI)) ||
     (hasDirectIntent && totalScore >= 40) ||
     (hasPlan && hasMeans) ||
     (hasTimeframe && hasMeans) ||
     (hasFarewell && hasDirectIntent) ||
+    (hasNSSI && hasDirectIntent) ||
+    (hasNSSI && hasIntentWord) ||
     totalScore >= 65;
 
   // High: Direct intent alone, plan/means/farewell alone, or moderate-high score
@@ -456,7 +460,7 @@ export class ModerationService {
     ];
 
     // Aggregate signals into risk level and score
-    const { riskLevel, riskScore } = aggregateSignals(signals);
+    const { riskLevel, riskScore } = aggregateSignals(signals, normalized);
 
     logger.debug('Moderation assessment', {
       riskLevel,

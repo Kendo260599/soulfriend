@@ -137,8 +137,20 @@ const ExpertDashboard: React.FC = () => {
       socket.emit('get_active_users');
     });
 
-    socket.on('disconnect', () => {
-      console.log('❌ Socket.io disconnected');
+    socket.on('connect_error', (err) => {
+      console.error('🔴 Socket.io connect_error:', err.message);
+      setConnected(false);
+      // If auth error, force re-login to get fresh token
+      if (err.message.includes('Authentication') || err.message.includes('Invalid') || err.message.includes('token')) {
+        console.warn('🔒 Token invalid, redirecting to login...');
+        localStorage.removeItem('expertToken');
+        localStorage.removeItem('expertInfo');
+        navigate('/expert/login');
+      }
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Socket.io disconnected:', reason);
       setConnected(false);
     });
 

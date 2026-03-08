@@ -54,18 +54,24 @@ const connectedUsers = new Map<string, { userId: string; sessionId: string; conn
 // =============================================================================
 
 export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
+  const SOCKET_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://soulfriend.vercel.app',
+    'https://soulfriend-v4.vercel.app',
+    'https://soulfriend-api.onrender.com',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean) as string[];
+
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://soulfriend.vercel.app',
-        'https://soulfriend-v4.vercel.app',
-        'https://soulfriend-kendo260599s-projects.vercel.app',
-        'https://soulfriend-git-main-kendo260599s-projects.vercel.app',
-        'https://soulfriend-api.onrender.com',
-        process.env.FRONTEND_URL,
-      ].filter(Boolean) as string[],
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (SOCKET_ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')) {
+          return callback(null, true);
+        }
+        callback(new Error('Not allowed by CORS'));
+      },
       methods: ['GET', 'POST'],
       credentials: true
     },

@@ -17,7 +17,7 @@
  * 11. Predictive Early Warning — CSD + Forecast + Risk (Phase 6)
  * 12. Session Analytics — Adaptive Session Manager (Phase 7)
  * 
- * @version 9.0.0 — PGE Phase 11: Adaptive Treatment Planning
+ * @version 10.0.0 — PGE Phase 12: Outcomes & Continuous Learning
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -473,6 +473,77 @@ interface ClinicalDashboardData {
   };
 }
 
+interface OutcomesDashboardData {
+  outcomeProfile: {
+    userId: string;
+    treatmentOutcome: {
+      expectedProgress: number;
+      actualProgress: number;
+      progressIndex: number;
+      variance: number;
+      clinicallySignificant: boolean;
+    };
+    totalSessions: number;
+    baselineEBH: number;
+    currentEBH: number;
+    improvementRate: number;
+    generatedAt: string;
+  };
+  interventionEffectiveness: Array<{
+    interventionType: string;
+    avgEffectiveness: { effectSize: number; efficacy: number; confidence: number };
+    sampleSize: number;
+    bestContext: string;
+    worstContext: string;
+  }>;
+  forecastValidation: {
+    userId: string;
+    accuracy: { mape: number; directionAccuracy: number; calibration: number; bias: number };
+    predictedTrajectory: number[];
+    actualTrajectory: number[];
+    validationWindow: number;
+    generatedAt: string;
+  };
+  expertSignals: {
+    avgEmpathy: number;
+    avgSafety: number;
+    avgAccuracy: number;
+    avgCulturalFit: number;
+    avgOverall: number;
+    totalReviews: number;
+    issueFrequency: Record<string, number>;
+    retrainRate: number;
+    consensusScore: number;
+  };
+  feedbackInsights: {
+    totalFeedbacks: number;
+    helpfulRate: number;
+    emotionChangeDistribution: Record<string, number>;
+    avgSignal: number;
+    trend: 'improving' | 'stable' | 'declining';
+    generatedAt: string;
+  };
+  safetyContext: {
+    userId: string;
+    events: Array<{
+      eventType: string;
+      timestamp: string;
+      context: { contextualRisk: number; escalationRisk: number; triggerDimensions: string[]; expertAlertLevel: string };
+      violationCount: number;
+    }>;
+    overallRisk: number;
+    totalEvents: number;
+    unreviewedCount: number;
+    generatedAt: string;
+  };
+  benchmark: {
+    userProgressRate: number;
+    cohortAvgProgressRate: number;
+    percentile: number;
+    fasterThanAvg: boolean;
+  };
+}
+
 // ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
@@ -530,7 +601,7 @@ interface PGEDashboardProps {
 }
 
 const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
-  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative' | 'resilience' | 'treatment'>('summary');
+  const [view, setView] = useState<'summary' | 'detail' | 'topology' | 'forecast' | 'sessions' | 'cohort' | 'narrative' | 'resilience' | 'treatment' | 'outcomes'>('summary');
   const [summary, setSummary] = useState<PGESummary | null>(null);
   const [fieldMap, setFieldMap] = useState<FieldMapData | null>(null);
   const [topologyData, setTopologyData] = useState<TopologyData | null>(null);
@@ -541,6 +612,7 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
   const [narrativeData, setNarrativeData] = useState<NarrativeDashboardData | null>(null);
   const [resilienceData, setResilienceData] = useState<ResilienceDashboardData | null>(null);
   const [treatmentData, setTreatmentData] = useState<ClinicalDashboardData | null>(null);
+  const [outcomesData, setOutcomesData] = useState<OutcomesDashboardData | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(userId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -743,6 +815,25 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
     }
   }, [token]);
 
+  const fetchOutcomesDashboard = useCallback(async (uid: string) => {
+    if (!uid) return;
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch(`${API_URL}/api/pge/outcomes/dashboard/${encodeURIComponent(uid)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) setOutcomesData(data.data);
+      else setError(data.error || 'Failed to fetch outcomes data');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchSummary();
   }, [fetchSummary]);
@@ -783,6 +874,9 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           </TabBtn>
           <TabBtn active={view === 'treatment'} onClick={() => setView('treatment')}>
             🎯 Kế hoạch
+          </TabBtn>
+          <TabBtn active={view === 'outcomes'} onClick={() => setView('outcomes')}>
+            📈 Kết quả
           </TabBtn>
         </TabRow>
       </Header>
@@ -849,13 +943,21 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchResilienceDashboard(selectedUserId)}
         />
-      ) : (
+      ) : view === 'treatment' ? (
         <TreatmentView
           data={treatmentData}
           loading={loading}
           selectedUserId={selectedUserId}
           onUserIdChange={setSelectedUserId}
           onSearch={() => fetchTreatmentDashboard(selectedUserId)}
+        />
+      ) : (
+        <OutcomesView
+          data={outcomesData}
+          loading={loading}
+          selectedUserId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
+          onSearch={() => fetchOutcomesDashboard(selectedUserId)}
         />
       )}
     </Container>
@@ -4377,6 +4479,455 @@ const TreatmentView: React.FC<{
                 </TxBlockerList>
               )}
             </TxCard>
+          </>
+        );
+      })()}
+    </>
+  );
+};
+
+// ═══════════════════════════════════════════
+// OUTCOMES VIEW (Phase 12)
+// ═══════════════════════════════════════════
+
+const OcCard = styled.div`
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+`;
+const OcCardTitle = styled.h3`
+  font-size: 16px;
+  color: #e0e0ff;
+  margin: 0 0 16px 0;
+`;
+const OcStatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+`;
+const OcStatBox = styled.div<{accent?: string}>`
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+  border-left: 3px solid ${p => p.accent || '#7c4dff'};
+`;
+const OcStatValue = styled.div<{color?: string}>`
+  font-size: 22px;
+  font-weight: 700;
+  color: ${p => p.color || '#e0e0ff'};
+`;
+const OcStatLabel = styled.div`
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px;
+`;
+const OcBarBg = styled.div`
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  height: 18px;
+  overflow: hidden;
+  position: relative;
+  margin: 6px 0;
+`;
+const OcBarFill = styled.div<{width: number; color: string}>`
+  height: 100%;
+  border-radius: 6px;
+  width: ${p => Math.min(100, p.width)}%;
+  background: ${p => p.color};
+  transition: width 0.5s;
+`;
+const OcEffRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  margin-bottom: 8px;
+`;
+const OcEffType = styled.div`
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0ff;
+  min-width: 120px;
+`;
+const OcEffMeta = styled.div`
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+`;
+const OcAccuracyRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+`;
+const OcAccuracyLabel = styled.span`
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+`;
+const OcAccuracyVal = styled.span<{color?: string}>`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${p => p.color || '#e0e0ff'};
+`;
+const OcFeedbackBar = styled.div`
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+`;
+const OcFeedbackSeg = styled.div<{width: number; color: string}>`
+  height: 22px;
+  border-radius: 4px;
+  width: ${p => p.width}%;
+  background: ${p => p.color};
+  min-width: ${p => p.width > 0 ? '4px' : '0'};
+`;
+const OcSafetyEvent = styled.div<{level: string}>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: ${p => p.level === 'urgent' ? 'rgba(244,67,54,0.1)' : p.level === 'elevated' ? 'rgba(255,152,0,0.1)' : 'rgba(255,255,255,0.03)'};
+  border-radius: 8px;
+  margin-bottom: 6px;
+  border-left: 3px solid ${p => p.level === 'urgent' ? '#f44336' : p.level === 'elevated' ? '#ff9800' : '#4caf50'};
+`;
+const OcBenchmarkBadge = styled.span<{good: boolean}>`
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: ${p => p.good ? 'rgba(76,175,80,0.15)' : 'rgba(255,152,0,0.15)'};
+  color: ${p => p.good ? '#4caf50' : '#ff9800'};
+`;
+
+const FEEDBACK_TREND_CONFIG: Record<string, {icon: string; color: string; label: string}> = {
+  improving: { icon: '📈', color: '#4caf50', label: 'Cải thiện' },
+  stable: { icon: '➡️', color: '#ff9800', label: 'Ổn định' },
+  declining: { icon: '📉', color: '#f44336', label: 'Giảm sút' },
+};
+
+const EMOTION_CHANGE_LABELS: Record<string, {label: string; color: string}> = {
+  feel_better: { label: 'Tốt hơn', color: '#4caf50' },
+  same: { label: 'Không đổi', color: '#ff9800' },
+  still_confused: { label: 'Vẫn bối rối', color: '#ff5722' },
+  feel_worse: { label: 'Tệ hơn', color: '#f44336' },
+};
+
+const OutcomesView: React.FC<{
+  data: OutcomesDashboardData | null;
+  loading: boolean;
+  selectedUserId: string;
+  onUserIdChange: (id: string) => void;
+  onSearch: () => void;
+}> = ({ data, loading, selectedUserId, onUserIdChange, onSearch }) => {
+  return (
+    <>
+      <SearchRow>
+        <SearchInput
+          value={selectedUserId}
+          onChange={e => onUserIdChange(e.target.value)}
+          placeholder="Nhập User ID..."
+        />
+        <SearchBtn onClick={onSearch} disabled={loading || !selectedUserId}>
+          {loading ? '⏳' : '🔍'} Xem kết quả
+        </SearchBtn>
+      </SearchRow>
+
+      {!data ? (
+        <EmptyText>Chọn người dùng để xem phân tích kết quả & học liên tục</EmptyText>
+      ) : (() => {
+        const d = data;
+        const op = d.outcomeProfile;
+        const fv = d.forecastValidation;
+        const es = d.expertSignals;
+        const fi = d.feedbackInsights;
+        const sc = d.safetyContext;
+        const bm = d.benchmark;
+        const trendCfg = FEEDBACK_TREND_CONFIG[fi.trend] || FEEDBACK_TREND_CONFIG.stable;
+
+        return (
+          <>
+            {/* Treatment Outcome Summary */}
+            <OcCard>
+              <OcCardTitle>📊 Kết quả điều trị tổng quan</OcCardTitle>
+              <OcStatsGrid>
+                <OcStatBox accent="#4caf50">
+                  <OcStatValue color={op.treatmentOutcome.progressIndex >= 1 ? '#4caf50' : '#ff9800'}>
+                    {(op.treatmentOutcome.actualProgress * 100).toFixed(0)}%
+                  </OcStatValue>
+                  <OcStatLabel>Tiến độ thực tế</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent="#2196f3">
+                  <OcStatValue>
+                    {(op.treatmentOutcome.expectedProgress * 100).toFixed(0)}%
+                  </OcStatValue>
+                  <OcStatLabel>Tiến độ kỳ vọng</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent={op.treatmentOutcome.progressIndex >= 1 ? '#4caf50' : '#ff5722'}>
+                  <OcStatValue color={op.treatmentOutcome.progressIndex >= 1 ? '#4caf50' : '#ff5722'}>
+                    {op.treatmentOutcome.progressIndex.toFixed(2)}x
+                  </OcStatValue>
+                  <OcStatLabel>Chỉ số tiến độ</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent="#7c4dff">
+                  <OcStatValue>{op.totalSessions}</OcStatValue>
+                  <OcStatLabel>Tổng phiên</OcStatLabel>
+                </OcStatBox>
+              </OcStatsGrid>
+
+              <div style={{display: 'flex', gap: '16px', flexWrap: 'wrap'}}>
+                <OcStatBox accent="#00bcd4" style={{flex: 1}}>
+                  <OcStatValue>{op.baselineEBH.toFixed(3)}</OcStatValue>
+                  <OcStatLabel>EBH ban đầu</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent="#00bcd4" style={{flex: 1}}>
+                  <OcStatValue color={op.currentEBH < op.baselineEBH ? '#4caf50' : '#f44336'}>
+                    {op.currentEBH.toFixed(3)}
+                  </OcStatValue>
+                  <OcStatLabel>EBH hiện tại</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent="#00bcd4" style={{flex: 1}}>
+                  <OcStatValue color={op.improvementRate > 0 ? '#4caf50' : '#f44336'}>
+                    {(op.improvementRate * 100).toFixed(2)}%
+                  </OcStatValue>
+                  <OcStatLabel>Tốc độ cải thiện/phiên</OcStatLabel>
+                </OcStatBox>
+              </div>
+
+              {op.treatmentOutcome.clinicallySignificant && (
+                <div style={{marginTop: '12px', padding: '8px 12px', background: 'rgba(76,175,80,0.1)', borderRadius: '8px', color: '#4caf50', fontSize: '13px'}}>
+                  ✅ Đạt ngưỡng ý nghĩa lâm sàng
+                </div>
+              )}
+            </OcCard>
+
+            {/* Benchmark */}
+            <OcCard>
+              <OcCardTitle>🏆 So sánh với nhóm dân số</OcCardTitle>
+              <OcStatsGrid>
+                <OcStatBox accent="#ff9800">
+                  <OcStatValue>{bm.percentile}</OcStatValue>
+                  <OcStatLabel>Phân vị (%)</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent="#4caf50">
+                  <OcStatValue>{(bm.userProgressRate * 100).toFixed(2)}%</OcStatValue>
+                  <OcStatLabel>Tốc độ (bạn)</OcStatLabel>
+                </OcStatBox>
+                <OcStatBox accent="#2196f3">
+                  <OcStatValue>{(bm.cohortAvgProgressRate * 100).toFixed(2)}%</OcStatValue>
+                  <OcStatLabel>Tốc độ TB nhóm</OcStatLabel>
+                </OcStatBox>
+              </OcStatsGrid>
+              <div style={{textAlign: 'center'}}>
+                <OcBenchmarkBadge good={bm.fasterThanAvg}>
+                  {bm.fasterThanAvg ? '🚀 Nhanh hơn trung bình' : '⏳ Chậm hơn trung bình'}
+                </OcBenchmarkBadge>
+              </div>
+            </OcCard>
+
+            {/* Intervention Effectiveness */}
+            {d.interventionEffectiveness.length > 0 && (
+              <OcCard>
+                <OcCardTitle>💊 Hiệu quả can thiệp theo loại</OcCardTitle>
+                {d.interventionEffectiveness.map((ie, idx) => (
+                  <OcEffRow key={idx}>
+                    <OcEffType>{ie.interventionType}</OcEffType>
+                    <div style={{flex: 1}}>
+                      <OcBarBg>
+                        <OcBarFill
+                          width={Math.abs(ie.avgEffectiveness.efficacy) * 100}
+                          color={ie.avgEffectiveness.efficacy > 0 ? '#4caf50' : '#f44336'}
+                        />
+                      </OcBarBg>
+                    </div>
+                    <OcStatValue style={{fontSize: '14px', minWidth: '50px', textAlign: 'right'}}>
+                      {(ie.avgEffectiveness.efficacy * 100).toFixed(0)}%
+                    </OcStatValue>
+                    <OcEffMeta>n={ie.sampleSize} | Tốt nhất: {ie.bestContext}</OcEffMeta>
+                  </OcEffRow>
+                ))}
+              </OcCard>
+            )}
+
+            {/* Forecast Validation */}
+            <OcCard>
+              <OcCardTitle>🎯 Độ chính xác dự báo</OcCardTitle>
+              <OcAccuracyRow>
+                <OcAccuracyLabel>MAPE (sai số %)</OcAccuracyLabel>
+                <OcAccuracyVal color={fv.accuracy.mape < 0.2 ? '#4caf50' : '#ff5722'}>
+                  {(fv.accuracy.mape * 100).toFixed(1)}%
+                </OcAccuracyVal>
+              </OcAccuracyRow>
+              <OcAccuracyRow>
+                <OcAccuracyLabel>Đúng hướng xu hướng</OcAccuracyLabel>
+                <OcAccuracyVal color={fv.accuracy.directionAccuracy > 0.7 ? '#4caf50' : '#ff9800'}>
+                  {(fv.accuracy.directionAccuracy * 100).toFixed(0)}%
+                </OcAccuracyVal>
+              </OcAccuracyRow>
+              <OcAccuracyRow>
+                <OcAccuracyLabel>Calibration</OcAccuracyLabel>
+                <OcAccuracyVal>{(fv.accuracy.calibration * 100).toFixed(0)}%</OcAccuracyVal>
+              </OcAccuracyRow>
+              <OcAccuracyRow>
+                <OcAccuracyLabel>Bias (thiên lệch)</OcAccuracyLabel>
+                <OcAccuracyVal color={Math.abs(fv.accuracy.bias) < 0.05 ? '#4caf50' : '#ff5722'}>
+                  {fv.accuracy.bias > 0 ? '+' : ''}{(fv.accuracy.bias * 100).toFixed(1)}%
+                </OcAccuracyVal>
+              </OcAccuracyRow>
+              <OcStatLabel style={{marginTop: '8px'}}>
+                Cửa sổ xác thực: {fv.validationWindow} điểm dữ liệu
+              </OcStatLabel>
+            </OcCard>
+
+            {/* Expert Signals */}
+            <OcCard>
+              <OcCardTitle>👨‍⚕️ Tín hiệu chuyên gia ({es.totalReviews} đánh giá)</OcCardTitle>
+              {es.totalReviews > 0 ? (
+                <>
+                  <OcStatsGrid>
+                    <OcStatBox accent="#e91e63">
+                      <OcStatValue>{es.avgEmpathy.toFixed(1)}/5</OcStatValue>
+                      <OcStatLabel>Đồng cảm</OcStatLabel>
+                    </OcStatBox>
+                    <OcStatBox accent="#f44336">
+                      <OcStatValue>{es.avgSafety.toFixed(1)}/5</OcStatValue>
+                      <OcStatLabel>An toàn</OcStatLabel>
+                    </OcStatBox>
+                    <OcStatBox accent="#2196f3">
+                      <OcStatValue>{es.avgAccuracy.toFixed(1)}/5</OcStatValue>
+                      <OcStatLabel>Chính xác</OcStatLabel>
+                    </OcStatBox>
+                    <OcStatBox accent="#ff9800">
+                      <OcStatValue>{es.avgCulturalFit.toFixed(1)}/5</OcStatValue>
+                      <OcStatLabel>Văn hóa</OcStatLabel>
+                    </OcStatBox>
+                  </OcStatsGrid>
+                  <OcAccuracyRow>
+                    <OcAccuracyLabel>Tỉ lệ cần huấn luyện lại</OcAccuracyLabel>
+                    <OcAccuracyVal color={es.retrainRate > 0.3 ? '#f44336' : '#4caf50'}>
+                      {(es.retrainRate * 100).toFixed(0)}%
+                    </OcAccuracyVal>
+                  </OcAccuracyRow>
+                  <OcAccuracyRow>
+                    <OcAccuracyLabel>Độ đồng thuận chuyên gia</OcAccuracyLabel>
+                    <OcAccuracyVal>{(es.consensusScore * 100).toFixed(0)}%</OcAccuracyVal>
+                  </OcAccuracyRow>
+                  {Object.keys(es.issueFrequency).length > 0 && (
+                    <div style={{marginTop: '12px'}}>
+                      <OcStatLabel>Vấn đề thường gặp:</OcStatLabel>
+                      {Object.entries(es.issueFrequency)
+                        .sort(([,a], [,b]) => b - a)
+                        .map(([type, count]) => (
+                          <div key={type} style={{display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '13px', color: 'rgba(255,255,255,0.7)'}}>
+                            <span>{type}</span>
+                            <span>{count}x</span>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyText>Chưa có đánh giá chuyên gia</EmptyText>
+              )}
+            </OcCard>
+
+            {/* User Feedback */}
+            <OcCard>
+              <OcCardTitle>
+                💬 Phản hồi người dùng ({fi.totalFeedbacks} lượt)
+                <span style={{marginLeft: '8px', fontSize: '13px', color: trendCfg.color}}>
+                  {trendCfg.icon} {trendCfg.label}
+                </span>
+              </OcCardTitle>
+              {fi.totalFeedbacks > 0 ? (
+                <>
+                  <OcStatsGrid>
+                    <OcStatBox accent="#4caf50">
+                      <OcStatValue color={fi.helpfulRate > 0.7 ? '#4caf50' : '#ff9800'}>
+                        {(fi.helpfulRate * 100).toFixed(0)}%
+                      </OcStatValue>
+                      <OcStatLabel>Hữu ích</OcStatLabel>
+                    </OcStatBox>
+                    <OcStatBox accent="#7c4dff">
+                      <OcStatValue>{fi.avgSignal.toFixed(2)}</OcStatValue>
+                      <OcStatLabel>Tín hiệu TB</OcStatLabel>
+                    </OcStatBox>
+                  </OcStatsGrid>
+
+                  <OcStatLabel>Phân bố cảm xúc sau phản hồi:</OcStatLabel>
+                  <OcFeedbackBar>
+                    {Object.entries(fi.emotionChangeDistribution).map(([key, count]) => {
+                      const cfg = EMOTION_CHANGE_LABELS[key] || { label: key, color: '#999' };
+                      const pct = fi.totalFeedbacks > 0 ? (count / fi.totalFeedbacks) * 100 : 0;
+                      return (
+                        <OcFeedbackSeg key={key} width={pct} color={cfg.color} title={`${cfg.label}: ${count} (${pct.toFixed(0)}%)`} />
+                      );
+                    })}
+                  </OcFeedbackBar>
+                  <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px'}}>
+                    {Object.entries(fi.emotionChangeDistribution).map(([key, count]) => {
+                      const cfg = EMOTION_CHANGE_LABELS[key] || { label: key, color: '#999' };
+                      return (
+                        <span key={key} style={{fontSize: '11px', color: cfg.color}}>
+                          ● {cfg.label}: {count}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <EmptyText>Chưa có phản hồi người dùng</EmptyText>
+              )}
+            </OcCard>
+
+            {/* Safety Context */}
+            <OcCard>
+              <OcCardTitle>
+                🛡️ An toàn & Bối cảnh ({sc.totalEvents} sự kiện)
+                {sc.unreviewedCount > 0 && (
+                  <span style={{marginLeft: '8px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(244,67,54,0.15)', color: '#f44336', fontSize: '12px'}}>
+                    {sc.unreviewedCount} chưa xem xét
+                  </span>
+                )}
+              </OcCardTitle>
+              {sc.totalEvents > 0 ? (
+                <>
+                  <OcStatsGrid>
+                    <OcStatBox accent={sc.overallRisk > 0.5 ? '#f44336' : '#4caf50'}>
+                      <OcStatValue color={sc.overallRisk > 0.5 ? '#f44336' : '#4caf50'}>
+                        {(sc.overallRisk * 100).toFixed(0)}%
+                      </OcStatValue>
+                      <OcStatLabel>Rủi ro tổng thể</OcStatLabel>
+                    </OcStatBox>
+                  </OcStatsGrid>
+                  {sc.events.slice(0, 5).map((evt, i) => (
+                    <OcSafetyEvent key={i} level={evt.context.expertAlertLevel}>
+                      <div>
+                        <div style={{fontSize: '13px', color: '#e0e0ff'}}>{evt.eventType}</div>
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>
+                          {new Date(evt.timestamp).toLocaleDateString('vi-VN')} | Vi phạm: {evt.violationCount}
+                        </div>
+                      </div>
+                      <div style={{textAlign: 'right'}}>
+                        <div style={{fontSize: '14px', fontWeight: 700, color: evt.context.contextualRisk > 0.7 ? '#f44336' : '#ff9800'}}>
+                          {(evt.context.contextualRisk * 100).toFixed(0)}%
+                        </div>
+                        <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.5)'}}>Rủi ro</div>
+                      </div>
+                    </OcSafetyEvent>
+                  ))}
+                </>
+              ) : (
+                <EmptyText>Không có sự kiện an toàn — 🟢</EmptyText>
+              )}
+            </OcCard>
           </>
         );
       })()}

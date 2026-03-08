@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 9.0.0 — Phase 11: Adaptive Treatment Planning + Phase 3-10
+ * @version 10.0.0 — Phase 12: Outcomes & Continuous Learning + Phase 3-11
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -4117,4 +4117,335 @@ export function computeSessionBriefingScore(params: {
     urgencyScore > 0.5 ? 'urgent' : urgencyScore > 0.25 ? 'elevated' : 'routine';
 
   return { priority, focusAreas };
+}
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 12: OUTCOMES & CONTINUOUS LEARNING ENGINE
+// ════════════════════════════════════════════════════════════════
+
+// ─── Types ───
+
+export interface TreatmentOutcome {
+  expectedProgress: number;
+  actualProgress: number;
+  progressIndex: number;       // actual/expected (>1 = ahead of schedule)
+  variance: number;
+  clinicallySignificant: boolean;
+}
+
+export interface InterventionEffectivenessResult {
+  effectSize: number;          // Cohen's d equivalent
+  efficacy: number;            // -1 to +1
+  confidence: number;          // 0-1
+}
+
+export interface ForecastAccuracy {
+  mape: number;                // Mean Absolute Percentage Error
+  directionAccuracy: number;   // 0-1: % of correct trend predictions
+  calibration: number;         // predicted confidence vs actual error
+  bias: number;                // systematic over/under prediction
+}
+
+export interface ExpertSignalAggregation {
+  avgEmpathy: number;
+  avgSafety: number;
+  avgAccuracy: number;
+  avgCulturalFit: number;
+  avgOverall: number;
+  totalReviews: number;
+  issueFrequency: Record<string, number>;
+  retrainRate: number;
+  consensusScore: number;
+}
+
+export interface OutcomesBenchmark {
+  userProgressRate: number;
+  cohortAvgProgressRate: number;
+  percentile: number;          // 0-100
+  fasterThanAvg: boolean;
+}
+
+export interface SafetyContextScore {
+  contextualRisk: number;      // 0-1
+  escalationRisk: number;      // 0-1
+  triggerDimensions: string[];
+  expertAlertLevel: 'routine' | 'elevated' | 'urgent';
+}
+
+/**
+ * Compute treatment outcome: expected vs actual progress against a goal.
+ * expectedTimeline in sessions, actualDuration in sessions elapsed.
+ */
+export function computeTreatmentOutcome(
+  goalBaseline: Vec,
+  currentState: Vec,
+  targetState: Vec,
+  expectedTimeline: number,
+  actualDuration: number
+): TreatmentOutcome {
+  const dim = goalBaseline.length;
+  if (dim === 0 || expectedTimeline <= 0) {
+    return { expectedProgress: 0, actualProgress: 0, progressIndex: 0, variance: 0, clinicallySignificant: false };
+  }
+
+  // Expected progress: linear interpolation capped at 1
+  const expectedProgress = Math.min(1, actualDuration / expectedTimeline);
+
+  // Actual progress via vector projection
+  let totalDist = 0, traveled = 0;
+  for (let i = 0; i < dim; i++) {
+    const full = targetState[i] - goalBaseline[i];
+    const done = currentState[i] - goalBaseline[i];
+    totalDist += full * full;
+    traveled += full * done;
+  }
+  const actualProgress = totalDist > 0.001
+    ? Math.max(0, Math.min(1, traveled / totalDist))
+    : 1;
+
+  const progressIndex = expectedProgress > 0.01
+    ? actualProgress / expectedProgress
+    : actualProgress > 0 ? 2 : 0;
+
+  const variance = actualProgress - expectedProgress;
+
+  // Clinical significance: minimum detectable effect ≥ 0.15
+  const clinicallySignificant = actualProgress >= 0.15 && actualProgress > expectedProgress * 0.5;
+
+  return { expectedProgress, actualProgress, progressIndex, variance, clinicallySignificant };
+}
+
+/**
+ * Compute intervention effectiveness using effect size (Cohen's d analog).
+ * Pre/post state vectors compared with pooled SD estimate.
+ */
+export function computeInterventionEffectiveness(
+  preState: Vec,
+  postState: Vec,
+  sampleSize: number
+): InterventionEffectivenessResult {
+  const dim = preState.length;
+  if (dim === 0) return { effectSize: 0, efficacy: 0, confidence: 0 };
+
+  // Compute mean change per dimension
+  let sumDelta = 0, sumDelta2 = 0;
+  for (let i = 0; i < dim; i++) {
+    const delta = postState[i] - preState[i];
+    sumDelta += delta;
+    sumDelta2 += delta * delta;
+  }
+  const meanDelta = sumDelta / dim;
+  const sdDelta = Math.sqrt(Math.max(0, sumDelta2 / dim - meanDelta * meanDelta));
+
+  // Effect size (Cohen's d)
+  const effectSize = sdDelta > 0.01 ? meanDelta / sdDelta : meanDelta * 10;
+
+  // Efficacy: -1 to +1 (negative = worsened overall)
+  // We want negative change on negative dims to be positive efficacy
+  const efficacy = Math.max(-1, Math.min(1, -effectSize * 0.5));
+
+  // Confidence from sample size (logistic Bayesian approximation)
+  const confidence = Math.min(0.95, 1 - 1 / (1 + sampleSize * 0.1));
+
+  return { effectSize, efficacy, confidence };
+}
+
+/**
+ * Compute forecast accuracy by comparing predicted EBH trajectory with actual.
+ */
+export function computeForecastAccuracy(
+  predicted: number[],
+  actual: number[]
+): ForecastAccuracy {
+  const n = Math.min(predicted.length, actual.length);
+  if (n === 0) return { mape: 1, directionAccuracy: 0, calibration: 0, bias: 0 };
+
+  let sumAPE = 0, correctDir = 0, sumBias = 0;
+
+  for (let i = 0; i < n; i++) {
+    const a = actual[i];
+    const p = predicted[i];
+    const absErr = Math.abs(p - a);
+    sumAPE += a > 0.01 ? absErr / a : absErr;
+    sumBias += p - a;
+
+    if (i > 0) {
+      const predDir = predicted[i] - predicted[i - 1];
+      const actDir = actual[i] - actual[i - 1];
+      if ((predDir >= 0 && actDir >= 0) || (predDir < 0 && actDir < 0)) {
+        correctDir++;
+      }
+    }
+  }
+
+  const mape = sumAPE / n;
+  const directionAccuracy = n > 1 ? correctDir / (n - 1) : 0;
+  const bias = sumBias / n;
+
+  // Calibration: how well prediction spread matches actual error
+  const avgAbsErr = sumAPE / n;
+  const calibration = Math.max(0, 1 - avgAbsErr);
+
+  return { mape, directionAccuracy, calibration, bias };
+}
+
+/**
+ * Aggregate expert review signals into a quality summary.
+ */
+export function aggregateExpertSignals(
+  reviews: Array<{
+    empathy: number; safety: number; accuracy: number;
+    culturalFit: number; overall: number;
+    issues: Array<{ type: string }>;
+    shouldRetrain: boolean;
+  }>
+): ExpertSignalAggregation {
+  const n = reviews.length;
+  if (n === 0) {
+    return {
+      avgEmpathy: 0, avgSafety: 0, avgAccuracy: 0, avgCulturalFit: 0,
+      avgOverall: 0, totalReviews: 0, issueFrequency: {},
+      retrainRate: 0, consensusScore: 0,
+    };
+  }
+
+  let sE = 0, sS = 0, sA = 0, sC = 0, sO = 0, retrainCount = 0;
+  const issueCounts: Record<string, number> = {};
+
+  for (const r of reviews) {
+    sE += r.empathy; sS += r.safety; sA += r.accuracy;
+    sC += r.culturalFit; sO += r.overall;
+    if (r.shouldRetrain) retrainCount++;
+    for (const issue of r.issues) {
+      issueCounts[issue.type] = (issueCounts[issue.type] || 0) + 1;
+    }
+  }
+
+  const avgOverall = sO / n;
+  // Consensus: low variance in overall ratings = high consensus
+  let varianceSum = 0;
+  for (const r of reviews) {
+    varianceSum += (r.overall - avgOverall) ** 2;
+  }
+  const stdDev = Math.sqrt(varianceSum / n);
+  const consensusScore = Math.max(0, 1 - stdDev / 2); // stdDev=0 → 1, stdDev≥2 → 0
+
+  return {
+    avgEmpathy: sE / n, avgSafety: sS / n, avgAccuracy: sA / n,
+    avgCulturalFit: sC / n, avgOverall,
+    totalReviews: n,
+    issueFrequency: issueCounts,
+    retrainRate: retrainCount / n,
+    consensusScore,
+  };
+}
+
+/**
+ * Compute user outcome benchmarked against a cohort.
+ * progressRate = total EBH improvement per session.
+ */
+export function computeOutcomeBenchmark(
+  userEBHStart: number,
+  userEBHCurrent: number,
+  userSessions: number,
+  cohortProgressRates: number[]
+): OutcomesBenchmark {
+  const userProgressRate = userSessions > 0
+    ? (userEBHStart - userEBHCurrent) / userSessions
+    : 0;
+
+  if (cohortProgressRates.length === 0) {
+    return { userProgressRate, cohortAvgProgressRate: 0, percentile: 50, fasterThanAvg: userProgressRate > 0 };
+  }
+
+  const sorted = [...cohortProgressRates].sort((a, b) => a - b);
+  const cohortAvgProgressRate = sorted.reduce((s, v) => s + v, 0) / sorted.length;
+
+  // Percentile rank
+  const below = sorted.filter(r => r < userProgressRate).length;
+  const percentile = Math.round((below / sorted.length) * 100);
+
+  return {
+    userProgressRate,
+    cohortAvgProgressRate,
+    percentile,
+    fasterThanAvg: userProgressRate > cohortAvgProgressRate,
+  };
+}
+
+/**
+ * Contextualize a safety event with psychological state data.
+ * Returns risk scoring considering the user's current trajectory.
+ */
+export function contextualizeSafetyEvent(params: {
+  eventSeverity: number;     // 0-1 from violation severity
+  currentEBH: number;
+  zone: string;
+  trendDirection: string;
+  resilienceIndex: number;
+  recentVolatility: number;  // EBH std dev over recent window
+}): SafetyContextScore {
+  const { eventSeverity, currentEBH, zone, trendDirection, resilienceIndex, recentVolatility } = params;
+
+  // Zone risk multiplier
+  const zoneMultiplier: Record<string, number> = {
+    safe: 0.3, caution: 0.6, risk: 0.8, critical: 1.0, black_hole: 1.0,
+  };
+  const zm = zoneMultiplier[zone] ?? 0.5;
+
+  // Trend factor: worsening trend amplifies risk
+  const trendFactor = trendDirection === 'worsening' ? 1.3
+    : trendDirection === 'stable' ? 1.0 : 0.7;
+
+  // Contextual risk
+  const contextualRisk = Math.min(1,
+    eventSeverity * 0.4 +
+    (1 - resilienceIndex) * 0.2 +
+    zm * 0.2 +
+    recentVolatility * 0.2
+  ) * trendFactor;
+
+  // Escalation risk
+  const escalationRisk = Math.min(1,
+    contextualRisk * 0.5 +
+    currentEBH * 0.3 +
+    recentVolatility * 0.2
+  );
+
+  // Alert level
+  const expertAlertLevel: SafetyContextScore['expertAlertLevel'] =
+    contextualRisk > 0.7 ? 'urgent'
+    : contextualRisk > 0.4 ? 'elevated'
+    : 'routine';
+
+  // Trigger dimensions: high EBH dims
+  const triggerDimensions: string[] = [];
+  if (currentEBH > 0.6) triggerDimensions.push('EBH cao');
+  if (recentVolatility > 0.15) triggerDimensions.push('Biến động mạnh');
+  if (trendDirection === 'worsening') triggerDimensions.push('Xu hướng xấu');
+  if (resilienceIndex < 0.3) triggerDimensions.push('Phục hồi yếu');
+
+  return { contextualRisk: Math.min(1, contextualRisk), escalationRisk, triggerDimensions, expertAlertLevel };
+}
+
+/**
+ * Compute user feedback signal: maps discrete feedback to a continuous learning signal.
+ * Returns a correction weight in [-1, +1] where positive = AI responded well.
+ */
+export function computeFeedbackSignal(
+  rating: 'helpful' | 'not_helpful',
+  emotionChange: 'feel_better' | 'same' | 'still_confused' | 'feel_worse'
+): { signal: number; weight: number } {
+  const ratingVal = rating === 'helpful' ? 1 : -1;
+  const emotionVal: Record<string, number> = {
+    feel_better: 1, same: 0, still_confused: -0.5, feel_worse: -1,
+  };
+  const eVal = emotionVal[emotionChange] ?? 0;
+
+  // Combined signal: 60% emotion change, 40% explicit rating
+  const signal = 0.6 * eVal + 0.4 * ratingVal;
+  // Weight: stronger signal = more confident
+  const weight = Math.abs(signal);
+
+  return { signal, weight };
 }

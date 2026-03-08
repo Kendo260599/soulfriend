@@ -48,6 +48,7 @@ import { cohortEngine } from '../services/pge/cohortEngine';
 import { narrativeIntelligenceEngine } from '../services/pge/narrativeIntelligenceEngine';
 import { resilienceEngine } from '../services/pge/resilienceEngine';
 import { treatmentPlanEngine } from '../services/pge/treatmentPlanEngine';
+import { outcomeLearningEngine } from '../services/pge/outcomeLearningEngine';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -1114,6 +1115,107 @@ router.get('/treatment/dashboard/:userId',
     } catch (error) {
       logger.error('[PGE Route] clinical dashboard error:', error);
       res.status(500).json({ success: false, error: 'Failed to generate clinical dashboard' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 12: OUTCOMES & CONTINUOUS LEARNING
+// ════════════════════════════════════════════════════════════════
+
+router.get('/outcomes/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const profile = await outcomeLearningEngine.getUserOutcomeProfile(userId);
+      res.json({ success: true, data: profile });
+    } catch (error) {
+      logger.error('[PGE Route] outcome profile error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get outcome profile' });
+    }
+  }
+);
+
+router.get('/outcomes/effectiveness/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const effectiveness = await outcomeLearningEngine.analyzeInterventionEffectiveness(userId);
+      res.json({ success: true, data: effectiveness });
+    } catch (error) {
+      logger.error('[PGE Route] intervention effectiveness error:', error);
+      res.status(500).json({ success: false, error: 'Failed to analyze intervention effectiveness' });
+    }
+  }
+);
+
+router.get('/outcomes/forecast-validation/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const validation = await outcomeLearningEngine.validateForecast(userId);
+      res.json({ success: true, data: validation });
+    } catch (error) {
+      logger.error('[PGE Route] forecast validation error:', error);
+      res.status(500).json({ success: false, error: 'Failed to validate forecast' });
+    }
+  }
+);
+
+router.get('/outcomes/expert-signals',
+  authenticateExpert,
+  async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const signals = await outcomeLearningEngine.aggregateExpertReviews();
+      res.json({ success: true, data: signals });
+    } catch (error) {
+      logger.error('[PGE Route] expert signals error:', error);
+      res.status(500).json({ success: false, error: 'Failed to aggregate expert signals' });
+    }
+  }
+);
+
+router.get('/outcomes/feedback/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const insights = await outcomeLearningEngine.getUserFeedbackInsights(userId);
+      res.json({ success: true, data: insights });
+    } catch (error) {
+      logger.error('[PGE Route] feedback insights error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get feedback insights' });
+    }
+  }
+);
+
+router.get('/outcomes/safety/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const safety = await outcomeLearningEngine.getSafetyContextReport(userId);
+      res.json({ success: true, data: safety });
+    } catch (error) {
+      logger.error('[PGE Route] safety context error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get safety context' });
+    }
+  }
+);
+
+router.get('/outcomes/dashboard/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const dashboard = await outcomeLearningEngine.getOutcomesDashboard(userId);
+      res.json({ success: true, data: dashboard });
+    } catch (error) {
+      logger.error('[PGE Route] outcomes dashboard error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate outcomes dashboard' });
     }
   }
 );

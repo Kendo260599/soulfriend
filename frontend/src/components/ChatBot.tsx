@@ -349,7 +349,7 @@ const InputContainer = styled.div<{ isOpen: boolean }>`
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   background: white;
   flex-shrink: 0;
-  align-items: center;
+  align-items: flex-end;
   
   @media (max-width: 768px) {
     padding: 12px 15px;
@@ -357,14 +357,20 @@ const InputContainer = styled.div<{ isOpen: boolean }>`
   }
 `;
 
-const MessageInput = styled.input`
+const MessageTextarea = styled.textarea`
   flex: 1;
   padding: 12px 16px;
   border: 2px solid #e9ecef;
-  border-radius: 25px;
+  border-radius: 20px;
   outline: none;
   font-size: 0.95rem;
   transition: border-color 0.3s ease;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  line-height: 1.4;
+  font-family: inherit;
+  overflow-y: auto;
   
   &:focus {
     border-color: #667eea;
@@ -441,7 +447,28 @@ interface ChatMessage {
   emotionChange?: 'feel_better' | 'same' | 'still_confused' | 'feel_worse' | null;
   showEmotionPicker?: boolean;
   retryCount?: number;
+  type?: 'ai' | 'expert' | 'system' | 'user' | 'crisis' | 'error';
+  status?: 'sending' | 'sent' | 'error';
 }
+
+const MAX_MESSAGES = 200;
+
+// Simple markdown-like rendering
+const renderMessageText = (text: string) => {
+  // Bold: **text**
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
+// Format timestamp
+const formatTime = (date: Date) => {
+  return new Date(date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+};
 
 interface ChatBotProps {
   testResults?: Array<{
@@ -461,22 +488,26 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [expertConnected, setExpertConnected] = useState(false); // Track if expert is in intervention
+  const [expertConnected, setExpertConnected] = useState(false);
   const [expertName, setExpertName] = useState<string | null>(null);
+  const [expertTyping, setExpertTyping] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const socketRef = useRef<Socket | null>(null);
-  const userIdRef = useRef<string>(localStorage.getItem('userId') || `user_${Date.now()}`);
-  const sessionIdRef = useRef<string>(localStorage.getItem('sessionId') || `session_${Date.now()}`);
+  // Persist userId across sessions; generate sessionId once per browser
+  const userIdRef = useRef<string>(
+    localStorage.getItem('sf_userId') || (() => { const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`; localStorage.setItem('sf_userId', id); return id; })()
+  );
+  const sessionIdRef = useRef<string>(
+    localStorage.getItem('sf_sessionId') || (() => { const id = `session_${Date.now()}`; localStorage.setItem('sf_sessionId', id); return id; })()
+  );
   const msgIdCounter = useRef(0);
+  const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextMsgId = (prefix = 'msg') => `${prefix}_${Date.now()}_${msgIdCounter.current++}`;
   const { processMessage, isProcessing } = useAI();
   
-  // Save userId and sessionId to localStorage
-  useEffect(() => {
-    localStorage.setItem('userId', userIdRef.current);
-    localStorage.setItem('sessionId', sessionIdRef.current);
-  }, []);
-
   // Socket.io connection for real-time expert intervention
   // Keep socket alive regardless of chat open/close to receive expert messages
   useEffect(() => {
@@ -511,12 +542,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       setExpertConnected(true);
       setExpertName(data.expertName);
 
-      // Add system message
+      // Play notification sound
+      try { new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA').play().catch(() => {}); } catch {}
+
       const systemMessage: ChatMessage = {
         id: `system_${nextMsgId('sys')}`,
         text: data.message,
         isBot: true,
         timestamp: new Date(data.timestamp),
+        type: 'system',
       };
       setMessages((prev) => [...prev, systemMessage]);
     });
@@ -525,13 +559,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     socket.on('expert_message', (data: { from: string; expertName: string; message: string; timestamp: Date }) => {
       console.log('💬 Expert message:', data);
 
+      // Play notification sound
+      try { new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA').play().catch(() => {}); } catch {}
+
       const expertMessage: ChatMessage = {
         id: `expert_${nextMsgId('exp')}`,
-        text: `❤️ **CHUN❤️**: ${data.message}`,
+        text: data.message,
         isBot: true,
         timestamp: new Date(data.timestamp),
+        type: 'expert',
       };
       setMessages((prev) => [...prev, expertMessage]);
+      setExpertTyping(false);
     });
 
     // Intervention ended
@@ -539,19 +578,38 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       console.log('🔒 Intervention ended:', data);
       setExpertConnected(false);
       setExpertName(null);
+      setExpertTyping(false);
 
       const systemMessage: ChatMessage = {
         id: nextMsgId('sys'),
         text: data.message,
         isBot: true,
         timestamp: new Date(data.timestamp),
+        type: 'system',
       };
       setMessages((prev) => [...prev, systemMessage]);
     });
 
+    // Expert typing indicator
+    socket.on('expert_typing', (data: { isTyping: boolean }) => {
+      setExpertTyping(data.isTyping);
+    });
+
     // Message received confirmation
-    socket.on('message_received', (data: any) => {
-      console.log('✅ Message received by server:', data);
+    socket.on('message_received', () => {
+      // Silent confirmation - message delivered
+    });
+
+    // Rate limited
+    socket.on('rate_limited', (data: { message: string }) => {
+      const warnMsg: ChatMessage = {
+        id: nextMsgId('sys'),
+        text: data.message,
+        isBot: true,
+        timestamp: new Date(),
+        type: 'system',
+      };
+      setMessages((prev) => [...prev, warnMsg]);
     });
 
     // Cleanup
@@ -579,10 +637,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     }
   }, []);
 
-  // Save conversation history to localStorage
+  // Save conversation history to localStorage (limit to MAX_MESSAGES)
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem('chatbot_history', JSON.stringify(messages));
+      const toSave = messages.slice(-MAX_MESSAGES);
+      localStorage.setItem('chatbot_history', JSON.stringify(toSave));
     }
   }, [messages]);
 
@@ -597,6 +656,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Track scroll position for "scroll to bottom" button
+  const handleScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
   };
 
   useEffect(() => {
@@ -677,7 +744,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
     try {
       // Thử sử dụng AI service trước
-      const response = await processMessage(userMessage, userProfile, testResults);
+      const response = await processMessage(userMessage, userProfile, testResults, sessionIdRef.current);
       return {
         text: response.text,
         crisisDetected: response.crisisDetected || false,
@@ -862,24 +929,24 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isTyping) return;
 
     const userMessage: ChatMessage = {
       id: nextMsgId('user'),
       text: inputValue,
       isBot: false,
       timestamp: new Date(),
-      retryCount: 0
+      retryCount: 0,
+      type: 'user',
+      status: 'sending',
     };
 
-    const originalInput = inputValue;
-    
-    // Log user message
-    console.log('💬 User sent message:', originalInput);
-    console.log('💬 Message length:', originalInput.length);
+    const originalInput = inputValue.trim();
     
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    // Reset textarea height
+    if (textareaRef.current) { textareaRef.current.style.height = 'auto'; }
     setIsTyping(true);
     setLastError(null);
 
@@ -889,12 +956,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         message: originalInput,
         timestamp: new Date(),
       });
-      console.log('📤 Message sent via Socket.io');
+      // Mark as sent
+      setMessages(prev => prev.map(m => m.id === userMessage.id ? { ...m, status: 'sent' as const } : m));
     }
 
     // If expert is connected, don't call AI — let the expert respond
     if (expertConnected) {
-      console.log('👨‍⚕️ Expert is active, skipping AI response');
       setIsTyping(false);
       return;
     }
@@ -902,28 +969,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     try {
       const botResponse = await generateBotResponse(originalInput);
       
-      // Log bot response
-      console.log('🤖 Bot response:', {
-        text: botResponse.text?.substring(0, 100),
-        crisisDetected: botResponse.crisisDetected,
-        riskLevel: botResponse.crisisDetected ? 'CRITICAL' : 'NORMAL'
-      });
-      
-      if (botResponse.crisisDetected) {
-        console.error('🚨 CRISIS DETECTED in frontend!', {
-          message: originalInput,
-          response: botResponse.text?.substring(0, 100),
-          recommendations: botResponse.recommendations,
-          emergencyContacts: botResponse.nextActions
-        });
-      }
-      
       // Thêm tin nhắn phản hồi chính
       const botMessage: ChatMessage = {
         id: nextMsgId('bot'),
         text: botResponse.text,
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
+        type: 'ai',
       };
       setMessages(prev => [...prev, botMessage]);
 
@@ -933,7 +985,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           id: nextMsgId('crisis'),
           text: "🚨 CẢNH BÁO: Tôi phát hiện dấu hiệu khủng hoảng. Hãy tìm kiếm sự hỗ trợ chuyên nghiệp ngay lập tức!",
           isBot: true,
-          timestamp: new Date()
+          timestamp: new Date(),
+          type: 'crisis',
         };
         setMessages(prev => [...prev, crisisMessage]);
       }
@@ -975,7 +1028,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         id: nextMsgId('err'),
         text: "Xin lỗi, tôi đang gặp vấn đề kỹ thuật. Bạn có thể thử lại bằng cách nhấn nút retry bên dưới.",
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
+        type: 'error',
       };
       setMessages(prev => [...prev, errorMessage]);
       setIsOnline(false);
@@ -987,12 +1041,60 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
   const handleQuickAction = (action: string) => {
     setInputValue(action);
+    // Auto-send after a brief moment for visual feedback
+    setTimeout(() => {
+      setInputValue('');
+      const userMessage: ChatMessage = {
+        id: nextMsgId('user'),
+        text: action,
+        isBot: false,
+        timestamp: new Date(),
+        type: 'user',
+      };
+      setMessages(prev => [...prev, userMessage]);
+      
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('user_message', { message: action, timestamp: new Date() });
+      }
+      if (!expertConnected) {
+        setIsTyping(true);
+        generateBotResponse(action).then(botResponse => {
+          const botMessage: ChatMessage = {
+            id: nextMsgId('bot'),
+            text: botResponse.text,
+            isBot: true,
+            timestamp: new Date(),
+            type: 'ai',
+          };
+          setMessages(prev => [...prev, botMessage]);
+          setIsTyping(false);
+        }).catch(() => setIsTyping(false));
+      }
+    }, 100);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  // Auto-resize textarea & emit typing indicator
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+
+    // Emit typing indicator to expert
+    if (socketRef.current?.connected && expertConnected) {
+      socketRef.current.emit('user_typing', { isTyping: true });
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        socketRef.current?.emit('user_typing', { isTyping: false });
+      }, 2000);
     }
   };
 
@@ -1023,17 +1125,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         </BotInfo>
       </ChatHeader>
 
-      <MessagesContainer isOpen={isOpen}>
+      <MessagesContainer isOpen={isOpen} ref={messagesContainerRef} onScroll={handleScroll}>
         {messages.map((message) => (
           <div key={message.id}>
             <Message isBot={message.isBot}>
               <MessageBubble isBot={message.isBot}>
-                {message.text}
+                {message.type === 'expert' && <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e91e63', marginBottom: 4 }}>❤️ CHUN❤️</div>}
+                {renderMessageText(message.text)}
+                <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4, textAlign: message.isBot ? 'left' : 'right' }}>
+                  {formatTime(message.timestamp)}
+                  {!message.isBot && message.status === 'sent' && ' ✓'}
+                </div>
               </MessageBubble>
             </Message>
             
-            {/* Feedback buttons for bot messages */}
-            {message.isBot && (
+            {/* Feedback buttons only for AI-generated responses */}
+            {message.isBot && message.type === 'ai' && (
               <>
                 <MessageActions>
                   <FeedbackButton 
@@ -1089,7 +1196,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           </div>
         ))}
         
-        {isTyping && (
+        {(isTyping || expertTyping) && (
           <Message isBot={true}>
             <TypingIndicator>
               <span></span>
@@ -1100,6 +1207,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         )}
         <div ref={messagesEndRef} />
       </MessagesContainer>
+
+      {/* Scroll to bottom button */}
+      {showScrollButton && isOpen && (
+        <button
+          onClick={scrollToBottom}
+          style={{
+            position: 'absolute', bottom: 160, right: 20,
+            width: 36, height: 36, borderRadius: '50%',
+            background: '#667eea', color: '#fff', border: 'none',
+            cursor: 'pointer', fontSize: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10,
+          }}
+          aria-label="Cuộn xuống cuối"
+        >
+          ↓
+        </button>
+      )}
 
       <QuickActions isOpen={isOpen}>
         {quickActions.map((action, index) => (
@@ -1142,12 +1266,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       </Toolbar>
 
       <InputContainer isOpen={isOpen}>
-        <MessageInput
+        <MessageTextarea
+          ref={textareaRef}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyPress}
           placeholder="Nhập câu hỏi về sức khỏe tâm lý..."
           disabled={isTyping || !isOnline}
+          rows={1}
         />
         <AnimatedButton
           variant="primary"

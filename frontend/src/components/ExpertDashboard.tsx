@@ -81,8 +81,10 @@ const ExpertDashboard: React.FC = () => {
   const [directChatUser, setDirectChatUser] = useState<ActiveUser | null>(null);
   const [directChatMessages, setDirectChatMessages] = useState<DirectChatMessage[]>([]);
   const [directMessageInput, setDirectMessageInput] = useState('');
+  const [userTypingInChat, setUserTypingInChat] = useState(false);
   const directChatUserRef = useRef<ActiveUser | null>(null);
   const directMessagesEndRef = useRef<HTMLDivElement>(null);
+  const directTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Cache chat history per user so switching doesn't lose messages
   const chatHistoryCache = useRef<Map<string, DirectChatMessage[]>>(new Map());
 
@@ -344,6 +346,17 @@ const ExpertDashboard: React.FC = () => {
           chatHistoryCache.current.set(key, updated);
           return updated;
         });
+        setUserTypingInChat(false);
+        // Play notification sound
+        try { new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA').play().catch(() => {}); } catch {}
+      }
+    });
+
+    // User typing indicator in direct chat
+    socket.on('user_typing', (data: { userId: string; sessionId: string; isTyping: boolean }) => {
+      const chatUser = directChatUserRef.current;
+      if (chatUser && data.userId === chatUser.userId && data.sessionId === chatUser.sessionId) {
+        setUserTypingInChat(data.isTyping);
       }
     });
 
@@ -847,6 +860,16 @@ const ExpertDashboard: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {userTypingInChat && (
+                    <div style={{ alignSelf: 'flex-start', maxWidth: '70%' }}>
+                      <div style={{
+                        padding: '10px 14px', borderRadius: 12, background: '#fff',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)', fontSize: 13, color: '#999',
+                      }}>
+                        👤 Đang nhập...
+                      </div>
+                    </div>
+                  )}
                   <div ref={directMessagesEndRef} />
                 </div>
 
@@ -858,7 +881,25 @@ const ExpertDashboard: React.FC = () => {
                   <input
                     type="text"
                     value={directMessageInput}
-                    onChange={e => setDirectMessageInput(e.target.value)}
+                    onChange={e => {
+                      setDirectMessageInput(e.target.value);
+                      // Emit typing indicator
+                      if (socketRef.current?.connected && directChatUser) {
+                        socketRef.current.emit('direct_typing', {
+                          userId: directChatUser.userId,
+                          sessionId: directChatUser.sessionId,
+                          isTyping: true,
+                        });
+                        if (directTypingTimeoutRef.current) clearTimeout(directTypingTimeoutRef.current);
+                        directTypingTimeoutRef.current = setTimeout(() => {
+                          socketRef.current?.emit('direct_typing', {
+                            userId: directChatUser.userId,
+                            sessionId: directChatUser.sessionId,
+                            isTyping: false,
+                          });
+                        }, 2000);
+                      }
+                    }}
                     placeholder="Nhập tin nhắn cho người dùng..."
                     style={{
                       flex: 1, padding: '10px 14px', border: '1px solid #ddd',

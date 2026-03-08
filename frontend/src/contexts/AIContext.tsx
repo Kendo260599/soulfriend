@@ -48,7 +48,7 @@ export interface AIContextType {
   insights: AIInsight[];
 
   // Methods
-  processMessage: (message: string, userProfile?: UserProfile, testResults?: TestResult[]) => Promise<AIResponse>;
+  processMessage: (message: string, userProfile?: UserProfile, testResults?: TestResult[], sessionId?: string) => Promise<AIResponse>;
   analyzeTestResults: (testResults: TestResult[]) => void;
   clearError: () => void;
   setOnlineStatus: (status: boolean) => void;
@@ -72,7 +72,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
   const processMessage = useCallback(async (
     message: string,
     userProfile: UserProfile = {},
-    testResults: TestResult[] = []
+    testResults: TestResult[] = [],
+    sessionId?: string
   ): Promise<AIResponse> => {
     setIsProcessing(true);
     setLastError(null);
@@ -98,7 +99,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
           body: JSON.stringify({
             message,
             userId: 'web_user',
-            sessionId: `session_${Date.now()}`,
+            sessionId: sessionId || `session_${Date.now()}`,
             context: {
               userProfile,
               testResults

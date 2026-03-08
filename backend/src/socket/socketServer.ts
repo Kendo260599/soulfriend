@@ -49,6 +49,11 @@ const getDirectChatRoom = (userId: string, sessionId: string) => `direct_${userI
 // Track connected users for expert direct chat
 const connectedUsers = new Map<string, { userId: string; sessionId: string; connectedAt: Date }>();
 
+// Simple rate limiter: userId -> { count, resetAt }
+const rateLimiter = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 15;       // max messages
+const RATE_WINDOW_MS = 30000; // per 30 seconds
+
 // =============================================================================
 // SOCKET.IO SERVER INITIALIZATION
 // =============================================================================
@@ -142,6 +147,19 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     socket.on('user_message', async (data: { message: string; timestamp: Date }) => {
       const { message, timestamp } = data;
 
+      // Rate limiting
+      const now = Date.now();
+      const entry = rateLimiter.get(userId);
+      if (entry && now < entry.resetAt) {
+        entry.count++;
+        if (entry.count > RATE_LIMIT) {
+          socket.emit('rate_limited', { message: 'Bạn đang gửi tin nhắn quá nhanh. Vui lòng chờ một chút.' });
+          return;
+        }
+      } else {
+        rateLimiter.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
+      }
+
       logger.info(`💬 User message: ${userId} | ${message.substring(0, 50)}...`);
 
       // Broadcast back to user room (for multi-device sync)
@@ -205,6 +223,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
     // Typing indicator
     socket.on('user_typing', (data: { isTyping: boolean }) => {
+      // Forward to intervention room
       getActiveInterventionForSession(sessionId).then(activeAlert => {
         if (activeAlert) {
           const interventionRoom = getInterventionRoom(activeAlert.id);
@@ -216,6 +235,14 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
           });
         }
       }).catch(() => {});
+
+      // Forward to direct chat room
+      const directRoom = getDirectChatRoom(userId, sessionId);
+      io.of('/expert').to(directRoom).emit('user_typing', {
+        userId,
+        sessionId,
+        isTyping: data.isTyping,
+      });
     });
 
     // Handle disconnection
@@ -491,6 +518,19 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const directRoom = getDirectChatRoom(userId, sessionId);
       socket.to(directRoom).emit('expert_message_sent', {
         expertId, expertName: 'CHUN❤️', message, timestamp
+      });
+    });
+
+    // Expert typing indicator in direct chat
+    socket.on('direct_typing', (data: {
+      userId: string;
+      sessionId: string;
+      isTyping: boolean;
+    }) => {
+      const userRoom = getUserRoom(data.userId, data.sessionId);
+      userNamespace.to(userRoom).emit('expert_typing', {
+        expertName: 'CHUN❤️',
+        isTyping: data.isTyping,
       });
     });
 

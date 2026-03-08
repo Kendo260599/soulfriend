@@ -83,6 +83,8 @@ const ExpertDashboard: React.FC = () => {
   const [directMessageInput, setDirectMessageInput] = useState('');
   const directChatUserRef = useRef<ActiveUser | null>(null);
   const directMessagesEndRef = useRef<HTMLDivElement>(null);
+  // Cache chat history per user so switching doesn't lose messages
+  const chatHistoryCache = useRef<Map<string, DirectChatMessage[]>>(new Map());
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -271,12 +273,17 @@ const ExpertDashboard: React.FC = () => {
     socket.on('direct_chat_history', (data: any) => {
       if (data.history && Array.isArray(data.history)) {
         const historyMsgs: DirectChatMessage[] = data.history.map((m: any) => ({
-          from: m.sender === 'expert' ? 'expert' as const : 'user' as const,
+          from: m.sender === 'expert' ? 'expert' as const : m.sender === 'system' ? 'system' as const : 'user' as const,
           message: m.message || m.text || '',
           timestamp: new Date(m.timestamp || Date.now()),
           expertName: m.senderName,
         }));
-        setDirectChatMessages(historyMsgs);
+        // Only replace if we don't have cached messages (avoid overwriting live chat)
+        const key = `${data.userId}_${data.sessionId}`;
+        if (!chatHistoryCache.current.has(key)) {
+          setDirectChatMessages(historyMsgs);
+          chatHistoryCache.current.set(key, historyMsgs);
+        }
       }
     });
 
@@ -304,9 +311,15 @@ const ExpertDashboard: React.FC = () => {
       // For direct chat
       const chatUser = directChatUserRef.current;
       if (chatUser && data.userId === chatUser.userId && data.sessionId === chatUser.sessionId) {
-        setDirectChatMessages(prev => [...prev, {
+        const newMsg: DirectChatMessage = {
           from: 'user', message: data.message, timestamp: new Date(data.timestamp || Date.now())
-        }]);
+        };
+        setDirectChatMessages(prev => {
+          const updated = [...prev, newMsg];
+          const key = `${chatUser.userId}_${chatUser.sessionId}`;
+          chatHistoryCache.current.set(key, updated);
+          return updated;
+        });
       }
     });
 
@@ -463,13 +476,24 @@ const ExpertDashboard: React.FC = () => {
   const handleStartDirectChat = (user: ActiveUser) => {
     if (!socketRef.current) return;
 
+    // Save current chat history before switching
+    const currentUser = directChatUserRef.current;
+    if (currentUser) {
+      const key = `${currentUser.userId}_${currentUser.sessionId}`;
+      chatHistoryCache.current.set(key, [...directChatMessages]);
+    }
+
     socketRef.current.emit('start_direct_chat', {
       userId: user.userId,
       sessionId: user.sessionId,
     });
 
     setDirectChatUser(user);
-    setDirectChatMessages([]);
+
+    // Restore cached history or clear for fresh load from server
+    const cachedKey = `${user.userId}_${user.sessionId}`;
+    const cached = chatHistoryCache.current.get(cachedKey);
+    setDirectChatMessages(cached || []);
   };
 
   // Send direct message
@@ -484,12 +508,19 @@ const ExpertDashboard: React.FC = () => {
       timestamp: new Date(),
     });
 
-    setDirectChatMessages(prev => [...prev, {
+    const newMsg: DirectChatMessage = {
       from: 'expert',
       expertName: expertInfo?.name,
       message: directMessageInput,
       timestamp: new Date(),
-    }]);
+    };
+    setDirectChatMessages(prev => {
+      const updated = [...prev, newMsg];
+      // Update cache
+      const key = `${directChatUser.userId}_${directChatUser.sessionId}`;
+      chatHistoryCache.current.set(key, updated);
+      return updated;
+    });
 
     setDirectMessageInput('');
   };
@@ -497,6 +528,10 @@ const ExpertDashboard: React.FC = () => {
   // End direct chat
   const handleEndDirectChat = () => {
     if (!directChatUser || !socketRef.current) return;
+
+    // Save history before clearing
+    const key = `${directChatUser.userId}_${directChatUser.sessionId}`;
+    chatHistoryCache.current.set(key, [...directChatMessages]);
 
     socketRef.current.emit('end_direct_chat', {
       userId: directChatUser.userId,

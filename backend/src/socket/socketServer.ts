@@ -184,9 +184,21 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
       // Also forward to direct chat room (if expert is chatting directly)
       const directRoom = getDirectChatRoom(userId, sessionId);
-      io.of('/expert').to(directRoom).emit('user_message', {
-        userId, sessionId, message, timestamp
-      });
+      const directRoomSockets = await io.of('/expert').in(directRoom).fetchSockets();
+      if (directRoomSockets.length > 0) {
+        io.of('/expert').to(directRoom).emit('user_message', {
+          userId, sessionId, message, timestamp
+        });
+        // Persist user message for direct chat history
+        InterventionMessage.create({
+          sessionId,
+          sender: 'user',
+          senderName: userId,
+          message,
+          timestamp: timestamp || new Date(),
+          read: false,
+        }).catch(err => logger.warn('Failed to persist direct chat user message:', err));
+      }
     });
 
     // Typing indicator
@@ -451,14 +463,14 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
       logger.info(`💬 Expert direct message to ${userId}: ${message.substring(0, 50)}...`);
 
-      // Persist to ConversationLog
-      ConversationLog.create({
+      // Persist to InterventionMessage for proper history retrieval
+      InterventionMessage.create({
         sessionId,
-        userId,
-        userMessage: '',
-        aiResponse: message,
+        sender: 'expert',
+        senderName: expertName,
+        message,
         timestamp: timestamp || new Date(),
-        metadata: { sender: 'expert', expertId, expertName },
+        read: true,
       }).catch(err => logger.warn('Failed to persist direct message:', err));
 
       // Send to user

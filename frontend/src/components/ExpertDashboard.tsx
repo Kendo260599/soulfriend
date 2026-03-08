@@ -150,6 +150,17 @@ const ExpertDashboard: React.FC = () => {
       setConnected(true);
       // Request active users list once connected
       socket.emit('get_active_users');
+
+      // Re-join direct chat room if we were in a direct chat (e.g. after reconnect)
+      const currentChat = directChatUserRef.current;
+      if (currentChat) {
+        socket.emit('start_direct_chat', {
+          userId: currentChat.userId,
+          sessionId: currentChat.sessionId,
+          rejoin: true,
+        });
+        console.log('🔄 Re-joined direct chat room after reconnect:', currentChat.userId);
+      }
     });
 
     socket.on('connect_error', (err) => {
@@ -501,6 +512,8 @@ const ExpertDashboard: React.FC = () => {
       sessionId: user.sessionId,
     });
 
+    // Set ref immediately so incoming user_message events are matched right away
+    directChatUserRef.current = user;
     setDirectChatUser(user);
 
     // Restore cached history or clear for fresh load from server

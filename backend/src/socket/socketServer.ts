@@ -185,10 +185,12 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Also forward to direct chat room (if expert is chatting directly)
       const directRoom = getDirectChatRoom(userId, sessionId);
       const directRoomSockets = await io.of('/expert').in(directRoom).fetchSockets();
+      logger.info(`📡 Direct chat room ${directRoom}: ${directRoomSockets.length} expert socket(s)`);
       if (directRoomSockets.length > 0) {
         io.of('/expert').to(directRoom).emit('user_message', {
           userId, sessionId, message, timestamp
         });
+        logger.info(`📤 User message forwarded to expert in direct chat: ${directRoom}`);
         // Persist user message for direct chat history
         InterventionMessage.create({
           sessionId,
@@ -426,28 +428,31 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     socket.on('start_direct_chat', async (data: {
       userId: string;
       sessionId: string;
+      rejoin?: boolean;
     }) => {
-      const { userId, sessionId } = data;
-      logger.info(`👨‍⚕️ Expert ${expertName} starting direct chat with ${userId}`);
+      const { userId, sessionId, rejoin } = data;
+      logger.info(`👨‍⚕️ Expert ${expertName} ${rejoin ? 're-joining' : 'starting'} direct chat with ${userId}`);
 
       const directRoom = getDirectChatRoom(userId, sessionId);
       socket.join(directRoom);
 
-      // Load conversation history
-      try {
-        const history = await getSessionHistory(sessionId);
-        socket.emit('direct_chat_history', { userId, sessionId, history });
-      } catch (error) {
-        socket.emit('direct_chat_history', { userId, sessionId, history: [] });
-      }
+      // Load conversation history (skip on rejoin — frontend already has it)
+      if (!rejoin) {
+        try {
+          const history = await getSessionHistory(sessionId);
+          socket.emit('direct_chat_history', { userId, sessionId, history });
+        } catch (error) {
+          socket.emit('direct_chat_history', { userId, sessionId, history: [] });
+        }
 
-      // Notify user
-      const userRoom = getUserRoom(userId, sessionId);
-      userNamespace.to(userRoom).emit('expert_joined', {
-        expertName: 'CHUN❤️',
-        message: `❤️ CHUN❤️ đã tham gia cuộc trò chuyện.`,
-        timestamp: new Date()
-      });
+        // Notify user (only on first join, not re-join after reconnect)
+        const userRoom = getUserRoom(userId, sessionId);
+        userNamespace.to(userRoom).emit('expert_joined', {
+          expertName: 'CHUN❤️',
+          message: `❤️ CHUN❤️ đã tham gia cuộc trò chuyện.`,
+          timestamp: new Date()
+        });
+      }
 
       socket.emit('direct_chat_started', { userId, sessionId, success: true });
     });

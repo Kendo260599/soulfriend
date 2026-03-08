@@ -45,6 +45,19 @@ interface Message {
   timestamp: Date;
 }
 
+interface ActiveUser {
+  userId: string;
+  sessionId: string;
+  connectedAt: Date;
+}
+
+interface DirectChatMessage {
+  from: 'user' | 'expert' | 'system';
+  expertName?: string;
+  message: string;
+  timestamp: Date;
+}
+
 const ExpertDashboard: React.FC = () => {
   const navigate = useNavigate();
   const socketRef = useRef<Socket | null>(null);
@@ -58,15 +71,27 @@ const ExpertDashboard: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [availability, setAvailability] = useState('available');
-  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact' | 'pge' | 'monitor' | 'report'>('crisis');
+  const [dashboardTab, setDashboardTab] = useState<'crisis' | 'review' | 'impact' | 'pge' | 'monitor' | 'report' | 'chat'>('crisis');
   const [monitoringUsers, setMonitoringUsers] = useState<any[]>([]);
   const [monitoringAlerts, setMonitoringAlerts] = useState<any[]>([]);
   const [monitoringStats, setMonitoringStats] = useState<any>(null);
 
-  // Keep ref in sync with state
+  // Direct Chat state
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [directChatUser, setDirectChatUser] = useState<ActiveUser | null>(null);
+  const [directChatMessages, setDirectChatMessages] = useState<DirectChatMessage[]>([]);
+  const [directMessageInput, setDirectMessageInput] = useState('');
+  const directChatUserRef = useRef<ActiveUser | null>(null);
+  const directMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Keep refs in sync with state
   useEffect(() => {
     activeInterventionRef.current = activeIntervention;
   }, [activeIntervention]);
+
+  useEffect(() => {
+    directChatUserRef.current = directChatUser;
+  }, [directChatUser]);
 
   // Load expert info from localStorage
   useEffect(() => {
@@ -134,22 +159,6 @@ const ExpertDashboard: React.FC = () => {
       }
     });
 
-    // User message during intervention
-    socket.on('user_message', (data: any) => {
-      console.log('💬 User message:', data);
-      const currentIntervention = activeInterventionRef.current;
-      if (currentIntervention && data.alertId === currentIntervention.alertId) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            from: 'user',
-            message: data.message,
-            timestamp: new Date(data.timestamp),
-          },
-        ]);
-      }
-    });
-
     // PGE Monitoring events (Phase 13)
     socket.on('pge_monitoring_alert', (data: any) => {
       console.log('📡 PGE Monitoring Alert:', data);
@@ -212,6 +221,79 @@ const ExpertDashboard: React.FC = () => {
       }
     });
 
+    // ═══ Direct Chat Events ═══
+
+    // Active users list
+    socket.on('active_users', (users: ActiveUser[]) => {
+      setActiveUsers(users);
+    });
+
+    // New user connected
+    socket.on('user_connected', (user: ActiveUser) => {
+      setActiveUsers(prev => {
+        if (prev.find(u => u.userId === user.userId && u.sessionId === user.sessionId)) return prev;
+        return [...prev, user];
+      });
+    });
+
+    // User disconnected
+    socket.on('user_disconnected', (data: { userId: string; sessionId: string }) => {
+      setActiveUsers(prev => prev.filter(u => !(u.userId === data.userId && u.sessionId === data.sessionId)));
+      // If chatting with this user, show disconnect notice
+      const chatUser = directChatUserRef.current;
+      if (chatUser && chatUser.userId === data.userId && chatUser.sessionId === data.sessionId) {
+        setDirectChatMessages(prev => [...prev, {
+          from: 'system', message: '⚠️ Người dùng đã ngắt kết nối.', timestamp: new Date()
+        }]);
+      }
+    });
+
+    // Direct chat history loaded
+    socket.on('direct_chat_history', (data: any) => {
+      if (data.history && Array.isArray(data.history)) {
+        const historyMsgs: DirectChatMessage[] = data.history.map((m: any) => ({
+          from: m.sender === 'expert' ? 'expert' as const : 'user' as const,
+          message: m.message || m.text || '',
+          timestamp: new Date(m.timestamp || Date.now()),
+          expertName: m.senderName,
+        }));
+        setDirectChatMessages(historyMsgs);
+      }
+    });
+
+    // Direct chat started confirmation
+    socket.on('direct_chat_started', (data: any) => {
+      console.log('✅ Direct chat started:', data);
+    });
+
+    // Direct chat ended confirmation
+    socket.on('direct_chat_ended', (data: any) => {
+      console.log('✅ Direct chat ended:', data);
+    });
+
+    // User message in direct chat (forwarded from user namespace)
+    socket.on('user_message', (data: any) => {
+      // For crisis intervention
+      const currentIntervention = activeInterventionRef.current;
+      if (currentIntervention && data.alertId === currentIntervention.alertId) {
+        setMessages((prev) => [
+          ...prev,
+          { from: 'user', message: data.message, timestamp: new Date(data.timestamp) },
+        ]);
+      }
+
+      // For direct chat
+      const chatUser = directChatUserRef.current;
+      if (chatUser && data.userId === chatUser.userId && data.sessionId === chatUser.sessionId) {
+        setDirectChatMessages(prev => [...prev, {
+          from: 'user', message: data.message, timestamp: new Date(data.timestamp || Date.now())
+        }]);
+      }
+    });
+
+    // Request active users list on connect
+    socket.emit('get_active_users');
+
     return () => {
       console.log('🔌 Disconnecting Socket.io...');
       socket.disconnect();
@@ -222,6 +304,11 @@ const ExpertDashboard: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-scroll direct chat messages
+  useEffect(() => {
+    directMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [directChatMessages]);
 
   // Request notification permission
   useEffect(() => {
@@ -354,6 +441,56 @@ const ExpertDashboard: React.FC = () => {
     });
   };
 
+  // ═══ Direct Chat Handlers ═══
+
+  // Start direct chat with a user
+  const handleStartDirectChat = (user: ActiveUser) => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit('start_direct_chat', {
+      userId: user.userId,
+      sessionId: user.sessionId,
+    });
+
+    setDirectChatUser(user);
+    setDirectChatMessages([]);
+  };
+
+  // Send direct message
+  const handleSendDirectMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directMessageInput.trim() || !directChatUser || !socketRef.current) return;
+
+    socketRef.current.emit('direct_message', {
+      userId: directChatUser.userId,
+      sessionId: directChatUser.sessionId,
+      message: directMessageInput,
+      timestamp: new Date(),
+    });
+
+    setDirectChatMessages(prev => [...prev, {
+      from: 'expert',
+      expertName: expertInfo?.name,
+      message: directMessageInput,
+      timestamp: new Date(),
+    }]);
+
+    setDirectMessageInput('');
+  };
+
+  // End direct chat
+  const handleEndDirectChat = () => {
+    if (!directChatUser || !socketRef.current) return;
+
+    socketRef.current.emit('end_direct_chat', {
+      userId: directChatUser.userId,
+      sessionId: directChatUser.sessionId,
+    });
+
+    setDirectChatUser(null);
+    setDirectChatMessages([]);
+  };
+
   if (!expertInfo) {
     return <div>Loading...</div>;
   }
@@ -462,6 +599,27 @@ const ExpertDashboard: React.FC = () => {
         >
           📄 Báo Cáo
         </button>
+        <button
+          onClick={() => { setDashboardTab('chat'); socketRef.current?.emit('get_active_users'); }}
+          style={{
+            padding: '12px 24px', border: 'none', background: 'none', cursor: 'pointer',
+            fontWeight: dashboardTab === 'chat' ? 600 : 400, fontSize: 14,
+            color: dashboardTab === 'chat' ? '#1565c0' : '#666',
+            borderBottom: `3px solid ${dashboardTab === 'chat' ? '#1565c0' : 'transparent'}`,
+            marginBottom: -2, position: 'relative',
+          }}
+        >
+          💬 Direct Chat
+          {activeUsers.length > 0 && (
+            <span style={{
+              position: 'absolute', top: 6, right: 4,
+              background: '#4caf50', color: '#fff', fontSize: 10,
+              borderRadius: '50%', width: 18, height: 18,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700,
+            }}>{activeUsers.length}</span>
+          )}
+        </button>
       </div>
 
       {dashboardTab === 'review' ? (
@@ -478,6 +636,170 @@ const ExpertDashboard: React.FC = () => {
         />
       ) : dashboardTab === 'report' ? (
         <ClinicalReportView />
+      ) : dashboardTab === 'chat' ? (
+        /* ═══ Direct Chat Tab ═══ */
+        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', height: 'calc(100vh - 140px)' }}>
+          {/* Active Users Sidebar */}
+          <div style={{ borderRight: '1px solid #e0e0e0', overflowY: 'auto', background: '#fafafa' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e0e0e0' }}>
+              <h3 style={{ margin: 0, fontSize: 15, color: '#1565c0' }}>
+                🟢 Người dùng đang online ({activeUsers.length})
+              </h3>
+            </div>
+            {activeUsers.length === 0 ? (
+              <div style={{ padding: 30, textAlign: 'center', color: '#999' }}>
+                <p style={{ fontSize: 28, margin: 0 }}>😴</p>
+                <p style={{ fontSize: 13 }}>Không có người dùng nào đang online</p>
+              </div>
+            ) : (
+              <div style={{ padding: '8px' }}>
+                {activeUsers.map(user => (
+                  <div
+                    key={`${user.userId}_${user.sessionId}`}
+                    onClick={() => handleStartDirectChat(user)}
+                    style={{
+                      padding: '12px 14px', marginBottom: 6, borderRadius: 8, cursor: 'pointer',
+                      background: directChatUser?.userId === user.userId && directChatUser?.sessionId === user.sessionId ? '#e3f2fd' : '#fff',
+                      border: directChatUser?.userId === user.userId && directChatUser?.sessionId === user.sessionId ? '2px solid #1565c0' : '1px solid #e0e0e0',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{
+                        width: 10, height: 10, borderRadius: '50%', background: '#4caf50',
+                        display: 'inline-block', flexShrink: 0,
+                      }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
+                          {user.userId.substring(0, 16)}...
+                        </div>
+                        <div style={{ fontSize: 11, color: '#999' }}>
+                          Session: {user.sessionId.substring(0, 10)}...
+                        </div>
+                        <div style={{ fontSize: 10, color: '#aaa' }}>
+                          Kết nối: {new Date(user.connectedAt).toLocaleTimeString('vi-VN')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Chat Area */}
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {directChatUser ? (
+              <>
+                {/* Chat Header */}
+                <div style={{
+                  padding: '12px 20px', borderBottom: '1px solid #e0e0e0', background: '#fff',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 15 }}>
+                      💬 Chat với {directChatUser.userId.substring(0, 16)}...
+                    </h3>
+                    <span style={{ fontSize: 11, color: '#666' }}>
+                      Session: {directChatUser.sessionId.substring(0, 20)}...
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleEndDirectChat}
+                    style={{
+                      padding: '8px 16px', background: '#d32f2f', color: '#fff',
+                      border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13,
+                    }}
+                  >
+                    Kết thúc chat
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div style={{
+                  flex: 1, overflowY: 'auto', padding: '16px 20px',
+                  background: '#f5f5f5', display: 'flex', flexDirection: 'column', gap: 8,
+                }}>
+                  {directChatMessages.map((msg, idx) => (
+                    <div key={idx} style={{
+                      alignSelf: msg.from === 'expert' ? 'flex-end' : msg.from === 'system' ? 'center' : 'flex-start',
+                      maxWidth: msg.from === 'system' ? '80%' : '70%',
+                    }}>
+                      <div style={{
+                        padding: '10px 14px', borderRadius: 12,
+                        background: msg.from === 'expert' ? '#1565c0' : msg.from === 'system' ? '#fff3e0' : '#fff',
+                        color: msg.from === 'expert' ? '#fff' : '#333',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        fontSize: 13,
+                      }}>
+                        {msg.from === 'user' && (
+                          <div style={{ fontSize: 11, color: '#1565c0', fontWeight: 600, marginBottom: 4 }}>
+                            👤 Người dùng
+                          </div>
+                        )}
+                        {msg.from === 'system' && (
+                          <div style={{ fontSize: 11, color: '#e65100', fontWeight: 600, marginBottom: 4 }}>
+                            🔔 Hệ thống
+                          </div>
+                        )}
+                        <div>{msg.message}</div>
+                        <div style={{
+                          fontSize: 10, marginTop: 4, textAlign: 'right',
+                          color: msg.from === 'expert' ? 'rgba(255,255,255,0.7)' : '#999',
+                        }}>
+                          {new Date(msg.timestamp).toLocaleTimeString('vi-VN')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={directMessagesEndRef} />
+                </div>
+
+                {/* Input Form */}
+                <form onSubmit={handleSendDirectMessage} style={{
+                  display: 'flex', gap: 8, padding: '12px 20px',
+                  borderTop: '1px solid #e0e0e0', background: '#fff',
+                }}>
+                  <input
+                    type="text"
+                    value={directMessageInput}
+                    onChange={e => setDirectMessageInput(e.target.value)}
+                    placeholder="Nhập tin nhắn cho người dùng..."
+                    style={{
+                      flex: 1, padding: '10px 14px', border: '1px solid #ddd',
+                      borderRadius: 8, fontSize: 14, outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!directMessageInput.trim()}
+                    style={{
+                      padding: '10px 24px', background: directMessageInput.trim() ? '#1565c0' : '#ccc',
+                      color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
+                      fontSize: 14, fontWeight: 600,
+                    }}
+                  >
+                    Gửi
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#fafafa',
+              }}>
+                <div style={{ textAlign: 'center', color: '#999' }}>
+                  <p style={{ fontSize: 48, margin: 0 }}>💬</p>
+                  <h3 style={{ color: '#666', margin: '12px 0 8px' }}>Direct Chat</h3>
+                  <p style={{ fontSize: 13 }}>Chọn người dùng từ danh sách bên trái để bắt đầu trò chuyện</p>
+                  <p style={{ fontSize: 12, color: '#aaa' }}>
+                    Tin nhắn của bạn sẽ hiển thị trực tiếp trong chatbot của người dùng
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
       <div className="dashboard-content">
         {/* Alerts Sidebar */}

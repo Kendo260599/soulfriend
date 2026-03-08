@@ -44,6 +44,10 @@ interface HITLAlert {
 const getUserRoom = (userId: string, sessionId: string) => `user_${userId}_${sessionId}`;
 const getExpertRoom = () => 'expert_dashboard';
 const getInterventionRoom = (alertId: string) => `intervention_${alertId}`;
+const getDirectChatRoom = (userId: string, sessionId: string) => `direct_${userId}_${sessionId}`;
+
+// Track connected users for expert direct chat
+const connectedUsers = new Map<string, { userId: string; sessionId: string; connectedAt: Date }>();
 
 // =============================================================================
 // SOCKET.IO SERVER INITIALIZATION
@@ -120,6 +124,14 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     const userRoom = getUserRoom(userId, sessionId);
     socket.join(userRoom);
 
+    // Track connected user
+    connectedUsers.set(`${userId}_${sessionId}`, { userId, sessionId, connectedAt: new Date() });
+
+    // Notify expert dashboard about new user
+    io.of('/expert').to(getExpertRoom()).emit('user_connected', {
+      userId, sessionId, connectedAt: new Date()
+    });
+
     // Handle user messages
     socket.on('user_message', async (data: { message: string; timestamp: Date }) => {
       const { message, timestamp } = data;
@@ -163,6 +175,12 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       } catch (error) {
         logger.error('Error checking active intervention:', error);
       }
+
+      // Also forward to direct chat room (if expert is chatting directly)
+      const directRoom = getDirectChatRoom(userId, sessionId);
+      io.of('/expert').to(directRoom).emit('user_message', {
+        userId, sessionId, message, timestamp
+      });
     });
 
     // Typing indicator
@@ -183,6 +201,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     // Handle disconnection
     socket.on('disconnect', () => {
       logger.info(`👤 User disconnected: ${userId}`);
+      connectedUsers.delete(`${userId}_${sessionId}`);
+      io.of('/expert').to(getExpertRoom()).emit('user_disconnected', { userId, sessionId });
     });
 
     // Send welcome message
@@ -374,6 +394,100 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       }
     });
 
+    // =========================================================================
+    // DIRECT CHAT — Expert initiates conversation with any active user
+    // =========================================================================
+
+    // Expert requests list of connected users
+    socket.on('get_active_users', () => {
+      const users = Array.from(connectedUsers.values());
+      socket.emit('active_users', users);
+    });
+
+    // Expert starts direct chat with a user
+    socket.on('start_direct_chat', async (data: {
+      userId: string;
+      sessionId: string;
+    }) => {
+      const { userId, sessionId } = data;
+      logger.info(`👨‍⚕️ Expert ${expertName} starting direct chat with ${userId}`);
+
+      const directRoom = getDirectChatRoom(userId, sessionId);
+      socket.join(directRoom);
+
+      // Load conversation history
+      try {
+        const history = await getSessionHistory(sessionId);
+        socket.emit('direct_chat_history', { userId, sessionId, history });
+      } catch (error) {
+        socket.emit('direct_chat_history', { userId, sessionId, history: [] });
+      }
+
+      // Notify user
+      const userRoom = getUserRoom(userId, sessionId);
+      userNamespace.to(userRoom).emit('expert_joined', {
+        expertName,
+        message: `👨‍⚕️ Chuyên gia ${expertName} đã tham gia cuộc trò chuyện.`,
+        timestamp: new Date()
+      });
+
+      socket.emit('direct_chat_started', { userId, sessionId, success: true });
+    });
+
+    // Expert sends direct message to user (no alertId needed)
+    socket.on('direct_message', async (data: {
+      userId: string;
+      sessionId: string;
+      message: string;
+      timestamp: Date;
+    }) => {
+      const { userId, sessionId, message, timestamp } = data;
+
+      logger.info(`💬 Expert direct message to ${userId}: ${message.substring(0, 50)}...`);
+
+      // Persist to ConversationLog
+      ConversationLog.create({
+        sessionId,
+        userId,
+        userMessage: '',
+        aiResponse: message,
+        timestamp: timestamp || new Date(),
+        metadata: { sender: 'expert', expertId, expertName },
+      }).catch(err => logger.warn('Failed to persist direct message:', err));
+
+      // Send to user
+      const userRoom = getUserRoom(userId, sessionId);
+      userNamespace.to(userRoom).emit('expert_message', {
+        from: 'expert',
+        expertName,
+        message,
+        timestamp
+      });
+
+      // Broadcast to other experts in same direct chat
+      const directRoom = getDirectChatRoom(userId, sessionId);
+      socket.to(directRoom).emit('expert_message_sent', {
+        expertId, expertName, message, timestamp
+      });
+    });
+
+    // Expert ends direct chat
+    socket.on('end_direct_chat', (data: { userId: string; sessionId: string }) => {
+      const { userId, sessionId } = data;
+      const directRoom = getDirectChatRoom(userId, sessionId);
+      socket.leave(directRoom);
+
+      // Notify user
+      const userRoom = getUserRoom(userId, sessionId);
+      userNamespace.to(userRoom).emit('intervention_ended', {
+        message: '👨‍⚕️ Chuyên gia đã kết thúc cuộc trò chuyện. Bạn có thể tiếp tục chat với AI.',
+        timestamp: new Date()
+      });
+
+      socket.emit('direct_chat_ended', { userId, sessionId, success: true });
+      logger.info(`👨‍⚕️ Expert ${expertName} ended direct chat with ${userId}`);
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
       logger.info(`👨‍⚕️ Expert disconnected: ${expertName}`);
@@ -425,7 +539,11 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
   logger.info('✅ Socket.io server initialized successfully');
   logger.info('   - User namespace: /user');
   logger.info('   - Expert namespace: /expert');
+  logger.info('   - Direct chat: enabled');
   logger.info('   - PGE monitoring broadcaster: attached');
+
+  // Expose connected users for REST API access
+  (io as any).getConnectedUsers = () => Array.from(connectedUsers.values());
 
   return io;
 }

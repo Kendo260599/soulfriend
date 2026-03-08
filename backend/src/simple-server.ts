@@ -113,7 +113,7 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
     console.log(`📨 User (${userId}): ${message}`);
 
     // Generate AI response using OpenAI
-    const systemPrompt = `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+    const systemPrompt = `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
     
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý
@@ -124,7 +124,7 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
 🌸 TÍNH CÁCH:
 - Ấm áp, đồng cảm, không phán xét
 - Chuyên nghiệp nhưng gần gũi
-- Xưng hô: "Mình" (CHUN) - "Bạn" (User)`;
+- Xưng hô: "Mình" (𝑺𝒆𝒄𝒓𝒆𝒕❤️) - "Bạn" (User)`;
 
     const response = await openAIClient.post<any>('/chat/completions', {
       model: 'gpt-4o-mini',

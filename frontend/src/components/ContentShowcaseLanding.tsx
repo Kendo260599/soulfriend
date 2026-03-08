@@ -543,7 +543,7 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
     },
     {
       icon: '🤖',
-      title: 'AI Chatbot CHUN',
+      title: 'AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️',
       description: 'Trợ lý AI chuyên nghiệp với khả năng phát hiện khủng hoảng và hỗ trợ 24/7',
       highlights: [
         'Phát hiện khủng hoảng tự động',
@@ -597,7 +597,7 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
     },
     {
       icon: '🤖',
-      title: 'AI Chatbot CHUN',
+      title: 'AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️',
       count: '24/7 support',
       description: 'Trợ lý AI với khả năng phát hiện khủng hoảng'
     },
@@ -649,7 +649,7 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
           </HeroTitle>
           
           <HeroSubtitle>
-            DASS-21 Assessment + AI Chatbot CHUN + Dữ liệu Nghiên cứu Việt Nam
+            DASS-21 Assessment + AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️ + Dữ liệu Nghiên cứu Việt Nam
           </HeroSubtitle>
           
           <HeroDescription>

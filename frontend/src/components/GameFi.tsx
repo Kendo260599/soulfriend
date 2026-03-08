@@ -347,7 +347,7 @@ const GameFi: React.FC = () => {
     {
       icon: '💬',
       title: 'Trò chuyện với AI',
-      description: 'Chat với AI CHUN ít nhất 3 tin nhắn về cảm xúc của bạn',
+      description: 'Chat với AI 𝑺𝒆𝒄𝒓𝒆𝒕❤️ ít nhất 3 tin nhắn về cảm xúc của bạn',
       reward: '+30 XP',
       action: () => {},
     },

@@ -14,9 +14,9 @@ test('renders main navigation button', () => {
   expect(startButton).toBeInTheDocument();
 });
 
-test('renders AI Chatbot CHUN features', () => {
+test('renders AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️ features', () => {
   render(<App />);
-  const aiChatbots = screen.getAllByText(/AI Chatbot CHUN/i);
+  const aiChatbots = screen.getAllByText(/AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️/i);
   expect(aiChatbots.length).toBeGreaterThan(0);
   expect(aiChatbots[0]).toBeInTheDocument();
 });

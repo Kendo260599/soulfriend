@@ -379,7 +379,7 @@ const FeaturesShowcase: React.FC = () => {
       after: 'Chủ động tìm chuyên gia, cải thiện rõ rệt',
     },
     {
-      text: 'Là một người mẹ đơn thân, tôi luôn ưu tiên con cái và quên chăm sóc bản thân. AI chatbot CHUN giúp tôi chia sẻ khi không có ai để nói. Tính năng phát hiện khủng hoảng cũng rất quan trọng — nó đã kết nối tôi với đường dây hỗ trợ khi tôi cần nhất.',
+      text: 'Là một người mẹ đơn thân, tôi luôn ưu tiên con cái và quên chăm sóc bản thân. AI chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️ giúp tôi chia sẻ khi không có ai để nói. Tính năng phát hiện khủng hoảng cũng rất quan trọng — nó đã kết nối tôi với đường dây hỗ trợ khi tôi cần nhất.',
       author: 'Trần Minh Châu',
       role: 'Mẹ đơn thân, 35 tuổi',
       before: 'Kiệt sức, không có ai chia sẻ',

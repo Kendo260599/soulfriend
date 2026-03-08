@@ -1,4 +1,4 @@
-# 🎨 CONTENT SHOWCASE DESIGN SPECIFICATIONS
+﻿# 🎨 CONTENT SHOWCASE DESIGN SPECIFICATIONS
 
 **Date:** 2025-10-08  
 **Purpose:** Redesign SoulFriend để showcase nội dung sâu  
@@ -36,7 +36,7 @@ const heroSection = {
   layout: "Full-width with gradient background",
   content: {
     title: "SoulFriend - Nền tảng Sức khỏe Tâm lý Chuyên nghiệp",
-    subtitle: "13 Tests Tâm lý + AI Chatbot CHUN + Dữ liệu Nghiên cứu Việt Nam",
+    subtitle: "13 Tests Tâm lý + AI Chatbot  + Dữ liệu Nghiên cứu Việt Nam",
     description: "Hỗ trợ phụ nữ Việt Nam với công nghệ AI tiên tiến và nghiên cứu khoa học sâu sắc",
     cta: {
       primary: "Khám phá ngay",
@@ -70,7 +70,7 @@ const featureShowcase = {
       visual: "Animated test cards với progress bars"
     },
     {
-      title: "🤖 AI Chatbot CHUN",
+      title: "🤖 AI Chatbot ",
       description: "Trợ lý AI chuyên nghiệp với Crisis Detection",
       highlights: [
         "96% độ chính xác phát hiện tự tử",
@@ -118,7 +118,7 @@ const contentDeepDive = {
       }
     },
     {
-      name: "AI Chatbot CHUN",
+      name: "AI Chatbot ",
       count: "24/7 support",
       description: "Trợ lý AI với khả năng phát hiện khủng hoảng",
       icon: "🤖",
@@ -201,7 +201,7 @@ const contentCards = {
     visual: "Animated progress bar với test completion"
   },
   ai: {
-    title: "AI Chatbot CHUN",
+    title: "AI Chatbot ",
     description: "Trợ lý AI 24/7 với khả năng phát hiện khủng hoảng",
     preview: {
       sampleConversation: "3-4 tin nhắn mẫu",
@@ -260,7 +260,7 @@ const mainMenu = {
     },
     "AI Chatbot": {
       path: "/chatbot",
-      description: "Trò chuyện với CHUN",
+      description: "Trò chuyện với ",
       icon: "🤖",
       submenu: [
         "Trò chuyện ngay",
@@ -339,7 +339,7 @@ const quickAccess = {
   },
   "AI Chatbot": {
     "Trò chuyện": {
-      description: "Chat với CHUN",
+      description: "Chat với ",
       icon: "💬"
     },
     "Crisis Demo": {

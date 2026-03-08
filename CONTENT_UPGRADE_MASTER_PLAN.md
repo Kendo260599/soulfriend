@@ -1,4 +1,4 @@
-# 🎯 SOULFRIEND CONTENT UPGRADE MASTER PLAN
+﻿# 🎯 SOULFRIEND CONTENT UPGRADE MASTER PLAN
 
 **Date:** 2025-10-08  
 **Version:** 1.0  
@@ -43,7 +43,7 @@
 👶 Parental Stress: Căng thẳng làm cha mẹ
 ```
 
-#### **2. AI Chatbot CHUN Chuyên nghiệp**
+#### **2. AI Chatbot  Chuyên nghiệp**
 ```
 🤖 Personality: Chuyên nghiệp, Hiểu biết, Ủng hộ, Nhiệt tình
 🚨 Crisis Detection: 96% độ chính xác phát hiện tự tử
@@ -78,12 +78,12 @@
 const landingPageStructure = {
   hero: {
     title: "SoulFriend - AI-Powered Mental Health Platform",
-    subtitle: "13 Psychological Tests + AI Chatbot CHUN",
+    subtitle: "13 Psychological Tests + AI Chatbot ",
     cta: "Khám phá ngay"
   },
   features: {
     tests: "13 Tests Tâm lý Chuyên nghiệp",
-    ai: "AI Chatbot CHUN với Crisis Detection",
+    ai: "AI Chatbot  với Crisis Detection",
     research: "Dữ liệu Nghiên cứu Việt Nam",
     support: "HITL Crisis Support System"
   },

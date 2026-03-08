@@ -1,4 +1,4 @@
-# 🚀 PHASE 1: CONTENT VISIBILITY IMPLEMENTATION
+﻿# 🚀 PHASE 1: CONTENT VISIBILITY IMPLEMENTATION
 
 **Date:** 2025-10-08  
 **Timeline:** 1-2 ngày  
@@ -33,7 +33,7 @@
 ```typescript
 const heroSection = {
   title: "SoulFriend - AI-Powered Mental Health Platform",
-  subtitle: "13 Psychological Tests + AI Chatbot CHUN",
+  subtitle: "13 Psychological Tests + AI Chatbot ",
   description: "Nền tảng sức khỏe tâm lý chuyên nghiệp dành cho phụ nữ Việt Nam",
   cta: {
     primary: "Khám phá ngay",
@@ -41,7 +41,7 @@ const heroSection = {
   },
   stats: {
     tests: "13 Tests Tâm lý",
-    ai: "AI Chatbot CHUN",
+    ai: "AI Chatbot ",
     research: "Dữ liệu Nghiên cứu",
     users: "1000+ Người dùng"
   }
@@ -64,7 +64,7 @@ const featureShowcase = {
     cta: "Xem tất cả tests"
   },
   ai: {
-    title: "AI Chatbot CHUN",
+    title: "AI Chatbot ",
     description: "Trợ lý AI chuyên nghiệp với Crisis Detection",
     highlights: [
       "96% độ chính xác phát hiện tự tử",
@@ -101,7 +101,7 @@ const contentDeepDive = {
       icon: "🧠"
     },
     {
-      name: "AI Chatbot CHUN",
+      name: "AI Chatbot ",
       count: "24/7 support",
       description: "Trợ lý AI với khả năng phát hiện khủng hoảng",
       icon: "🤖"
@@ -147,7 +147,7 @@ const contentCards = {
     cta: "Bắt đầu test"
   },
   ai: {
-    title: "AI Chatbot CHUN",
+    title: "AI Chatbot ",
     description: "Trợ lý AI 24/7",
     preview: "Demo conversation",
     cta: "Trò chuyện"
@@ -205,7 +205,7 @@ const quickAccess = {
     "GAD-7 (2-3 phút)"
   ],
   "AI Chatbot": [
-    "Trò chuyện với CHUN",
+    "Trò chuyện với ",
     "Crisis Detection Demo",
     "HITL System Info"
   ],

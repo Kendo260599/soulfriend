@@ -56,10 +56,10 @@ export class OpenAIService {
     }
 
     try {
-      // Use custom system prompt if provided, otherwise use default CHUN prompt
+      // Use custom system prompt if provided, otherwise use default 𝑺𝒆𝒄𝒓𝒆𝒕❤️ prompt
       const systemPrompt =
         context?.systemPrompt ||
-        `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+        `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý
@@ -72,7 +72,7 @@ export class OpenAIService {
 - Ấm áp, đồng cảm, không phán xét
 - Chuyên nghiệp nhưng gần gũi
 - Sử dụng emoji phù hợp (💙 🌸 ⚠️)
-- Xưng hô: "Mình" (CHUN) - "Bạn" (User)
+- Xưng hô: "Mình" (𝑺𝒆𝒄𝒓𝒆𝒕❤️) - "Bạn" (User)
 
 🚨 CRISIS PROTOCOL:
 - Nếu phát hiện ý định tự tử: Hotline NGAY 1900 599 958
@@ -160,7 +160,7 @@ export class OpenAIService {
 
     try {
       const systemPrompt =
-        'Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam. Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt và xưng hô "Mình" (CHUN) - "Bạn" (User).';
+        'Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam. Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt và xưng hô "Mình" (𝑺𝒆𝒄𝒓𝒆𝒕❤️) - "Bạn" (User).';
 
       // Build conversation history
       const messages = [

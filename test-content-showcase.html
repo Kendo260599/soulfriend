@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -544,10 +544,10 @@
                     }
                 },
                 {
-                    name: 'AI Chatbot CHUN',
+                    name: 'AI Chatbot ',
                     test: () => {
                         return fetchData(FRONTEND_URL).then(result => {
-                            if (result.ok && result.raw.includes('AI Chatbot CHUN')) {
+                            if (result.ok && result.raw.includes('AI Chatbot ')) {
                                 return { status: 'PASS', message: 'AI Chatbot feature found' };
                             }
                             return { status: 'FAIL', message: 'AI Chatbot feature not found' };

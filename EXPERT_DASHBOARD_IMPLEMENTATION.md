@@ -1,4 +1,4 @@
-# 🩺 Expert Dashboard - Real-Time HITL Implementation
+﻿# 🩺 Expert Dashboard - Real-Time HITL Implementation
 
 ## ✅ HOÀN TẤT - Implementation Complete!
 
@@ -237,7 +237,7 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/expert/register
   -d '{
     "email": "kendo2605@gmail.com",
     "password": "SecurePassword123!",
-    "name": "Chuyên Gia Tâm Lý CHUN",
+    "name": "Chuyên Gia Tâm Lý ",
     "role": "crisis_counselor",
     "phone": "0938021111",
     "specialty": ["crisis_intervention", "mental_health"]
@@ -299,11 +299,11 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/chatbot/message
 
 1. **Expert:** Click on alert in sidebar → Join intervention
 2. **User:** Should see system message: "👨‍⚕️ Chuyên gia... đã tham gia"
-3. **User:** ChatBot header changes to "Chuyên gia CHUN" with 👨‍⚕️
+3. **User:** ChatBot header changes to "Chuyên gia " with 👨‍⚕️
 4. **User:** Type message: "Xin chào"
 5. **Expert:** Should see user message in real-time
 6. **Expert:** Reply: "Chào bạn, tôi ở đây để hỗ trợ"
-7. **User:** Should see expert message with "👨‍⚕️ **Chuyên gia CHUN**:"
+7. **User:** Should see expert message with "👨‍⚕️ **Chuyên gia **:"
 8. **Expert:** Click "Kết thúc can thiệp"
 9. **User:** Should see intervention ended message with contact info
 
@@ -313,7 +313,7 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/chatbot/message
 ```
 🚨 HITL Alert created: [alertId]
 📡 HITL alert broadcasted to expert dashboard
-👨‍⚕️ Expert CHUN joining intervention: [alertId]
+👨‍⚕️ Expert  joining intervention: [alertId]
 💬 User message: ...
 📤 Expert message delivered to user
 ```

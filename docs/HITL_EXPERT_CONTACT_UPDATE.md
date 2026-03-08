@@ -1,4 +1,4 @@
-# 🚨 HITL Expert Contact Information Update
+﻿# 🚨 HITL Expert Contact Information Update
 
 ## 📋 Tổng quan
 
@@ -11,11 +11,11 @@
 
 ## 👨‍⚕️ THÔNG TIN CHUYÊN GIA
 
-### Chuyên Gia Tâm Lý CHUN
+### Chuyên Gia Tâm Lý 
 
 | Thông tin | Chi tiết |
 |-----------|----------|
-| **Tên** | Chuyên Gia Tâm Lý CHUN |
+| **Tên** | Chuyên Gia Tâm Lý  |
 | **Email** | kendo2605@gmail.com |
 | **Hotline** | 0938021111 |
 | **Vai trò** | Crisis Counselor |
@@ -50,7 +50,7 @@ clinicalTeam: [
 clinicalTeam: [
   {
     id: 'crisis_team_1',
-    name: 'Chuyên Gia Tâm Lý CHUN',
+    name: 'Chuyên Gia Tâm Lý ',
     role: 'crisis_counselor',
     email: 'kendo2605@gmail.com', // Chuyên gia tâm lý chính
     phone: '+84-938021111', // 0938021111
@@ -75,7 +75,7 @@ const hitlMessage = crisisResponse +
 ```typescript
 const hitlMessage = crisisResponse + 
   '\n\n⚠️ **HỆ THỐNG CAN THIỆP KHỦNG HOẢNG ĐÃ ĐƯỢC KÍCH HOẠT**\n\n' +
-  '👨‍⚕️ Chuyên gia tâm lý CHUN đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.\n\n' +
+  '👨‍⚕️ Chuyên gia tâm lý  đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.\n\n' +
   '📧 Email: kendo2605@gmail.com\n' +
   '📞 Hotline: 0938021111\n\n' +
   'Bạn không đơn độc. Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7.';
@@ -173,7 +173,7 @@ Expected: HITL activated với thông tin chuyên gia
 
 ⚠️ **HỆ THỐNG CAN THIỆP KHỦNG HOẢNG ĐÃ ĐƯỢC KÍCH HOẠT**
 
-👨‍⚕️ Chuyên gia tâm lý CHUN đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.
+👨‍⚕️ Chuyên gia tâm lý  đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.
 
 📧 Email: kendo2605@gmail.com
 📞 Hotline: 0938021111
@@ -280,14 +280,14 @@ This is an automated alert from SoulFriend HITL System.
    - Get emergency hotline numbers
 
 2. **Within 5 minutes**:
-   - Chuyên gia CHUN liên hệ qua email hoặc phone
+   - Chuyên gia  liên hệ qua email hoặc phone
    - Receive professional support
 
 3. **Backup**:
    - Emergency hotlines: 1800-599-920, 19001115
    - Hospital emergency: 113, 115
 
-### For Expert (CHUN):
+### For Expert ():
 
 1. **Alert Received**:
    - Check email: kendo2605@gmail.com
@@ -359,7 +359,7 @@ This is an automated alert from SoulFriend HITL System.
 
 **Who Benefits**:
 - 👤 **Users in crisis**: Get immediate expert contact info
-- 👨‍⚕️ **Expert CHUN**: Receives timely crisis alerts
+- 👨‍⚕️ **Expert **: Receives timely crisis alerts
 - 🏥 **System**: Better crisis management workflow
 
 **Result**:
@@ -371,5 +371,5 @@ This is an automated alert from SoulFriend HITL System.
 
 **Status**: 🟢 Deployed  
 **Effective**: After Railway deployment completes  
-**Contact**: Chuyên Gia Tâm Lý CHUN - kendo2605@gmail.com / 0938021111
+**Contact**: Chuyên Gia Tâm Lý  - kendo2605@gmail.com / 0938021111
 

@@ -524,7 +524,7 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
     },
     {
       icon: '🤖',
-      title: 'AI Chatbot CHUN',
+      title: 'AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️',
       count: '24/7 support',
       description: 'Trợ lý AI với khả năng phát hiện khủng hoảng',
       variant: 'secondary' as const,

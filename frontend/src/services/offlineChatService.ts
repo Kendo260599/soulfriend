@@ -137,7 +137,7 @@ ${this.emergencyContacts.map(contact => `• ${contact}`).join('\n')}
    */
   private handleGreeting(): OfflineResponse {
     return {
-      text: `Xin chào! Mình là CHUN 🌸 - AI Companion hỗ trợ sức khỏe tâm lý.
+      text: `Xin chào! Mình là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ 🌸 - AI Companion hỗ trợ sức khỏe tâm lý.
 
 ⚠️ LƯU Ý: Hiện tại mình đang hoạt động ở chế độ offline. Một số tính năng có thể bị hạn chế.
 

@@ -305,7 +305,7 @@ export class EnhancedChatbotService {
         const hitlMessage =
           crisisResponse +
           '\n\n⚠️ **HỆ THỐNG CAN THIỆP KHỦNG HOẢNG ĐÃ ĐƯỢC KÍCH HOẠT**\n\n' +
-          '👨‍⚕️ Chuyên gia tâm lý CHUN đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.\n\n' +
+          '👨‍⚕️ Chuyên gia tâm lý 𝑺𝒆𝒄𝒓𝒆𝒕❤️ đã được thông báo và sẽ liên hệ với bạn trong vòng 5 phút.\n\n' +
           '📧 Email: kendo2605@gmail.com\n' +
           '📞 Hotline: 0938021111\n\n' +
           'Bạn không đơn độc. Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7.';
@@ -366,7 +366,7 @@ export class EnhancedChatbotService {
         if (this.openAIService && this.openAIService.isReady()) {
           try {
             const aiContext = {
-              systemPrompt: `Bạn là CHUN - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+              systemPrompt: `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý
@@ -379,7 +379,7 @@ export class EnhancedChatbotService {
 - Ấm áp, đồng cảm, không phán xét
 - Chuyên nghiệp nhưng gần gũi
 - Sử dụng emoji phù hợp (💙 🌸 ⚠️)
-- Xưng hô: "Mình" (CHUN) - "Bạn" (User)
+- Xưng hô: "Mình" (𝑺𝒆𝒄𝒓𝒆𝒕❤️) - "Bạn" (User)
 
 🚨 CRISIS PROTOCOL:
 - Nếu phát hiện ý định tự tử: Hotline NGAY 1900 599 958

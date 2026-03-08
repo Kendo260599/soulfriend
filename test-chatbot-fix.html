@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -296,7 +296,7 @@
                 if (response.ok && data.success) {
                     const botDiv = document.createElement('div');
                     botDiv.className = 'message bot-message';
-                    botDiv.innerHTML = `<strong>CHUN:</strong> ${data.data.message}`;
+                    botDiv.innerHTML = `<strong>:</strong> ${data.data.message}`;
                     messagesDiv.appendChild(botDiv);
                 } else {
                     const errorDiv = document.createElement('div');

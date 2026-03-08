@@ -114,7 +114,12 @@ const ExpertDashboard: React.FC = () => {
 
     console.log('🔌 Connecting to Socket.io...');
 
+    const token = localStorage.getItem('expertToken');
+
     const socket = io(API_URL + '/expert', {
+      auth: {
+        token,
+      },
       query: {
         expertId: expertInfo.id,
         expertName: expertInfo.name,
@@ -128,6 +133,8 @@ const ExpertDashboard: React.FC = () => {
     socket.on('connect', () => {
       console.log('✅ Socket.io connected');
       setConnected(true);
+      // Request active users list once connected
+      socket.emit('get_active_users');
     });
 
     socket.on('disconnect', () => {
@@ -290,9 +297,6 @@ const ExpertDashboard: React.FC = () => {
         }]);
       }
     });
-
-    // Request active users list on connect
-    socket.emit('get_active_users');
 
     return () => {
       console.log('🔌 Disconnecting Socket.io...');

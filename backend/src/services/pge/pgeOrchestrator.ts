@@ -43,6 +43,7 @@ import { narrativeIntelligenceEngine } from './narrativeIntelligenceEngine';
 import { resilienceEngine } from './resilienceEngine';
 import { treatmentPlanEngine } from './treatmentPlanEngine';
 import { outcomeLearningEngine } from './outcomeLearningEngine';
+import { expertMonitoringService } from './expertMonitoringService';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -183,6 +184,21 @@ class PGEOrchestrator {
         extractionMethod: extraction.method,
         confidence: extraction.confidence,
       });
+
+      // ════════════════════════════════════════════
+      // STEP 7.5: Real-Time Expert Monitoring (Phase 13)
+      // ════════════════════════════════════════════
+      try {
+        expertMonitoringService.onPGEUpdate(userId, {
+          ebhScore,
+          esScore: computeESScore(S),
+          zone,
+          dominantEmotion,
+          sessionId,
+        });
+      } catch (monErr) {
+        logger.warn('[PGE] Expert monitoring update failed:', monErr instanceof Error ? monErr.message : monErr);
+      }
 
       // Invalidate forecast cache (new state means old forecast is stale)
       forecastEngine.invalidateCache(userId);

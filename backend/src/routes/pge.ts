@@ -49,6 +49,7 @@ import { narrativeIntelligenceEngine } from '../services/pge/narrativeIntelligen
 import { resilienceEngine } from '../services/pge/resilienceEngine';
 import { treatmentPlanEngine } from '../services/pge/treatmentPlanEngine';
 import { outcomeLearningEngine } from '../services/pge/outcomeLearningEngine';
+import { expertMonitoringService } from '../services/pge/expertMonitoringService';
 import { emotionExtractionService } from '../services/pge/emotionExtractor';
 import {
   stateToVec, potentialEnergy, computeEBHScore, classifyZone,
@@ -1216,6 +1217,121 @@ router.get('/outcomes/dashboard/:userId',
     } catch (error) {
       logger.error('[PGE Route] outcomes dashboard error:', error);
       res.status(500).json({ success: false, error: 'Failed to generate outcomes dashboard' });
+    }
+  }
+);
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 13: REAL-TIME EXPERT MONITORING
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * GET /monitoring/users — Active monitored users sorted by risk
+ */
+router.get('/monitoring/users',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sortBy = (req.query.sortBy as 'risk' | 'ebh' | 'lastActive') || 'risk';
+      const users = expertMonitoringService.getActiveUsers(sortBy);
+      res.json({ success: true, data: users });
+    } catch (error) {
+      logger.error('[PGE Route] monitoring users error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch monitored users' });
+    }
+  }
+);
+
+/**
+ * GET /monitoring/alerts — Recent monitoring alerts
+ */
+router.get('/monitoring/alerts',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+      const alerts = expertMonitoringService.getRecentAlerts(limit);
+      res.json({ success: true, data: alerts });
+    } catch (error) {
+      logger.error('[PGE Route] monitoring alerts error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch monitoring alerts' });
+    }
+  }
+);
+
+/**
+ * GET /monitoring/user/:userId — Detailed monitoring for a specific user
+ */
+router.get('/monitoring/user/:userId',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const detail = expertMonitoringService.getUserDetail(userId);
+      if (!detail) {
+        res.status(404).json({ success: false, error: 'User not being monitored' });
+        return;
+      }
+      res.json({ success: true, data: detail });
+    } catch (error) {
+      logger.error('[PGE Route] monitoring user detail error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch user monitoring data' });
+    }
+  }
+);
+
+/**
+ * GET /monitoring/stats — Aggregated monitoring statistics
+ */
+router.get('/monitoring/stats',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const stats = expertMonitoringService.getMonitoringStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      logger.error('[PGE Route] monitoring stats error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch monitoring stats' });
+    }
+  }
+);
+
+/**
+ * GET /monitoring/thresholds — Current monitoring thresholds
+ */
+router.get('/monitoring/thresholds',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const thresholds = expertMonitoringService.getThresholds();
+      res.json({ success: true, data: thresholds });
+    } catch (error) {
+      logger.error('[PGE Route] monitoring thresholds error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch thresholds' });
+    }
+  }
+);
+
+/**
+ * PUT /monitoring/thresholds — Update monitoring thresholds
+ */
+router.put('/monitoring/thresholds',
+  authenticateExpert,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { ebhWarning, ebhCritical, declineRateWarning, volatilityWarning } = req.body;
+      const updates: Record<string, number> = {};
+      if (typeof ebhWarning === 'number') updates.ebhWarning = ebhWarning;
+      if (typeof ebhCritical === 'number') updates.ebhCritical = ebhCritical;
+      if (typeof declineRateWarning === 'number') updates.declineRateWarning = declineRateWarning;
+      if (typeof volatilityWarning === 'number') updates.volatilityWarning = volatilityWarning;
+
+      expertMonitoringService.setThresholds(updates);
+      const current = expertMonitoringService.getThresholds();
+      res.json({ success: true, data: current });
+    } catch (error) {
+      logger.error('[PGE Route] monitoring thresholds update error:', error);
+      res.status(500).json({ success: false, error: 'Failed to update thresholds' });
     }
   }
 );

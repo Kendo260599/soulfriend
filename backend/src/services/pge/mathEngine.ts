@@ -14,7 +14,7 @@
  * Toàn bộ triển khai pure TypeScript — không phụ thuộc thư viện bên ngoài.
  * 
  * @module services/pge/mathEngine
- * @version 10.0.0 — Phase 12: Outcomes & Continuous Learning + Phase 3-11
+ * @version 11.0.0 — Phase 13: Real-Time Expert Monitoring + Phase 3-12
  */
 
 import { PSY_VARIABLES, PSY_DIMENSION, IStateVector, PSY_GROUPS } from '../../models/PsychologicalState';
@@ -4448,4 +4448,193 @@ export function computeFeedbackSignal(
   const weight = Math.abs(signal);
 
   return { signal, weight };
+}
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 13: REAL-TIME EXPERT MONITORING
+// ════════════════════════════════════════════════════════════════
+
+// ─── Types ───
+
+export interface MonitoringThresholds {
+  ebhWarning: number;      // EBH threshold to trigger warning (default 0.5)
+  ebhCritical: number;     // EBH threshold to trigger critical alert (default 0.7)
+  declineRateWarning: number; // EBH increase per session to flag rapid decline (default 0.15)
+  volatilityWarning: number;  // Volatility threshold (default 0.2)
+}
+
+export type MonitoringAlertType =
+  | 'zone_transition'   // User moved to a worse zone
+  | 'ebh_threshold'     // EBH crossed a threshold
+  | 'rapid_decline'     // EBH increasing fast (worsening)
+  | 'forecast_warning'  // Forecast predicts bad trajectory
+  | 'high_volatility';  // Emotional state is very unstable
+
+export type MonitoringAlertSeverity = 'info' | 'warning' | 'critical';
+
+export interface MonitoringAlertTrigger {
+  type: MonitoringAlertType;
+  severity: MonitoringAlertSeverity;
+  message: string;
+  data: Record<string, number | string>;
+}
+
+export interface UserMonitoringSnapshot {
+  userId: string;
+  currentEBH: number;
+  currentES: number;
+  zone: string;
+  trend: 'improving' | 'stable' | 'declining' | 'rapid_decline';
+  riskScore: number;
+  sessionCount: number;
+  lastActiveAt: Date;
+  alertCount: number;
+}
+
+// ─── Default Thresholds ───
+
+export const DEFAULT_MONITORING_THRESHOLDS: MonitoringThresholds = {
+  ebhWarning: 0.5,
+  ebhCritical: 0.7,
+  declineRateWarning: 0.15,
+  volatilityWarning: 0.2,
+};
+
+// ─── Functions ───
+
+/**
+ * Classify trend from recent EBH values.
+ * Uses linear regression slope of last N values.
+ */
+export function classifyMonitoringTrend(
+  ebhHistory: number[]
+): 'improving' | 'stable' | 'declining' | 'rapid_decline' {
+  if (ebhHistory.length < 2) return 'stable';
+
+  const n = Math.min(ebhHistory.length, 10);
+  const recent = ebhHistory.slice(-n);
+
+  // Simple linear regression slope
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i; sumY += recent[i]; sumXY += i * recent[i]; sumX2 += i * i;
+  }
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX || 1);
+
+  // Slope > 0 means EBH increasing (worsening), < 0 means decreasing (improving)
+  if (slope < -0.03) return 'improving';
+  if (slope > 0.08) return 'rapid_decline';
+  if (slope > 0.02) return 'declining';
+  return 'stable';
+}
+
+/**
+ * Compute monitoring risk score combining EBH, ES, zone, and trend.
+ * Range: 0 (safe) to 1 (extreme risk).
+ */
+export function computeMonitoringRiskScore(
+  ebh: number,
+  esScore: number,
+  zone: string,
+  trendSlope: number,
+  recentVolatility: number,
+): number {
+  // Zone weight
+  const zoneWeight: Record<string, number> = {
+    safe: 0, mild: 0.15, moderate: 0.35, danger: 0.6, critical: 0.85
+  };
+  const zW = zoneWeight[zone] ?? 0.5;
+
+  // EBH component (already 0-1, higher = worse)
+  const ebhComponent = Math.min(1, ebh);
+
+  // ES inverse (lower ES = more risk, ES is 0-1 where 1 = good)
+  const esComponent = 1 - Math.min(1, Math.max(0, esScore));
+
+  // Trend component (positive slope = worsening)
+  const trendComponent = Math.min(1, Math.max(0, trendSlope * 3));
+
+  // Volatility component
+  const volComponent = Math.min(1, recentVolatility * 2);
+
+  // Weighted combination
+  return Math.min(1, 0.35 * ebhComponent + 0.25 * zW + 0.15 * esComponent + 0.15 * trendComponent + 0.10 * volComponent);
+}
+
+/**
+ * Check if a state update should trigger a monitoring alert.
+ * Compares previous and current state against thresholds.
+ */
+export function checkMonitoringTriggers(
+  prev: { ebh: number; zone: string } | null,
+  current: { ebh: number; zone: string; esScore: number },
+  ebhHistory: number[],
+  thresholds: MonitoringThresholds,
+): MonitoringAlertTrigger[] {
+  const triggers: MonitoringAlertTrigger[] = [];
+
+  // 1. EBH threshold crossing
+  if (current.ebh >= thresholds.ebhCritical && (!prev || prev.ebh < thresholds.ebhCritical)) {
+    triggers.push({
+      type: 'ebh_threshold',
+      severity: 'critical',
+      message: `EBH vượt ngưỡng nguy hiểm: ${current.ebh.toFixed(3)}`,
+      data: { ebh: current.ebh, threshold: thresholds.ebhCritical },
+    });
+  } else if (current.ebh >= thresholds.ebhWarning && (!prev || prev.ebh < thresholds.ebhWarning)) {
+    triggers.push({
+      type: 'ebh_threshold',
+      severity: 'warning',
+      message: `EBH vượt ngưỡng cảnh báo: ${current.ebh.toFixed(3)}`,
+      data: { ebh: current.ebh, threshold: thresholds.ebhWarning },
+    });
+  }
+
+  // 2. Zone transition (worse)
+  const ZONE_RANK: Record<string, number> = { safe: 0, mild: 1, moderate: 2, danger: 3, critical: 4 };
+  if (prev) {
+    const prevRank = ZONE_RANK[prev.zone] ?? 0;
+    const curRank = ZONE_RANK[current.zone] ?? 0;
+    if (curRank > prevRank && curRank >= 2) {
+      const sev: MonitoringAlertSeverity = curRank >= 3 ? 'critical' : 'warning';
+      triggers.push({
+        type: 'zone_transition',
+        severity: sev,
+        message: `Chuyển vùng: ${prev.zone} → ${current.zone}`,
+        data: { from: prev.zone, to: current.zone },
+      });
+    }
+  }
+
+  // 3. Rapid decline
+  if (ebhHistory.length >= 3) {
+    const recent3 = ebhHistory.slice(-3);
+    const avgIncrease = (recent3[recent3.length - 1] - recent3[0]) / (recent3.length - 1);
+    if (avgIncrease >= thresholds.declineRateWarning) {
+      triggers.push({
+        type: 'rapid_decline',
+        severity: avgIncrease >= thresholds.declineRateWarning * 2 ? 'critical' : 'warning',
+        message: `Suy giảm nhanh: EBH tăng ${avgIncrease.toFixed(3)}/lần gần đây`,
+        data: { avgIncrease, recentEBH: recent3[recent3.length - 1] },
+      });
+    }
+  }
+
+  // 4. High volatility
+  if (ebhHistory.length >= 5) {
+    const recent = ebhHistory.slice(-5);
+    const mean = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const variance = recent.reduce((s, v) => s + (v - mean) ** 2, 0) / recent.length;
+    const volatility = Math.sqrt(variance);
+    if (volatility >= thresholds.volatilityWarning) {
+      triggers.push({
+        type: 'high_volatility',
+        severity: 'warning',
+        message: `Trạng thái không ổn định: volatility ${volatility.toFixed(3)}`,
+        data: { volatility, mean },
+      });
+    }
+  }
+
+  return triggers;
 }

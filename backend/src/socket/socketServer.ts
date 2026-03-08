@@ -8,6 +8,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger';
 import { criticalInterventionService } from '../services/criticalInterventionService';
+import { expertMonitoringService } from '../services/pge/expertMonitoringService';
 import InterventionMessage from '../models/InterventionMessage';
 import ConversationLog from '../models/ConversationLog';
 
@@ -408,9 +409,23 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     logger.info(`📡 HITL alert broadcasted to expert dashboard`);
   };
 
+  // =============================================================================
+  // PGE MONITORING BROADCASTER — Real-time expert monitoring (Phase 13)
+  // =============================================================================
+
+  expertMonitoringService.setBroadcaster((event: string, data: any) => {
+    expertNamespace.to(getExpertRoom()).emit(event, data);
+  });
+
+  // Hydrate monitoring service with recent user data from DB
+  expertMonitoringService.hydrate().catch(err => {
+    logger.warn('Expert monitoring hydration failed:', err);
+  });
+
   logger.info('✅ Socket.io server initialized successfully');
   logger.info('   - User namespace: /user');
   logger.info('   - Expert namespace: /expert');
+  logger.info('   - PGE monitoring broadcaster: attached');
 
   return io;
 }

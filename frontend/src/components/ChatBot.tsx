@@ -536,6 +536,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       console.log('👤 User connected:', data);
     });
 
+    // Restore HITL state on reconnect (server checks for active expert session)
+    socket.on('hitl_state', (data: { active: boolean; expertName?: string; alertId?: string; reason?: string }) => {
+      console.log('🔄 HITL state received:', data);
+      if (data.active && data.expertName) {
+        setExpertConnected(true);
+        setExpertName(data.expertName);
+      } else {
+        setExpertConnected(false);
+        setExpertName(null);
+      }
+    });
+
     // Expert joined the conversation
     socket.on('expert_joined', (data: { expertName: string; message: string; timestamp: Date }) => {
       console.log('👨‍⚕️ Expert joined:', data);

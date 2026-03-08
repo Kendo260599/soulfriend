@@ -258,6 +258,44 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       userId,
       sessionId
     });
+
+    // Check if there's an active expert session (HITL intervention or direct chat)
+    // This handles the case where the user refreshes/reconnects while expert is active
+    (async () => {
+      try {
+        // Check 1: Active HITL intervention
+        const activeAlert = await getActiveInterventionForSession(sessionId);
+        if (activeAlert) {
+          logger.info(`🔄 Restoring HITL state for reconnected user ${userId}, alert: ${activeAlert.id}`);
+          socket.emit('hitl_state', {
+            active: true,
+            expertName: 'CHUN❤️',
+            alertId: activeAlert.id,
+            reason: 'intervention',
+          });
+          return;
+        }
+
+        // Check 2: Active direct chat (expert is in the direct chat room)
+        const directRoom = getDirectChatRoom(userId, sessionId);
+        const expertSockets = await io.of('/expert').in(directRoom).fetchSockets();
+        if (expertSockets.length > 0) {
+          logger.info(`🔄 Restoring direct chat state for reconnected user ${userId}`);
+          socket.emit('hitl_state', {
+            active: true,
+            expertName: 'CHUN❤️',
+            reason: 'direct_chat',
+          });
+          return;
+        }
+
+        // No active expert session
+        socket.emit('hitl_state', { active: false });
+      } catch (error) {
+        logger.error('Error checking active expert session on reconnect:', error);
+        socket.emit('hitl_state', { active: false });
+      }
+    })();
   });
 
   // =============================================================================

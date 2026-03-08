@@ -78,11 +78,18 @@ const ExpertDashboard: React.FC = () => {
 
   // Direct Chat state
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
-  const [directChatUser, setDirectChatUser] = useState<ActiveUser | null>(null);
+  const [directChatUser, setDirectChatUser] = useState<ActiveUser | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('expert_directChatUser');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [directChatMessages, setDirectChatMessages] = useState<DirectChatMessage[]>([]);
   const [directMessageInput, setDirectMessageInput] = useState('');
   const [userTypingInChat, setUserTypingInChat] = useState(false);
-  const directChatUserRef = useRef<ActiveUser | null>(null);
+  const directChatUserRef = useRef<ActiveUser | null>(
+    (() => { try { const s = sessionStorage.getItem('expert_directChatUser'); return s ? JSON.parse(s) : null; } catch { return null; } })()
+  );
   const directMessagesEndRef = useRef<HTMLDivElement>(null);
   const directTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Cache chat history per user so switching doesn't lose messages
@@ -95,6 +102,12 @@ const ExpertDashboard: React.FC = () => {
 
   useEffect(() => {
     directChatUserRef.current = directChatUser;
+    // Persist to sessionStorage for reconnect after refresh
+    if (directChatUser) {
+      sessionStorage.setItem('expert_directChatUser', JSON.stringify(directChatUser));
+    } else {
+      sessionStorage.removeItem('expert_directChatUser');
+    }
   }, [directChatUser]);
 
   // Load expert info from localStorage
@@ -202,6 +215,16 @@ const ExpertDashboard: React.FC = () => {
           icon: '/logo192.png',
         });
       }
+    });
+
+    // Restore active alerts on reconnect (expert refreshed page)
+    socket.on('active_alerts_restore', (alerts: HITLAlert[]) => {
+      console.log('🔄 Restoring active alerts:', alerts.length);
+      setAlerts((prev) => {
+        const existingIds = new Set(prev.map(a => a.alertId));
+        const newAlerts = alerts.filter(a => !existingIds.has(a.alertId));
+        return [...newAlerts, ...prev];
+      });
     });
 
     // PGE Monitoring events (Phase 13)

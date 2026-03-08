@@ -811,6 +811,29 @@ This case requires IMMEDIATE attention.
       this.escalationTimers.delete(alertId);
     }
   }
+
+  /**
+   * Reset an acknowledged alert back to pending (e.g. when expert disconnects)
+   * Returns the alert if reset was successful, null otherwise.
+   */
+  async resetAlertToPending(alertId: string): Promise<CriticalAlert | null> {
+    const alert = this.alertCache.get(alertId);
+    if (!alert || alert.status !== 'acknowledged') return null;
+
+    alert.status = 'pending';
+    alert.acknowledgedBy = undefined;
+    alert.acknowledgedAt = undefined;
+    this.alertCache.set(alertId, alert);
+
+    // Persist to MongoDB
+    CriticalAlertModel.findOneAndUpdate(
+      { alertId },
+      { status: 'pending', acknowledgedBy: null, acknowledgedAt: null }
+    ).catch(err => logger.error('Failed to reset alert status:', err));
+
+    logger.warn(`🔄 Alert ${alertId} reset to pending`);
+    return alert;
+  }
 }
 
 // Export singleton instance

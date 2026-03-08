@@ -319,6 +319,10 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
     logger.info(`👨‍⚕️ Expert connected: ${expertName} (${expertId})`);
 
+    // Track expert's active session (for cleanup on disconnect)
+    let currentIntervention: { alertId: string; userId: string; sessionId: string } | null = null;
+    let currentDirectChat: { userId: string; sessionId: string } | null = null;
+
     // Join expert dashboard room (for broadcast alerts)
     socket.join(getExpertRoom());
 
@@ -335,6 +339,10 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Join intervention room
       const interventionRoom = getInterventionRoom(alertId);
       socket.join(interventionRoom);
+
+      // Track active intervention for disconnect cleanup
+      currentIntervention = { alertId, userId, sessionId };
+      currentDirectChat = null; // Can only be in one mode
 
       // Acknowledge alert in the system
       try {
@@ -470,6 +478,9 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         const interventionRoom = getInterventionRoom(alertId);
         socket.leave(interventionRoom);
 
+        // Clear tracking
+        currentIntervention = null;
+
         // Confirm to expert
         socket.emit('intervention_closed', { alertId, success: true });
 
@@ -501,6 +512,10 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
       const directRoom = getDirectChatRoom(userId, sessionId);
       socket.join(directRoom);
+
+      // Track active direct chat for disconnect cleanup
+      currentDirectChat = { userId, sessionId };
+      currentIntervention = null; // Can only be in one mode
 
       // Load conversation history (skip on rejoin — frontend already has it)
       if (!rejoin) {
@@ -579,6 +594,9 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const directRoom = getDirectChatRoom(userId, sessionId);
       socket.leave(directRoom);
 
+      // Clear tracking
+      currentDirectChat = null;
+
       // Notify user
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('intervention_ended', {
@@ -590,9 +608,72 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       logger.info(`👨‍⚕️ Expert ${expertName} ended direct chat with ${userId}`);
     });
 
-    // Handle disconnection
-    socket.on('disconnect', () => {
+    // Handle disconnection — clean up and notify affected users
+    socket.on('disconnect', async () => {
       logger.info(`👨‍⚕️ Expert disconnected: ${expertName}`);
+
+      // If expert was in an active intervention, notify user and reset alert
+      if (currentIntervention) {
+        const { alertId, userId, sessionId } = currentIntervention;
+        logger.warn(`⚠️ Expert ${expertName} disconnected during intervention ${alertId}`);
+
+        // Check if any OTHER experts are still in the intervention room
+        const interventionRoom = getInterventionRoom(alertId);
+        const remainingSockets = await io.of('/expert').in(interventionRoom).fetchSockets();
+        
+        if (remainingSockets.length === 0) {
+          // No other expert is handling this — notify user and reset alert
+          const userRoom = getUserRoom(userId, sessionId);
+          userNamespace.to(userRoom).emit('intervention_ended', {
+            message: '❤️ CHUN❤️ tạm thời mất kết nối. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️ — chuyên gia sẽ quay lại sớm nhất.',
+            timestamp: new Date(),
+          });
+
+          // Reset alert back to 'pending' so escalation timer can re-fire
+          // and other experts can pick it up
+          try {
+            const resetAlert = await criticalInterventionService.resetAlertToPending(alertId);
+            if (resetAlert) {
+              // Re-broadcast to all experts
+              expertNamespace.to(getExpertRoom()).emit('hitl_alert', {
+                alertId: resetAlert.id,
+                userId: resetAlert.userId,
+                sessionId: resetAlert.sessionId,
+                riskLevel: resetAlert.riskLevel,
+                riskType: resetAlert.riskType,
+                message: resetAlert.userMessage,
+                keywords: resetAlert.detectedKeywords,
+                timestamp: resetAlert.timestamp,
+                rebroadcast: true,
+              });
+
+              logger.warn(`🔄 Alert ${alertId} reset to pending and re-broadcast`);
+            }
+          } catch (err) {
+            logger.error('Error resetting alert on expert disconnect:', err);
+          }
+        }
+        currentIntervention = null;
+      }
+
+      // If expert was in a direct chat, notify user
+      if (currentDirectChat) {
+        const { userId, sessionId } = currentDirectChat;
+        logger.warn(`⚠️ Expert ${expertName} disconnected during direct chat with ${userId}`);
+
+        // Check if any OTHER experts are still in the direct room
+        const directRoom = getDirectChatRoom(userId, sessionId);
+        const remainingSockets = await io.of('/expert').in(directRoom).fetchSockets();
+
+        if (remainingSockets.length === 0) {
+          const userRoom = getUserRoom(userId, sessionId);
+          userNamespace.to(userRoom).emit('intervention_ended', {
+            message: '❤️ CHUN❤️ tạm thời mất kết nối. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️ — chuyên gia sẽ quay lại sớm nhất.',
+            timestamp: new Date(),
+          });
+        }
+        currentDirectChat = null;
+      }
     });
 
     // Send welcome message
@@ -601,6 +682,28 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       expertId,
       expertName
     });
+
+    // Send active alerts to the reconnecting expert (in case they refreshed)
+    (async () => {
+      try {
+        const activeAlerts = criticalInterventionService.getActiveAlerts();
+        if (activeAlerts.length > 0) {
+          socket.emit('active_alerts_restore', activeAlerts.map(alert => ({
+            alertId: alert.id,
+            userId: alert.userId,
+            sessionId: alert.sessionId,
+            riskLevel: alert.riskLevel,
+            riskType: alert.riskType,
+            message: alert.userMessage,
+            keywords: alert.detectedKeywords,
+            timestamp: alert.timestamp,
+            status: alert.status,
+          })));
+        }
+      } catch (err) {
+        logger.warn('Failed to restore active alerts for expert:', err);
+      }
+    })();
   });
 
   // =============================================================================

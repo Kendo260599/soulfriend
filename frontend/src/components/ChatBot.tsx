@@ -489,6 +489,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
   const [expertConnected, setExpertConnected] = useState(false);
+  const expertConnectedRef = useRef(false);
   const [expertName, setExpertName] = useState<string | null>(null);
   const [expertTyping, setExpertTyping] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -505,6 +506,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   );
   const msgIdCounter = useRef(0);
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hitlStateResolved = useRef(false);
   const nextMsgId = (prefix = 'msg') => `${prefix}_${Date.now()}_${msgIdCounter.current++}`;
   const { processMessage, isProcessing } = useAI();
   
@@ -526,6 +528,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     // Connection events
     socket.on('connect', () => {
       console.log('✅ Socket.io connected (user)');
+      hitlStateResolved.current = false; // Wait for server to confirm HITL state
     });
 
     socket.on('disconnect', () => {
@@ -539,10 +542,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     // Restore HITL state on reconnect (server checks for active expert session)
     socket.on('hitl_state', (data: { active: boolean; expertName?: string; alertId?: string; reason?: string }) => {
       console.log('🔄 HITL state received:', data);
+      hitlStateResolved.current = true;
       if (data.active && data.expertName) {
+        expertConnectedRef.current = true;
         setExpertConnected(true);
         setExpertName(data.expertName);
       } else {
+        expertConnectedRef.current = false;
         setExpertConnected(false);
         setExpertName(null);
       }
@@ -551,6 +557,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     // Expert joined the conversation
     socket.on('expert_joined', (data: { expertName: string; message: string; timestamp: Date }) => {
       console.log('👨‍⚕️ Expert joined:', data);
+      expertConnectedRef.current = true;
       setExpertConnected(true);
       setExpertName(data.expertName);
 
@@ -588,6 +595,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     // Intervention ended
     socket.on('intervention_ended', (data: { message: string; timestamp: Date }) => {
       console.log('🔒 Intervention ended:', data);
+      expertConnectedRef.current = false;
       setExpertConnected(false);
       setExpertName(null);
       setExpertTyping(false);
@@ -976,6 +984,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     if (expertConnected) {
       setIsTyping(false);
       return;
+    }
+
+    // Guard: wait for hitl_state to resolve before calling AI
+    // Prevents race condition where user sends message before server confirms expert status
+    if (!hitlStateResolved.current && socketRef.current?.connected) {
+      await new Promise<void>((resolve) => {
+        const check = () => { if (hitlStateResolved.current) resolve(); else setTimeout(check, 50); };
+        check();
+        // Safety timeout: don't wait forever (max 2s)
+        setTimeout(resolve, 2000);
+      });
+      // Re-check after waiting (use ref for latest value)
+      if (expertConnectedRef.current) {
+        setIsTyping(false);
+        return;
+      }
     }
 
     try {

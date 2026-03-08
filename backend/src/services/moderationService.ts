@@ -108,41 +108,43 @@ const VIETNAMESE_LEXICON = {
   // Direct suicidal intent
   direct_intent: [
     'muon chet', 'khong muon song', 'tu tu', 'ket thuc cuoc doi',
-    'muon bien mat', 'di xa day', 'nghi den cai chet', 'muon ngu mai',
+    'di xa day', 'nghi den cai chet',
     'khong muon ton tai', 'muon bien mat vinh vien', 'ket thuc tat ca',
-    'khong con ly do song', 'vo vong', 'muon thoat khoi cuoc song nay',
+    'khong con ly do song', 'muon thoat khoi cuoc song nay',
+    'muon chet di', 'khong muon song nua',
   ],
 
-  // Planning indicators
+  // Planning indicators (require combination with intent/means)
   plan: [
-    'toi se', 'toi da len ke hoach', 'ke hoach', 'thu thuoc ngu',
+    'toi da len ke hoach', 'ke hoach tu tu', 'thu thuoc ngu',
     'mua day thung', 'nho cao', 'tim dia diem', 'nhay cau',
-    'viet thu tuyet menh', 'soan thu', 'dem nay', 'ngay mai luc',
-    'len ke hoach', 'toi se lam', 'da chuẩn bị', 'da san sang',
-    'se lam dem nay', 'se lam toi nay', 'se lam ngay mai', 'se lam',
+    'viet thu tuyet menh', 'soan thu tuyet menh',
+    'len ke hoach chet', 'da chuan bi xong', 'da san sang chet',
   ],
 
-  // Means/methods
+  // Means/methods (specific to self-harm/suicide context)
   means: [
-    'day thung', 'dao', 'thuoc ngu', 'thuoc', 'thuoc tru sau',
-    'dao lam', 'dao gam', 'sung', 'cay', 'duong ray', 'nhay cau',
-    'thuoc doc', 'thuoc an than', 'thuoc ngu', 'day treo co',
-    'cat mach', 'uong thuoc', 'thuoc quy liều cao',
+    'day thung', 'thuoc ngu', 'thuoc tru sau',
+    'dao lam', 'dao gam', 'sung', 'duong ray', 'nhay cau',
+    'thuoc doc', 'day treo co',
+    'cat mach', 'uong thuoc de chet', 'uong thuoc tu tu',
+    'thuoc quy lieu cao', 'lieu cao thuoc ngu',
   ],
 
-  // Timeframe indicators
+  // Timeframe indicators (only meaningful combined with intent/means)
   timeframe: [
-    'dem nay', 'toi nay', 'ngay mai', 'cuoi tuan nay', 'tuan toi',
-    'sang mai', 'chieu nay', 'khi nao', 'luc nao', 'ngay nao',
-    'sau khi', 'truoc khi', 'khi nao xong', 'lam dem nay', 'lam toi nay',
+    'dem nay se chet', 'toi nay se chet', 'ngay mai se chet',
+    'lam dem nay', 'lam toi nay', 'se lam dem nay', 'se lam toi nay',
   ],
 
   // Farewell/goodbye messages
   farewell: [
-    'tam biet', 'xin loi moi nguoi', 'du dung tim em', 'em di day',
-    'hen gap o mot noi khac', 'cam on vi tat ca', 'xin loi',
-    'chao tam biet', 'vinh biet', 'di vinh vien', 'xin loi ba me',
-    'xin loi gia dinh', 'dung tim em nua', 'em xin loi',
+    'tam biet moi nguoi', 'xin loi moi nguoi',
+    'du dung tim em', 'em di day',
+    'hen gap o mot noi khac', 'vinh biet',
+    'chao tam biet', 'di vinh vien',
+    'xin loi ba me', 'xin loi gia dinh',
+    'dung tim em nua', 'tam biet vinh vien',
   ],
 
   // Non-suicidal self-injury (NSSI)
@@ -150,14 +152,15 @@ const VIETNAMESE_LEXICON = {
     'cat tay', 'tu lam dau', 'tu hanh ha', 'lam ton thuong ban than',
     'cat co', 'cat chan', 'danh minh', 'tu sat thuong', 'lam dau minh',
     'tu lam ton thuong', 'cat da', 'danh vao tuong', 'tu lam dau ban than',
+    'muon lam dau ban than', 'dang cat tay',
   ],
 
   // Suicidal ideation (less direct)
   ideation: [
-    'chan doi', 'vo vong', 'vo gia tri', 'khong con y nghia',
-    'muon ngu mai', 'muon bien mat khoi the gioi', 'khong muon song nua',
+    'vo vong', 'vo gia tri', 'khong con y nghia song',
+    'muon bien mat khoi the gioi', 'khong muon song nua',
     'khong con ly do', 'cuoc song vo nghia', 'khong con hy vong',
-    'moi thu deu vo nghia', 'khong con ai quan tam', 'khong ai can minh',
+    'khong ai can minh',
   ],
 
   // Internet slang and metaphors (context-dependent)
@@ -228,6 +231,23 @@ function scanLexical(normalizedText: string): ModerationSignal[] {
     // Reduce confidence of signals if strong negation present
     signals.forEach(signal => {
       signal.confidence *= 0.5;
+    });
+  }
+
+  // Check for medical/safe context (dramatically reduce false positives)
+  const medicalContext = [
+    'bac si', 'ke don', 'bi om', 'bi cam', 'bi sot', 'bi benh',
+    'theo chi dan', 'truoc khi ngu', 'sau bua an', 'thuoc cam',
+    'thuoc giam dau', 'thuoc bo', 'thuoc vitamin', 'di kham',
+    'nau an', 'lam bep', 'cat rau', 'cat thit', 'nau com',
+  ];
+  const hasMedicalContext = medicalContext.some(ctx => normalizedText.includes(ctx));
+  if (hasMedicalContext && signals.length > 0) {
+    // Only keep signals with direct intent (e.g., "muon chet" is still dangerous even with medical context)
+    signals.forEach(signal => {
+      if (signal.category !== 'direct_intent') {
+        signal.confidence *= 0.2; // Dramatically reduce non-intent signals
+      }
     });
   }
 
@@ -340,10 +360,10 @@ const CATEGORY_WEIGHTS: Record<ModerationSignal['category'], number> = {
   direct_intent: 40,
   plan: 25,
   means: 20,
-  timeframe: 20,
-  farewell: 15,
-  nssi: 10,
-  ideation: 8,
+  timeframe: 15,
+  farewell: 20,
+  nssi: 18,
+  ideation: 10,
   other: 5,
 };
 
@@ -373,19 +393,22 @@ function aggregateSignals(signals: ModerationSignal[]): {
   const hasMeans = categories.has('means');
   const hasTimeframe = categories.has('timeframe');
   const hasFarewell = categories.has('farewell');
+  const hasNSSI = categories.has('nssi');
 
-  // Critical: Direct intent (suicidal ideation is always critical) OR 
-  // Direct intent + (plan OR means OR timeframe) OR very high score
+  // Critical: Direct intent + another signal, OR plan + means, 
+  // OR farewell + direct_intent, OR very high score
   const isCritical =
-    hasDirectIntent ||
+    (hasDirectIntent && (hasPlan || hasMeans || hasTimeframe || hasFarewell || hasNSSI)) ||
+    (hasDirectIntent && totalScore >= 40) ||
     (hasPlan && hasMeans) ||
     (hasTimeframe && hasMeans) ||
-    totalScore >= 60;
+    (hasFarewell && hasDirectIntent) ||
+    totalScore >= 65;
 
-  // High: Plan/means/farewell alone OR high score without critical combo
+  // High: Direct intent alone, plan/means/farewell alone, or moderate-high score
   const isHigh =
     !isCritical &&
-    (hasPlan || hasMeans || hasTimeframe || hasFarewell || totalScore >= 45);
+    (hasDirectIntent || hasPlan || hasMeans || hasFarewell || hasNSSI || totalScore >= 45);
 
   // Moderate: Some signals but not high
   const isModerate = !isCritical && !isHigh && totalScore >= 25;

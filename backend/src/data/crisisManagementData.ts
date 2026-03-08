@@ -72,11 +72,13 @@ export const crisisScenarios: CrisisScenario[] = [
       'kết thúc cuộc đời',
       'tự tử',
       'nhảy lầu',
-      'uống thuốc',
+      'uống thuốc để chết',
+      'uống thuốc tự tử',
       'cắt tay',
       'không muốn tồn tại',
-      'muốn biến mất',
-      'không còn ý nghĩa',
+      'muốn biến mất vĩnh viễn',
+      'muốn biến mất khỏi thế giới',
+      'không còn ý nghĩa sống',
     ],
     immediateResponse:
       'Tôi rất quan tâm đến những gì bạn vừa chia sẻ. Những suy nghĩ này cho thấy bạn đang trải qua một giai đoạn rất khó khăn. Bạn không cần phải đối mặt một mình.',
@@ -352,19 +354,52 @@ export function detectCrisis(userInput: string): CrisisScenario | null {
   console.error(`   Lowercase: "${inputLower}"`);
   console.error(`   Normalized: "${inputNormalized}"`);
 
+  // Context-aware safe phrases that indicate non-crisis usage of ambiguous keywords
+  const safePhrases = [
+    // Medicine context (uống thuốc)
+    'theo chi dan', 'bac si', 'ke don', 'bi om', 'bi cam',
+    'bi sot', 'bi benh', 'truoc khi ngu', 'sau bua an',
+    'thuoc cam', 'thuoc giam dau', 'thuoc bo', 'thuoc vitamin',
+    // Disappear from social context (biến mất)
+    'khoi bua tiec', 'khoi cuoc hop', 'khoi lop hoc', 'khoi dam dong',
+    // Sleep context (ngủ)
+    'ngu ngon', 'ngu som', 'ngu du giac',
+  ];
+  const hasSafeContext = safePhrases.some(p => inputNormalized.includes(p));
+
   for (const scenario of crisisScenarios) {
     // Try matching with original triggers (with diacritics)
-    const hasDirectTrigger = scenario.triggers.some(trigger =>
+    const matchedTrigger = scenario.triggers.find(trigger =>
       inputLower.includes(trigger.toLowerCase())
     );
 
     // Try matching with normalized text (diacritics removed)
-    const hasNormalizedTrigger = scenario.triggers.some(trigger => {
+    const matchedNormalized = !matchedTrigger ? scenario.triggers.find(trigger => {
       const normalizedTrigger = removeVietnameseDiacritics(trigger);
       return inputNormalized.includes(normalizedTrigger);
-    });
+    }) : null;
 
-    if (hasDirectTrigger || hasNormalizedTrigger) {
+    const matched = matchedTrigger || matchedNormalized;
+
+    if (matched) {
+      // If safe context is present and matched trigger is ambiguous, skip
+      if (hasSafeContext && scenario.level !== 'critical') {
+        console.error(`   ⚠️ SAFE CONTEXT override for: ${scenario.id} (trigger: "${matched}")`);
+        continue;
+      }
+      // For critical scenarios, only skip if the matched trigger is specifically ambiguous
+      if (hasSafeContext && scenario.level === 'critical') {
+        const ambiguousTriggers = ['uống thuốc', 'muốn biến mất', 'không còn ý nghĩa'];
+        const normalizedMatched = removeVietnameseDiacritics(matched);
+        const isAmbiguous = ambiguousTriggers.some(t =>
+          removeVietnameseDiacritics(t) === normalizedMatched
+        );
+        if (isAmbiguous) {
+          console.error(`   ⚠️ SAFE CONTEXT override for ambiguous trigger: "${matched}"`);
+          continue;
+        }
+      }
+
       console.error(`   ✅ MATCHED: ${scenario.id} (${scenario.level})`);
       return scenario;
     }

@@ -279,8 +279,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Notify user that expert has joined
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('expert_joined', {
-        expertName,
-        message: `👨‍⚕️ Chuyên gia tâm lý ${expertName} đã tham gia cuộc trò chuyện. Xin chào bạn!`,
+        expertName: 'CHUN',
+        message: `💙 CHUN đã tham gia cuộc trò chuyện. Xin chào bạn!`,
         timestamp: new Date()
       });
 
@@ -330,7 +330,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('expert_message', {
         from: 'expert',
-        expertName,
+        expertName: 'CHUN',
         message,
         timestamp
       });
@@ -339,7 +339,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const interventionRoom = getInterventionRoom(alertId);
       socket.to(interventionRoom).emit('expert_message_sent', {
         expertId,
-        expertName,
+        expertName: 'CHUN',
         message,
         timestamp
       });
@@ -356,7 +356,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     }) => {
       const userRoom = getUserRoom(data.userId, data.sessionId);
       userNamespace.to(userRoom).emit('expert_typing', {
-        expertName,
+        expertName: 'CHUN',
         isTyping: data.isTyping,
       });
     });
@@ -391,7 +391,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         // Notify user
         const userRoom = getUserRoom(userId, sessionId);
         userNamespace.to(userRoom).emit('intervention_ended', {
-          message: `👨‍⚕️ Chuyên gia đã kết thúc can thiệp. Bạn có thể tiếp tục chat với AI hoặc liên hệ lại bất cứ lúc nào.
+          message: `� CHUN đã kết thúc can thiệp. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️ hoặc liên hệ lại bất cứ lúc nào.
           
 📧 Email: kendo2605@gmail.com
 📞 Hotline: 0938021111`,
@@ -444,8 +444,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Notify user
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('expert_joined', {
-        expertName,
-        message: `👨‍⚕️ Chuyên gia ${expertName} đã tham gia cuộc trò chuyện.`,
+        expertName: 'CHUN',
+        message: `💙 CHUN đã tham gia cuộc trò chuyện.`,
         timestamp: new Date()
       });
 
@@ -477,7 +477,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('expert_message', {
         from: 'expert',
-        expertName,
+        expertName: 'CHUN',
         message,
         timestamp
       });
@@ -485,7 +485,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Broadcast to other experts in same direct chat
       const directRoom = getDirectChatRoom(userId, sessionId);
       socket.to(directRoom).emit('expert_message_sent', {
-        expertId, expertName, message, timestamp
+        expertId, expertName: 'CHUN', message, timestamp
       });
     });
 
@@ -498,7 +498,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Notify user
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('intervention_ended', {
-        message: '👨‍⚕️ Chuyên gia đã kết thúc cuộc trò chuyện. Bạn có thể tiếp tục chat với AI.',
+        message: '� CHUN đã kết thúc cuộc trò chuyện. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️.',
         timestamp: new Date()
       });
 

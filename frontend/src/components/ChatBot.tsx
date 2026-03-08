@@ -527,7 +527,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
       const expertMessage: ChatMessage = {
         id: `expert_${nextMsgId('exp')}`,
-        text: `👨‍⚕️ **${data.expertName}**: ${data.message}`,
+        text: `� **CHUN**: ${data.message}`,
         isBot: true,
         timestamp: new Date(data.timestamp),
       };
@@ -892,6 +892,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       console.log('📤 Message sent via Socket.io');
     }
 
+    // If expert is connected, don't call AI — let the expert respond
+    if (expertConnected) {
+      console.log('👨‍⚕️ Expert is active, skipping AI response');
+      setIsTyping(false);
+      return;
+    }
+
     try {
       const botResponse = await generateBotResponse(originalInput);
       
@@ -1000,15 +1007,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       </ChatToggle>
 
       <ChatHeader isOpen={isOpen}>
-        <BotAvatar>{expertConnected ? '👨‍⚕️' : '🌸'}</BotAvatar>
+        <BotAvatar>{expertConnected ? '�' : '🌸'}</BotAvatar>
         <BotInfo>
           <BotName>
-            {expertConnected ? `Chuyên gia ${expertName}` : '𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion'}
+            {expertConnected ? 'CHUN 💙' : '𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion'}
           </BotName>
           <BotStatus>
             <StatusDot online={isOnline} />
             {expertConnected
-              ? `👨‍⚕️ Đang được hỗ trợ bởi chuyên gia`
+              ? '💙 Bạn đang trò chuyện với CHUN'
               : isOnline
               ? 'Luôn sẵn sàng lắng nghe bạn 💙'
               : 'Đang kết nối lại...'}

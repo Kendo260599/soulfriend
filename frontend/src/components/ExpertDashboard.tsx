@@ -117,6 +117,14 @@ const ExpertDashboard: React.FC = () => {
     console.log('🔌 Connecting to Socket.io...');
 
     const token = localStorage.getItem('expertToken');
+    if (!token) {
+      console.error('🔴 No token found, redirecting to login');
+      navigate('/expert/login');
+      return;
+    }
+
+    // Wake up backend first (Render free tier may be sleeping)
+    fetch(API_URL + '/api/health').catch(() => {});
 
     const socket = io(API_URL + '/expert', {
       auth: {
@@ -126,7 +134,12 @@ const ExpertDashboard: React.FC = () => {
         expertId: expertInfo.id,
         expertName: expertInfo.name,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 20,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 30000,
     });
 
     socketRef.current = socket;
@@ -702,9 +715,12 @@ const ExpertDashboard: React.FC = () => {
               {!connected && (
                 <button
                   onClick={() => {
-                    // Force reconnect
-                    socketRef.current?.disconnect();
-                    socketRef.current?.connect();
+                    // Wake up backend then reconnect
+                    fetch(API_URL + '/api/health').catch(() => {});
+                    setTimeout(() => {
+                      socketRef.current?.disconnect();
+                      socketRef.current?.connect();
+                    }, 1000);
                   }}
                   style={{ marginTop: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', background: '#1565c0', color: '#fff', border: 'none', borderRadius: 4 }}
                 >

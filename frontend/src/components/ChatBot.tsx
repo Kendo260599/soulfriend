@@ -527,7 +527,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
       const expertMessage: ChatMessage = {
         id: `expert_${nextMsgId('exp')}`,
-        text: `� **CHUN**: ${data.message}`,
+        text: `❤️ **CHUN❤️**: ${data.message}`,
         isBot: true,
         timestamp: new Date(data.timestamp),
       };
@@ -1007,15 +1007,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       </ChatToggle>
 
       <ChatHeader isOpen={isOpen}>
-        <BotAvatar>{expertConnected ? '�' : '🌸'}</BotAvatar>
+        <BotAvatar>{expertConnected ? '❤️' : '🌸'}</BotAvatar>
         <BotInfo>
           <BotName>
-            {expertConnected ? 'CHUN 💙' : '𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion'}
+            {expertConnected ? 'CHUN❤️' : '𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion'}
           </BotName>
           <BotStatus>
             <StatusDot online={isOnline} />
             {expertConnected
-              ? '💙 Bạn đang trò chuyện với CHUN'
+              ? '❤️ Bạn đang trò chuyện với CHUN❤️'
               : isOnline
               ? 'Luôn sẵn sàng lắng nghe bạn 💙'
               : 'Đang kết nối lại...'}

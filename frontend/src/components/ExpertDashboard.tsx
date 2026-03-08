@@ -661,6 +661,21 @@ const ExpertDashboard: React.FC = () => {
               <h3 style={{ margin: 0, fontSize: 15, color: '#1565c0' }}>
                 🟢 Người dùng đang online ({activeUsers.length})
               </h3>
+              <div style={{ fontSize: 11, color: connected ? '#4caf50' : '#f44336', marginTop: 4 }}>
+                Socket: {connected ? '✅ Đã kết nối' : '❌ Chưa kết nối'} | SID: {socketRef.current?.id || 'N/A'}
+              </div>
+              {!connected && (
+                <button
+                  onClick={() => {
+                    // Force reconnect
+                    socketRef.current?.disconnect();
+                    socketRef.current?.connect();
+                  }}
+                  style={{ marginTop: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer', background: '#1565c0', color: '#fff', border: 'none', borderRadius: 4 }}
+                >
+                  🔄 Kết nối lại
+                </button>
+              )}
             </div>
             {activeUsers.length === 0 ? (
               <div style={{ padding: 30, textAlign: 'center', color: '#999' }}>

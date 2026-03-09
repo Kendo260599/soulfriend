@@ -340,21 +340,33 @@ function canonicalizeCycle(cycle: number[]): string {
 // ════════════════════════════════════════════════════════════════
 
 /**
- * Học ma trận A từ chuỗi trạng thái bằng Ridge Regression.
+ * Học ma trận A từ chuỗi trạng thái bằng Bayesian Ridge Regression.
  * 
- * Min ||S(t+1) − A·S(t)||² + λ||A||²_F
+ * BAYESIAN FORMULATION:
+ * Prior:      P(A) = N(A_prior, (1/λ)·I)   — shrink toward population/default
+ * Likelihood: P(Y|A) = N(A·X, σ²I)
  * 
- * Giải: A = (ΣS(t)S(t)ᵀ + λI)⁻¹ · ΣS(t+1)S(t)ᵀ
+ * MAP estimate:
+ *   Min ||S(t+1) − A·S(t)||² + λ||A − A_prior||²_F
  * 
- * Vì đảo ma trận 24×24 phức tạp, ta dùng per-row regression:
- * A[i,:] = (XᵀX + λI)⁻¹ · Xᵀy[i]
+ * Solution (per-row):
+ *   A[i,:] = (XᵀX + λI)⁻¹ · (Xᵀy[i] + λ·A_prior[i,:])
+ * 
+ * Key insight: Khi data ít (T nhỏ), XᵀX nhỏ → λ dominates → A ≈ A_prior
+ *              Khi data nhiều (T lớn), XᵀX dominates → A ≈ pure data-driven
+ *              → Tự động interpolation giữa prior và data.
+ * 
+ * @param stateHistory — chuỗi trạng thái [S(0), S(1), ..., S(T)]
+ * @param lambda — regularization strength (default 0.01)
+ * @param prior — ma trận prior (population hoặc default). Nếu null → shrink toward 0 (classic ridge)
  */
 export function learnInteractionMatrix(
   stateHistory: Vec[],
-  lambda = 0.01
+  lambda = 0.01,
+  prior?: Mat | null
 ): { matrix: Mat; loss: number } {
   if (stateHistory.length < 3) {
-    return { matrix: defaultInteractionMatrix(), loss: 0 };
+    return { matrix: prior ? prior.map(r => [...r]) : defaultInteractionMatrix(), loss: 0 };
   }
 
   const n = PSY_DIMENSION;
@@ -381,11 +393,12 @@ export function learnInteractionMatrix(
   // Invert (XᵀX + λI) — using Gauss-Jordan
   const inv = invertMatrix(XtX);
   if (!inv) {
-    return { matrix: defaultInteractionMatrix(), loss: 0 };
+    return { matrix: prior ? prior.map(r => [...r]) : defaultInteractionMatrix(), loss: 0 };
   }
 
   // For each row i of A:
-  // XᵀY[:,i] (n×1), then A[i,:] = inv · XᵀY[:,i]
+  // Bayesian: A[i,:] = inv · (Xᵀy[i] + λ·A_prior[i,:])
+  // Classic:  A[i,:] = inv · Xᵀy[i]  (when prior = null)
   const A = zeroMat(n);
   for (let i = 0; i < n; i++) {
     // XᵀY[:,i]
@@ -395,11 +408,17 @@ export function learnInteractionMatrix(
       for (let t = 0; t < T; t++) sum += X[t][j] * Y[t][i];
       xty[j] = sum;
     }
-    // A[i,:] = inv · xty
+    // Add Bayesian prior term: λ·A_prior[i,:]
+    if (prior) {
+      for (let j = 0; j < n; j++) {
+        xty[j] += lambda * prior[i][j];
+      }
+    }
+    // A[i,:] = inv · (xty + λ·prior_row)
     A[i] = matVec(inv, xty);
   }
 
-  // Compute loss
+  // Compute loss (data fit only, excludes regularization)
   let loss = 0;
   for (let t = 0; t < T; t++) {
     const predicted = matVec(A, X[t]);

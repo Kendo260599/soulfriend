@@ -65,6 +65,9 @@ import v5SystemHealthRoutes from './routes/v5/systemHealth';
 // PGE Routes — Psychological Gravity Engine
 import pgeRoutes from './routes/pge';
 
+// SPSI & PDD Routes — Research System
+import spsiRoutes from './routes/spsi';
+
 // Upload Routes — Image Upload
 import uploadRoutes from './routes/upload';
 
@@ -90,6 +93,12 @@ import './models/TrainingDataset';
 import './models/PsychologicalState';
 import './models/InteractionMatrix';
 import './models/PsychologicalTrajectory';
+
+// SPSI & PDD Models — Research System
+import './models/SPSIRecord';
+import './models/ResearchEvent';
+import './models/PDDSnapshot';
+import './models/ResearchConsent';
 
 // Services
 import emailService from './services/emailService';
@@ -340,7 +349,10 @@ app.use('/api/v5/health', v5SystemHealthRoutes);
 // 🧠 PGE: Psychological Gravity Engine Routes
 app.use('/api/pge', pgeRoutes);
 
-// 📷 Upload: Image upload for chat
+// � SPSI & PDD: Research System Routes
+app.use('/api/spsi', spsiRoutes);
+
+// �📷 Upload: Image upload for chat
 app.use('/api/v2/upload', uploadRoutes);
 
 // 🧪 TEST: QStash Testing Endpoints (Development ONLY)

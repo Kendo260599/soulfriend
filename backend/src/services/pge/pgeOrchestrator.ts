@@ -32,7 +32,7 @@ import {
   classifyZone, detectAttractor, findDominantEmotion,
   simulateTrajectory, analyzeTrajectoryWarning,
   learnInteractionMatrix, defaultInteractionMatrix,
-  spectralRadius, defaultWeightMatrix, Vec,
+  spectralRadius, defaultWeightMatrix, Vec, Mat,
   computeESScore, distanceToAttractor, escapeForceRequired,
 } from './mathEngine';
 import { interventionEngine } from './interventionEngine';
@@ -45,6 +45,10 @@ import { treatmentPlanEngine } from './treatmentPlanEngine';
 import { outcomeLearningEngine } from './outcomeLearningEngine';
 import { expertMonitoringService } from './expertMonitoringService';
 import { dassTestBridge } from './dassTestBridge';
+import { spsiEngine } from './spsiEngine';
+import { pddCollectionService } from './pddCollectionService';
+import { dataQualityService } from './dataQualityService';
+import { anonymizationEngine } from './anonymizationEngine';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -338,6 +342,43 @@ class PGEOrchestrator {
         });
       }
 
+      // ════════════════════════════════════════════
+      // STEP 10.5: SPSI — Social Psychological Stress Index
+      // ════════════════════════════════════════════
+      spsiEngine.processAndSave({
+        userId,
+        sessionId,
+        stateVector,
+        ebhScore,
+        zone,
+        confidence: extraction.confidence,
+      }).catch(err => {
+        logger.warn('[PGE] SPSI processing failed:', err instanceof Error ? err.message : err);
+      });
+
+      // ════════════════════════════════════════════
+      // STEP 10.7: PDD — Research Event Logging
+      // ════════════════════════════════════════════
+      const wordCount = userMessage.trim().split(/\s+/).length;
+      const emotionSummary: Record<string, number> = {};
+      for (const v of ['stress', 'anxiety', 'sadness', 'loneliness', 'hope'] as const) {
+        emotionSummary[v] = stateVector[v];
+      }
+      pddCollectionService.logMessageEvent({
+        userId,
+        sessionId,
+        role: 'user',
+        messageIndex,
+        wordCount,
+        emotionSummary,
+        spsiScore: this.computeSPSIQuick(stateVector),
+        ebhScore,
+        zone,
+        dataQuality: extraction.confidence >= 0.3 ? 1.0 : 0.5,
+      }).catch(err => {
+        logger.warn('[PGE] PDD event logging failed:', err instanceof Error ? err.message : err);
+      });
+
       logger.info('[PGE] processMessage completed', {
         userId: userId.substring(0, 8),
         sessionId: sessionId.substring(0, 8),
@@ -417,12 +458,16 @@ class PGEOrchestrator {
   }
 
   /**
-   * Update interaction matrix from state history (Ridge Regression)
+   * Update interaction matrix from state history (Bayesian Ridge Regression)
+   * Uses population or default matrix as Bayesian prior → shrinks toward
+   * known psychological dynamics instead of zero.
    */
   private async updateInteractionMatrix(userId: string, stateHistory: Vec[]): Promise<void> {
     if (stateHistory.length < MIN_STATES_FOR_LEARNING) return;
 
-    const { matrix, loss } = learnInteractionMatrix(stateHistory, REGULARIZATION_LAMBDA);
+    // Bayesian prior: population matrix > default matrix > null (classic ridge)
+    const prior = await this.getBayesianPrior();
+    const { matrix, loss } = learnInteractionMatrix(stateHistory, REGULARIZATION_LAMBDA, prior);
     const loops = detectFeedbackLoops(matrix);
     const sr = spectralRadius(matrix);
 
@@ -478,6 +523,29 @@ class PGEOrchestrator {
       spectralRadius: sr.toFixed(3),
       loops: loops.length,
     });
+  }
+
+  /**
+   * Get Bayesian prior matrix for individual learning.
+   * Priority: population matrix (data-driven) > default matrix (expert knowledge)
+   * 
+   * The prior acts as informed regularization:
+   * - With sparse data: individual matrix stays close to population/default
+   * - With abundant data: individual matrix diverges toward personal dynamics
+   */
+  private async getBayesianPrior(): Promise<Mat> {
+    try {
+      const popMatrix = await InteractionMatrix.findOne({
+        scope: 'population',
+      }).sort({ version: -1 }).lean();
+
+      if (popMatrix && popMatrix.matrix) {
+        return popMatrix.matrix;
+      }
+    } catch {
+      // Fall through to default
+    }
+    return defaultInteractionMatrix();
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -793,7 +861,9 @@ class PGEOrchestrator {
 
       if (allStates.length < MIN_STATES_FOR_LEARNING) return;
 
-      const { matrix, loss } = learnInteractionMatrix(allStates, REGULARIZATION_LAMBDA);
+      // Population learning uses default (expert) matrix as Bayesian prior
+      const popPrior = defaultInteractionMatrix();
+      const { matrix, loss } = learnInteractionMatrix(allStates, REGULARIZATION_LAMBDA, popPrior);
       const loops = detectFeedbackLoops(matrix);
       const sr = spectralRadius(matrix);
 
@@ -826,6 +896,16 @@ class PGEOrchestrator {
     } catch (error) {
       logger.error('[PGE] Population matrix update failed:', error);
     }
+  }
+
+  /**
+   * Quick SPSI computation (no DB, for inline event logging)
+   */
+  private computeSPSIQuick(sv: IStateVector): number {
+    const raw = 0.25 * sv.stress + 0.20 * sv.anxiety + 0.15 * sv.rumination
+      + 0.15 * sv.loneliness + 0.10 * sv.hopelessness + 0.10 * sv.sadness
+      - 0.15 * sv.hope - 0.08 * sv.perceivedSupport - 0.07 * sv.gratitude;
+    return Math.max(0, Math.min(1, raw));
   }
 }
 

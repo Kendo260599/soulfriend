@@ -349,11 +349,6 @@ export function detectCrisis(userInput: string): CrisisScenario | null {
   const inputLower = userInput.toLowerCase();
   const inputNormalized = removeVietnameseDiacritics(userInput);
 
-  console.error('🔍 CRISIS DETECTION DEBUG:');
-  console.error(`   Original: "${userInput}"`);
-  console.error(`   Lowercase: "${inputLower}"`);
-  console.error(`   Normalized: "${inputNormalized}"`);
-
   // Context-aware safe phrases that indicate non-crisis usage of ambiguous keywords
   const safePhrases = [
     // Medicine context (uống thuốc)
@@ -384,7 +379,6 @@ export function detectCrisis(userInput: string): CrisisScenario | null {
     if (matched) {
       // If safe context is present and matched trigger is ambiguous, skip
       if (hasSafeContext && scenario.level !== 'critical') {
-        console.error(`   ⚠️ SAFE CONTEXT override for: ${scenario.id} (trigger: "${matched}")`);
         continue;
       }
       // For critical scenarios, only skip if the matched trigger is specifically ambiguous
@@ -395,17 +389,14 @@ export function detectCrisis(userInput: string): CrisisScenario | null {
           removeVietnameseDiacritics(t) === normalizedMatched
         );
         if (isAmbiguous) {
-          console.error(`   ⚠️ SAFE CONTEXT override for ambiguous trigger: "${matched}"`);
           continue;
         }
       }
 
-      console.error(`   ✅ MATCHED: ${scenario.id} (${scenario.level})`);
       return scenario;
     }
   }
 
-  console.error('   ❌ NO MATCH');
   return null;
 }
 

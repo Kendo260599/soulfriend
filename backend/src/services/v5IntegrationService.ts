@@ -105,6 +105,27 @@ class V5IntegrationService {
       // ================================
       // 1. CAPTURE INTERACTION (Module 1)
       // ================================
+      // Map emotionalState to valid sentiment enum values
+      const sentimentMap: Record<string, string> = {
+        crisis: 'very_negative',
+        despair: 'very_negative',
+        panic: 'very_negative',
+        exhaustion: 'very_negative',
+        abandonment: 'negative',
+        guilt: 'negative',
+        loneliness: 'negative',
+        disappointment: 'negative',
+        neglect: 'negative',
+        manipulation: 'negative',
+        anxiety: 'negative',
+        neutral: 'neutral',
+        positive: 'positive',
+        very_positive: 'very_positive',
+        negative: 'negative',
+        very_negative: 'very_negative',
+      };
+      const mappedSentiment = sentimentMap[params.emotionalState || 'neutral'] || 'neutral';
+
       const captured = await interactionCaptureService.capture({
         sessionId: params.sessionId,
         userId: params.userId,
@@ -112,7 +133,7 @@ class V5IntegrationService {
         aiResponse: params.aiResponse,
         responseTimeMs: params.responseTimeMs,
         riskLevel: params.riskLevel || 'NONE',
-        sentiment: params.emotionalState || 'neutral',
+        sentiment: mappedSentiment,
         escalationTriggered: params.crisisLevel === 'high' || params.crisisLevel === 'critical',
         escalationType: params.crisisLevel === 'critical' ? 'crisis' : 'none',
         aiModelUsed: 'gpt-4o-mini',

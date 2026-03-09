@@ -132,7 +132,7 @@ export class DataRetentionService {
     // Also run initial check 5 minutes after startup
     setTimeout(() => {
       this.enforceAll().catch(err =>
-        logger.error('[DataRetention] Initial enforcement failed:', err)
+        logger.warn('[DataRetention] Initial enforcement failed:', err)
       );
     }, 5 * 60 * 1000);
   }
@@ -153,8 +153,8 @@ export class DataRetentionService {
   async enforceAll(): Promise<RetentionResult[]> {
     // Check MongoDB connection before running
     const mongoose = await import('mongoose');
-    if (mongoose.connection.readyState !== 1) {
-      logger.warn('[DataRetention] MongoDB not connected (state: ' + mongoose.connection.readyState + '), skipping enforcement');
+    if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) {
+      logger.warn('[DataRetention] MongoDB not ready (state: ' + mongoose.connection.readyState + '), skipping enforcement');
       return [];
     }
 

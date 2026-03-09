@@ -269,20 +269,20 @@ export class CriticalInterventionService {
       logger.error('Failed to persist alert to MongoDB:', err);
     });
 
-    logger.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`, {
+    logger.warn(`🚨 CRITICAL ALERT CREATED: ${alert.id}`, {
       userId,
       riskType: alert.riskType,
       keywords: alert.detectedKeywords,
     });
 
     // Force console output for Render visibility
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
-    console.error(`User: ${userId}`);
-    console.error(`Risk Type: ${alert.riskType}`);
-    console.error(`Keywords: ${alert.detectedKeywords.join(', ')}`);
-    console.error(`Message: "${alert.userMessage}"`);
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.warn(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
+    console.warn(`User: ${userId}`);
+    console.warn(`Risk Type: ${alert.riskType}`);
+    console.warn(`Keywords: ${alert.detectedKeywords.join(', ')}`);
+    console.warn(`Message: "${alert.userMessage}"`);
+    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // STEP 2: Immediate documentation (non-blocking)
     if (this.config.autoDocumentation) {
@@ -387,12 +387,12 @@ export class CriticalInterventionService {
       // FIX: Check if alert is still pending AND escalation email hasn't been sent
       const currentAlert = this.alertCache.get(alert.id);
       if (currentAlert && currentAlert.status === 'pending' && !currentAlert.escalationEmailSent) {
-        logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        logger.error(
+        logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logger.warn(
           `⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`
         );
-        logger.error(`Alert ${alert.id} - Escalating to emergency services`);
-        logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logger.warn(`Alert ${alert.id} - Escalating to emergency services`);
+        logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         await this.escalateToEmergencyServices(alert);
       } else if (currentAlert && currentAlert.escalationEmailSent) {
         logger.info(`⚠️  Alert ${alert.id} escalation email already sent. Skipping duplicate.`);
@@ -414,7 +414,7 @@ export class CriticalInterventionService {
       return;
     }
 
-    logger.error(`🚑 ESCALATING TO EMERGENCY SERVICES: Alert ${alert.id}`);
+    logger.warn(`🚑 ESCALATING TO EMERGENCY SERVICES: Alert ${alert.id}`);
 
     // Mark escalation email as sent BEFORE sending to prevent race conditions
     alert.escalationEmailSent = true;
@@ -547,7 +547,7 @@ export class CriticalInterventionService {
   private async notifyEmergencyHotline(alert: CriticalAlert): Promise<void> {
     const hotlines = this.config.hotlines.filter(h => h.available24h);
 
-    logger.error(
+    logger.warn(
       `☎️ Emergency hotlines notified for ${alert.id}:`,
       hotlines.map(h => h.name)
     );
@@ -608,7 +608,7 @@ This case requires IMMEDIATE attention.
         `.trim(),
       });
 
-      logger.error(
+      logger.warn(
         `🚨 Urgent email notifications sent to ${recipients.length} recipient(s) for escalated alert ${alert.id}`
       );
       console.log(`✅ Urgent email sent to: ${recipients.join(', ')}`);

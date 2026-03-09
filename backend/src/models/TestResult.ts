@@ -93,6 +93,10 @@ const TestResultSchema: Schema = new Schema({
     min: [0, 'Điểm số không được nhỏ hơn 0'],
     max: [10, 'Điểm số không được lớn hơn 10']
   }],
+  encryptedAnswers: {
+    type: String,
+    default: null,
+  },
   totalScore: {
     type: Number,
     required: [true, 'Tổng điểm là bắt buộc'],

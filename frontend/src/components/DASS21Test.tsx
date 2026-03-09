@@ -235,9 +235,13 @@ const DASS21Test: React.FC<DASS21TestProps> = ({ onComplete, onBack }) => {
    * Hoàn thành bài test
    */
   const handleComplete = () => {
-    // Chuyển đổi -1 thành 0 cho những câu chưa trả lời
-    const finalAnswers = answers.map(answer => answer === -1 ? 0 : answer);
-    onComplete(finalAnswers);
+    // Kiểm tra người dùng đã trả lời hết chưa
+    const unanswered = answers.filter(a => a === -1).length;
+    if (unanswered > 0) {
+      alert(`Bạn còn ${unanswered} câu chưa trả lời. Vui lòng hoàn thành tất cả các câu hỏi.`);
+      return;
+    }
+    onComplete(answers);
   };
 
   /**
@@ -245,6 +249,7 @@ const DASS21Test: React.FC<DASS21TestProps> = ({ onComplete, onBack }) => {
    */
   const canProceed = answers[currentQuestion] !== -1;
   const isLastQuestion = currentQuestion === dass21Questions.length - 1;
+  const allAnswered = answers.every(a => a !== -1);
   const progress = ((currentQuestion + 1) / dass21Questions.length) * 100;
 
   return (
@@ -304,7 +309,7 @@ const DASS21Test: React.FC<DASS21TestProps> = ({ onComplete, onBack }) => {
         
         <Button
           variant="primary"
-          disabled={!canProceed}
+          disabled={isLastQuestion ? !allAnswered : !canProceed}
           onClick={isLastQuestion ? handleComplete : handleNext}
         >
           {isLastQuestion ? 'Hoàn thành bài test' : 'Câu tiếp theo →'}

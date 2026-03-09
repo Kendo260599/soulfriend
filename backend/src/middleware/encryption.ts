@@ -163,11 +163,8 @@ function isEncrypted(value: string): boolean {
 export const encryptTestResult = (req: Request, res: Response, next: NextFunction) => {
   try {
     if (req.body && req.body.answers) {
-      // Encrypt test answers
+      // Encrypt test answers for storage
       req.body.encryptedAnswers = encryptionService.encrypt(JSON.stringify(req.body.answers));
-
-      // Keep original answers for processing, remove before saving
-      req.body._originalAnswers = req.body.answers;
     }
     next();
   } catch (error) {

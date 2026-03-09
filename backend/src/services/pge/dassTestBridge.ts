@@ -71,9 +71,9 @@ const MAX_SUBSCALE_SCORE = 42;
  * - Stress subscale → stress, anger, mentalFatigue, ↓calmness, ↓cognitiveClarity
  */
 function mapDASSToStateBias(scores: DASSScores): Partial<IStateVector> {
-  const dNorm = Math.min(1, scores.depression / MAX_SUBSCALE_SCORE);
-  const aNorm = Math.min(1, scores.anxiety / MAX_SUBSCALE_SCORE);
-  const sNorm = Math.min(1, scores.stress / MAX_SUBSCALE_SCORE);
+  const dNorm = Math.min(1, Math.max(0, scores.depression) / MAX_SUBSCALE_SCORE);
+  const aNorm = Math.min(1, Math.max(0, scores.anxiety) / MAX_SUBSCALE_SCORE);
+  const sNorm = Math.min(1, Math.max(0, scores.stress) / MAX_SUBSCALE_SCORE);
 
   return {
     // Depression subscale → negative emotions & reduced positive
@@ -117,6 +117,9 @@ function mapDASSToStateBias(scores: DASSScores): Partial<IStateVector> {
 class DASSTestBridgeService {
   private cache: Map<string, { result: DASSStateBias | null; cachedAt: number }> = new Map();
   private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+  private readonly MAX_CACHE_SIZE = 500;
+  private lastCleanup = Date.now();
+  private readonly CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
   /**
    * Get DASS-21 state bias for a user.
@@ -124,6 +127,9 @@ class DASSTestBridgeService {
    */
   async getStateBias(userId: string): Promise<DASSStateBias | null> {
     if (!userId) return null;
+
+    // Periodic cleanup of stale cache entries
+    this.cleanupIfNeeded();
 
     // Check cache
     const cached = this.cache.get(userId);
@@ -258,6 +264,32 @@ class DASSTestBridgeService {
     }
 
     return { boost: 0, severity, shouldElevate: false };
+  }
+
+  /**
+   * Evict expired entries and enforce max cache size
+   */
+  private cleanupIfNeeded(): void {
+    const now = Date.now();
+    if (now - this.lastCleanup < this.CLEANUP_INTERVAL_MS) return;
+    this.lastCleanup = now;
+
+    // Remove expired entries
+    for (const [key, entry] of this.cache) {
+      if (now - entry.cachedAt >= this.CACHE_TTL_MS) {
+        this.cache.delete(key);
+      }
+    }
+
+    // If still over max size, evict oldest entries
+    if (this.cache.size > this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].cachedAt - b[1].cachedAt);
+      const toRemove = entries.slice(0, this.cache.size - this.MAX_CACHE_SIZE);
+      for (const [key] of toRemove) {
+        this.cache.delete(key);
+      }
+    }
   }
 
   /**

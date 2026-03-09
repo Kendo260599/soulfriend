@@ -101,6 +101,9 @@ export interface TherapeuticProfile {
 export class TherapeuticContextService {
   private profileCache: Map<string, { profile: TherapeuticProfile; cachedAt: number }> = new Map();
   private readonly CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+  private readonly MAX_CACHE_SIZE = 200;
+  private lastCleanup = Date.now();
+  private readonly CLEANUP_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
   /**
    * Build complete therapeutic profile for a user
@@ -108,6 +111,7 @@ export class TherapeuticContextService {
   async buildProfile(userId: string, forceRefresh = false): Promise<TherapeuticProfile> {
     // Check cache
     if (!forceRefresh) {
+      this.cleanupIfNeeded();
       const cached = this.profileCache.get(userId);
       if (cached && Date.now() - cached.cachedAt < this.CACHE_TTL_MS) {
         return cached.profile;
@@ -408,7 +412,9 @@ export class TherapeuticContextService {
       });
     }
 
-    return Array.from(byType.entries()).map(([testType, scores]) => {
+    const trends: TestTrend[] = [];
+
+    for (const [testType, scores] of byType.entries()) {
       const latestScore = scores[scores.length - 1].score;
       const latestSeverity = scores[scores.length - 1].severity;
 
@@ -425,8 +431,46 @@ export class TherapeuticContextService {
         else trend = 'stable';
       }
 
-      return { testType, scores, trend, latestScore, latestSeverity, changeRate };
-    });
+      trends.push({ testType, scores, trend, latestScore, latestSeverity, changeRate });
+
+      // DASS-21: also track each subscale individually for more granular trends
+      if (testType === 'DASS-21') {
+        const dassResults = testResults.filter(r => r.testType === 'DASS-21');
+        for (const subscale of ['depression', 'anxiety', 'stress'] as const) {
+          const subScores = dassResults
+            .filter(r => r.subscaleScores?.[subscale] != null)
+            .map(r => ({
+              date: r.completedAt,
+              score: r.subscaleScores[subscale] as number,
+              severity: r.evaluation?.severity || 'unknown',
+            }));
+
+          if (subScores.length === 0) continue;
+
+          const subLatest = subScores[subScores.length - 1].score;
+          let subTrend: TestTrend['trend'] = 'insufficient_data';
+          let subChangeRate = 0;
+
+          if (subScores.length >= 2) {
+            subChangeRate = subLatest - subScores[0].score;
+            if (subChangeRate <= -3) subTrend = 'improving';
+            else if (subChangeRate >= 3) subTrend = 'worsening';
+            else subTrend = 'stable';
+          }
+
+          trends.push({
+            testType: `DASS-21:${subscale}`,
+            scores: subScores,
+            trend: subTrend,
+            latestScore: subLatest,
+            latestSeverity: subScores[subScores.length - 1].severity,
+            changeRate: subChangeRate,
+          });
+        }
+      }
+    }
+
+    return trends;
   }
 
   /**
@@ -717,6 +761,30 @@ export class TherapeuticContextService {
       declining: 'giảm',
     };
     return map[trend] || trend;
+  }
+
+  /**
+   * Evict expired entries and enforce max cache size
+   */
+  private cleanupIfNeeded(): void {
+    const now = Date.now();
+    if (now - this.lastCleanup < this.CLEANUP_INTERVAL_MS) return;
+    this.lastCleanup = now;
+
+    for (const [key, entry] of this.profileCache) {
+      if (now - entry.cachedAt >= this.CACHE_TTL_MS) {
+        this.profileCache.delete(key);
+      }
+    }
+
+    if (this.profileCache.size > this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this.profileCache.entries())
+        .sort((a, b) => a[1].cachedAt - b[1].cachedAt);
+      const toRemove = entries.slice(0, this.profileCache.size - this.MAX_CACHE_SIZE);
+      for (const [key] of toRemove) {
+        this.profileCache.delete(key);
+      }
+    }
   }
 
   /**

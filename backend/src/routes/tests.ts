@@ -30,7 +30,7 @@ router.post(
     body('testType')
       .isIn(['DASS-21'])
       .withMessage('Loại test không hợp lệ'),
-    body('answers').isArray().withMessage('Câu trả lời phải là một mảng'),
+    body('answers').isArray({ min: 21, max: 21 }).withMessage('Cần đúng 21 câu trả lời'),
     body('answers.*').isInt({ min: 0, max: 3 }).withMessage('Điểm số phải từ 0-3'),
     body('consentId').isString().isLength({ min: 1 }).withMessage('Consent ID không hợp lệ'),
   ],
@@ -46,7 +46,7 @@ router.post(
       });
     }
 
-    const { testType, answers, consentId, userId } = req.body;
+    const { testType, answers, consentId, userId, encryptedAnswers } = req.body;
 
     // Chuyển đổi answers array thành object với key là questionId
     const answersMap: { [key: number]: number } = {};
@@ -86,6 +86,7 @@ router.post(
       userId: userId || null,
       testType,
       answers,
+      encryptedAnswers: encryptedAnswers || null,
       totalScore,
       subscaleScores: evaluation.subscaleScores,
       evaluation,

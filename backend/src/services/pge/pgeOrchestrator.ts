@@ -116,7 +116,7 @@ class PGEOrchestrator {
       // STEP 1.5: Blend DASS-21 Test Scores (if available)
       // ════════════════════════════════════════════
       const dassBias = await dassTestBridge.getStateBias(userId);
-      if (dassBias) {
+      if (dassBias && dassBias.isRecent) {
         stateVector = dassTestBridge.blendWithExtraction(stateVector, dassBias);
         logger.debug('[PGE] DASS-21 bias applied', {
           userId: userId.substring(0, 8),

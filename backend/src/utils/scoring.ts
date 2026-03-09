@@ -36,15 +36,15 @@ export function scoreDASS21(answers: AnswerMap): TestResult {
   let stressScore = 0;
 
   depressionQuestions.forEach(q => {
-    depressionScore += answers[q] || 0;
+    depressionScore += answers[q] ?? 0;
   });
 
   anxietyQuestions.forEach(q => {
-    anxietyScore += answers[q] || 0;
+    anxietyScore += answers[q] ?? 0;
   });
 
   stressQuestions.forEach(q => {
-    stressScore += answers[q] || 0;
+    stressScore += answers[q] ?? 0;
   });
 
   // Nhân đôi để có điểm DASS-21 chuẩn
@@ -103,7 +103,7 @@ export function scoreDASS21(answers: AnswerMap): TestResult {
  * Main scoring function - chỉ hỗ trợ DASS-21
  */
 export function scoreTest(testType: string, answers: AnswerMap): TestResult {
-  const normalizedType = testType.toUpperCase().replace('_', '-');
+  const normalizedType = testType.toUpperCase().replace(/_/g, '-');
   if (normalizedType === 'DASS-21') {
     return scoreDASS21(answers);
   }

@@ -600,8 +600,10 @@ export function simulateTrajectory(
   let S = [...S0];
 
   for (let t = 0; t < steps; t++) {
-    // dS = A·S
-    let dS = matVec(A, S);
+    // dS = (A − I)·S  (continuous-time rate derived from discrete transition A)
+    // A is a discrete-time transition matrix (S_next = A·S), so the
+    // continuous-time rate of change is (A − I)·S, NOT A·S.
+    let dS = vecSub(matVec(A, S), S);
 
     // + B·I if external input provided
     if (I && B) {
@@ -997,6 +999,8 @@ const INTERVENTION_LABELS_VN = [
  * @param steps — simulation steps (default 5)
  * @param dt — time step (default 0.1)
  * @param intensityLevels — intensities to try (default [0.5, 0.7, 1.0])
+ * @param currentLoopStrength — current feedback loop strength for accurate EBH comparison
+ * @param currentInertia — current negative inertia for accurate EBH comparison
  */
 export function findOptimalIntervention(
   S: Vec,
@@ -1005,6 +1009,8 @@ export function findOptimalIntervention(
   steps = 5,
   dt = 0.1,
   intensityLevels = [0.5, 0.7, 1.0],
+  currentLoopStrength = 0,
+  currentInertia = 0,
 ): InterventionCandidate[] {
   const interventionB = B ?? defaultInterventionMatrix();
   const S_PA = positiveAttractor();
@@ -1015,8 +1021,8 @@ export function findOptimalIntervention(
 
   // Current state metrics (baseline)
   const currentEBH = computeEBHScore({
-    loopStrength: 0, // simplified — use 0 for comparison
-    negativeInertia: 0,
+    loopStrength: currentLoopStrength,
+    negativeInertia: currentInertia,
     potentialEnergy: potentialEnergy(S, W),
     hopeLevel: S[8],
   });
@@ -1035,8 +1041,8 @@ export function findOptimalIntervention(
       // Compute metrics
       const predU = potentialEnergy(predictedState, W);
       const predEBH = computeEBHScore({
-        loopStrength: 0,
-        negativeInertia: 0,
+        loopStrength: currentLoopStrength,
+        negativeInertia: currentInertia,
         potentialEnergy: predU,
         hopeLevel: predictedState[8],
       });
@@ -1098,8 +1104,8 @@ export function findOptimalIntervention(
     const predictedState = trajectory[trajectory.length - 1];
     const predU = potentialEnergy(predictedState, W);
     const predEBH = computeEBHScore({
-      loopStrength: 0,
-      negativeInertia: 0,
+      loopStrength: currentLoopStrength,
+      negativeInertia: currentInertia,
       potentialEnergy: predU,
       hopeLevel: predictedState[8],
     });
@@ -2514,11 +2520,11 @@ export function forecastConfidenceInterval(
 // Risk Probability Estimation
 // ─────────────────────────────────────────────
 
-/** EBH threshold for each risk zone */
+/** EBH threshold for each risk zone — must match classifyZone() thresholds */
 const ZONE_THRESHOLDS = {
-  risk: 0.5,      // EBH >= 0.5 → risk zone
-  critical: 0.7,  // EBH >= 0.7 → critical
-  black_hole: 0.85, // EBH >= 0.85 → black hole
+  risk: 0.4,       // EBH >= 0.4 → risk zone (classifyZone uses 0.4)
+  critical: 0.6,   // EBH >= 0.6 → critical  (classifyZone uses 0.6)
+  black_hole: 0.8, // EBH >= 0.8 → black hole (classifyZone uses 0.8)
 };
 
 /**

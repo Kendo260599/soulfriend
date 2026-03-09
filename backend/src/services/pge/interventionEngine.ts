@@ -162,6 +162,8 @@ class InterventionEngine {
       5,   // simulation steps
       0.1, // dt
       [0.5, 0.7, 1.0], // intensity levels
+      params.loopStrength ?? 0,
+      params.negativeInertia ?? 0,
     );
 
     // 3.5 PHASE 4: Apply topology profile weights

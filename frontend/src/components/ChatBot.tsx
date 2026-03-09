@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { io, Socket } from 'socket.io-client';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import AnimatedButton from './AnimatedButton';
 import { useAI } from '../contexts/AIContext';
+import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
 
@@ -438,6 +440,108 @@ const QuickActionButton = styled.button`
   }
 `;
 
+const EmojiPickerWrapper = styled.div`
+  position: relative;
+  padding: 0 10px;
+  z-index: 100;
+  
+  .EmojiPickerReact {
+    border: none !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 12px !important;
+  }
+`;
+
+const InputActions = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+`;
+
+const InputActionButton = styled.button<{ active?: boolean; disabled?: boolean }>`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: ${props => props.active ? 'rgba(102, 126, 234, 0.2)' : 'transparent'};
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: ${props => props.disabled ? 0.5 : 1};
+  flex-shrink: 0;
+  
+  &:hover:not(:disabled) {
+    background: rgba(102, 126, 234, 0.15);
+    transform: scale(1.1);
+  }
+`;
+
+const ImagePreviewContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(102, 126, 234, 0.05);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+`;
+
+const ImagePreviewThumb = styled.img`
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(102, 126, 234, 0.3);
+`;
+
+const RemoveImageButton = styled.button`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 59, 48, 0.9);
+  color: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 4px;
+  left: 72px;
+  
+  &:hover {
+    background: rgba(255, 59, 48, 1);
+    transform: scale(1.1);
+  }
+`;
+
+const UploadingOverlay = styled.div`
+  font-size: 0.75rem;
+  color: #667eea;
+  font-weight: 500;
+  margin-left: 8px;
+`;
+
+const ChatImage = styled.img`
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  display: block;
+  
+  &:hover {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+`;
+
 interface ChatMessage {
   id: string;
   text: string;
@@ -449,6 +553,7 @@ interface ChatMessage {
   retryCount?: number;
   type?: 'ai' | 'expert' | 'system' | 'user' | 'crisis' | 'error';
   status?: 'sending' | 'sent' | 'error';
+  imageUrl?: string;
 }
 
 const MAX_MESSAGES = 200;
@@ -493,6 +598,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const [expertName, setExpertName] = useState<string | null>(null);
   const [expertTyping, setExpertTyping] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -949,16 +1060,26 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isTyping) return;
+    if ((!inputValue.trim() && !imageFile) || isTyping) return;
+
+    // Upload image first if present
+    let uploadedImageUrl: string | undefined;
+    if (imageFile) {
+      const url = await uploadImage(imageFile);
+      if (!url) return; // Upload failed
+      uploadedImageUrl = url;
+      removeImagePreview();
+    }
 
     const userMessage: ChatMessage = {
       id: nextMsgId('user'),
-      text: inputValue,
+      text: inputValue || (uploadedImageUrl ? '📷 Đã gửi ảnh' : ''),
       isBot: false,
       timestamp: new Date(),
       retryCount: 0,
       type: 'user',
       status: 'sending',
+      imageUrl: uploadedImageUrl,
     };
 
     const originalInput = inputValue.trim();
@@ -974,6 +1095,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('user_message', {
         message: originalInput,
+        imageUrl: uploadedImageUrl,
         timestamp: new Date(),
       });
       // Mark as sent
@@ -1116,6 +1238,94 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     }
   };
 
+  // Emoji picker handler
+  const onEmojiClick = useCallback((emojiData: EmojiClickData) => {
+    setInputValue(prev => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
+  }, []);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
+
+  // Image upload handler
+  const handleImageSelect = useCallback((file: File) => {
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setLastError('Chỉ hỗ trợ file ảnh (JPEG, PNG, GIF, WebP)');
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setLastError('Dung lượng ảnh tối đa 5MB');
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageSelect(file);
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  }, [handleImageSelect]);
+
+  const removeImagePreview = useCallback(() => {
+    setImagePreview(null);
+    setImageFile(null);
+  }, []);
+
+  // Upload image to server
+  const uploadImage = useCallback(async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await axios.post(`${API_URL}/api/v2/upload/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+
+      return res.data.url;
+    } catch {
+      setLastError('Không thể tải ảnh lên. Vui lòng thử lại.');
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  // Drag & drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleImageSelect(file);
+    }
+  }, [handleImageSelect]);
+
   // Auto-resize textarea & emit typing indicator
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1161,13 +1371,21 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         </BotInfo>
       </ChatHeader>
 
-      <MessagesContainer isOpen={isOpen} ref={messagesContainerRef} onScroll={handleScroll}>
+      <MessagesContainer isOpen={isOpen} ref={messagesContainerRef} onScroll={handleScroll}
+        onDragOver={handleDragOver} onDrop={handleDrop}>
         {messages.map((message) => (
           <div key={message.id}>
             <Message isBot={message.isBot}>
               <MessageBubble isBot={message.isBot}>
                 {message.type === 'expert' && <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e91e63', marginBottom: 4 }}>❤️ CHUN❤️</div>}
-                {renderMessageText(message.text)}
+                {message.imageUrl && (
+                  <ChatImage 
+                    src={message.imageUrl} 
+                    alt="Ảnh đã gửi" 
+                    onClick={() => window.open(message.imageUrl, '_blank')}
+                  />
+                )}
+                {message.text && renderMessageText(message.text)}
                 <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4, textAlign: message.isBot ? 'left' : 'right' }}>
                   {formatTime(message.timestamp)}
                   {!message.isBot && message.status === 'sent' && ' ✓'}
@@ -1301,7 +1519,46 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         )}
       </Toolbar>
 
+      {/* Image preview */}
+      {imagePreview && isOpen && (
+        <ImagePreviewContainer>
+          <ImagePreviewThumb src={imagePreview} alt="Preview" />
+          <RemoveImageButton onClick={removeImagePreview} title="Xóa ảnh">✕</RemoveImageButton>
+          {isUploading && <UploadingOverlay>Đang tải...</UploadingOverlay>}
+        </ImagePreviewContainer>
+      )}
+
+      {/* Emoji picker popup */}
+      {showEmojiPicker && isOpen && (
+        <EmojiPickerWrapper ref={emojiPickerRef}>
+          <EmojiPicker onEmojiClick={onEmojiClick} width="100%" height={350} />
+        </EmojiPickerWrapper>
+      )}
+
       <InputContainer isOpen={isOpen}>
+        <InputActions>
+          <InputActionButton 
+            onClick={() => setShowEmojiPicker(prev => !prev)} 
+            title="Chọn emoji"
+            active={showEmojiPicker}
+          >
+            😊
+          </InputActionButton>
+          <InputActionButton 
+            onClick={() => fileInputRef.current?.click()} 
+            title="Gửi ảnh"
+            disabled={isUploading}
+          >
+            📷
+          </InputActionButton>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            onChange={handleFileInputChange}
+            style={{ display: 'none' }}
+          />
+        </InputActions>
         <MessageTextarea
           ref={textareaRef}
           value={inputValue}
@@ -1315,8 +1572,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           variant="primary"
           size="small"
           onClick={handleSendMessage}
-          disabled={!inputValue.trim() || isTyping || !isOnline || isProcessing}
-          loading={isTyping || isProcessing}
+          disabled={(!inputValue.trim() && !imageFile) || isTyping || !isOnline || isProcessing || isUploading}
+          loading={isTyping || isProcessing || isUploading}
           icon="📤"
         >
           Gửi

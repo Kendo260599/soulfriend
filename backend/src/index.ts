@@ -65,6 +65,9 @@ import v5SystemHealthRoutes from './routes/v5/systemHealth';
 // PGE Routes — Psychological Gravity Engine
 import pgeRoutes from './routes/pge';
 
+// Upload Routes — Image Upload
+import uploadRoutes from './routes/upload';
+
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
 import './models/Expert';
@@ -337,6 +340,9 @@ app.use('/api/v5/health', v5SystemHealthRoutes);
 // 🧠 PGE: Psychological Gravity Engine Routes
 app.use('/api/pge', pgeRoutes);
 
+// 📷 Upload: Image upload for chat
+app.use('/api/v2/upload', uploadRoutes);
+
 // 🧪 TEST: QStash Testing Endpoints (Development ONLY)
 if (config.NODE_ENV === 'development') {
   app.use('/api/test/qstash', qstashTestRoutes);
@@ -356,6 +362,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/research', researchRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+
+// ====================
+// STATIC FILES (uploads for development)
+// ====================
+import path from 'path';
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ====================
 // HEALTH CHECK ENDPOINTS

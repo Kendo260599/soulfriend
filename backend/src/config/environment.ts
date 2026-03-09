@@ -70,6 +70,11 @@ interface EnvironmentConfig {
   PINECONE_API_KEY?: string;
   PINECONE_ENVIRONMENT?: string;
   PINECONE_INDEX_NAME?: string;
+
+  // Cloudinary (Image Upload)
+  CLOUDINARY_CLOUD_NAME?: string;
+  CLOUDINARY_API_KEY?: string;
+  CLOUDINARY_API_SECRET?: string;
 }
 
 /**
@@ -187,6 +192,11 @@ function parseEnvironment(): EnvironmentConfig {
     PINECONE_API_KEY: getEnvOptional('PINECONE_API_KEY'),
     PINECONE_ENVIRONMENT: getEnv('PINECONE_ENVIRONMENT', 'us-east-1'),
     PINECONE_INDEX_NAME: getEnv('PINECONE_INDEX_NAME', 'soulfriend-memories'),
+
+    // Cloudinary (Image Upload)
+    CLOUDINARY_CLOUD_NAME: getEnvOptional('CLOUDINARY_CLOUD_NAME'),
+    CLOUDINARY_API_KEY: getEnvOptional('CLOUDINARY_API_KEY'),
+    CLOUDINARY_API_SECRET: getEnvOptional('CLOUDINARY_API_SECRET'),
   };
 }
 

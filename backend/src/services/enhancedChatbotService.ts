@@ -207,7 +207,9 @@ export class EnhancedChatbotService {
       const riskAssessment = await centralRiskScoringService.assess(
         message,
         this.getUserHistory(sessionId),
-        nuancedEmotion.emotion
+        nuancedEmotion.emotion,
+        undefined,
+        userId
       );
       const detectedCrisis = detectCrisis(message);
       logger.info('Risk assessment completed', {

@@ -390,7 +390,7 @@ export class TherapeuticContextService {
   async buildTestTrends(userId: string): Promise<TestTrend[]> {
     // Query test results — TestResult model uses consentId, not userId directly
     // However, there's a userId index — the field may be populated dynamically
-    const testResults = await TestResult.find({ userId } as any)
+    const testResults = await TestResult.find({ userId })
       .sort({ completedAt: 1 })
       .lean() as any[];
 

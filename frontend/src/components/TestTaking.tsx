@@ -136,10 +136,16 @@ const TestTaking: React.FC<TestTakingProps> = ({
     try {
       // Gửi kết quả lên server
       const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
+      const userId = localStorage.getItem('sf_userId') || (() => {
+        const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        localStorage.setItem('sf_userId', id);
+        return id;
+      })();
       const response = await axios.post(`${apiUrl}/api/v2/tests/submit`, {
         testType: currentTestType,
         answers,
-        consentId
+        consentId,
+        userId
       });
 
       if (response.data.success) {

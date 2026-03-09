@@ -44,6 +44,7 @@ import { resilienceEngine } from './resilienceEngine';
 import { treatmentPlanEngine } from './treatmentPlanEngine';
 import { outcomeLearningEngine } from './outcomeLearningEngine';
 import { expertMonitoringService } from './expertMonitoringService';
+import { dassTestBridge } from './dassTestBridge';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -109,7 +110,21 @@ class PGEOrchestrator {
       // STEP 1: Emotion Extraction → State Vector
       // ════════════════════════════════════════════
       const extraction = await emotionExtractionService.extract(userMessage);
-      const stateVector = extraction.stateVector;
+      let stateVector = extraction.stateVector;
+
+      // ════════════════════════════════════════════
+      // STEP 1.5: Blend DASS-21 Test Scores (if available)
+      // ════════════════════════════════════════════
+      const dassBias = await dassTestBridge.getStateBias(userId);
+      if (dassBias) {
+        stateVector = dassTestBridge.blendWithExtraction(stateVector, dassBias);
+        logger.debug('[PGE] DASS-21 bias applied', {
+          userId: userId.substring(0, 8),
+          weight: dassBias.weight.toFixed(2),
+          severity: dassBias.scores.severity,
+        });
+      }
+
       const S = stateToVec(stateVector);
 
       // ════════════════════════════════════════════

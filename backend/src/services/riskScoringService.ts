@@ -31,6 +31,7 @@ import moderationService, { ModerationResult } from './moderationService';
 import { detectCrisis, assessRisk, CrisisScenario } from '../data/crisisManagementData';
 import { socialHarmDecoder, SocialHarmResult } from './socialHarmDecoder';
 import { biasMonitor, BiasCheckResult } from './biasMonitor';
+import { dassTestBridge } from './pge/dassTestBridge';
 import { logger } from '../utils/logger';
 
 // =============================================================================
@@ -54,7 +55,8 @@ export class CentralRiskScoringService {
     message: string,
     userHistory: string[] = [],
     emotionalState: string = 'neutral',
-    botResponse?: string
+    botResponse?: string,
+    userId?: string
   ): Promise<RiskAssessment> {
     const signals: RiskSignal[] = [];
     let detectedCrisis: CrisisScenario | null = null;
@@ -184,6 +186,28 @@ export class CentralRiskScoringService {
     }
 
     // ─────────────────────────────────────────────────
+    // SOURCE 6: DASS-21 Clinical Test Scores (if userId available)
+    // ─────────────────────────────────────────────────
+    if (userId) {
+      try {
+        const dassRisk = await dassTestBridge.getRiskBoost(userId);
+        if (dassRisk.boost > 0) {
+          signals.push({
+            source: 'clinical_test',
+            level: dassRisk.shouldElevate ? RiskLevel.HIGH : RiskLevel.MODERATE,
+            score: dassRisk.boost,
+            confidence: 0.85,
+            details: {
+              category: `DASS-21 severity: ${dassRisk.severity}`,
+            },
+          });
+        }
+      } catch (error) {
+        logger.warn('DASS-21 risk boost failed:', error);
+      }
+    }
+
+    // ─────────────────────────────────────────────────
     // AGGREGATE: Determine final risk level
     // ─────────────────────────────────────────────────
     const finalLevel = this.aggregateSignals(signals);
@@ -245,6 +269,7 @@ export class CentralRiskScoringService {
     const defaultWeights: Record<string, number> = {
       crisis_keywords: 1.0,
       moderation: 0.9,
+      clinical_test: 0.85,
       social_harm: 0.85,
       bias_monitor: 0.7,
       sentiment: 0.7,

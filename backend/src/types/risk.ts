@@ -89,7 +89,7 @@ export type RiskScore = number;
  * Result from a single risk detection source
  */
 export interface RiskSignal {
-  source: 'lexical' | 'crisis_keywords' | 'moderation' | 'sentiment' | 'ai' | 'history' | 'social_harm' | 'bias_monitor';
+  source: 'lexical' | 'crisis_keywords' | 'moderation' | 'sentiment' | 'ai' | 'history' | 'social_harm' | 'bias_monitor' | 'clinical_test';
   level: RiskLevel;
   score: RiskScore;
   confidence: number; // 0..1

@@ -13,6 +13,9 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { authenticateAdmin } from '../middleware/auth';
 import { encryptTestResult } from '../middleware/encryption';
 import { checkConsent } from '../middleware/consentEnforcement';
+import { dassTestBridge } from '../services/pge/dassTestBridge';
+import { therapeuticContextService } from '../services/therapeuticContextService';
+import logger from '../utils/logger';
 
 import mongoose from 'mongoose';
 const router = express.Router();
@@ -43,7 +46,7 @@ router.post(
       });
     }
 
-    const { testType, answers, consentId } = req.body;
+    const { testType, answers, consentId, userId } = req.body;
 
     // Chuyển đổi answers array thành object với key là questionId
     const answersMap: { [key: number]: number } = {};
@@ -80,15 +83,24 @@ router.post(
 
     // Lưu kết quả test vào MongoDB
     const testResult = new TestResult({
+      userId: userId || null,
       testType,
       answers,
       totalScore,
+      subscaleScores: evaluation.subscaleScores,
       evaluation,
       consentId,
       completedAt: new Date(),
     });
 
     await testResult.save();
+
+    // Invalidate caches so next chat reflects new test data
+    if (userId) {
+      dassTestBridge.invalidateCache(userId);
+      therapeuticContextService.invalidateCache(userId);
+      logger.info('Test submitted — caches invalidated for PGE & therapeutic context', { userId, testType });
+    }
 
     res.status(201).json({
       success: true,
@@ -168,15 +180,7 @@ router.get('/questions/:testType', (req: Request, res: Response) => {
   });
 });
 
-/**
- * Tính toán đánh giá dựa trên loại test và điểm số
- */
-function calculateEvaluation(testType: string, totalScore: number, answers: number[]): any {
-  if (testType === 'DASS-21') {
-    return calculateDASSEvaluation(answers);
-  }
-  return { level: 'unknown', description: 'Chưa có đánh giá cho loại test này' };
-}
+// === Dead code removed: calculateEvaluation/calculateDASSEvaluation — scoring.ts is the single source of truth ===
 
 /**
  * Lấy câu hỏi theo loại test
@@ -193,71 +197,6 @@ function getQuestionsByTestType(testType: string): any {
     return null;
   }
 }
-
-/**
- * DASS-21 Evaluation - Đánh giá chi tiết 3 thang con
- */
-function calculateDASSEvaluation(answers: number[]) {
-  const depressionItems = [3, 5, 10, 13, 16, 17, 21];
-  const anxietyItems = [2, 4, 7, 9, 15, 19, 20];
-  const stressItems = [1, 6, 8, 11, 12, 14, 18];
-
-  const calcSubscale = (items: number[]) =>
-    items.reduce((sum, i) => sum + (answers[i - 1] || 0), 0) * 2;
-
-  const depression = calcSubscale(depressionItems);
-  const anxiety = calcSubscale(anxietyItems);
-  const stress = calcSubscale(stressItems);
-
-  const getLevel = (score: number, type: 'depression' | 'anxiety' | 'stress') => {
-    const ranges: Record<string, [number, number, string, string][]> = {
-      depression: [
-        [0, 9, 'normal', 'Bình thường'],
-        [10, 13, 'mild', 'Nhẹ'],
-        [14, 20, 'moderate', 'Vừa'],
-        [21, 27, 'severe', 'Nặng'],
-        [28, 42, 'extremely_severe', 'Rất nặng'],
-      ],
-      anxiety: [
-        [0, 7, 'normal', 'Bình thường'],
-        [8, 9, 'mild', 'Nhẹ'],
-        [10, 14, 'moderate', 'Vừa'],
-        [15, 19, 'severe', 'Nặng'],
-        [20, 42, 'extremely_severe', 'Rất nặng'],
-      ],
-      stress: [
-        [0, 14, 'normal', 'Bình thường'],
-        [15, 18, 'mild', 'Nhẹ'],
-        [19, 25, 'moderate', 'Vừa'],
-        [26, 33, 'severe', 'Nặng'],
-        [34, 42, 'extremely_severe', 'Rất nặng'],
-      ],
-    };
-    const range = ranges[type].find(([min, max]) => score >= min && score <= max);
-    return range ? { level: range[2], label: range[3] } : { level: 'normal', label: 'Bình thường' };
-  };
-
-  const dLevel = getLevel(depression, 'depression');
-  const aLevel = getLevel(anxiety, 'anxiety');
-  const sLevel = getLevel(stress, 'stress');
-
-  // Xác định mức độ tổng thể
-  const severityOrder = ['normal', 'mild', 'moderate', 'severe', 'extremely_severe'];
-  const maxSeverity = [dLevel.level, aLevel.level, sLevel.level]
-    .sort((a, b) => severityOrder.indexOf(b) - severityOrder.indexOf(a))[0];
-
-  return {
-    level: maxSeverity,
-    description: `Trầm cảm: ${dLevel.label} (${depression}đ) | Lo âu: ${aLevel.label} (${anxiety}đ) | Căng thẳng: ${sLevel.label} (${stress}đ)`,
-    subscales: {
-      depression: { score: depression, ...dLevel },
-      anxiety: { score: anxiety, ...aLevel },
-      stress: { score: stress, ...sLevel },
-    },
-  };
-}
-
-// === Đã xóa các hàm evaluation cũ (GAD-7, PHQ-9, EPDS, etc.) - chỉ giữ DASS-21 ===
 
 /**
  * GET /api/tests/validate

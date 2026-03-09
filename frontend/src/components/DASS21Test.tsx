@@ -6,37 +6,37 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
-// Câu hỏi DASS-21 (bản tiếng Việt)
+// Câu hỏi DASS-21 (bản tiếng Việt chuẩn — Lovibond & Lovibond, 1995)
 const dass21Questions = [
-  "Tôi cảm thấy khó thư giãn",
-  "Tôi nhận ra miệng khô",
-  "Tôi cảm thấy không trải nghiệm được cảm xúc tích cực",
-  "Tôi gặp khó khăn trong việc thở (thở nhanh, khó thở khi không gắng sức)",
-  "Tôi cảm thấy khó bắt đầu làm việc",
-  "Tôi có xu hướng phản ứng thái quá với các tình huống",
-  "Tôi bị run, rung (ví dụ: ở tay)",
-  "Tôi cảm thấy mình đang tiêu tốn rất nhiều năng lượng thần kinh",
-  "Tôi lo lắng về những tình huống mà mình có thể hoảng sợ và làm cho mình trông ngớ ngẩn",
-  "Tôi cảm thấy rằng mình không có gì để mong đợi",
-  "Tôi cảm thấy bản thân bị kích động",
-  "Tôi cảm thấy khó thư giãn",
-  "Tôi cảm thấy buồn bã và chán nản",
-  "Tôi không thể chịu đựng được mọi thứ cản trở việc mình đang làm",
-  "Tôi cảm thấy gần như hoảng sợ",
-  "Tôi không thể hào hứng với bất cứ điều gì",
-  "Tôi cảm thấy mình không xứng đáng làm người",
-  "Tôi cảm thấy khá nhạy cảm",
-  "Tôi nhận ra rằng tim đập nhanh mà không gắng sức (ví dụ: đập nhanh, nhịp tim không đều)",
-  "Tôi cảm thấy sợ hãi mà không có lý do chính đáng",
-  "Tôi cảm thấy cuộc sống không có ý nghĩa"
+  "Tôi thấy khó mà thoải mái được",                                                              // 1 - Stress
+  "Tôi bị khô miệng",                                                                               // 2 - Anxiety
+  "Tôi không thể có cảm xúc tích cực gì cả",                                                       // 3 - Depression
+  "Tôi bị rối loạn nhịp thở (thở gấp, khó thở dù không hoạt động thể lực)",                        // 4 - Anxiety
+  "Tôi thấy khó bắt tay vào công việc",                                                             // 5 - Depression
+  "Tôi có xu hướng phản ứng thái quá",                                                              // 6 - Stress
+  "Tôi bị run (tay, chân...)",                                                                      // 7 - Anxiety
+  "Tôi thấy mình luôn bồn chồn",                                                                    // 8 - Stress
+  "Tôi lo lắng về những tình huống có thể làm tôi hoảng sợ hoặc biến tôi thành trò cười",           // 9 - Anxiety
+  "Tôi thấy mình chẳng có gì để mong đợi cả",                                                      // 10 - Depression
+  "Tôi thấy bản thân dễ bị kích động",                                                              // 11 - Stress
+  "Tôi thấy khó thư giãn được",                                                                     // 12 - Stress
+  "Tôi cảm thấy buồn rầu, chán nản",                                                               // 13 - Depression
+  "Tôi không chấp nhận được bất cứ điều gì cản trở tôi tiếp tục công việc đang làm",               // 14 - Stress
+  "Tôi thấy mình gần như hoảng loạn",                                                               // 15 - Anxiety
+  "Tôi không thể hào hứng với bất cứ điều gì",                                                      // 16 - Depression
+  "Tôi cảm thấy mình chẳng đáng làm người",                                                        // 17 - Depression
+  "Tôi thấy mình khá dễ phật ý, tự ái",                                                            // 18 - Stress
+  "Tôi nghe thấy rõ tiếng nhịp tim dù không làm việc gì (đánh trống ngực...)",                     // 19 - Anxiety
+  "Tôi hay sợ vô cớ",                                                                               // 20 - Anxiety
+  "Tôi thấy cuộc sống vô nghĩa"                                                                     // 21 - Depression
 ];
 
-// Các tùy chọn trả lời
+// Các tùy chọn trả lời (chuẩn DASS-21 Lovibond & Lovibond, 1995 — bản Việt hóa)
 const answerOptions = [
-  { value: 0, label: "Không bao giờ", description: "Không áp dụng cho tôi" },
-  { value: 1, label: "Thỉnh thoảng", description: "Áp dụng cho tôi ở một mức độ nào đó, hoặc đôi khi" },
-  { value: 2, label: "Thường xuyên", description: "Áp dụng cho tôi ở mức độ đáng kể, hoặc phần lớn thời gian" },
-  { value: 3, label: "Rất thường xuyên", description: "Áp dụng cho tôi rất nhiều, hoặc hầu hết thời gian" }
+  { value: 0, label: "Không đúng chút nào", description: "Không đúng với tôi chút nào cả" },
+  { value: 1, label: "Đúng phần nào", description: "Đúng với tôi phần nào, hoặc thỉnh thoảng mới có" },
+  { value: 2, label: "Đúng phần nhiều", description: "Đúng với tôi phần nhiều, hoặc phần lớn thời gian" },
+  { value: 3, label: "Hoàn toàn đúng", description: "Hoàn toàn đúng với tôi, hoặc hầu hết thời gian" }
 ];
 
 // Styled Components

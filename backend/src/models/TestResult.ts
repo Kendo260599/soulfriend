@@ -28,6 +28,7 @@ export interface IEvaluation {
 
 // Interface định nghĩa cấu trúc dữ liệu TestResult
 export interface ITestResult extends Document {
+  userId?: string;              // ID người dùng (liên kết test với user)
   testType: TestType;           // Loại test
   answers: number[];            // Mảng câu trả lời (điểm số cho mỗi câu)
   totalScore: number;           // Tổng điểm
@@ -76,6 +77,11 @@ const SubscaleScoresSchema = new Schema({
 
 // Schema MongoDB cho TestResult
 const TestResultSchema: Schema = new Schema({
+  userId: {
+    type: String,
+    index: true,
+    default: null,
+  },
   testType: {
     type: String,
     enum: Object.values(TestType),

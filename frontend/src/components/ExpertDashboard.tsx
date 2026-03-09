@@ -3,9 +3,11 @@
  * Real-time dashboard for crisis intervention experts
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import axios from 'axios';
 import ExpertReviewPanel from './ExpertReviewPanel';
 import ImpactDashboard from './ImpactDashboard';
 import PGEDashboard from './PGEDashboard';
@@ -56,7 +58,11 @@ interface DirectChatMessage {
   expertName?: string;
   message: string;
   timestamp: Date;
+  imageUrl?: string;
 }
+
+const HEART_EMOJIS = ['❤️', '💕', '💗', '💖', '💘', '💝', '💞', '💓', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '🩷', '🩵', '🩶', '♥️', '😍', '🥰', '😘'];
+const HEART_POOL = ['❤️', '💕', '💗', '💖', '💘', '💝', '💞', '💓'];
 
 const ExpertDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -87,6 +93,14 @@ const ExpertDashboard: React.FC = () => {
   const [directChatMessages, setDirectChatMessages] = useState<DirectChatMessage[]>([]);
   const [directMessageInput, setDirectMessageInput] = useState('');
   const [userTypingInChat, setUserTypingInChat] = useState(false);
+  const [showExpertEmojiPicker, setShowExpertEmojiPicker] = useState(false);
+  const [expertImagePreview, setExpertImagePreview] = useState<string | null>(null);
+  const [expertImageFile, setExpertImageFile] = useState<File | null>(null);
+  const [isExpertUploading, setIsExpertUploading] = useState(false);
+  const [expertFloatingHearts, setExpertFloatingHearts] = useState<Array<{ id: number; emoji: string; delay: number; left: number; size: number; duration: number }>>([]);
+  const expertFileInputRef = useRef<HTMLInputElement>(null);
+  const expertEmojiPickerRef = useRef<HTMLDivElement>(null);
+  const expertHeartIdCounter = useRef(0);
   const directChatUserRef = useRef<ActiveUser | null>(
     (() => { try { const s = sessionStorage.getItem('expert_directChatUser'); return s ? JSON.parse(s) : null; } catch { return null; } })()
   );
@@ -359,7 +373,7 @@ const ExpertDashboard: React.FC = () => {
       const chatUser = directChatUserRef.current;
       if (chatUser && data.userId === chatUser.userId && data.sessionId === chatUser.sessionId) {
         const newMsg: DirectChatMessage = {
-          from: 'user', message: data.message, timestamp: new Date(data.timestamp || Date.now())
+          from: 'user', message: data.message, imageUrl: data.imageUrl, timestamp: new Date(data.timestamp || Date.now())
         };
         setDirectChatMessages(prev => {
           const updated = [...prev, newMsg];
@@ -556,27 +570,111 @@ const ExpertDashboard: React.FC = () => {
     setDirectChatMessages(cached || []);
   };
 
+  // Expert floating hearts
+  const triggerExpertHearts = useCallback(() => {
+    const hearts: typeof expertFloatingHearts = [];
+    const count = 12 + Math.floor(Math.random() * 8);
+    for (let i = 0; i < count; i++) {
+      hearts.push({
+        id: expertHeartIdCounter.current++,
+        emoji: HEART_POOL[Math.floor(Math.random() * HEART_POOL.length)],
+        delay: Math.random() * 0.8,
+        left: 10 + Math.random() * 80,
+        size: 1 + Math.random() * 1.5,
+        duration: 2 + Math.random() * 1.5,
+      });
+    }
+    setExpertFloatingHearts(hearts);
+    setTimeout(() => setExpertFloatingHearts([]), 4500);
+  }, []);
+
+  // Expert emoji picker
+  const onExpertEmojiClick = useCallback((emojiData: EmojiClickData) => {
+    setDirectMessageInput(prev => prev + emojiData.emoji);
+    setShowExpertEmojiPicker(false);
+    if (HEART_EMOJIS.includes(emojiData.emoji)) triggerExpertHearts();
+  }, [triggerExpertHearts]);
+
+  // Close emoji picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (expertEmojiPickerRef.current && !expertEmojiPickerRef.current.contains(e.target as Node)) {
+        setShowExpertEmojiPicker(false);
+      }
+    };
+    if (showExpertEmojiPicker) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExpertEmojiPicker]);
+
+  // Expert image handlers
+  const handleExpertImageSelect = useCallback((file: File) => {
+    const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!ALLOWED.includes(file.type)) return;
+    if (file.size > 5 * 1024 * 1024) return;
+    setExpertImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setExpertImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleExpertFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleExpertImageSelect(file);
+    e.target.value = '';
+  }, [handleExpertImageSelect]);
+
+  const uploadExpertImage = useCallback(async (file: File): Promise<string | null> => {
+    setIsExpertUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await axios.post(`${API_URL}/api/v2/upload/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+      return res.data.url;
+    } catch {
+      return null;
+    } finally {
+      setIsExpertUploading(false);
+    }
+  }, []);
+
   // Send direct message
-  const handleSendDirectMessage = (e: React.FormEvent) => {
+  const handleSendDirectMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!directMessageInput.trim() || !directChatUser || !socketRef.current) return;
+    if ((!directMessageInput.trim() && !expertImageFile) || !directChatUser || !socketRef.current) return;
+
+    let uploadedUrl: string | undefined;
+    if (expertImageFile) {
+      const url = await uploadExpertImage(expertImageFile);
+      if (url) uploadedUrl = url;
+      setExpertImageFile(null);
+      setExpertImagePreview(null);
+    }
+
+    const msgText = directMessageInput || (uploadedUrl ? '📷 Đã gửi ảnh' : '');
 
     socketRef.current.emit('direct_message', {
       userId: directChatUser.userId,
       sessionId: directChatUser.sessionId,
-      message: directMessageInput,
+      message: msgText,
+      imageUrl: uploadedUrl,
       timestamp: new Date(),
     });
+
+    // Trigger hearts if message has heart emoji
+    if (HEART_EMOJIS.some(h => msgText.includes(h))) triggerExpertHearts();
 
     const newMsg: DirectChatMessage = {
       from: 'expert',
       expertName: expertInfo?.name,
-      message: directMessageInput,
+      message: msgText,
+      imageUrl: uploadedUrl,
       timestamp: new Date(),
     };
     setDirectChatMessages(prev => {
       const updated = [...prev, newMsg];
-      // Update cache
       const key = `${directChatUser.userId}_${directChatUser.sessionId}`;
       chatHistoryCache.current.set(key, updated);
       return updated;
@@ -871,7 +969,18 @@ const ExpertDashboard: React.FC = () => {
                             🔔 Hệ thống
                           </div>
                         )}
-                        <div>{msg.message}</div>
+                        {msg.imageUrl && (
+                          <img
+                            src={msg.imageUrl}
+                            alt="Ảnh"
+                            onClick={() => window.open(msg.imageUrl, '_blank')}
+                            style={{
+                              maxWidth: 200, maxHeight: 200, borderRadius: 8,
+                              marginBottom: 6, cursor: 'pointer', display: 'block',
+                            }}
+                          />
+                        )}
+                        {msg.message && <div>{msg.message}</div>}
                         <div style={{
                           fontSize: 10, marginTop: 4, textAlign: 'right',
                           color: msg.from === 'expert' ? 'rgba(255,255,255,0.7)' : '#999',
@@ -894,11 +1003,82 @@ const ExpertDashboard: React.FC = () => {
                   <div ref={directMessagesEndRef} />
                 </div>
 
+                {/* Expert floating hearts */}
+                {expertFloatingHearts.length > 0 && (
+                  <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 50 }}>
+                    {expertFloatingHearts.map(heart => (
+                      <span
+                        key={heart.id}
+                        style={{
+                          position: 'absolute',
+                          bottom: 60,
+                          left: `${heart.left}%`,
+                          fontSize: `${heart.size}rem`,
+                          animation: `expertHeartFloat ${heart.duration}s ease-out ${heart.delay}s forwards`,
+                          opacity: 0,
+                          filter: 'drop-shadow(0 2px 4px rgba(233,30,99,0.3))',
+                          willChange: 'transform, opacity',
+                        }}
+                      >
+                        {heart.emoji}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Image preview */}
+                {expertImagePreview && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px',
+                    background: 'rgba(21,101,192,0.05)', borderTop: '1px solid #e0e0e0', position: 'relative',
+                  }}>
+                    <img src={expertImagePreview} alt="Preview" style={{
+                      width: 60, height: 60, objectFit: 'cover', borderRadius: 8,
+                      border: '2px solid rgba(21,101,192,0.3)',
+                    }} />
+                    <button onClick={() => { setExpertImagePreview(null); setExpertImageFile(null); }} style={{
+                      width: 24, height: 24, borderRadius: '50%', border: 'none',
+                      background: 'rgba(255,59,48,0.9)', color: '#fff', fontSize: '0.8rem',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      position: 'absolute', top: 4, left: 72,
+                    }}>✕</button>
+                    {isExpertUploading && <span style={{ fontSize: 12, color: '#1565c0', fontWeight: 500 }}>Đang tải...</span>}
+                  </div>
+                )}
+
+                {/* Emoji picker */}
+                {showExpertEmojiPicker && (
+                  <div ref={expertEmojiPickerRef} style={{ padding: '0 10px', zIndex: 100 }}>
+                    <EmojiPicker onEmojiClick={onExpertEmojiClick} width="100%" height={350} />
+                  </div>
+                )}
+
                 {/* Input Form */}
                 <form onSubmit={handleSendDirectMessage} style={{
-                  display: 'flex', gap: 8, padding: '12px 20px',
+                  display: 'flex', gap: 8, padding: '12px 20px', alignItems: 'flex-end',
                   borderTop: '1px solid #e0e0e0', background: '#fff',
                 }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" onClick={() => setShowExpertEmojiPicker(prev => !prev)} style={{
+                      width: 36, height: 36, borderRadius: '50%', border: 'none',
+                      background: showExpertEmojiPicker ? 'rgba(21,101,192,0.2)' : 'transparent',
+                      cursor: 'pointer', fontSize: '1.2rem', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                    }} title="Chọn emoji">😊</button>
+                    <button type="button" onClick={() => expertFileInputRef.current?.click()} disabled={isExpertUploading} style={{
+                      width: 36, height: 36, borderRadius: '50%', border: 'none',
+                      background: 'transparent', cursor: isExpertUploading ? 'not-allowed' : 'pointer',
+                      fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: isExpertUploading ? 0.5 : 1,
+                    }} title="Gửi ảnh">📷</button>
+                    <input
+                      ref={expertFileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      onChange={handleExpertFileChange}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
                   <input
                     type="text"
                     value={directMessageInput}
@@ -929,14 +1109,15 @@ const ExpertDashboard: React.FC = () => {
                   />
                   <button
                     type="submit"
-                    disabled={!directMessageInput.trim()}
+                    disabled={(!directMessageInput.trim() && !expertImageFile) || isExpertUploading}
                     style={{
-                      padding: '10px 24px', background: directMessageInput.trim() ? '#1565c0' : '#ccc',
+                      padding: '10px 24px',
+                      background: (directMessageInput.trim() || expertImageFile) && !isExpertUploading ? '#1565c0' : '#ccc',
                       color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
                       fontSize: 14, fontWeight: 600,
                     }}
                   >
-                    Gửi
+                    {isExpertUploading ? '⏳' : 'Gửi'}
                   </button>
                 </form>
               </>

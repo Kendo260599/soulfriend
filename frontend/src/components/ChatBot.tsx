@@ -28,6 +28,49 @@ const typing = keyframes`
   }
 `;
 
+const floatUp = keyframes`
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-120px) scale(1.2) rotate(-15deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-280px) scale(1) rotate(10deg);
+  }
+  75% {
+    opacity: 0.4;
+    transform: translateY(-420px) scale(0.8) rotate(-5deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-550px) scale(0.5) rotate(15deg);
+  }
+`;
+
+const FloatingHeartsOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 9998;
+`;
+
+const FloatingHeart = styled.span<{ delay: number; left: number; size: number; duration: number }>`
+  position: absolute;
+  bottom: 60px;
+  left: ${props => props.left}%;
+  font-size: ${props => props.size}rem;
+  animation: ${floatUp} ${props => props.duration}s ease-out ${props => props.delay}s forwards;
+  opacity: 0;
+  animation-fill-mode: forwards;
+  filter: drop-shadow(0 2px 4px rgba(233, 30, 99, 0.3));
+  will-change: transform, opacity;
+`;
+
 const ChatContainer = styled.div<{ isOpen: boolean }>`
   position: fixed;
   bottom: 20px;
@@ -602,8 +645,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [floatingHearts, setFloatingHearts] = useState<Array<{ id: number; emoji: string; delay: number; left: number; size: number; duration: number }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const heartIdCounter = useRef(0);
+  const triggerHeartsRef = useRef<() => void>(() => {});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -701,6 +747,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       };
       setMessages((prev) => [...prev, expertMessage]);
       setExpertTyping(false);
+
+      // Trigger heart animation if expert sends heart
+      if (['❤️', '💕', '💗', '💖', '💘', '💝', '💞', '💓', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '🩷', '🩵', '🩶', '♥️', '😍', '🥰', '😘'].some(h => data.message.includes(h))) {
+        triggerHeartsRef.current();
+      }
     });
 
     // Intervention ended
@@ -1083,6 +1134,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     };
 
     const originalInput = inputValue.trim();
+
+    // Trigger heart animation if message contains heart emojis
+    if (isHeartMessage(userMessage.text)) {
+      triggerFloatingHearts();
+    }
     
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
@@ -1238,12 +1294,44 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     }
   };
 
+  // Heart emoji detection & floating animation
+  const HEART_EMOJIS = ['❤️', '💕', '💗', '💖', '💘', '💝', '💞', '💓', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '🩷', '🩵', '🩶', '♥️', '😍', '🥰', '😘'];
+  const triggerFloatingHearts = useCallback(() => {
+    const hearts: typeof floatingHearts = [];
+    const count = 12 + Math.floor(Math.random() * 8); // 12-19 hearts
+    for (let i = 0; i < count; i++) {
+      hearts.push({
+        id: heartIdCounter.current++,
+        emoji: ['❤️', '💕', '💗', '💖', '💘', '💝', '💞', '💓'][Math.floor(Math.random() * 8)],
+        delay: Math.random() * 0.8,
+        left: 10 + Math.random() * 80,
+        size: 1 + Math.random() * 1.5,
+        duration: 2 + Math.random() * 1.5,
+      });
+    }
+    setFloatingHearts(hearts);
+    // Clean up after animation completes
+    setTimeout(() => setFloatingHearts([]), 4500);
+  }, []);
+
+  // Keep ref in sync for use in socket effect
+  triggerHeartsRef.current = triggerFloatingHearts;
+
+  const isHeartMessage = useCallback((text: string) => {
+    return HEART_EMOJIS.some(h => text.includes(h));
+  }, []);
+
   // Emoji picker handler
   const onEmojiClick = useCallback((emojiData: EmojiClickData) => {
-    setInputValue(prev => prev + emojiData.emoji);
+    const emoji = emojiData.emoji;
+    setInputValue(prev => prev + emoji);
     setShowEmojiPicker(false);
     textareaRef.current?.focus();
-  }, []);
+    // Trigger hearts if a heart emoji is selected
+    if (HEART_EMOJIS.includes(emoji)) {
+      triggerFloatingHearts();
+    }
+  }, [triggerFloatingHearts]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -1579,6 +1667,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           Gửi
         </AnimatedButton>
       </InputContainer>
+      {/* Floating hearts animation */}
+      {floatingHearts.length > 0 && (
+        <FloatingHeartsOverlay>
+          {floatingHearts.map(heart => (
+            <FloatingHeart
+              key={heart.id}
+              delay={heart.delay}
+              left={heart.left}
+              size={heart.size}
+              duration={heart.duration}
+            >
+              {heart.emoji}
+            </FloatingHeart>
+          ))}
+        </FloatingHeartsOverlay>
+      )}
     </ChatContainer>
   );
 };

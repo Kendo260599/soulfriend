@@ -158,30 +158,17 @@ describe('Admin Model', () => {
     });
 
     it('should lock account after 5 failed attempts', async () => {
-      // Simulate 5 failed login attempts
+      // Simulate 5 failed login attempts - must reload admin each time
+      // because incrementLoginAttempts uses this.loginAttempts in-memory
+      let currentAdmin = admin;
       for (let i = 0; i < 5; i++) {
-        await admin.incrementLoginAttempts();
-        // Reload admin after each attempt to get updated values
-        const currentAdmin = await Admin.findById(admin._id);
-        console.log(`Attempt ${i + 1}:`, {
-          loginAttempts: currentAdmin?.loginAttempts,
-          lockUntil: currentAdmin?.lockUntil
-        });
-        // Wait a bit to ensure database update
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await currentAdmin.incrementLoginAttempts();
+        currentAdmin = (await Admin.findById(admin._id))!;
       }
 
-      // Reload from database to get updated values
-      const updatedAdmin = await Admin.findById(admin._id);
-      console.log('Final admin:', {
-        loginAttempts: updatedAdmin?.loginAttempts,
-        lockUntil: updatedAdmin?.lockUntil,
-        isLocked: (updatedAdmin as any)?.isLocked
-      });
-      
-      expect(updatedAdmin?.loginAttempts).toBe(5);
-      expect(updatedAdmin?.lockUntil).toBeDefined();
-      expect((updatedAdmin as any)?.isLocked).toBe(true);
+      expect(currentAdmin?.loginAttempts).toBe(5);
+      expect(currentAdmin?.lockUntil).toBeDefined();
+      expect((currentAdmin as any)?.isLocked).toBe(true);
     });
   });
 

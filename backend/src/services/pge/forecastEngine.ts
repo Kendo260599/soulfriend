@@ -112,11 +112,14 @@ class ForecastEngineService {
     );
 
     // 5. Build forecast points with CI and risk probabilities
+    // Use Student-t distribution (heavy tails) for small samples — prevents
+    // underestimation of crisis probability. df = T - 2 for Holt's (2 params).
+    const df = Math.max(3, residuals.length - 2);
     const forecasts: ForecastPoint[] = FORECAST_HORIZONS.map((h, i) => {
       const pred = predictions[i];
-      const ci = forecastConfidenceInterval(pred, residuals, h.steps);
-      const riskProb = estimateZoneRiskProbability(pred, residuals, h.steps, 0.5);
-      const critProb = estimateZoneRiskProbability(pred, residuals, h.steps, 0.7);
+      const ci = forecastConfidenceInterval(pred, residuals, h.steps, 0.90, df);
+      const riskProb = estimateZoneRiskProbability(pred, residuals, h.steps, 0.5, df);
+      const critProb = estimateZoneRiskProbability(pred, residuals, h.steps, 0.7, df);
 
       return {
         horizon: h.days,

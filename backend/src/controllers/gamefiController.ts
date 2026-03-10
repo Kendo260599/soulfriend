@@ -22,6 +22,7 @@ import {
   completeWeekly,
   getLoreData,
   getFullGameData,
+  getPlayerDashboard,
 } from '../services/gamefi';
 import type { PsychEventType } from '../services/gamefi';
 import { logger } from '../utils/logger';
@@ -394,6 +395,25 @@ export class GamefiController {
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getFullData error:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/v2/gamefi/dashboard/:userId
+   * Get player profile dashboard (aggregated view)
+   */
+  getDashboard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      if (!userId || typeof userId !== 'string' || userId.length > 100) {
+        res.status(400).json({ error: 'Invalid userId' });
+        return;
+      }
+      const data = getPlayerDashboard(userId);
+      res.json({ success: true, data });
+    } catch (error) {
+      logger.error('GameFi getDashboard error:', error);
       next(error);
     }
   };

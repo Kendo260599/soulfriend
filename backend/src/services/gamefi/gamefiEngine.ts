@@ -59,6 +59,8 @@ import type {
   QuestDatabaseData, QuestInfo,
   AdaptiveQuestData, RecommendedQuest, QuestChainInfo,
   StateData, BehaviorData, LoreData, FullGameData,
+  PlayerDashboardData,
+  DashboardSkillBranch, DashboardNarrativeEvent, DashboardMilestone,
 } from './types';
 
 // ══════════════════════════════════════════════
@@ -683,6 +685,238 @@ export function getFullGameData(userId: string): FullGameData {
     state: getStateData(userId),
     behavior: getBehaviorData(userId),
     lore: getLoreData(),
+  };
+}
+
+// ══════════════════════════════════════════════
+// PLAYER DASHBOARD (aggregated view)
+// ══════════════════════════════════════════════
+
+const BRANCH_NAMES: Record<string, { name: string; icon: string }> = {
+  self_awareness: { name: 'Tự Nhận Thức', icon: '🪞' },
+  emotional_regulation: { name: 'Điều Tiết Cảm Xúc', icon: '🌊' },
+  cognitive_flexibility: { name: 'Linh Hoạt Nhận Thức', icon: '🧠' },
+  relationship_skills: { name: 'Kỹ Năng Quan Hệ', icon: '🤝' },
+  meaning_purpose: { name: 'Ý Nghĩa & Mục Đích', icon: '⛰️' },
+};
+
+const LOC_ICONS: Record<string, string> = {
+  thung_lung_cau_hoi: '🏞️', rung_tu_nhan_thuc: '🌲', dong_song_cam_xuc: '🌊',
+  thanh_pho_ket_noi: '🏙️', dinh_nui_y_nghia: '⛰️',
+};
+
+function generateInsight(char: OriginalCharacter, questsCompleted: number, streak: number): string {
+  const stats = char.growthStats;
+  const strongest = Object.entries(stats).sort((a, b) => b[1] - a[1])[0];
+  const weakest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
+
+  const nameMap: Record<string, string> = {
+    emotionalAwareness: 'nhận diện cảm xúc',
+    psychologicalSafety: 'an toàn tâm lý',
+    meaning: 'ý nghĩa sống',
+    cognitiveFlexibility: 'linh hoạt nhận thức',
+    relationshipQuality: 'kết nối xã hội',
+  };
+
+  const parts: string[] = [];
+  if (questsCompleted > 0) {
+    parts.push(`Bạn đã hoàn thành ${questsCompleted} nhiệm vụ.`);
+  }
+  if (streak >= 3) {
+    parts.push(`Chuỗi ${streak} ngày liên tiếp cho thấy bạn đang rất kiên trì!`);
+  }
+  if (strongest[1] > 30) {
+    parts.push(`Điểm mạnh của bạn là ${nameMap[strongest[0]] || strongest[0]} (${strongest[1]}/100).`);
+  }
+  if (weakest[1] < 30) {
+    parts.push(`Hãy dành thời gian phát triển ${nameMap[weakest[0]] || weakest[0]} — đây là cơ hội tăng trưởng lớn.`);
+  }
+
+  return parts.length > 0
+    ? parts.join(' ')
+    : 'Hãy bắt đầu hành trình bằng cách hoàn thành nhiệm vụ đầu tiên!';
+}
+
+function generateSuggestion(char: OriginalCharacter, quests: { id: string; title: string; completed: boolean }[]): string {
+  const incomplete = quests.find(q => !q.completed);
+  if (incomplete) return `Hoàn thành nhiệm vụ "${incomplete.title}"`;
+
+  const stats = char.growthStats;
+  const weakest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
+  const suggestionMap: Record<string, string> = {
+    emotionalAwareness: 'Viết nhật ký cảm xúc: "Hôm nay tôi cảm thấy..."',
+    psychologicalSafety: 'Thử bài tập thở 5 phút để tạo cảm giác an toàn',
+    meaning: 'Liệt kê 3 điều bạn biết ơn hôm nay',
+    cognitiveFlexibility: 'Thử nhìn một vấn đề từ góc độ khác',
+    relationshipQuality: 'Chia sẻ một câu chuyện tích cực với ai đó',
+  };
+  return suggestionMap[weakest[0]] || 'Hãy trò chuyện với AI về cảm xúc của bạn hôm nay';
+}
+
+export function getPlayerDashboard(userId: string): PlayerDashboardData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const frontendChar = toFrontendCharacter(char);
+  const profile = getGameProfile(userId);
+  const skills = getSkillTree(userId);
+  const world = getWorldMap(userId);
+  const stateD = getStateData(userId);
+  const behaviorD = getBehaviorData(userId);
+  const badges = getBadges(userId);
+  const dailyQ = getDailyQuests(userId);
+
+  // Identity
+  const identity = {
+    name: char.name || userId,
+    archetype: char.archetype,
+    level: char.level,
+    xp: char.xp,
+    xpProgress: profile.xpProgress,
+    xpToNextLevel: profile.xpToNextLevel,
+    levelTitle: profile.levelTitle,
+    soulPoints: frontendChar.soulPoints,
+    empathyPoints: frontendChar.empathyPoints,
+    streak: frontendChar.streak,
+    createdAt: frontendChar.createdAt,
+  };
+
+  // Psychological state
+  const psychologicalState = { ...char.growthStats };
+
+  // Skill branches
+  const branches = Object.keys(BRANCH_NAMES);
+  const skillBranches: DashboardSkillBranch[] = branches.map(branch => {
+    const branchSkills = skills.skills
+      .filter(s => s.branch === branch)
+      .map(s => ({ id: s.id, name: s.ten, unlocked: s.unlocked }));
+    const mastery = skills.masteries.find(m => m.branch === branch);
+    return {
+      branch,
+      name: BRANCH_NAMES[branch].name,
+      icon: BRANCH_NAMES[branch].icon,
+      skills: branchSkills,
+      mastered: mastery?.mastered || false,
+      masteryTitle: mastery?.danhHieu || '',
+    };
+  });
+
+  // Quest progress
+  const questsCompletedTotal = char.completedQuestIds.length;
+  const reflectionStreak = frontendChar.streak;
+  const incomplete = dailyQ.find(q => !q.completed);
+  const questProgress = {
+    dailyQuests: dailyQ.map(q => ({ id: q.id, title: q.title, icon: q.icon, completed: q.completed })),
+    questsCompletedTotal,
+    reflectionStreak,
+    currentQuestHint: incomplete ? incomplete.title : null,
+  };
+
+  // Narrative timeline — build from trajectory + meaning shifts + milestones
+  const narrativeTimeline: DashboardNarrativeEvent[] = [];
+
+  // Start event
+  narrativeTimeline.push({
+    timestamp: new Date(frontendChar.createdAt).getTime() || Date.now() - 86400000 * 30,
+    label: 'Bắt đầu hành trình',
+    type: 'start',
+  });
+
+  // Zone changes from trajectory
+  let lastZone = '';
+  const zoneNames: Record<string, string> = {
+    disorientation: 'Mất Phương Hướng',
+    self_exploration: 'Tự Khám Phá',
+    stabilization: 'Ổn Định',
+    growth: 'Phát Triển',
+    mentor_stage: 'Người Dẫn Đường',
+  };
+  for (const t of stateD.trajectory) {
+    if (t.zone !== lastZone) {
+      narrativeTimeline.push({
+        timestamp: t.timestamp,
+        label: `Đạt trạng thái: ${zoneNames[t.zone] || t.zone}`,
+        type: 'zone_change',
+      });
+      lastZone = t.zone;
+    }
+  }
+
+  // Meaning shifts
+  for (const shift of behaviorD.meaningShifts) {
+    narrativeTimeline.push({
+      timestamp: shift.detectedAt,
+      label: `Thay đổi ý nghĩa: ${shift.from} → ${shift.to}`,
+      type: 'meaning_shift',
+    });
+  }
+
+  // Milestones from badges
+  const unlockedBadges = badges.filter(b => b.unlocked);
+  for (const b of unlockedBadges) {
+    narrativeTimeline.push({
+      timestamp: Date.now() - Math.random() * 86400000 * 7,
+      label: `Đạt huy hiệu: ${b.name}`,
+      type: 'milestone',
+    });
+  }
+
+  narrativeTimeline.sort((a, b) => a.timestamp - b.timestamp);
+
+  // Milestones
+  const milestones: DashboardMilestone[] = badges.map(b => ({
+    id: b.id,
+    name: b.name,
+    icon: b.icon,
+    description: b.description,
+    unlocked: b.unlocked,
+  }));
+
+  // Community role
+  const empathyRankNames: Record<string, string> = {
+    newcomer: 'Người Mới',
+    listener: 'Người Lắng Nghe',
+    supporter: 'Người Hỗ Trợ',
+    mentor: 'Người Dẫn Đường',
+    guardian: 'Người Bảo Hộ',
+  };
+  const communityRole = {
+    role: empathyRankNames[stateD.empathyRank] || stateD.empathyRank,
+    empathyScore: stateD.empathyScore,
+    empathyRank: stateD.empathyRank,
+    peoplHelped: Math.floor(stateD.empathyScore / 4),
+  };
+
+  // World progress
+  const worldProgress = {
+    locations: world.locations.map(l => ({
+      id: l.id,
+      name: l.ten,
+      icon: LOC_ICONS[l.id] || '🏔️',
+      unlocked: l.unlocked,
+      isCurrent: l.isCurrent,
+    })),
+    currentLocation: world.currentLocation,
+    unlockedCount: world.unlockedCount,
+    totalCount: world.totalCount,
+  };
+
+  // AI-generated insight and suggestion
+  const personalInsight = generateInsight(char, questsCompletedTotal, frontendChar.streak);
+  const dailySuggestion = generateSuggestion(char, dailyQ);
+
+  return {
+    identity,
+    psychologicalState,
+    skillBranches,
+    questProgress,
+    narrativeTimeline,
+    milestones,
+    communityRole,
+    worldProgress,
+    personalInsight,
+    dailySuggestion,
+    zone: stateD.zone,
+    growthScore: stateD.growthScore,
   };
 }
 

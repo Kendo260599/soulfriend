@@ -5,10 +5,12 @@
  * Fetches all data via /api/v2/gamefi/full/:userId
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
+
+const PlayerDashboard = lazy(() => import('./PlayerDashboard'));
 
 const API_URL = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
 
@@ -209,7 +211,7 @@ const PHASE_NAMES: Record<string,string> = {
   stabilization: 'Ổn định', growth: 'Phát triển', mentor: 'Mentor',
 };
 
-type TabType = 'dashboard' | 'world' | 'skills' | 'quests' | 'behavior' | 'lore';
+type TabType = 'profile' | 'dashboard' | 'world' | 'skills' | 'quests' | 'behavior' | 'lore';
 
 // ══════════════════════════════════════════════
 // COMPONENT
@@ -222,7 +224,7 @@ const GameFi: React.FC = () => {
   const [adaptive, setAdaptive] = useState<AdaptiveQuestData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<TabType>('dashboard');
+  const [tab, setTab] = useState<TabType>('profile');
   const [toast, setToast] = useState({ msg: '', visible: false });
   const [confirmQuest, setConfirmQuest] = useState<DailyQuest | null>(null);
 
@@ -707,6 +709,7 @@ const GameFi: React.FC = () => {
       </UserBar>
 
       <TabBar>
+        <Tab active={tab === 'profile'} onClick={() => setTab('profile')}>🌸 Profile</Tab>
         <Tab active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>🏠 Dashboard</Tab>
         <Tab active={tab === 'world'} onClick={() => setTab('world')}>🗺️ World Map</Tab>
         <Tab active={tab === 'skills'} onClick={() => setTab('skills')}>🌳 Skill Tree</Tab>
@@ -715,6 +718,7 @@ const GameFi: React.FC = () => {
         <Tab active={tab === 'lore'} onClick={() => setTab('lore')}>📜 Lore</Tab>
       </TabBar>
 
+      {tab === 'profile' && <Suspense fallback={<LoadingContainer><div style={{fontSize:'2rem'}}>🌸</div>Đang tải...</LoadingContainer>}><PlayerDashboard /></Suspense>}
       {tab === 'dashboard' && renderDashboard()}
       {tab === 'world' && renderWorldMap()}
       {tab === 'skills' && renderSkillTree()}

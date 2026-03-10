@@ -28,6 +28,7 @@ export {
   getLoreData,
   getLoreMessage,
   getFullGameData,
+  getPlayerDashboard,
 } from './gamefiEngine';
 
 // Narrative Detector (re-export from integration/narrativeTrigger)
@@ -45,4 +46,5 @@ export type {
   Character, DailyQuest, Badge, GameProfile,
   SkillTreeData, WorldMapData, QuestDatabaseData,
   AdaptiveQuestData, StateData, BehaviorData, LoreData, FullGameData,
+  PlayerDashboardData,
 } from './types';

@@ -223,6 +223,89 @@ export interface LoreData {
   locationLores: { locationId: string; ten: string; truyenThuyet: string; trieuLy: string }[];
 }
 
+// ── Player Dashboard ─────────────────────────
+
+export interface DashboardPlayerIdentity {
+  name: string;
+  archetype: string;
+  level: number;
+  xp: number;
+  xpProgress: number;
+  xpToNextLevel: number;
+  levelTitle: string;
+  soulPoints: number;
+  empathyPoints: number;
+  streak: number;
+  createdAt: string;
+}
+
+export interface DashboardPsychState {
+  emotionalAwareness: number;
+  psychologicalSafety: number;
+  meaning: number;
+  cognitiveFlexibility: number;
+  relationshipQuality: number;
+}
+
+export interface DashboardSkillBranch {
+  branch: string;
+  name: string;
+  icon: string;
+  skills: { id: string; name: string; unlocked: boolean }[];
+  mastered: boolean;
+  masteryTitle: string;
+}
+
+export interface DashboardQuestProgress {
+  dailyQuests: { id: string; title: string; icon: string; completed: boolean }[];
+  questsCompletedTotal: number;
+  reflectionStreak: number;
+  currentQuestHint: string | null;
+}
+
+export interface DashboardNarrativeEvent {
+  timestamp: number;
+  label: string;
+  type: 'zone_change' | 'milestone' | 'meaning_shift' | 'start';
+}
+
+export interface DashboardMilestone {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  unlocked: boolean;
+}
+
+export interface DashboardCommunityRole {
+  role: string;
+  empathyScore: number;
+  empathyRank: string;
+  peoplHelped: number;
+}
+
+export interface DashboardWorldProgress {
+  locations: { id: string; name: string; icon: string; unlocked: boolean; isCurrent: boolean }[];
+  currentLocation: string;
+  unlockedCount: number;
+  totalCount: number;
+}
+
+export interface PlayerDashboardData {
+  identity: DashboardPlayerIdentity;
+  psychologicalState: DashboardPsychState;
+  skillBranches: DashboardSkillBranch[];
+  questProgress: DashboardQuestProgress;
+  narrativeTimeline: DashboardNarrativeEvent[];
+  milestones: DashboardMilestone[];
+  communityRole: DashboardCommunityRole;
+  worldProgress: DashboardWorldProgress;
+  personalInsight: string;
+  dailySuggestion: string;
+  zone: string;
+  growthScore: number;
+}
+
 // ── Full Game Data ───────────────────────────
 
 export interface FullGameData {

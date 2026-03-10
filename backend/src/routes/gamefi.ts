@@ -17,6 +17,9 @@ router.get('/supported-events', gamefiController.getSupportedEvents);
 // ── Full Game Data (single call) ─────────────
 router.get('/full/:userId', gamefiController.getFullData);
 
+// ── Player Dashboard (aggregated) ────────────
+router.get('/dashboard/:userId', gamefiController.getDashboard);
+
 // ── Skill Tree ───────────────────────────────
 router.get('/skills/:userId', gamefiController.getSkillTree);
 

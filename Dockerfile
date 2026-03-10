@@ -5,16 +5,18 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy backend package files
-COPY backend/package*.json ./
+COPY backend/package*.json ./backend/
 
 # Install ALL dependencies (including devDependencies for TypeScript build)
-RUN npm ci
+RUN cd backend && npm ci
 
-# Copy backend source
-COPY backend/ ./
+# Copy source directories needed for TypeScript compilation
+COPY gamefi/ ./gamefi/
+COPY integration/ ./integration/
+COPY backend/ ./backend/
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript (rootDir=".." so tsc needs access to gamefi/ and integration/)
+RUN cd backend && npm run build
 
 # Production image
 FROM node:20-alpine
@@ -27,8 +29,8 @@ COPY backend/package*.json ./
 # Install ONLY production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+# Copy built files from builder (includes dist/backend/src, dist/gamefi, dist/integration)
+COPY --from=builder /app/backend/dist ./dist
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001

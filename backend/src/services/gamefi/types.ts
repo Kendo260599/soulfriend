@@ -1,70 +1,21 @@
 // ============================================
-// SoulFriend GameFi — Backend Types
+// SoulFriend GameFi — Backend API Types
 // ============================================
+// Types for the API response format (frontend-friendly).
+// Core engine types (PsychEventType, PsychEvent, EventResult,
+// GrowthStats, Character) live in the original gamefi/core/types.ts
+// and gamefi/core/eventHandler.ts — re-exported via index.ts barrel.
 
-// ── Event Types ──────────────────────────────
+import type { GrowthStats } from '../../../../gamefi/core/types';
 
-export type PsychEventType =
-  | 'journal_entry'
-  | 'story_shared'
-  | 'emotion_checkin'
-  | 'user_helped_user'
-  | 'quest_completed';
-
-export interface PsychEvent {
-  userId: string;
-  eventType: PsychEventType;
-  content: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface EventResult {
-  xpGained: number;
-  growthImpact: Partial<GrowthStats>;
-  newLevel: number;
-  levelTitle: string;
-  unlockedQuest: string | null;
-  milestone: string | null;
-  safetyAlert: boolean;
-  rewards: {
-    soulPoints: number;
-    empathyPoints: number;
-  };
-  feedback: string;
-}
-
-// ── Growth Stats ─────────────────────────────
-
-export interface GrowthStats {
-  emotionalAwareness: number;
-  psychologicalSafety: number;
-  meaning: number;
-  cognitiveFlexibility: number;
-  relationshipQuality: number;
-}
-
-// ── Action Type ──────────────────────────────
-
-export type ActionType =
-  | 'journal_entry'
-  | 'emotion_regulation'
-  | 'reflection'
-  | 'help_others'
-  | 'gratitude';
-
-// ── Character ────────────────────────────────
-
-export type ArchetypeId =
-  | 'Người Tìm Đường'
-  | 'Người Hồi Sinh'
-  | 'Người Kiến Tạo'
-  | 'Người Đồng Cảm'
-  | 'Người Khám Phá';
+// ── Frontend Character ───────────────────────
+// Maps the original Character (name, empathyScore, empathyRank, currentLocation)
+// to what the frontend expects (userId, empathyPoints, streak, lastActiveDate).
 
 export interface Character {
   id: string;
   userId: string;
-  archetype: ArchetypeId;
+  archetype: string;
   level: number;
   xp: number;
   growthScore: number;
@@ -78,14 +29,6 @@ export interface Character {
   createdAt: string;
 }
 
-// ── Level ────────────────────────────────────
-
-export interface LevelInfo {
-  level: number;
-  title: string;
-  xpRequired: number;
-}
-
 // ── Quest ────────────────────────────────────
 
 export interface DailyQuest {
@@ -94,7 +37,7 @@ export interface DailyQuest {
   description: string;
   icon: string;
   xpReward: number;
-  eventType: PsychEventType;
+  eventType: string;
   completed: boolean;
 }
 

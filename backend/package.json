@@ -2,12 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/backend/src/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/backend/src/index.js",
     "dev": "nodemon src/index.ts",
-    "setup": "npm run build && node dist/scripts/createDefaultAdmin.js",
+    "setup": "npm run build && node dist/backend/src/scripts/createDefaultAdmin.js",
     "test": "jest --forceExit --detectOpenHandles"
   },
   "keywords": [],

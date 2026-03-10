@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/backend/src/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/postbuild.js",
     "start": "node dist/backend/src/index.js",
     "dev": "nodemon src/index.ts",
     "setup": "npm run build && node dist/backend/src/scripts/createDefaultAdmin.js",

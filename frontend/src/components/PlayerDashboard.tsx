@@ -394,7 +394,7 @@ const RadarChart: React.FC<{ stats: DashboardPsychState }> = ({ stats }) => {
 
   const gridLevels = [20, 40, 60, 80, 100];
 
-  const values = RADAR_LABELS.map(l => (stats as Record<string,number>)[l.key] || 0);
+  const values = RADAR_LABELS.map(l => (stats as unknown as Record<string,number>)[l.key] || 0);
   const dataPoints = values.map((v, i) => getPoint(i, v));
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') + 'Z';
 

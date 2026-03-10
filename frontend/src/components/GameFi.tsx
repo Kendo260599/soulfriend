@@ -162,6 +162,13 @@ const ZoneBadge = styled.span<{zone:string}>`display:inline-block;padding:0.3rem
 // Toast
 const Toast = styled.div<{visible:boolean}>`position:fixed;top:20px;right:20px;background:linear-gradient(135deg,#48BB78,#38A169);color:white;padding:1rem 1.5rem;border-radius:12px;box-shadow:0 8px 25px rgba(72,187,120,0.4);z-index:1000;opacity:${p=>p.visible?1:0};transform:translateY(${p=>p.visible?'0':'-20px'});transition:all 0.3s ease;font-weight:600;`;
 
+// Confirm overlay
+const Overlay = styled.div`position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:999;display:flex;align-items:center;justify-content:center;`;
+const ConfirmBox = styled.div`background:white;border-radius:16px;padding:2rem;max-width:400px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.2);text-align:center;`;
+const ConfirmTitle = styled.h3`color:#4A4A4A;margin-bottom:0.5rem;font-size:1.1rem;`;
+const ConfirmDesc = styled.p`color:#888;font-size:0.9rem;margin-bottom:1.5rem;line-height:1.5;`;
+const ConfirmBtnRow = styled.div`display:flex;gap:0.75rem;justify-content:center;`;
+
 const LoadingContainer = styled.div`display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;color:#888;font-size:1.1rem;`;
 const ErrorContainer = styled.div`text-align:center;padding:2rem;color:#E53E3E;`;
 const RetryButton = styled.button`margin-top:1rem;padding:0.6rem 1.5rem;border:none;border-radius:8px;background:linear-gradient(135deg,#E8B4B8,#D4A5A5);color:white;font-weight:600;cursor:pointer;transition:all 0.2s;&:hover{transform:scale(1.05);}`;
@@ -217,6 +224,7 @@ const GameFi: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabType>('dashboard');
   const [toast, setToast] = useState({ msg: '', visible: false });
+  const [confirmQuest, setConfirmQuest] = useState<DailyQuest | null>(null);
 
   const userId = user?.id || 'anonymous';
 
@@ -256,14 +264,53 @@ const GameFi: React.FC = () => {
     return res.json();
   };
 
-  const handleDailyQuestClick = async (quest: DailyQuest) => {
-    if (quest.completed) return;
+  // Complete quest only after confirmation or after action
+  const doCompleteQuest = async (quest: DailyQuest) => {
     try {
       const json = await apiPost('/quest/complete', { userId, questId: quest.id });
       if (json.success && json.data) { showToast(`+${json.data.xpGained} XP — ${quest.title}`); await fetchAll(); }
     } catch { /* silent */ }
-    if (quest.title.includes('DASS')) navigate('/start');
-    else if (quest.title.includes('nghiên cứu') || quest.title.includes('Đọc')) navigate('/research');
+  };
+
+  // Quest routing: navigate to action page or show confirmation
+  const QUEST_ROUTES: Record<string, { route?: string; needConfirm?: boolean; hint: string }> = {
+    quest_dass: { route: '/start', hint: 'Hãy hoàn thành bài test DASS-21' },
+    quest_chat: { hint: 'Hãy mở chatbot và trò chuyện ít nhất 3 tin nhắn' },
+    quest_journal: { needConfirm: true, hint: 'Bạn đã viết nhật ký cảm xúc (ít nhất 3 câu) chưa?' },
+    quest_breathing: { needConfirm: true, hint: 'Bạn đã thực hành bài tập thở 5 phút chưa?' },
+    quest_research: { route: '/research', hint: 'Hãy đọc 1 bài nghiên cứu về sức khỏe tâm lý' },
+    quest_share: { needConfirm: true, hint: 'Bạn đã chia sẻ câu chuyện tích cực với ai đó chưa?' },
+  };
+
+  const handleDailyQuestClick = (quest: DailyQuest) => {
+    if (quest.completed) return;
+
+    // Extract quest type prefix (e.g. "quest_dass_2026-03-11" → "quest_dass")
+    const prefix = quest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '');
+    const routing = QUEST_ROUTES[prefix];
+
+    if (routing?.needConfirm) {
+      // Show confirmation dialog — user must affirm they did the action
+      setConfirmQuest(quest);
+      return;
+    }
+
+    if (routing?.route) {
+      // Navigate to action page — don't auto-complete
+      showToast(`📍 ${routing.hint}`);
+      navigate(routing.route);
+      return;
+    }
+
+    // Default: show hint that user should do the action
+    showToast(`💡 ${routing?.hint || quest.description}`);
+  };
+
+  const handleConfirmComplete = async () => {
+    if (confirmQuest) {
+      await doCompleteQuest(confirmQuest);
+      setConfirmQuest(null);
+    }
   };
 
   const handleTravel = async (locId: string) => {
@@ -630,6 +677,23 @@ const GameFi: React.FC = () => {
   return (
     <Container>
       <Toast visible={toast.visible}>{toast.msg}</Toast>
+
+      {/* Confirmation Dialog for self-report quests */}
+      {confirmQuest && (
+        <Overlay onClick={() => setConfirmQuest(null)}>
+          <ConfirmBox onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:'2.5rem',marginBottom:'0.75rem'}}>{confirmQuest.icon}</div>
+            <ConfirmTitle>{confirmQuest.title}</ConfirmTitle>
+            <ConfirmDesc>
+              {QUEST_ROUTES[confirmQuest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '')]?.hint || confirmQuest.description}
+            </ConfirmDesc>
+            <ConfirmBtnRow>
+              <ActionBtn variant="secondary" onClick={() => setConfirmQuest(null)}>Chưa làm</ActionBtn>
+              <ActionBtn onClick={handleConfirmComplete}>✅ Đã hoàn thành</ActionBtn>
+            </ConfirmBtnRow>
+          </ConfirmBox>
+        </Overlay>
+      )}
 
       <UserBar>
         <UserInfo>

@@ -986,8 +986,6 @@ function getDbStatusMessage(state: number): string {
 }
 
 // Start the server
-if (require.main === module) {
-  startServer();
-}
+startServer();
 
 export default app;

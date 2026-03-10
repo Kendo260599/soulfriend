@@ -1,21 +1,81 @@
 /**
  * GameFi - Gamification & Mental Health Rewards
  * 
+ * Connected to backend GameFi Engine API.
  * Features:
- * - Daily wellness quests
- * - Achievement badges
+ * - Character with Archetype & Growth Stats
+ * - Daily wellness quests (from API)
+ * - Achievement badges (from API)
  * - Streak tracking
- * - Community leaderboard (anonymous)
- * - Reward shop (future)
+ * - XP/Level progression
+ * - Soul Points & Empathy Points
  * 
  * Requires authentication.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 import SocialSharing from './SocialSharing';
+
+const API_URL = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
+
+// ══════════════════════════════════════════════
+// TYPES (matching backend API response)
+// ══════════════════════════════════════════════
+
+interface GrowthStats {
+  emotionalAwareness: number;
+  psychologicalSafety: number;
+  meaning: number;
+  cognitiveFlexibility: number;
+  relationshipQuality: number;
+}
+
+interface Character {
+  id: string;
+  userId: string;
+  archetype: string;
+  level: number;
+  xp: number;
+  growthScore: number;
+  growthStats: GrowthStats;
+  soulPoints: number;
+  empathyPoints: number;
+  streak: number;
+  lastActiveDate: string;
+  completedQuestIds: string[];
+  badges: string[];
+  createdAt: string;
+}
+
+interface DailyQuest {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  xpReward: number;
+  eventType: string;
+  completed: boolean;
+}
+
+interface Badge {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  unlocked: boolean;
+}
+
+interface GameProfile {
+  character: Character;
+  quests: DailyQuest[];
+  badges: Badge[];
+  levelTitle: string;
+  xpToNextLevel: number;
+  xpProgress: number;
+}
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -249,182 +309,284 @@ const ComingSoonText = styled.p`
   font-size: 0.9rem;
 `;
 
+// ── New: Growth Stats ────────────────────────
+
+const GrowthSection = styled.div`
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  margin-bottom: 2rem;
+`;
+
+const GrowthRow = styled.div`
+  margin-bottom: 1rem;
+  &:last-child { margin-bottom: 0; }
+`;
+
+const GrowthLabel = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  color: #4A4A4A;
+`;
+
+const GrowthBarBg = styled.div`
+  background: #F0F0F0;
+  border-radius: 8px;
+  height: 10px;
+  overflow: hidden;
+`;
+
+const GrowthBarFill = styled.div<{ width: number; color: string }>`
+  height: 100%;
+  width: ${props => Math.min(100, props.width)}%;
+  background: ${props => props.color};
+  border-radius: 8px;
+  transition: width 0.6s ease;
+`;
+
+const XpProgressContainer = styled.div`
+  background: #F0F0F0;
+  border-radius: 8px;
+  height: 8px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+`;
+
+const XpProgressFill = styled.div<{ width: number }>`
+  height: 100%;
+  width: ${props => props.width}%;
+  background: linear-gradient(90deg, #E8B4B8, #D4A5A5);
+  border-radius: 8px;
+  transition: width 0.6s ease;
+`;
+
+const ArchetypeTag = styled.span`
+  display: inline-block;
+  background: linear-gradient(135deg, #805AD5, #6B46C1);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #888;
+  font-size: 1.1rem;
+`;
+
+const ErrorContainer = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #E53E3E;
+`;
+
+const RetryButton = styled.button`
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #E8B4B8, #D4A5A5);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { transform: scale(1.05); }
+`;
+
+const PointsRow = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`;
+
+const PointCard = styled.div<{ gradient: string }>`
+  flex: 1;
+  background: ${props => props.gradient};
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  color: white;
+  text-align: center;
+`;
+
+const PointValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: 700;
+`;
+
+const PointLabel = styled.div`
+  font-size: 0.8rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+`;
+
+const FeedbackToast = styled.div<{ visible: boolean }>`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #48BB78, #38A169);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+  z-index: 1000;
+  opacity: ${props => props.visible ? 1 : 0};
+  transform: translateY(${props => props.visible ? '0' : '-20px'});
+  transition: all 0.3s ease;
+  font-weight: 600;
+`;
+
+// ══════════════════════════════════════════════
+// GROWTH STAT CONFIG
+// ══════════════════════════════════════════════
+
+const GROWTH_CONFIG: Array<{ key: keyof GrowthStats; label: string; color: string; icon: string }> = [
+  { key: 'emotionalAwareness', label: 'Nhận Diện Cảm Xúc', color: '#E8B4B8', icon: '💗' },
+  { key: 'psychologicalSafety', label: 'An Toàn Tâm Lý', color: '#48BB78', icon: '🛡️' },
+  { key: 'meaning', label: 'Ý Nghĩa Sống', color: '#805AD5', icon: '✨' },
+  { key: 'cognitiveFlexibility', label: 'Linh Hoạt Nhận Thức', color: '#DD6B20', icon: '🧠' },
+  { key: 'relationshipQuality', label: 'Kết Nối Xã Hội', color: '#3182CE', icon: '🤝' },
+];
+
 const GameFi: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  // ========== PERSISTENT STATE ==========
-  const GAMEFI_STORAGE_KEY = 'soulfriend_gamefi';
+  const [profile, setProfile] = useState<GameProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
 
-  const loadGameState = () => {
+  const userId = user?.id || 'anonymous';
+
+  const fetchProfile = useCallback(async () => {
     try {
-      const saved = localStorage.getItem(GAMEFI_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Reset quests if last completed date is not today
-        const today = new Date().toDateString();
-        if (parsed.lastQuestDate !== today) {
-          parsed.completedQuests = [];
-          parsed.lastQuestDate = today;
-        }
-        // Streak logic — check if last visit was yesterday
-        const lastVisit = parsed.lastVisitDate ? new Date(parsed.lastVisitDate) : null;
-        const now = new Date();
-        if (lastVisit) {
-          const diffDays = Math.floor((now.getTime() - lastVisit.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays > 1) {
-            parsed.streak = 1; // Reset streak if missed a day
-          } else if (diffDays === 1 && parsed.lastVisitDate !== now.toDateString()) {
-            parsed.streak = (parsed.streak || 0) + 1;
-          }
-        }
-        parsed.lastVisitDate = now.toDateString();
-        return parsed;
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`${API_URL}/api/v2/gamefi/profile/${encodeURIComponent(userId)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success) {
+        setProfile(data.data);
+      } else {
+        throw new Error(data.error || 'Failed to load profile');
       }
-    } catch {}
-    return {
-      xp: 0,
-      streak: 1,
-      completedQuests: [] as number[],
-      lastQuestDate: new Date().toDateString(),
-      lastVisitDate: new Date().toDateString(),
-      totalTestsTaken: 0,
-      totalChatMessages: 0,
-      totalResearchRead: 0,
-    };
-  };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu GameFi');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
 
-  const [gameState, setGameState] = useState(loadGameState);
-  const [completedQuests, setCompletedQuests] = useState<Set<number>>(
-    new Set(gameState.completedQuests || [])
-  );
-
-  // XP → Level formula: Level = floor(sqrt(XP / 50)) + 1
-  const calcLevel = (xp: number) => Math.floor(Math.sqrt(xp / 50)) + 1;
-  const level = calcLevel(gameState.xp);
-  const nextLevelXP = Math.pow(level, 2) * 50;
-  const xpProgress = Math.round(((gameState.xp - Math.pow(level - 1, 2) * 50) / (nextLevelXP - Math.pow(level - 1, 2) * 50)) * 100);
-
-  // Save state to localStorage
   useEffect(() => {
-    const toSave = {
-      ...gameState,
-      completedQuests: Array.from(completedQuests),
-    };
-    localStorage.setItem(GAMEFI_STORAGE_KEY, JSON.stringify(toSave));
-  }, [gameState, completedQuests]);
+    fetchProfile();
+  }, [fetchProfile]);
 
-  // Dynamic badge unlocking
-  const getBadges = () => {
-    const xp = gameState.xp;
-    const streak = gameState.streak;
-    const tests = gameState.totalTestsTaken;
-    const chats = gameState.totalChatMessages;
-    const reads = gameState.totalResearchRead;
-    return [
-      { icon: '🌱', name: 'Người bắt đầu', status: 'Hoàn thành test đầu tiên', unlocked: tests >= 1 },
-      { icon: '🔥', name: 'Streak 3 ngày', status: '3 ngày liên tiếp', unlocked: streak >= 3 },
-      { icon: '⭐', name: 'Streak 7 ngày', status: '7 ngày liên tiếp', unlocked: streak >= 7 },
-      { icon: '💎', name: 'Streak 30 ngày', status: '30 ngày liên tiếp', unlocked: streak >= 30 },
-      { icon: '🧠', name: 'Nhà tâm lý', status: 'Làm 10 bài test', unlocked: tests >= 10 },
-      { icon: '💬', name: 'Người chia sẻ', status: 'Chat 50 tin nhắn', unlocked: chats >= 50 },
-      { icon: '📊', name: 'Nhà nghiên cứu', status: 'Đọc 5 bài nghiên cứu', unlocked: reads >= 5 },
-      { icon: '🏆', name: 'Champion', status: 'Đạt Level 10', unlocked: level >= 10 },
-    ];
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 3000);
   };
 
-  const badges = getBadges();
+  const handleQuestClick = async (quest: DailyQuest) => {
+    if (quest.completed) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, questId: quest.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        showToast(`+${data.data.xpGained} XP — ${quest.title}`);
+        // Refresh profile to get updated state
+        await fetchProfile();
+      }
+    } catch {
+      // Silent fallback — quest marked via API
+    }
+
+    // Navigate for specific quests
+    if (quest.title.includes('DASS')) navigate('/start');
+    else if (quest.title.includes('nghiên cứu') || quest.title.includes('Đọc')) navigate('/research');
+  };
+
+  if (loading) {
+    return (
+      <Container>
+        <LoadingContainer>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎮</div>
+          Đang tải GameFi Engine...
+        </LoadingContainer>
+      </Container>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <Container>
+        <ErrorContainer>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <p>{error || 'Không thể tải dữ liệu'}</p>
+          <RetryButton onClick={fetchProfile}>Thử lại</RetryButton>
+        </ErrorContainer>
+      </Container>
+    );
+  }
+
+  const { character, quests, badges, levelTitle, xpToNextLevel, xpProgress } = profile;
   const unlockedCount = badges.filter(b => b.unlocked).length;
-
-  const dailyQuests = [
-    {
-      icon: '🧠',
-      title: 'Làm test DASS-21',
-      description: 'Hoàn thành bài đánh giá DASS-21 để biết trạng thái tâm lý hôm nay',
-      reward: '+50 XP',
-      action: () => navigate('/start'),
-    },
-    {
-      icon: '💬',
-      title: 'Trò chuyện với AI',
-      description: 'Chat với AI 𝑺𝒆𝒄𝒓𝒆𝒕❤️ ít nhất 3 tin nhắn về cảm xúc của bạn',
-      reward: '+30 XP',
-      action: () => {},
-    },
-    {
-      icon: '📖',
-      title: 'Đọc nghiên cứu',
-      description: 'Khám phá 1 bài nghiên cứu về sức khỏe tâm lý tại Việt Nam',
-      reward: '+20 XP',
-      action: () => navigate('/research'),
-    },
-    {
-      icon: '🤝',
-      title: 'Tham gia cộng đồng',
-      description: 'Ghé thăm trang cộng đồng và tìm hiểu nguồn hỗ trợ',
-      reward: '+20 XP',
-      action: () => navigate('/community'),
-    },
-    {
-      icon: '🧘',
-      title: 'Bài tập thở 5 phút',
-      description: 'Thực hành hít thở sâu 5 phút để giảm stress',
-      reward: '+25 XP',
-      action: () => {},
-    },
-    {
-      icon: '📝',
-      title: 'Ghi nhật ký cảm xúc',
-      description: 'Viết 3 câu về cảm xúc và suy nghĩ của bạn hôm nay',
-      reward: '+30 XP',
-      action: () => {},
-    },
-  ];
-
-  // Badges are computed dynamically by getBadges() above
-
-  const handleQuestClick = (index: number) => {
-    if (completedQuests.has(index)) return; // Can't un-complete a quest
-    const newCompleted = new Set(completedQuests);
-    newCompleted.add(index);
-    setCompletedQuests(newCompleted);
-    // Award XP
-    const xpReward = parseInt(dailyQuests[index].reward.replace(/[^0-9]/g, ''), 10) || 20;
-    setGameState((prev: typeof gameState) => ({
-      ...prev,
-      xp: prev.xp + xpReward,
-      completedQuests: Array.from(newCompleted),
-    }));
-    dailyQuests[index].action();
-  };
 
   return (
     <Container>
+      <FeedbackToast visible={toastVisible}>{toastMessage}</FeedbackToast>
+
       <UserBar>
         <UserInfo>
           <UserAvatar>🌸</UserAvatar>
-          <UserName>{user?.displayName || 'User'}</UserName>
+          <UserName>
+            {user?.displayName || 'User'}
+            <ArchetypeTag>{character.archetype}</ArchetypeTag>
+          </UserName>
         </UserInfo>
         <LogoutBtn onClick={() => { logout(); navigate('/'); }}>Đăng xuất</LogoutBtn>
       </UserBar>
 
       <Header>
-        <PageTitle>🎮 GameFi - Hành trình Sức khỏe Tâm lý</PageTitle>
-        <PageSubtitle>Hoàn thành nhiệm vụ mỗi ngày để cải thiện sức khỏe tâm lý</PageSubtitle>
+        <PageTitle>🎮 GameFi — Hành Trình Sức Khỏe Tâm Lý</PageTitle>
+        <PageSubtitle>{levelTitle} • Growth Score: {character.growthScore}</PageSubtitle>
       </Header>
 
+      {/* ── Main Stats ── */}
       <StatsRow>
         <StatCard color="#E8B4B8">
-          <StatValue>{gameState.xp}</StatValue>
-          <StatLabel>XP tổng cộng (→ Lv.{level + 1} cần {nextLevelXP} XP)</StatLabel>
+          <StatValue>{character.xp}</StatValue>
+          <StatLabel>XP tổng cộng</StatLabel>
+          <XpProgressContainer>
+            <XpProgressFill width={xpProgress} />
+          </XpProgressContainer>
+          <StatLabel style={{ marginTop: '0.3rem', fontSize: '0.75rem' }}>
+            {xpProgress}% → Lv.{character.level + 1} (còn {xpToNextLevel} XP)
+          </StatLabel>
         </StatCard>
         <StatCard color="#48BB78">
-          <StatValue>{gameState.streak} 🔥</StatValue>
+          <StatValue>{character.streak} 🔥</StatValue>
           <StatLabel>Streak hiện tại</StatLabel>
         </StatCard>
         <StatCard color="#805AD5">
-          <StatValue>Lv. {level}</StatValue>
-          <StatLabel>Cấp độ ({xpProgress}% → Lv.{level + 1})</StatLabel>
+          <StatValue>Lv. {character.level}</StatValue>
+          <StatLabel>{levelTitle}</StatLabel>
         </StatCard>
         <StatCard color="#DD6B20">
           <StatValue>{unlockedCount}/{badges.length}</StatValue>
@@ -432,34 +594,64 @@ const GameFi: React.FC = () => {
         </StatCard>
       </StatsRow>
 
-      <SectionTitle>📋 Nhiệm vụ Hàng ngày</SectionTitle>
+      {/* ── Points ── */}
+      <PointsRow>
+        <PointCard gradient="linear-gradient(135deg, #667eea, #764ba2)">
+          <PointValue>{character.soulPoints}</PointValue>
+          <PointLabel>Soul Points ✨</PointLabel>
+        </PointCard>
+        <PointCard gradient="linear-gradient(135deg, #f093fb, #f5576c)">
+          <PointValue>{character.empathyPoints}</PointValue>
+          <PointLabel>Empathy Points 💜</PointLabel>
+        </PointCard>
+      </PointsRow>
+
+      {/* ── Growth Stats ── */}
+      <SectionTitle>📊 Chỉ Số Phát Triển Tâm Lý</SectionTitle>
+      <GrowthSection>
+        {GROWTH_CONFIG.map(({ key, label, color, icon }) => (
+          <GrowthRow key={key}>
+            <GrowthLabel>
+              <span>{icon} {label}</span>
+              <span style={{ fontWeight: 600 }}>{character.growthStats[key]}/100</span>
+            </GrowthLabel>
+            <GrowthBarBg>
+              <GrowthBarFill width={character.growthStats[key]} color={color} />
+            </GrowthBarBg>
+          </GrowthRow>
+        ))}
+      </GrowthSection>
+
+      {/* ── Daily Quests ── */}
+      <SectionTitle>📋 Nhiệm Vụ Hàng Ngày</SectionTitle>
       <QuestGrid>
-        {dailyQuests.map((quest, index) => (
+        {quests.map((quest) => (
           <QuestCard
-            key={index}
-            completed={completedQuests.has(index)}
-            onClick={() => handleQuestClick(index)}
+            key={quest.id}
+            completed={quest.completed}
+            onClick={() => handleQuestClick(quest)}
           >
             <QuestIcon>{quest.icon}</QuestIcon>
             <QuestTitle>
               {quest.title}
-              <QuestStatus done={completedQuests.has(index)}>
-                {completedQuests.has(index) ? '✅ Hoàn thành' : ''}
+              <QuestStatus done={quest.completed}>
+                {quest.completed ? '✅ Hoàn thành' : ''}
               </QuestStatus>
             </QuestTitle>
             <QuestDescription>{quest.description}</QuestDescription>
-            <QuestReward>{quest.reward}</QuestReward>
+            <QuestReward>+{quest.xpReward} XP</QuestReward>
           </QuestCard>
         ))}
       </QuestGrid>
 
-      <SectionTitle>🏅 Huy hiệu</SectionTitle>
+      {/* ── Badges ── */}
+      <SectionTitle>🏅 Huy Hiệu</SectionTitle>
       <BadgeGrid>
-        {badges.map((badge, index) => (
-          <BadgeCard key={index} unlocked={badge.unlocked}>
+        {badges.map((badge) => (
+          <BadgeCard key={badge.id} unlocked={badge.unlocked}>
             <BadgeIcon>{badge.icon}</BadgeIcon>
             <BadgeName>{badge.name}</BadgeName>
-            <BadgeStatus>{badge.unlocked ? '✅ Đã mở' : `🔒 ${badge.status}`}</BadgeStatus>
+            <BadgeStatus>{badge.unlocked ? '✅ Đã mở' : `🔒 ${badge.description}`}</BadgeStatus>
           </BadgeCard>
         ))}
       </BadgeGrid>
@@ -477,7 +669,7 @@ const GameFi: React.FC = () => {
       <ComingSoon>
         <ComingSoonTitle>🚀 Sắp ra mắt</ComingSoonTitle>
         <ComingSoonText>
-          Bảng xếp hạng ẩn danh • Reward Shop • Thử thách tuần • Multiplayer Wellness • NFT Badges
+          World Map Tâm Lý • Skill Tree • Archetype System • Narrative Engine • Reward Shop
         </ComingSoonText>
       </ComingSoon>
     </Container>

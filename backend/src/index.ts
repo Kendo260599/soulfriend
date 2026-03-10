@@ -71,6 +71,9 @@ import spsiRoutes from './routes/spsi';
 // Upload Routes — Image Upload
 import uploadRoutes from './routes/upload';
 
+// 🎮 GameFi Routes — Gamification Engine
+import gamefiRoutes from './routes/gamefi';
+
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
 import './models/Expert';
@@ -354,7 +357,8 @@ app.use('/api/spsi', spsiRoutes);
 
 // �📷 Upload: Image upload for chat
 app.use('/api/v2/upload', uploadRoutes);
-
+// 🎮 GameFi: Gamification Engine
+app.use('/api/v2/gamefi', gamefiRoutes);
 // 🧪 TEST: QStash Testing Endpoints (Development ONLY)
 if (config.NODE_ENV === 'development') {
   app.use('/api/test/qstash', qstashTestRoutes);

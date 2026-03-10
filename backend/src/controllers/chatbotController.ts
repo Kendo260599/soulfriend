@@ -11,6 +11,7 @@ import { v5IntegrationService } from '../services/v5IntegrationService';
 import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
 import { RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
+import { detectEvent, processEvent as gamefiProcessEvent, generateShortFeedback } from '../services/gamefi';
 
 // PGE: Track message index per session (with max size to prevent memory leak)
 const SESSION_INDEX_MAX_SIZE = 5000;
@@ -106,6 +107,30 @@ export class ChatbotController {
         intent: response.intent,
         crisisLevel: response.crisisLevel,
       }).catch(() => {});
+
+      // 🎮 GameFi: Detect event from user message and process
+      try {
+        const detectedEvent = detectEvent(message);
+        if (detectedEvent) {
+          const gamefiResult = gamefiProcessEvent({
+            userId: effectiveUserId,
+            eventType: detectedEvent,
+            content: message,
+          });
+          if (gamefiResult.xpGained > 0) {
+            (response as any).gamefi = {
+              xpGained: gamefiResult.xpGained,
+              newLevel: gamefiResult.newLevel,
+              levelTitle: gamefiResult.levelTitle,
+              milestone: gamefiResult.milestone,
+              safetyAlert: gamefiResult.safetyAlert,
+              feedback: generateShortFeedback(gamefiResult),
+            };
+          }
+        }
+      } catch (gamefiErr) {
+        logger.debug('[GameFi] processEvent failed (non-critical):', gamefiErr instanceof Error ? gamefiErr.message : gamefiErr);
+      }
 
       // PGE: Psychological Gravity Engine — extract emotions, compute EBH, simulate trajectory (ASYNC)
       cleanupSessionIndex();

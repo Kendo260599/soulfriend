@@ -14,6 +14,20 @@ export {
   getGameProfile,
   getSupportedEvents,
   resetEngine,
+  // New: Full systems
+  getSkillTree,
+  getWorldMap,
+  travel,
+  getQuestDatabase,
+  completeFullQuest,
+  getAdaptiveQuests,
+  getStateData,
+  getBehaviorData,
+  completeDailyRitualStep,
+  completeWeekly,
+  getLoreData,
+  getLoreMessage,
+  getFullGameData,
 } from './gamefiEngine';
 
 // Narrative Detector (re-export from integration/narrativeTrigger)
@@ -27,4 +41,8 @@ export type { PsychEventType, PsychEvent, EventResult } from '../../../../gamefi
 export type { GrowthStats } from '../../../../gamefi/core/types';
 
 // Types — backend API response types
-export type { Character, DailyQuest, Badge, GameProfile } from './types';
+export type {
+  Character, DailyQuest, Badge, GameProfile,
+  SkillTreeData, WorldMapData, QuestDatabaseData,
+  AdaptiveQuestData, StateData, BehaviorData, LoreData, FullGameData,
+} from './types';

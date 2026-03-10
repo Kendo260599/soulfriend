@@ -1,5 +1,5 @@
 // ============================================
-// SoulFriend GameFi — Routes
+// SoulFriend GameFi — Routes (Full 22 Systems)
 // ============================================
 
 import { Router } from 'express';
@@ -7,19 +7,39 @@ import { gamefiController } from '../controllers/gamefiController';
 
 const router = Router();
 
-// GET /api/v2/gamefi/profile/:userId — Full game profile
+// ── Profile & Core ───────────────────────────
 router.get('/profile/:userId', gamefiController.getProfile);
-
-// POST /api/v2/gamefi/event — Process a psychological event
 router.post('/event', gamefiController.processEvent);
-
-// POST /api/v2/gamefi/quest/complete — Complete a daily quest
 router.post('/quest/complete', gamefiController.completeQuest);
-
-// POST /api/v2/gamefi/detect — Detect event type from message (utility)
 router.post('/detect', gamefiController.detectEvent);
-
-// GET /api/v2/gamefi/supported-events — List supported event types
 router.get('/supported-events', gamefiController.getSupportedEvents);
+
+// ── Full Game Data (single call) ─────────────
+router.get('/full/:userId', gamefiController.getFullData);
+
+// ── Skill Tree ───────────────────────────────
+router.get('/skills/:userId', gamefiController.getSkillTree);
+
+// ── World Map ────────────────────────────────
+router.get('/world/:userId', gamefiController.getWorldMap);
+router.post('/world/travel', gamefiController.travel);
+
+// ── Quest Database (200 quests) ──────────────
+router.get('/quests/:userId', gamefiController.getQuestDatabase);
+router.post('/quests/complete', gamefiController.completeFullQuest);
+
+// ── Adaptive Quest AI ────────────────────────
+router.get('/adaptive/:userId', gamefiController.getAdaptiveQuests);
+
+// ── Psychological State ──────────────────────
+router.get('/state/:userId', gamefiController.getState);
+
+// ── Behavior Loops ───────────────────────────
+router.get('/behavior/:userId', gamefiController.getBehavior);
+router.post('/behavior/daily', gamefiController.completeDailyStep);
+router.post('/behavior/weekly', gamefiController.completeWeeklyChallenge);
+
+// ── Lore & Mythology ─────────────────────────
+router.get('/lore', gamefiController.getLore);
 
 export default router;

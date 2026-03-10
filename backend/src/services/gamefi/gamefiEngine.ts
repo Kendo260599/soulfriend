@@ -1,15 +1,7 @@
 // ============================================
 // SoulFriend GameFi — Backend Engine Wrapper
 // ============================================
-// Thin adapter around the ORIGINAL 22-system GameFi engine
-// (gamefi/core/) and integration layer (integration/).
-//
-// The original engine provides: archetype growth bonus, economy
-// with streaks & daily caps, narrative analysis, emotion detection,
-// state engine, crisis signals, behavioral loop, and data logging.
-//
-// This wrapper adds: API-friendly profile, daily quests, badges,
-// streak tracking, and character type mapping for the frontend.
+// Full adapter around the ORIGINAL 22-system GameFi engine.
 
 import {
   processEvent as originalProcessEvent,
@@ -27,13 +19,70 @@ import type { Character as OriginalCharacter } from '../../../../gamefi/core/typ
 import { getLevelTitle, getLevelTable } from '../../../../gamefi/core/character';
 import { getStreak, recordStreakActivity, resetEconomy } from '../../../../gamefi/economy/economyEngine';
 import { generateFeedback as origGenerateFeedback } from '../../../../integration/gamefiFeedback';
-import type { Character, DailyQuest, Badge, GameProfile } from './types';
+import {
+  initSkillTree, getAllSkills, getAllSynergies, getAllBranchMasteries,
+  canUnlockSkill, unlockAvailableSkills, createSkillState,
+} from '../../../../gamefi/skills/skillTree';
+import type { UnlockContext } from '../../../../gamefi/skills/skillTree';
+import type { CharacterSkillState, SkillBranchId } from '../../../../gamefi/core/types';
+import {
+  initWorldMap, getAllLocations, canAccessLocation, travelTo,
+} from '../../../../gamefi/world/worldMap';
+import {
+  initQuests as initQuestDB, getAllQuests as getAllQuestsDB,
+  getQuestsByCategory as getQuestsByCategoryDB,
+  completeQuest as completeQuestDB,
+} from '../../../../gamefi/quests/questEngine';
+import {
+  getPlayerPhase, buildPlayerProfile, recommendQuests,
+  getQuestChain, assessDifficulty, getAvailableChainThemes,
+  classifyUserType,
+} from '../../../../gamefi/engine/adaptiveQuestAI';
+import {
+  getStateZone, getTrajectory, calcGrowthScore,
+} from '../../../../gamefi/engine/stateEngine';
+import {
+  getDailyRitual, completeDailyStep, initWeeklyChallenges,
+  getAllWeeklyChallenges, completeWeeklyChallenge,
+  initSeasonalGoals, getAllSeasonalGoals, updateSeasonalProgress,
+  getMeaningShifts,
+} from '../../../../gamefi/engine/behaviorLoop';
+import { calculateEmpathyRank } from '../../../../gamefi/engine/empathy';
+import {
+  initLore, getAllPhilosophies, getAllLegends, getAllLocationLores,
+  getWorldName, getPlayerRole, getCommunityName, getLoreForEvent,
+} from '../../../../gamefi/lore/loreEngine';
+import type {
+  Character, DailyQuest, Badge, GameProfile,
+  SkillTreeData, SkillInfo, SynergyInfo, BranchMasteryInfo,
+  WorldMapData, LocationInfo,
+  QuestDatabaseData, QuestInfo,
+  AdaptiveQuestData, RecommendedQuest, QuestChainInfo,
+  StateData, BehaviorData, LoreData, FullGameData,
+} from './types';
 
 // ══════════════════════════════════════════════
-// METADATA STORE (fields not in original Character)
+// INITIALIZATION
+// ══════════════════════════════════════════════
+
+let _initialized = false;
+function ensureInit() {
+  if (_initialized) return;
+  initSkillTree();
+  initWorldMap();
+  initQuestDB();
+  initWeeklyChallenges();
+  initSeasonalGoals();
+  initLore();
+  _initialized = true;
+}
+
+// ══════════════════════════════════════════════
+// METADATA STORE
 // ══════════════════════════════════════════════
 
 const createdAtStore: Map<string, string> = new Map();
+const skillStateStore: Map<string, CharacterSkillState> = new Map();
 
 // ══════════════════════════════════════════════
 // HELPERS
@@ -42,6 +91,13 @@ const createdAtStore: Map<string, string> = new Map();
 function todayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getSkillState(userId: string) {
+  if (!skillStateStore.has(userId)) {
+    skillStateStore.set(userId, createSkillState());
+  }
+  return skillStateStore.get(userId)!;
 }
 
 /** Convert original Character → frontend-friendly Character */
@@ -73,11 +129,13 @@ function toFrontendCharacter(char: OriginalCharacter): Character {
 // ══════════════════════════════════════════════
 
 export function getOrCreateCharacter(userId: string): Character {
+  ensureInit();
   const char = originalGetOrCreate(userId);
   return toFrontendCharacter(char);
 }
 
 export function getCharacter(userId: string): Character | undefined {
+  ensureInit();
   const char = originalGetCharacter(userId);
   return char ? toFrontendCharacter(char) : undefined;
 }
@@ -87,6 +145,7 @@ export function getCharacter(userId: string): Character | undefined {
 // ══════════════════════════════════════════════
 
 export function processEvent(event: PsychEvent): OriginalEventResult & { feedback: string } {
+  ensureInit();
   // Full 10-step pipeline from original engine:
   //  1. Map event → action with archetype bonus
   //  2. Update growth stats with archetype growth %
@@ -298,6 +357,336 @@ export function getSupportedEvents(): PsychEventType[] {
 }
 
 // ══════════════════════════════════════════════
+// SKILL TREE
+// ══════════════════════════════════════════════
+
+export function getSkillTree(userId: string): SkillTreeData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const state = getSkillState(userId);
+
+  const ctx: UnlockContext = {
+    character: char,
+    skillState: state,
+    categoryCounts: {},
+    reflectionCount: char.completedQuestIds.length,
+    helpOthersCount: Math.floor(char.empathyScore / 4),
+    hasNarrativeQuest: char.completedQuestIds.some(id => id.includes('narrative')),
+  };
+
+  // Auto-unlock available skills
+  unlockAvailableSkills(ctx);
+
+  const allSkills = getAllSkills();
+  const skills: SkillInfo[] = allSkills.map(s => ({
+    id: s.id,
+    branch: s.branch,
+    tier: s.tier,
+    ten: s.ten,
+    moTa: s.moTa,
+    linkedLocation: s.linkedLocation,
+    unlocked: state.unlockedSkills.includes(s.id),
+    canUnlock: !state.unlockedSkills.includes(s.id) && canUnlockSkill(s, ctx),
+  }));
+
+  const synergies: SynergyInfo[] = getAllSynergies().map(syn => ({
+    id: syn.id,
+    ten: syn.ten,
+    moTa: syn.moTa,
+    requiredSkills: syn.requiredSkills,
+    unlocked: state.unlockedSynergies.includes(syn.id),
+  }));
+
+  const masteries: BranchMasteryInfo[] = getAllBranchMasteries().map(bm => ({
+    branch: bm.branch,
+    ten: bm.ten,
+    danhHieu: bm.danhHieu,
+    mastered: state.masteredBranches.includes(bm.branch),
+  }));
+
+  return {
+    skills,
+    synergies,
+    masteries,
+    unlockedCount: state.unlockedSkills.length,
+    totalCount: allSkills.length,
+  };
+}
+
+// ══════════════════════════════════════════════
+// WORLD MAP
+// ══════════════════════════════════════════════
+
+export function getWorldMap(userId: string): WorldMapData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const allLocations = getAllLocations();
+
+  const locations: LocationInfo[] = allLocations.map(loc => ({
+    id: loc.id,
+    ten: loc.ten,
+    moTa: loc.moTa,
+    levelRequired: loc.unlock.levelRequired,
+    growthScoreRequired: loc.unlock.growthScoreRequired,
+    unlocked: canAccessLocation(char, loc.id),
+    isCurrent: char.currentLocation === loc.id,
+  }));
+
+  return {
+    locations,
+    currentLocation: char.currentLocation,
+    unlockedCount: locations.filter(l => l.unlocked).length,
+    totalCount: locations.length,
+  };
+}
+
+export function travel(userId: string, locationId: string): { success: boolean; message: string } {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  return travelTo(char, locationId as any);
+}
+
+// ══════════════════════════════════════════════
+// QUEST DATABASE (full 200)
+// ══════════════════════════════════════════════
+
+export function getQuestDatabase(userId: string, category?: string): QuestDatabaseData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  let allQuests = getAllQuestsDB();
+
+  if (category) {
+    allQuests = getQuestsByCategoryDB(category as any);
+  }
+
+  const quests: QuestInfo[] = allQuests.map(q => ({
+    id: q.id,
+    title: q.title,
+    description: q.description,
+    category: q.category,
+    location: q.location,
+    xpReward: q.xpReward,
+    loai: q.loai,
+    completed: char.completedQuestIds.includes(q.id),
+  }));
+
+  const categories = [...new Set(getAllQuestsDB().map(q => q.category))];
+
+  return {
+    quests,
+    totalCount: quests.length,
+    completedCount: quests.filter(q => q.completed).length,
+    categories,
+  };
+}
+
+export function completeFullQuest(userId: string, questId: string): (OriginalEventResult & { feedback: string }) | null {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  if (char.completedQuestIds.includes(questId)) return null;
+
+  const quest = getAllQuestsDB().find(q => q.id === questId);
+  if (quest) {
+    completeQuestDB(char, quest);
+  }
+
+  return processEvent({
+    userId,
+    eventType: 'quest_completed',
+    content: `Hoàn thành quest: ${questId}`,
+  });
+}
+
+// ══════════════════════════════════════════════
+// ADAPTIVE QUEST AI
+// ══════════════════════════════════════════════
+
+export function getAdaptiveQuests(userId: string): AdaptiveQuestData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const gs = calcGrowthScore(char.growthStats);
+  const phase = getPlayerPhase(gs);
+  const allQuests = getAllQuestsDB();
+
+  const completedCategories = allQuests
+    .filter(q => char.completedQuestIds.includes(q.id))
+    .map(q => q.category);
+
+  const userType = classifyUserType(completedCategories as any);
+  const difficulty = assessDifficulty(char.id, char.level);
+  const scored = recommendQuests(allQuests, char.growthStats, char.completedQuestIds, undefined, 5);
+
+  const recommendations: RecommendedQuest[] = scored.map(s => ({
+    questId: s.questId,
+    title: s.quest.title,
+    description: s.quest.description,
+    category: s.quest.category,
+    xpReward: s.quest.xpReward,
+    totalScore: s.totalScore,
+    reason: s.statNeed > 30 ? 'Cải thiện điểm yếu' : s.narrativeRelevance > 0 ? 'Phù hợp câu chuyện' : 'Khám phá mới',
+  }));
+
+  // Get a quest chain based on weakest stat
+  const themes = getAvailableChainThemes();
+  let questChain: QuestChainInfo | null = null;
+  if (themes.length > 0) {
+    const chain = getQuestChain(themes[0]);
+    if (chain) {
+      questChain = {
+        id: chain.id,
+        theme: chain.theme,
+        title: chain.title,
+        steps: chain.steps.map(s => ({ order: s.order, title: s.title, description: s.description, xpReward: s.xpReward })),
+        totalXp: chain.totalXp,
+      };
+    }
+  }
+
+  return {
+    playerPhase: phase,
+    userType,
+    recommendations,
+    questChain,
+    difficulty: {
+      current: difficulty.currentDifficulty,
+      suggested: difficulty.suggestedDifficulty,
+      completionRate: difficulty.completionRate,
+      shouldAdjust: difficulty.shouldAdjust,
+      reason: difficulty.reason,
+    },
+  };
+}
+
+// ══════════════════════════════════════════════
+// STATE & TRAJECTORY
+// ══════════════════════════════════════════════
+
+export function getStateData(userId: string): StateData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const gs = calcGrowthScore(char.growthStats);
+  const zone = getStateZone(gs);
+  const trajectory = getTrajectory(char.id).map(s => ({
+    timestamp: s.timestamp,
+    zone: s.zone,
+    growthScore: s.growthScore,
+    stats: { ...s.state },
+  }));
+  const empathyRank = calculateEmpathyRank(char.empathyScore);
+
+  return {
+    zone,
+    growthScore: gs,
+    trajectory,
+    empathyRank,
+    empathyScore: char.empathyScore,
+  };
+}
+
+// ══════════════════════════════════════════════
+// BEHAVIOR LOOPS
+// ══════════════════════════════════════════════
+
+export function getBehaviorData(userId: string): BehaviorData {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+
+  const ritual = getDailyRitual(char.id);
+  const weeklyChallenges = getAllWeeklyChallenges().map(ch => ({
+    id: ch.id,
+    title: ch.title,
+    description: ch.description,
+    xpReward: ch.xpReward,
+    completed: ch.completed,
+  }));
+  const seasonalGoals = getAllSeasonalGoals().map(g => ({
+    id: g.id,
+    title: g.title,
+    rewardTitle: g.rewardTitle,
+    xpReward: g.xpReward,
+    progress: { ...g.progress },
+    requirements: { ...g.requirements },
+    completed: g.completed,
+  }));
+  const shifts = getMeaningShifts(char.id).map(s => ({
+    from: s.from,
+    to: s.to,
+    detectedAt: s.detectedAt,
+  }));
+
+  return {
+    dailyRitual: {
+      date: ritual.date,
+      checkinDone: ritual.checkinDone,
+      reflectionDone: ritual.reflectionDone,
+      communityDone: ritual.communityDone,
+      completed: ritual.completed,
+    },
+    weeklyChallenges,
+    seasonalGoals,
+    meaningShifts: shifts,
+  };
+}
+
+export function completeDailyRitualStep(userId: string, step: 'checkin' | 'reflection' | 'community') {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const ritual = completeDailyStep(char.id, step);
+  if (ritual.completed) {
+    // Bonus for completing full daily ritual
+    processEvent({ userId, eventType: 'quest_completed', content: 'Hoàn thành nghi thức hàng ngày' });
+  }
+  return ritual;
+}
+
+export function completeWeekly(userId: string, challengeId: string) {
+  ensureInit();
+  const ch = completeWeeklyChallenge(challengeId);
+  if (ch?.completed) {
+    processEvent({ userId, eventType: 'quest_completed', content: `Hoàn thành thử thách tuần: ${ch.title}` });
+  }
+  return ch;
+}
+
+// ══════════════════════════════════════════════
+// LORE
+// ══════════════════════════════════════════════
+
+export function getLoreData(): LoreData {
+  ensureInit();
+  return {
+    worldName: getWorldName(),
+    playerRole: getPlayerRole(),
+    communityName: getCommunityName(),
+    philosophies: getAllPhilosophies(),
+    legends: getAllLegends(),
+    locationLores: getAllLocationLores(),
+  };
+}
+
+export function getLoreMessage(trigger: string, ref: string): string | null {
+  ensureInit();
+  const msg = getLoreForEvent(trigger as any, ref);
+  return msg?.text ?? null;
+}
+
+// ══════════════════════════════════════════════
+// FULL GAME DATA
+// ══════════════════════════════════════════════
+
+export function getFullGameData(userId: string): FullGameData {
+  ensureInit();
+  return {
+    profile: getGameProfile(userId),
+    skillTree: getSkillTree(userId),
+    worldMap: getWorldMap(userId),
+    state: getStateData(userId),
+    behavior: getBehaviorData(userId),
+    lore: getLoreData(),
+  };
+}
+
+// ══════════════════════════════════════════════
 // RESET (testing)
 // ══════════════════════════════════════════════
 
@@ -305,4 +694,6 @@ export function resetEngine(): void {
   resetEventHandler();
   resetEconomy();
   createdAtStore.clear();
+  skillStateStore.clear();
+  _initialized = false;
 }

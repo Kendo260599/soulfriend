@@ -109,11 +109,23 @@ function ensureInit() {
 }
 
 // ══════════════════════════════════════════════
-// METADATA STORE
+// METADATA STORE (capped to prevent memory leaks)
 // ══════════════════════════════════════════════
 
+const MAX_METADATA_ENTRIES = 10000;
 const createdAtStore: Map<string, string> = new Map();
 const skillStateStore: Map<string, CharacterSkillState> = new Map();
+
+/** FIFO eviction: remove oldest entries when map exceeds cap */
+function evictIfNeeded<V>(map: Map<string, V>, max: number): void {
+  if (map.size <= max) return;
+  const excess = map.size - max;
+  const iter = map.keys();
+  for (let i = 0; i < excess; i++) {
+    const key = iter.next().value;
+    if (key !== undefined) map.delete(key);
+  }
+}
 
 // ══════════════════════════════════════════════
 // HELPERS
@@ -126,6 +138,7 @@ function todayStr(): string {
 
 function getSkillState(userId: string) {
   if (!skillStateStore.has(userId)) {
+    evictIfNeeded(skillStateStore, MAX_METADATA_ENTRIES);
     skillStateStore.set(userId, createSkillState());
   }
   return skillStateStore.get(userId)!;
@@ -135,6 +148,7 @@ function getSkillState(userId: string) {
 function toFrontendCharacter(char: OriginalCharacter): Character {
   const streakInfo = getStreak(char.id, 'daily_ritual');
   if (!createdAtStore.has(char.name)) {
+    evictIfNeeded(createdAtStore, MAX_METADATA_ENTRIES);
     createdAtStore.set(char.name, new Date().toISOString());
   }
   return {

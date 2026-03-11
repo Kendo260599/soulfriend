@@ -1506,12 +1506,43 @@ assert(medAlert!.shouldPauseGame === undefined || medAlert!.shouldPauseGame === 
 
 // ── C2: Memory Store Limits ──────────────────
 
-// 17.10 Log store limit
+// 17.10 Log store limit (global)
 clearLogs();
 for (let i = 0; i < 10010; i++) {
   logAction('limit_char', 'journal_entry', { emotionalAwareness: 1 });
 }
 assert(getLogCount() <= 10000, `Log store capped at ≤ 10000 (got ${getLogCount()})`);
+
+// ── C5: Per-User DataLogger Limits ───────────
+
+// 17.11 Per-user limit enforcement (500 per user)
+clearLogs();
+for (let i = 0; i < 600; i++) {
+  logAction('user_a', 'journal_entry', { emotionalAwareness: 1 });
+}
+const userALogs = getLogsForCharacter('user_a');
+assert(userALogs.length <= 500, `Per-user logs capped at ≤ 500 (user_a got ${userALogs.length})`);
+
+// 17.12 Per-user isolation — one user filling logs doesn't evict another
+clearLogs();
+for (let i = 0; i < 100; i++) {
+  logAction('user_b', 'reflection', { meaning: 1 });
+}
+for (let i = 0; i < 600; i++) {
+  logAction('user_c', 'journal_entry', { emotionalAwareness: 1 });
+}
+const userBLogs = getLogsForCharacter('user_b');
+assert(userBLogs.length === 100, `user_b logs preserved (expected 100, got ${userBLogs.length})`);
+
+// 17.13 Global cap still enforced across many users
+clearLogs();
+// 30 users × 400 logs each = 12000, should be capped at 10000
+for (let u = 0; u < 30; u++) {
+  for (let i = 0; i < 400; i++) {
+    logAction(`user_${u}`, 'gratitude', { relationshipQuality: 1 });
+  }
+}
+assert(getLogCount() <= 10000, `Global cap enforced across users (got ${getLogCount()})`);
 
 // ══════════════════════════════════════════════
 // SUMMARY

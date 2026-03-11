@@ -27,6 +27,7 @@ import {
 } from '../services/gamefi';
 import type { PsychEventType } from '../services/gamefi';
 import { logger } from '../utils/logger';
+import { sanitizeText } from '../utils/sanitize';
 
 /**
  * Get authenticated userId from request.
@@ -102,7 +103,7 @@ export class GamefiController {
       const result = await processEvent({
         userId,
         eventType: eventType as PsychEventType,
-        content: content.normalize('NFC'),
+        content: sanitizeText(content),
       });
 
       res.json({ success: true, data: result });
@@ -156,7 +157,7 @@ export class GamefiController {
         return;
       }
 
-      const result = detectEventWithScores(message);
+      const result = detectEventWithScores(sanitizeText(message));
       res.json({ success: true, data: result });
     } catch (error) {
       logger.error('GameFi detectEvent error:', error);

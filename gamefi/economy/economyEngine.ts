@@ -52,6 +52,20 @@ const STREAK_MILESTONES = [
 const streakMap: Map<string, StreakInfo> = new Map();         // key: charId_type
 const dailyMap: Map<string, DailyEconomy> = new Map();        // key: charId_date
 
+/** Max entries per Map to prevent memory leaks */
+const MAX_MAP_ENTRIES = 50000;
+
+/** FIFO eviction when map exceeds cap */
+function evictOldest<V>(map: Map<string, V>, max: number): void {
+  if (map.size <= max) return;
+  const excess = map.size - max;
+  const iter = map.keys();
+  for (let i = 0; i < excess; i++) {
+    const key = iter.next().value;
+    if (key !== undefined) map.delete(key);
+  }
+}
+
 // ══════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════
@@ -114,6 +128,7 @@ export function getDailyEconomy(characterId: string, date?: string): DailyEconom
   const key = dailyKey(characterId, d);
   let daily = dailyMap.get(key);
   if (!daily) {
+    evictOldest(dailyMap, MAX_MAP_ENTRIES);
     daily = {
       characterId,
       date: d,
@@ -149,6 +164,7 @@ export function getStreak(characterId: string, type: StreakInfo['type']): Streak
   const key = streakKey(characterId, type);
   let streak = streakMap.get(key);
   if (!streak) {
+    evictOldest(streakMap, MAX_MAP_ENTRIES);
     streak = {
       characterId,
       type,

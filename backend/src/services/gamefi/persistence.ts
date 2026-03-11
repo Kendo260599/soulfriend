@@ -22,6 +22,9 @@ import { logger } from '../../utils/logger';
 
 const loadedUsers = new Set<string>();
 
+/** Per-user loading promises to prevent concurrent loads (race condition fix) */
+const loadingPromises = new Map<string, Promise<void>>();
+
 /** Callback to restore skill state into gamefiEngine's local store */
 let _skillStateRestorer: ((userId: string, data: { unlockedSkills: string[]; unlockedSynergies: string[]; masteredBranches: string[] }) => void) | null = null;
 
@@ -52,10 +55,30 @@ function isDbConnected(): boolean {
 /**
  * Ensure a user's GameFi data is loaded from MongoDB into memory.
  * No-op if already loaded or DB not connected.
+ * Uses per-user Promise locking to prevent concurrent loads.
  */
 export async function ensureUserLoaded(userId: string): Promise<void> {
   if (loadedUsers.has(userId) || !isDbConnected()) return;
 
+  // If another call is already loading this user, wait for it
+  const existing = loadingPromises.get(userId);
+  if (existing) {
+    await existing;
+    return;
+  }
+
+  const loadPromise = _loadUserFromDb(userId);
+  loadingPromises.set(userId, loadPromise);
+
+  try {
+    await loadPromise;
+  } finally {
+    loadingPromises.delete(userId);
+  }
+}
+
+/** Internal: actual DB load logic (called once per user via lock) */
+async function _loadUserFromDb(userId: string): Promise<void> {
   try {
     const doc = await GameFiState.findOne({ userId }).lean();
     if (doc) {
@@ -289,4 +312,5 @@ export async function saveSkillState(
 
 export function resetLoadedUsers(): void {
   loadedUsers.clear();
+  loadingPromises.clear();
 }

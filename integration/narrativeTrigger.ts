@@ -14,6 +14,10 @@ import type { PsychEventType } from '../gamefi/core/eventHandler';
 // ══════════════════════════════════════════════
 // KEYWORD DICTIONARIES — Vietnamese + English
 // ══════════════════════════════════════════════
+// NOTE: narrativeEngine.ts has a separate EMOTION_KEYWORDS mapping
+// specific emotions (sadness, anxiety, etc.) → keywords for narrative
+// generation. Those serve a different classification purpose than these
+// event-type detection keywords and are intentionally separate.
 
 /** Từ khóa cho journal_entry (viết nhật ký, chia sẻ suy nghĩ) */
 const JOURNAL_KEYWORDS = [

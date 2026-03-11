@@ -528,7 +528,7 @@ export async function travel(userId: string, locationId: string): Promise<{ succ
 // QUEST DATABASE (full 200)
 // ══════════════════════════════════════════════
 
-export async function getQuestDatabase(userId: string, category?: string): Promise<QuestDatabaseData> {
+export async function getQuestDatabase(userId: string, category?: string, page = 1, limit = 20): Promise<QuestDatabaseData> {
   ensureInit();
   await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
@@ -538,7 +538,7 @@ export async function getQuestDatabase(userId: string, category?: string): Promi
     allQuests = getQuestsByCategoryDB(category as any);
   }
 
-  const quests: QuestInfo[] = allQuests.map(q => ({
+  const allQuestInfos: QuestInfo[] = allQuests.map(q => ({
     id: q.id,
     title: q.title,
     description: q.description,
@@ -549,13 +549,25 @@ export async function getQuestDatabase(userId: string, category?: string): Promi
     completed: char.completedQuestIds.includes(q.id),
   }));
 
+  const totalCount = allQuestInfos.length;
+  const completedCount = allQuestInfos.filter(q => q.completed).length;
   const categories = [...new Set(getAllQuestsDB().map(q => q.category))];
+
+  // Pagination
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(Math.max(1, limit), 100); // cap at 100
+  const totalPages = Math.ceil(totalCount / safeLimit);
+  const offset = (safePage - 1) * safeLimit;
+  const quests = allQuestInfos.slice(offset, offset + safeLimit);
 
   return {
     quests,
-    totalCount: quests.length,
-    completedCount: quests.filter(q => q.completed).length,
+    totalCount,
+    completedCount,
     categories,
+    page: safePage,
+    limit: safeLimit,
+    totalPages,
   };
 }
 

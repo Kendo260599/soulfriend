@@ -5,6 +5,7 @@
 import { Router } from 'express';
 import { gamefiController } from '../controllers/gamefiController';
 import { authenticateUser } from '../middleware/auth';
+import { gamefiReadLimiter, gamefiWriteLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -12,44 +13,44 @@ const router = Router();
 router.use(authenticateUser);
 
 // ── Profile & Core ───────────────────────────
-router.get('/profile/:userId', gamefiController.getProfile);
-router.post('/event', gamefiController.processEvent);
-router.post('/quest/complete', gamefiController.completeQuest);
-router.post('/detect', gamefiController.detectEvent);
-router.get('/supported-events', gamefiController.getSupportedEvents);
+router.get('/profile/:userId', gamefiReadLimiter.middleware, gamefiController.getProfile);
+router.post('/event', gamefiWriteLimiter.middleware, gamefiController.processEvent);
+router.post('/quest/complete', gamefiWriteLimiter.middleware, gamefiController.completeQuest);
+router.post('/detect', gamefiReadLimiter.middleware, gamefiController.detectEvent);
+router.get('/supported-events', gamefiReadLimiter.middleware, gamefiController.getSupportedEvents);
 
 // ── Full Game Data (single call) ─────────────
-router.get('/full/:userId', gamefiController.getFullData);
+router.get('/full/:userId', gamefiReadLimiter.middleware, gamefiController.getFullData);
 
 // ── Player Dashboard (aggregated) ────────────
-router.get('/dashboard/:userId', gamefiController.getDashboard);
+router.get('/dashboard/:userId', gamefiReadLimiter.middleware, gamefiController.getDashboard);
 
 // ── Skill Tree ───────────────────────────────
-router.get('/skills/:userId', gamefiController.getSkillTree);
+router.get('/skills/:userId', gamefiReadLimiter.middleware, gamefiController.getSkillTree);
 
 // ── World Map ────────────────────────────────
-router.get('/world/:userId', gamefiController.getWorldMap);
-router.post('/world/travel', gamefiController.travel);
+router.get('/world/:userId', gamefiReadLimiter.middleware, gamefiController.getWorldMap);
+router.post('/world/travel', gamefiWriteLimiter.middleware, gamefiController.travel);
 
 // ── Quest Database (200 quests) ──────────────
-router.get('/quests/:userId', gamefiController.getQuestDatabase);
-router.post('/quests/complete', gamefiController.completeFullQuest);
+router.get('/quests/:userId', gamefiReadLimiter.middleware, gamefiController.getQuestDatabase);
+router.post('/quests/complete', gamefiWriteLimiter.middleware, gamefiController.completeFullQuest);
 
 // ── Adaptive Quest AI ────────────────────────
-router.get('/adaptive/:userId', gamefiController.getAdaptiveQuests);
+router.get('/adaptive/:userId', gamefiReadLimiter.middleware, gamefiController.getAdaptiveQuests);
 
 // ── Quest History ────────────────────────────
-router.get('/history/:userId', gamefiController.getHistory);
+router.get('/history/:userId', gamefiReadLimiter.middleware, gamefiController.getHistory);
 
 // ── Psychological State ──────────────────────
-router.get('/state/:userId', gamefiController.getState);
+router.get('/state/:userId', gamefiReadLimiter.middleware, gamefiController.getState);
 
 // ── Behavior Loops ───────────────────────────
-router.get('/behavior/:userId', gamefiController.getBehavior);
-router.post('/behavior/daily', gamefiController.completeDailyStep);
-router.post('/behavior/weekly', gamefiController.completeWeeklyChallenge);
+router.get('/behavior/:userId', gamefiReadLimiter.middleware, gamefiController.getBehavior);
+router.post('/behavior/daily', gamefiWriteLimiter.middleware, gamefiController.completeDailyStep);
+router.post('/behavior/weekly', gamefiWriteLimiter.middleware, gamefiController.completeWeeklyChallenge);
 
 // ── Lore & Mythology ─────────────────────────
-router.get('/lore', gamefiController.getLore);
+router.get('/lore', gamefiReadLimiter.middleware, gamefiController.getLore);
 
 export default router;

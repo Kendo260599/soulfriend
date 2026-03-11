@@ -94,4 +94,8 @@ export const rateLimiter = new RateLimiter(
 // Auth rate limiter
 export const authRateLimiter = new AuthRateLimiter();
 
+// GameFi rate limiter — tighter limits for game endpoints
+export const gamefiReadLimiter = new RateLimiter(60 * 1000, 60);   // 60 reads/min
+export const gamefiWriteLimiter = new RateLimiter(60 * 1000, 20);  // 20 writes/min
+
 export default rateLimiter;

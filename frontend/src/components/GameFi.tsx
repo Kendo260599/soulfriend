@@ -299,10 +299,14 @@ const GameFi: React.FC = () => {
     } catch { /* silent */ }
   }, [userId, token]);
 
-  const fetchQuestDb = useCallback(async (category?: string) => {
+  const fetchQuestDb = useCallback(async (category?: string, page = 1, limit = 20) => {
     try {
-      const catParam = category && category !== 'all' ? `?category=${encodeURIComponent(category)}` : '';
-      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}${catParam}`, { headers: authHeaders });
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.set('category', category);
+      params.set('page', String(page));
+      params.set('limit', String(limit));
+      const qs = params.toString();
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}?${qs}`, { headers: authHeaders });
       if (res.ok) { const json = await res.json(); if (json.success) setQuestDb(json.data); }
     } catch { /* silent */ }
   }, [userId, token]);

@@ -44,7 +44,7 @@ function getAuthedUserId(req: Request, res: Response, source: 'params' | 'body')
   }
 
   if (!requestedId || typeof requestedId !== 'string' || requestedId.length > 100) {
-    res.status(400).json({ error: 'Invalid userId' });
+    res.status(400).json({ success: false, error: 'Invalid userId' });
     return null;
   }
 
@@ -87,6 +87,7 @@ export class GamefiController {
       const { eventType, content } = req.body;
       if (!eventType || !getSupportedEvents().includes(eventType as PsychEventType)) {
         res.status(400).json({
+          success: false,
           error: 'Invalid eventType',
           supported: getSupportedEvents(),
         });
@@ -94,7 +95,7 @@ export class GamefiController {
       }
 
       if (!content || typeof content !== 'string' || content.length > 5000) {
-        res.status(400).json({ error: 'Content is required (max 5000 chars)' });
+        res.status(400).json({ success: false, error: 'Content is required (max 5000 chars)' });
         return;
       }
 
@@ -124,13 +125,13 @@ export class GamefiController {
       const { questId } = req.body;
 
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
-        res.status(400).json({ error: 'Invalid questId' });
+        res.status(400).json({ success: false, error: 'Invalid questId' });
         return;
       }
 
       const result = await completeQuest(userId, questId);
       if (!result) {
-        res.json({ success: true, data: null, message: 'Quest already completed' });
+        res.status(409).json({ success: false, error: 'Quest đã hoàn thành trước đó' });
         return;
       }
 
@@ -151,7 +152,7 @@ export class GamefiController {
       const { message } = req.body;
 
       if (!message || typeof message !== 'string' || message.length > 5000) {
-        res.status(400).json({ error: 'Message is required (max 5000 chars)' });
+        res.status(400).json({ success: false, error: 'Message is required (max 5000 chars)' });
         return;
       }
 
@@ -214,7 +215,7 @@ export class GamefiController {
       if (!userId) return;
       const { locationId } = req.body;
       if (!locationId || typeof locationId !== 'string' || locationId.length > 100) {
-        res.status(400).json({ error: 'Invalid locationId' });
+        res.status(400).json({ success: false, error: 'Invalid locationId' });
         return;
       }
       const result = await travel(userId, locationId);
@@ -227,15 +228,17 @@ export class GamefiController {
 
   /**
    * GET /api/v2/gamefi/quests/:userId
-   * Get full quest database (200 quests)
-   * Query: ?category=reflection
+   * Get quest database with pagination
+   * Query: ?category=reflection&page=1&limit=20
    */
   getQuestDatabase = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = getAuthedUserId(req, res, 'params');
       if (!userId) return;
       const category = typeof req.query.category === 'string' ? req.query.category : undefined;
-      const data = await getQuestDatabase(userId, category);
+      const page = typeof req.query.page === 'string' ? parseInt(req.query.page, 10) || 1 : 1;
+      const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) || 20 : 20;
+      const data = await getQuestDatabase(userId, category, page, limit);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getQuestDatabase error:', error);
@@ -254,12 +257,12 @@ export class GamefiController {
       if (!userId) return;
       const { questId } = req.body;
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
-        res.status(400).json({ error: 'Invalid questId' });
+        res.status(400).json({ success: false, error: 'Invalid questId' });
         return;
       }
       const result = await completeFullQuest(userId, questId);
       if (!result) {
-        res.json({ success: true, data: null, message: 'Quest already completed' });
+        res.status(409).json({ success: false, error: 'Quest đã hoàn thành trước đó' });
         return;
       }
       res.json({ success: true, data: result });
@@ -328,7 +331,7 @@ export class GamefiController {
       if (!userId) return;
       const { step } = req.body;
       if (!['checkin', 'reflection', 'community'].includes(step)) {
-        res.status(400).json({ error: 'Invalid step. Must be: checkin, reflection, community' });
+        res.status(400).json({ success: false, error: 'Invalid step. Must be: checkin, reflection, community' });
         return;
       }
       const ritual = await completeDailyRitualStep(userId, step);
@@ -350,7 +353,7 @@ export class GamefiController {
       if (!userId) return;
       const { challengeId } = req.body;
       if (!challengeId || typeof challengeId !== 'string') {
-        res.status(400).json({ error: 'Invalid challengeId' });
+        res.status(400).json({ success: false, error: 'Invalid challengeId' });
         return;
       }
       const result = await completeWeekly(userId, challengeId);

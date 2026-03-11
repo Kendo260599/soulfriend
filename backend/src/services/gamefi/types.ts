@@ -133,6 +133,9 @@ export interface QuestDatabaseData {
   totalCount: number;
   completedCount: number;
   categories: string[];
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // ── Adaptive Quest AI ────────────────────────

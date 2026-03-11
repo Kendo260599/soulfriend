@@ -18,6 +18,9 @@ import TestResults from './TestResults';
 import TestTaking from './TestTaking';
 import WelcomePage from './WelcomePage';
 
+// GameFi — Lazy loaded
+const GameFi = React.lazy(() => import('./GameFi'));
+
 // Import AI Context
 import { AIProvider } from '../contexts/AIContext';
 
@@ -362,6 +365,7 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
           <NavLink onClick={() => navigate('/community')}>Cộng đồng</NavLink>
           <NavLink onClick={() => navigate('/start')}>Làm test</NavLink>
           <NavLink onClick={() => navigate('/dashboard')}>Dashboard</NavLink>
+          <NavLink onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLink>
         </NavLinks>
       </NavBar>
 
@@ -408,6 +412,13 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
 
         {/* Features Showcase */}
         <Route path="/features" element={<FeaturesShowcase />} />
+
+        {/* GameFi — Gamification Engine */}
+        <Route path="/gamefi" element={
+          <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem' }}>Đang tải GameFi...</div>}>
+            <GameFi />
+          </React.Suspense>
+        } />
 
         {/* Expert Login & Dashboard */}
         <Route path="/expert/login" element={<ExpertLogin />} />

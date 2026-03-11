@@ -58,7 +58,7 @@ const dailyMap: Map<string, DailyEconomy> = new Map();        // key: charId_dat
 
 function todayStr(): string {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
 function streakKey(charId: string, type: StreakInfo['type']): string {
@@ -175,10 +175,9 @@ export function recordStreakActivity(
 
   // Check continuity — is it consecutive?
   if (streak.lastActivityDate) {
-    const lastDate = new Date(streak.lastActivityDate);
-    const todayDate = new Date(today);
-    const diffMs = todayDate.getTime() - lastDate.getTime();
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    const lastDate = new Date(streak.lastActivityDate + 'T00:00:00Z');
+    const todayDate = new Date(today + 'T00:00:00Z');
+    const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / (24 * 60 * 60 * 1000));
 
     if (diffDays === 1) {
       streak.currentStreak += 1;

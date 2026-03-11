@@ -669,25 +669,25 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const { processMessage, isProcessing } = useAI();
 
   // --- Auto-complete quest_chat when user sends 3+ messages ---
-  const { user: authUser } = useAuth();
+  const { user: authUser, token: authToken } = useAuth();
   const chatQuestCompletedRef = useRef(false);
   const userMsgCountRef = useRef(0);
 
   const tryCompleteChatQuest = useCallback(async () => {
     if (chatQuestCompletedRef.current) return;
     const gamefiUserId = authUser?.id;
-    if (!gamefiUserId) return;
+    if (!gamefiUserId || !authToken) return;
     const today = new Date().toISOString().slice(0, 10);
     const questId = `quest_chat_${today}`;
     chatQuestCompletedRef.current = true;
     try {
       await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ userId: gamefiUserId, questId }),
       });
     } catch { /* silent — quest completion is best-effort */ }
-  }, [authUser]);
+  }, [authUser, authToken]);
 
   // --- Narrative Quest Suggestion: map chat topics to quest suggestions ---
   const NARRATIVE_QUEST_MAP: { keywords: string[]; questHint: string; questType: string }[] = [

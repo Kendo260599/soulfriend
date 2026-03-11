@@ -4,8 +4,12 @@
 
 import { Router } from 'express';
 import { gamefiController } from '../controllers/gamefiController';
+import { authenticateUser } from '../middleware/auth';
 
 const router = Router();
+
+// All GameFi routes require authentication
+router.use(authenticateUser);
 
 // ── Profile & Core ───────────────────────────
 router.get('/profile/:userId', gamefiController.getProfile);

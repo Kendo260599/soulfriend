@@ -28,6 +28,34 @@ import {
 import type { PsychEventType } from '../services/gamefi';
 import { logger } from '../utils/logger';
 
+/**
+ * Get authenticated userId from request.
+ * For GET routes: userId from params must match the authenticated user.
+ * For POST routes: userId from body must match the authenticated user.
+ * Returns null and sends 403 if mismatch.
+ */
+function getAuthedUserId(req: Request, res: Response, source: 'params' | 'body'): string | null {
+  const authedId = req.authUser?.userId;
+  const requestedId = source === 'params' ? req.params.userId : req.body?.userId;
+
+  if (!authedId) {
+    res.status(401).json({ success: false, error: 'Chưa đăng nhập' });
+    return null;
+  }
+
+  if (!requestedId || typeof requestedId !== 'string' || requestedId.length > 100) {
+    res.status(400).json({ error: 'Invalid userId' });
+    return null;
+  }
+
+  if (requestedId !== authedId) {
+    res.status(403).json({ success: false, error: 'Không có quyền truy cập dữ liệu của người khác' });
+    return null;
+  }
+
+  return authedId;
+}
+
 export class GamefiController {
   /**
    * GET /api/v2/gamefi/profile/:userId
@@ -35,11 +63,8 @@ export class GamefiController {
    */
   getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
 
       const profile = await getGameProfile(userId);
       res.json({ success: true, data: profile });
@@ -56,13 +81,10 @@ export class GamefiController {
    */
   processEvent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId, eventType, content } = req.body;
+      const userId = getAuthedUserId(req, res, 'body');
+      if (!userId) return;
 
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
-
+      const { eventType, content } = req.body;
       if (!eventType || !getSupportedEvents().includes(eventType as PsychEventType)) {
         res.status(400).json({
           error: 'Invalid eventType',
@@ -96,12 +118,10 @@ export class GamefiController {
    */
   completeQuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId, questId } = req.body;
+      const userId = getAuthedUserId(req, res, 'body');
+      if (!userId) return;
 
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const { questId } = req.body;
 
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
         res.status(400).json({ error: 'Invalid questId' });
@@ -157,11 +177,8 @@ export class GamefiController {
    */
   getSkillTree = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getSkillTree(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -176,11 +193,8 @@ export class GamefiController {
    */
   getWorldMap = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getWorldMap(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -196,11 +210,9 @@ export class GamefiController {
    */
   travel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId, locationId } = req.body;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'body');
+      if (!userId) return;
+      const { locationId } = req.body;
       if (!locationId || typeof locationId !== 'string' || locationId.length > 100) {
         res.status(400).json({ error: 'Invalid locationId' });
         return;
@@ -220,11 +232,8 @@ export class GamefiController {
    */
   getQuestDatabase = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const category = typeof req.query.category === 'string' ? req.query.category : undefined;
       const data = await getQuestDatabase(userId, category);
       res.json({ success: true, data });
@@ -241,11 +250,9 @@ export class GamefiController {
    */
   completeFullQuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId, questId } = req.body;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'body');
+      if (!userId) return;
+      const { questId } = req.body;
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
         res.status(400).json({ error: 'Invalid questId' });
         return;
@@ -268,11 +275,8 @@ export class GamefiController {
    */
   getAdaptiveQuests = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getAdaptiveQuests(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -287,11 +291,8 @@ export class GamefiController {
    */
   getState = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getStateData(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -306,11 +307,8 @@ export class GamefiController {
    */
   getBehavior = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getBehaviorData(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -326,11 +324,9 @@ export class GamefiController {
    */
   completeDailyStep = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId, step } = req.body;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'body');
+      if (!userId) return;
+      const { step } = req.body;
       if (!['checkin', 'reflection', 'community'].includes(step)) {
         res.status(400).json({ error: 'Invalid step. Must be: checkin, reflection, community' });
         return;
@@ -350,11 +346,9 @@ export class GamefiController {
    */
   completeWeeklyChallenge = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId, challengeId } = req.body;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'body');
+      if (!userId) return;
+      const { challengeId } = req.body;
       if (!challengeId || typeof challengeId !== 'string') {
         res.status(400).json({ error: 'Invalid challengeId' });
         return;
@@ -387,11 +381,8 @@ export class GamefiController {
    */
   getFullData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getFullGameData(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -406,11 +397,8 @@ export class GamefiController {
    */
   getDashboard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getPlayerDashboard(userId);
       res.json({ success: true, data });
     } catch (error) {
@@ -425,11 +413,8 @@ export class GamefiController {
    */
   getHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { userId } = req.params;
-      if (!userId || typeof userId !== 'string' || userId.length > 100) {
-        res.status(400).json({ error: 'Invalid userId' });
-        return;
-      }
+      const userId = getAuthedUserId(req, res, 'params');
+      if (!userId) return;
       const data = await getQuestHistory(userId);
       res.json({ success: true, data });
     } catch (error) {

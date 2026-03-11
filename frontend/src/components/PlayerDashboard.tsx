@@ -455,7 +455,7 @@ const RadarChart: React.FC<{ stats: DashboardPsychState }> = ({ stats }) => {
 // ══════════════════════════════════════════════
 
 const PlayerDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [data, setData] = useState<PlayerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -465,7 +465,8 @@ const PlayerDashboard: React.FC = () => {
   const fetchDashboard = useCallback(async () => {
     try {
       setLoading(true); setError(null);
-      const res = await fetch(`${API_URL}/api/v2/gamefi/dashboard/${encodeURIComponent(userId)}`);
+      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(`${API_URL}/api/v2/gamefi/dashboard/${encodeURIComponent(userId)}`, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success) setData(json.data);
@@ -475,7 +476,7 @@ const PlayerDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, token]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 

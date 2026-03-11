@@ -253,7 +253,7 @@ type TabType = 'profile' | 'dashboard' | 'world' | 'skills' | 'quests' | 'behavi
 
 const GameFi: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const [data, setData] = useState<FullGameData | null>(null);
   const [adaptive, setAdaptive] = useState<AdaptiveQuestData | null>(null);
   const [questDb, setQuestDb] = useState<QuestDbData | null>(null);
@@ -270,6 +270,10 @@ const GameFi: React.FC = () => {
 
   const userId = user?.id || 'anonymous';
 
+  const authHeaders: HeadersInit = token
+    ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    : { 'Content-Type': 'application/json' };
+
   const showToast = (msg: string) => {
     setToast({ msg, visible: true });
     setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000);
@@ -278,7 +282,7 @@ const GameFi: React.FC = () => {
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true); setError(null);
-      const res = await fetch(`${API_URL}/api/v2/gamefi/full/${encodeURIComponent(userId)}`);
+      const res = await fetch(`${API_URL}/api/v2/gamefi/full/${encodeURIComponent(userId)}`, { headers: authHeaders });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success) setData(json.data);
@@ -286,29 +290,29 @@ const GameFi: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu');
     } finally { setLoading(false); }
-  }, [userId]);
+  }, [userId, token]);
 
   const fetchAdaptive = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/v2/gamefi/adaptive/${encodeURIComponent(userId)}`);
+      const res = await fetch(`${API_URL}/api/v2/gamefi/adaptive/${encodeURIComponent(userId)}`, { headers: authHeaders });
       if (res.ok) { const json = await res.json(); if (json.success) setAdaptive(json.data); }
     } catch { /* silent */ }
-  }, [userId]);
+  }, [userId, token]);
 
   const fetchQuestDb = useCallback(async (category?: string) => {
     try {
       const catParam = category && category !== 'all' ? `?category=${encodeURIComponent(category)}` : '';
-      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}${catParam}`);
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}${catParam}`, { headers: authHeaders });
       if (res.ok) { const json = await res.json(); if (json.success) setQuestDb(json.data); }
     } catch { /* silent */ }
-  }, [userId]);
+  }, [userId, token]);
 
   const fetchQuestHistory = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/v2/gamefi/history/${encodeURIComponent(userId)}`);
+      const res = await fetch(`${API_URL}/api/v2/gamefi/history/${encodeURIComponent(userId)}`, { headers: authHeaders });
       if (res.ok) { const json = await res.json(); if (json.success) setQuestHistory(json.data); }
     } catch { /* silent */ }
-  }, [userId]);
+  }, [userId, token]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => { if (tab === 'quests') { fetchAdaptive(); fetchQuestDb(); fetchQuestHistory(); } }, [tab, fetchAdaptive, fetchQuestDb, fetchQuestHistory]);
@@ -316,7 +320,7 @@ const GameFi: React.FC = () => {
 
   const apiPost = async (path: string, body: Record<string, unknown>) => {
     const res = await fetch(`${API_URL}/api/v2/gamefi${path}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: authHeaders,
       body: JSON.stringify(body),
     });
     return res.json();

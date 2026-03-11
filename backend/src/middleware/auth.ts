@@ -1,5 +1,5 @@
 /**
- * Middleware xác thực và phân quyền cho admin
+ * Middleware xác thực và phân quyền cho admin + user
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin';
 import { asyncHandler } from './asyncHandler';
 
-// Extend Request interface để thêm admin info
+// Extend Request interface để thêm admin + user info
 declare global {
   namespace Express {
     interface Request {
@@ -15,6 +15,10 @@ declare global {
         adminId: string;
         username: string;
         role: string;
+      };
+      authUser?: {
+        userId: string;
+        email: string;
       };
     }
   }
@@ -106,6 +110,46 @@ export const authenticateAdmin = asyncHandler(
     }
   }
 );
+
+/**
+ * Middleware xác thực user thường bằng JWT token.
+ * Attaches req.authUser = { userId, email }.
+ */
+export const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.',
+    });
+  }
+
+  const token = authHeader.substring(7);
+  const JWT_SECRET = process.env.JWT_SECRET;
+
+  if (!JWT_SECRET) {
+    return res.status(500).json({ success: false, message: 'Server configuration error' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+
+    if (!decoded.userId) {
+      return res.status(401).json({ success: false, message: 'Token không hợp lệ' });
+    }
+
+    req.authUser = { userId: decoded.userId, email: decoded.email };
+    next();
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      });
+    }
+    return res.status(401).json({ success: false, message: 'Token không hợp lệ' });
+  }
+};
 
 /**
  * Middleware kiểm tra quyền super admin

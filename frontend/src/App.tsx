@@ -24,17 +24,17 @@ function TestFlow() {
   const [currentStep, setCurrentStep] = useState<AppStep>(AppStep.CONSENT);
   const [consentId, setConsentId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   // Auto-complete quest_dass when DASS test is finished
   const completeDassQuest = async () => {
     const userId = user?.id;
-    if (!userId) return;
+    if (!userId || !token) return;
     const today = new Date().toISOString().slice(0, 10);
     try {
       await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ userId, questId: `quest_dass_${today}` }),
       });
     } catch { /* best-effort */ }

@@ -34,6 +34,9 @@ router.post('/quests/complete', gamefiController.completeFullQuest);
 // ── Adaptive Quest AI ────────────────────────
 router.get('/adaptive/:userId', gamefiController.getAdaptiveQuests);
 
+// ── Quest History ────────────────────────────
+router.get('/history/:userId', gamefiController.getHistory);
+
 // ── Psychological State ──────────────────────
 router.get('/state/:userId', gamefiController.getState);
 

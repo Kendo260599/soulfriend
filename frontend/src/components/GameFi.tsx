@@ -45,10 +45,11 @@ interface LocationInfo { id: string; ten: string; moTa: string; levelRequired: n
 interface WorldMapData { locations: LocationInfo[]; currentLocation: string; unlockedCount: number; totalCount: number; }
 
 interface RecommendedQuest { questId: string; title: string; description: string; category: string; xpReward: number; totalScore: number; reason: string; }
-interface QuestChainInfo { id: string; theme: string; title: string; steps: { order: number; title: string; description: string; xpReward: number }[]; totalXp: number; }
+interface QuestChainInfo { id: string; theme: string; title: string; steps: { order: number; title: string; description: string; xpReward: number; completed: boolean }[]; totalXp: number; completedSteps: number; }
 interface AdaptiveQuestData {
   playerPhase: string; userType: string; recommendations: RecommendedQuest[];
   questChain: QuestChainInfo | null;
+  allChains: QuestChainInfo[];
   difficulty: { current: string; suggested: string; completionRate: number; shouldAdjust: boolean; reason: string; };
 }
 
@@ -65,6 +66,9 @@ interface LoreData {
   legends: { id: string; ten: string; moTa: string; becomeCondition: string }[];
   locationLores: { locationId: string; ten: string; truyenThuyet: string; trieuLy: string }[];
 }
+
+interface QuestDbItem { id: string; title: string; description: string; category: string; location: string; xpReward: number; loai: string; completed: boolean; }
+interface QuestDbData { quests: QuestDbItem[]; totalCount: number; completedCount: number; categories: string[]; }
 
 interface FullGameData {
   profile: GameProfile; skillTree: SkillTreeData; worldMap: WorldMapData;
@@ -155,7 +159,22 @@ const RitualStep = styled.div<{done?:boolean}>`display:flex;align-items:center;g
 // Adaptive
 const RecommendCard = styled.div`background:linear-gradient(135deg,#667eea08,#764ba208);border-radius:16px;padding:1.25rem;border:2px solid #805AD530;margin-bottom:1rem;cursor:pointer;transition:all 0.2s;&:hover{border-color:#805AD5;transform:translateY(-2px);}`;
 const ChainCard = styled.div`background:linear-gradient(135deg,#FFF5F5,#F5F0FF);border-radius:16px;padding:1.5rem;border:2px solid #E8B4B8;margin-bottom:1.5rem;`;
-const ChainStep = styled.div<{idx:number}>`display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid #E2E8F0;&:last-child{border-bottom:none;}`;
+
+// Quest Database Browser
+const CatTabs = styled.div`display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;`;
+const CatTab = styled.button<{active?:boolean}>`padding:0.4rem 0.9rem;border:1.5px solid ${p=>p.active?'#805AD5':'#E2E8F0'};border-radius:20px;font-size:0.8rem;font-weight:600;cursor:pointer;background:${p=>p.active?'#805AD510':'white'};color:${p=>p.active?'#805AD5':'#888'};transition:all 0.2s;&:hover{border-color:#805AD5;color:#805AD5;}`;
+const QuestBrowserCard = styled.div<{done?:boolean}>`background:${p=>p.done?'#F0FFF4':'white'};border-radius:12px;padding:1rem 1.25rem;border:1.5px solid ${p=>p.done?'#48BB78':'#E2E8F0'};margin-bottom:0.5rem;cursor:pointer;transition:all 0.2s;display:flex;justify-content:space-between;align-items:center;&:hover{border-color:#805AD5;transform:translateX(4px);}`;const QuestBrowserInfo = styled.div`flex:1;min-width:0;`;
+const QuestBrowserTitle = styled.div`font-weight:600;color:#4A4A4A;font-size:0.9rem;`;
+const QuestBrowserMeta = styled.div`display:flex;gap:0.5rem;margin-top:0.3rem;flex-wrap:wrap;`;
+const MetaTag = styled.span<{color?:string}>`font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:12px;background:${p=>p.color||'#F7FAFC'};color:#666;font-weight:500;`;
+const QuestDbStats = styled.div`display:flex;gap:1.5rem;margin-bottom:1rem;font-size:0.85rem;color:#888;`;
+const FilterRow = styled.div`display:flex;gap:0.75rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;`;
+const SelectBox = styled.select`padding:0.35rem 0.7rem;border:1.5px solid #E2E8F0;border-radius:10px;font-size:0.82rem;color:#4A4A4A;background:white;cursor:pointer;outline:none;&:focus{border-color:#805AD5;}`;
+const QuestDetailPanel = styled.div`padding:0.75rem 0 0 0;border-top:1px solid #E2E8F0;margin-top:0.75rem;`;
+const GrowthBar = styled.div<{w:number;color:string}>`height:6px;border-radius:3px;background:#F0F0F0;position:relative;overflow:hidden;&::after{content:'';position:absolute;left:0;top:0;height:100%;width:${p=>Math.min(100, p.w*25)}%;background:${p=>p.color};border-radius:3px;transition:width 0.4s;}`;
+const ChainStep = styled.div<{idx:number; done?:boolean}>`display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid #E2E8F0;&:last-child{border-bottom:none;}opacity:${p => p.done ? 0.6 : 1};`;
+const ChainProgressBar = styled.div`background:#E2E8F0;border-radius:8px;height:8px;margin:0.5rem 0 1rem;overflow:hidden;`;
+const ChainProgressFill = styled.div<{pct:number}>`height:100%;border-radius:8px;background:linear-gradient(90deg,#E8B4B8,#805AD5);width:${p => p.pct}%;transition:width 0.5s;`;
 const StepNumber = styled.div`width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#E8B4B8,#D4A5A5);color:white;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;`;
 
 // State zone
@@ -211,6 +230,21 @@ const PHASE_NAMES: Record<string,string> = {
   stabilization: 'Ổn định', growth: 'Phát triển', mentor: 'Mentor',
 };
 
+const DIFF_LABELS: Record<string,string> = { easy: 'Dễ', medium: 'Trung bình', hard: 'Khó' };
+
+const CATEGORY_LABELS: Record<string,string> = {
+  reflection: '🪞 Suy Ngẫm',
+  emotional_awareness: '💗 Nhận Diện Cảm Xúc',
+  cognitive_reframing: '🧠 Tư Duy Tích Cực',
+  resilience: '💪 Kiên Cường',
+  relationships: '🤝 Mối Quan Hệ',
+  empathy: '💜 Đồng Cảm',
+  meaning_purpose: '⛰️ Ý Nghĩa',
+  gratitude: '🙏 Biết Ơn',
+  self_compassion: '🌸 Tự Yêu Thương',
+  community_impact: '🌍 Cộng Đồng',
+};
+
 type TabType = 'profile' | 'dashboard' | 'world' | 'skills' | 'quests' | 'behavior' | 'lore';
 
 // ══════════════════════════════════════════════
@@ -222,6 +256,12 @@ const GameFi: React.FC = () => {
   const { user, logout } = useAuth();
   const [data, setData] = useState<FullGameData | null>(null);
   const [adaptive, setAdaptive] = useState<AdaptiveQuestData | null>(null);
+  const [questDb, setQuestDb] = useState<QuestDbData | null>(null);
+  const [questCat, setQuestCat] = useState<string>('all');
+  const [questSort, setQuestSort] = useState<'recommended'|'xp_desc'|'xp_asc'>('recommended');
+  const [questDoneFilter, setQuestDoneFilter] = useState<'all'|'todo'|'done'>('all');
+  const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
+  const [questHistory, setQuestHistory] = useState<{ questId: string; title: string; category: string; xpReward: number; completedAt: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabType>('profile');
@@ -255,8 +295,24 @@ const GameFi: React.FC = () => {
     } catch { /* silent */ }
   }, [userId]);
 
+  const fetchQuestDb = useCallback(async (category?: string) => {
+    try {
+      const catParam = category && category !== 'all' ? `?category=${encodeURIComponent(category)}` : '';
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}${catParam}`);
+      if (res.ok) { const json = await res.json(); if (json.success) setQuestDb(json.data); }
+    } catch { /* silent */ }
+  }, [userId]);
+
+  const fetchQuestHistory = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v2/gamefi/history/${encodeURIComponent(userId)}`);
+      if (res.ok) { const json = await res.json(); if (json.success) setQuestHistory(json.data); }
+    } catch { /* silent */ }
+  }, [userId]);
+
   useEffect(() => { fetchAll(); }, [fetchAll]);
-  useEffect(() => { if (tab === 'quests') fetchAdaptive(); }, [tab, fetchAdaptive]);
+  useEffect(() => { if (tab === 'quests') { fetchAdaptive(); fetchQuestDb(); fetchQuestHistory(); } }, [tab, fetchAdaptive, fetchQuestDb, fetchQuestHistory]);
+  useEffect(() => { if (tab === 'quests') fetchQuestDb(questCat); }, [questCat, tab, fetchQuestDb]);
 
   const apiPost = async (path: string, body: Record<string, unknown>) => {
     const res = await fetch(`${API_URL}/api/v2/gamefi${path}`, {
@@ -276,12 +332,22 @@ const GameFi: React.FC = () => {
 
   // Quest routing: navigate to action page or show confirmation
   const QUEST_ROUTES: Record<string, { route?: string; needConfirm?: boolean; hint: string }> = {
-    quest_dass: { route: '/start', hint: 'Hãy hoàn thành bài test DASS-21' },
-    quest_chat: { hint: 'Hãy mở chatbot và trò chuyện ít nhất 3 tin nhắn' },
+    quest_dass: { route: '/start', hint: 'Hãy hoàn thành bài test DASS-21 — quest sẽ tự hoàn thành khi bạn nộp bài!' },
+    quest_chat: { hint: '💬 Hãy mở chatbot và trò chuyện ít nhất 3 tin nhắn — quest sẽ tự hoàn thành!' },
     quest_journal: { needConfirm: true, hint: 'Bạn đã viết nhật ký cảm xúc (ít nhất 3 câu) chưa?' },
     quest_breathing: { needConfirm: true, hint: 'Bạn đã thực hành bài tập thở 5 phút chưa?' },
     quest_research: { route: '/research', hint: 'Hãy đọc 1 bài nghiên cứu về sức khỏe tâm lý' },
     quest_share: { needConfirm: true, hint: 'Bạn đã chia sẻ câu chuyện tích cực với ai đó chưa?' },
+    // New rotating quests
+    quest_gratitude: { needConfirm: true, hint: 'Bạn đã viết 3 điều biết ơn hôm nay chưa?' },
+    quest_music: { needConfirm: true, hint: 'Bạn đã dành 10 phút nghe nhạc thư giãn chưa?' },
+    quest_walk: { needConfirm: true, hint: 'Bạn đã đi bộ 10 phút ngoài trời chưa?' },
+    quest_friend: { needConfirm: true, hint: 'Bạn đã gọi cho bạn bè hoặc người thân chưa?' },
+    quest_selfcare: { needConfirm: true, hint: 'Bạn đã làm 1 điều nhỏ để tự thưởng cho bản thân chưa?' },
+    quest_positive: { needConfirm: true, hint: 'Bạn đã viết lại 1 suy nghĩ tiêu cực thành tích cực chưa?' },
+    quest_water: { needConfirm: true, hint: 'Bạn đã uống đủ 8 ly nước hôm nay chưa?' },
+    quest_sleep: { needConfirm: true, hint: 'Bạn đã ghi nhật ký giấc ngủ hôm nay chưa?' },
+    quest_kindness: { needConfirm: true, hint: 'Bạn đã làm 1 điều tốt cho người khác hôm nay chưa?' },
   };
 
   const handleDailyQuestClick = (quest: DailyQuest) => {
@@ -527,9 +593,21 @@ const GameFi: React.FC = () => {
         <>
           <SubTitle>🤖 AI Đề Xuất (Phase: {PHASE_NAMES[adaptive.playerPhase] || adaptive.playerPhase} • Type: {adaptive.userType})</SubTitle>
           <div style={{color:'#888',fontSize:'0.85rem',marginBottom:'0.75rem'}}>
-            Độ khó: {adaptive.difficulty.current} • Hoàn thành: {Math.round(adaptive.difficulty.completionRate*100)}%
+            Độ khó: {DIFF_LABELS[adaptive.difficulty.current] || adaptive.difficulty.current} • Hoàn thành: {Math.round(adaptive.difficulty.completionRate*100)}%
             {adaptive.difficulty.shouldAdjust && <span style={{color:'#DD6B20'}}> • {adaptive.difficulty.reason}</span>}
           </div>
+          {adaptive.difficulty.shouldAdjust && (
+            <div style={{display:'flex',gap:'0.5rem',marginBottom:'1rem',flexWrap:'wrap'}}>
+              {['easy','medium','hard'].map(d => (
+                <ActionBtn key={d} style={{fontSize:'0.8rem',padding:'0.3rem 1rem',
+                  background: adaptive.difficulty.current === d ? '#805AD5' : adaptive.difficulty.suggested === d ? '#E8B4B8' : '#E2E8F0',
+                  color: adaptive.difficulty.current === d ? '#fff' : '#4A4A4A',
+                }} onClick={() => { showToast(`✅ Đã chọn độ khó: ${DIFF_LABELS[d] || d}`); }}>
+                  {DIFF_LABELS[d] || d} {adaptive.difficulty.suggested === d ? '⭐' : ''}
+                </ActionBtn>
+              ))}
+            </div>
+          )}
 
           {adaptive.recommendations.map(r => (
             <RecommendCard key={r.questId} onClick={() => handleFullQuestComplete(r.questId, r.title)}>
@@ -544,26 +622,157 @@ const GameFi: React.FC = () => {
             </RecommendCard>
           ))}
 
-          {/* Quest Chain */}
-          {adaptive.questChain && (
-            <ChainCard>
-              <SubTitle>🔗 {adaptive.questChain.title} ({adaptive.questChain.totalXp} XP)</SubTitle>
-              {adaptive.questChain.steps.map((step, i) => (
-                <ChainStep key={i} idx={i}>
-                  <StepNumber>{step.order}</StepNumber>
-                  <div>
-                    <div style={{fontWeight:600,color:'#4A4A4A',fontSize:'0.9rem'}}>{step.title}</div>
-                    <div style={{color:'#888',fontSize:'0.8rem'}}>{step.description}</div>
-                    <div style={{color:'#E8B4B8',fontSize:'0.75rem',marginTop:'0.25rem'}}>+{step.xpReward} XP</div>
+          {/* All Quest Chains with Progress */}
+          {adaptive.allChains && adaptive.allChains.length > 0 && (
+            <>
+              <SubTitle style={{marginTop:'1.5rem'}}>🔗 Chuỗi Nhiệm Vụ ({adaptive.allChains.length} chuỗi)</SubTitle>
+              {adaptive.allChains.map(chain => (
+                <ChainCard key={chain.id}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <SubTitle style={{margin:0}}>🔗 {chain.title}</SubTitle>
+                    <span style={{color:'#805AD5',fontWeight:600,fontSize:'0.85rem'}}>{chain.completedSteps}/{chain.steps.length} bước • {chain.totalXp} XP</span>
                   </div>
-                </ChainStep>
+                  <ChainProgressBar><ChainProgressFill pct={chain.steps.length > 0 ? (chain.completedSteps / chain.steps.length) * 100 : 0} /></ChainProgressBar>
+                  {chain.steps.map((step, i) => (
+                    <ChainStep key={i} idx={i} done={step.completed}>
+                      <StepNumber style={{background: step.completed ? '#48BB78' : undefined, color: step.completed ? '#fff' : undefined}}>
+                        {step.completed ? '✓' : step.order}
+                      </StepNumber>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:600,color: step.completed ? '#A0AEC0' : '#4A4A4A',fontSize:'0.9rem',textDecoration: step.completed ? 'line-through' : 'none'}}>{step.title}</div>
+                        <div style={{color:'#888',fontSize:'0.8rem'}}>{step.description}</div>
+                        <div style={{color:'#E8B4B8',fontSize:'0.75rem',marginTop:'0.25rem'}}>+{step.xpReward} XP</div>
+                      </div>
+                      {!step.completed && (
+                        <ActionBtn style={{fontSize:'0.75rem',padding:'0.3rem 0.8rem'}} onClick={() => handleFullQuestComplete(`${chain.id}_step_${step.order}`, `${chain.title} - ${step.title}`)}>
+                          Hoàn thành
+                        </ActionBtn>
+                      )}
+                    </ChainStep>
+                  ))}
+                </ChainCard>
               ))}
-            </ChainCard>
+            </>
           )}
         </>
       )}
 
       {!adaptive && <div style={{color:'#888',marginBottom:'1rem'}}>Đang tải gợi ý AI...</div>}
+
+      {/* ── Quest Database Browser (200 quests) ── */}
+      <SectionTitle style={{marginTop:'2rem'}}>📚 Kho Nhiệm Vụ</SectionTitle>
+
+      {questDb && (
+        <>
+          <QuestDbStats>
+            <span>📊 {questDb.completedCount}/{questDb.totalCount} đã hoàn thành</span>
+            <span>🏷️ {questDb.categories.length} chủ đề</span>
+          </QuestDbStats>
+
+          <CatTabs>
+            <CatTab active={questCat === 'all'} onClick={() => setQuestCat('all')}>Tất cả</CatTab>
+            {questDb.categories.map(c => (
+              <CatTab key={c} active={questCat === c} onClick={() => setQuestCat(c)}>
+                {CATEGORY_LABELS[c] || c}
+              </CatTab>
+            ))}
+          </CatTabs>
+
+          <FilterRow>
+            <SelectBox value={questSort} onChange={e => setQuestSort(e.target.value as any)}>
+              <option value="recommended">Đề xuất</option>
+              <option value="xp_desc">XP cao → thấp</option>
+              <option value="xp_asc">XP thấp → cao</option>
+            </SelectBox>
+            <SelectBox value={questDoneFilter} onChange={e => setQuestDoneFilter(e.target.value as any)}>
+              <option value="all">Tất cả</option>
+              <option value="todo">Chưa làm</option>
+              <option value="done">Đã hoàn thành</option>
+            </SelectBox>
+          </FilterRow>
+
+          {(() => {
+            let filtered = questDb.quests.filter(q =>
+              questDoneFilter === 'all' ? true : questDoneFilter === 'done' ? q.completed : !q.completed
+            );
+            if (questSort === 'xp_desc') filtered = [...filtered].sort((a, b) => b.xpReward - a.xpReward);
+            else if (questSort === 'xp_asc') filtered = [...filtered].sort((a, b) => a.xpReward - b.xpReward);
+            return filtered.length > 0 ? filtered.map(q => (
+              <QuestBrowserCard key={q.id} done={q.completed} onClick={() => setExpandedQuestId(prev => prev === q.id ? null : q.id)}>
+                <QuestBrowserInfo>
+                  <QuestBrowserTitle>{q.completed ? '✅ ' : ''}{q.title}</QuestBrowserTitle>
+                  <div style={{color:'#888',fontSize:'0.82rem',marginTop:'0.2rem'}}>{q.description}</div>
+                  <QuestBrowserMeta>
+                    <MetaTag color="#F0E6FF">{CATEGORY_LABELS[q.category] || q.category}</MetaTag>
+                    <MetaTag color="#E6F7FF">{q.location}</MetaTag>
+                    <MetaTag color="#FFF5E6">{q.loai}</MetaTag>
+                  </QuestBrowserMeta>
+                  {/* Expandable detail panel */}
+                  {expandedQuestId === q.id && (
+                    <QuestDetailPanel>
+                      <div style={{fontSize:'0.82rem',color:'#666',marginBottom:'0.5rem'}}>📍 Vùng đất: <strong>{q.location}</strong> • Loại: <strong>{q.loai}</strong></div>
+                      {!q.completed && (
+                        <ActionBtn onClick={e => { e.stopPropagation(); handleFullQuestComplete(q.id, q.title); }}>
+                          ✨ Hoàn thành quest (+{q.xpReward} XP)
+                        </ActionBtn>
+                      )}
+                    </QuestDetailPanel>
+                  )}
+                </QuestBrowserInfo>
+                <QuestReward>+{q.xpReward} XP</QuestReward>
+              </QuestBrowserCard>
+            )) : <div style={{color:'#888',textAlign:'center',padding:'2rem'}}>Không có quest nào phù hợp</div>;
+          })()}
+        </>
+      )}
+
+      {!questDb && <div style={{color:'#888'}}>Đang tải kho nhiệm vụ...</div>}
+
+      {/* ── Quest Completion History ── */}
+      {questHistory.length > 0 && (
+        <>
+          <SectionTitle style={{marginTop:'2rem'}}>📜 Lịch Sử Hoàn Thành ({questHistory.length})</SectionTitle>
+          <div style={{maxHeight:'300px',overflowY:'auto'}}>
+            {questHistory.slice(0, 20).map((h, i) => (
+              <Card key={`${h.questId}-${i}`} style={{padding:'0.7rem 1rem',marginBottom:'0.5rem',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <div style={{fontWeight:600,fontSize:'0.9rem',color:'#4A4A4A'}}>✅ {h.title}</div>
+                  <div style={{color:'#888',fontSize:'0.78rem'}}>
+                    {CATEGORY_LABELS[h.category] || h.category}
+                    {h.completedAt > 0 && ` • ${new Date(h.completedAt).toLocaleDateString('vi-VN')}`}
+                  </div>
+                </div>
+                <QuestReward>+{h.xpReward} XP</QuestReward>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── Growth Impact from Quests ── */}
+      {data && (
+        <>
+          <SectionTitle style={{marginTop:'2rem'}}>🌱 Tác Động Phát Triển</SectionTitle>
+          <Card>
+            <div style={{fontSize:'0.85rem',color:'#888',marginBottom:'1rem'}}>
+              📊 {data.profile.character.completedQuestIds.length} quest hoàn thành → Chỉ số phát triển hiện tại:
+            </div>
+            {GROWTH_CONFIG.map(({key, label, color, icon}) => (
+              <div key={key} style={{marginBottom:'0.75rem'}}>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.85rem',marginBottom:'0.25rem'}}>
+                  <span>{icon} {label}</span>
+                  <span style={{fontWeight:600,color}}>{data.profile.character.growthStats[key]}/100</span>
+                </div>
+                <BarBg><BarFill w={data.profile.character.growthStats[key]} color={color} /></BarBg>
+              </div>
+            ))}
+            <div style={{textAlign:'center',marginTop:'1rem',padding:'0.75rem',background:'linear-gradient(135deg,#F0E6FF,#FFF5F5)',borderRadius:'12px'}}>
+              <div style={{fontSize:'1.5rem',fontWeight:700,color:'#805AD5'}}>{data.state.growthScore}</div>
+              <div style={{fontSize:'0.8rem',color:'#888'}}>Growth Score tổng hợp</div>
+            </div>
+          </Card>
+        </>
+      )}
     </>
   );
 

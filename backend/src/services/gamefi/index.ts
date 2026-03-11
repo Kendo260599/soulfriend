@@ -29,6 +29,7 @@ export {
   getLoreMessage,
   getFullGameData,
   getPlayerDashboard,
+  getQuestHistory,
 } from './gamefiEngine';
 
 // Narrative Detector (re-export from integration/narrativeTrigger)

@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import AnimatedButton from './AnimatedButton';
 import { useAI } from '../contexts/AIContext';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com';
@@ -666,7 +667,49 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const hitlStateResolved = useRef(false);
   const nextMsgId = (prefix = 'msg') => `${prefix}_${Date.now()}_${msgIdCounter.current++}`;
   const { processMessage, isProcessing } = useAI();
-  
+
+  // --- Auto-complete quest_chat when user sends 3+ messages ---
+  const { user: authUser } = useAuth();
+  const chatQuestCompletedRef = useRef(false);
+  const userMsgCountRef = useRef(0);
+
+  const tryCompleteChatQuest = useCallback(async () => {
+    if (chatQuestCompletedRef.current) return;
+    const gamefiUserId = authUser?.id;
+    if (!gamefiUserId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const questId = `quest_chat_${today}`;
+    chatQuestCompletedRef.current = true;
+    try {
+      await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: gamefiUserId, questId }),
+      });
+    } catch { /* silent — quest completion is best-effort */ }
+  }, [authUser]);
+
+  // --- Narrative Quest Suggestion: map chat topics to quest suggestions ---
+  const NARRATIVE_QUEST_MAP: { keywords: string[]; questHint: string; questType: string }[] = [
+    { keywords: ['buồn', 'cô đơn', 'một mình', 'lẻ loi'], questHint: '🌟 Gợi ý: Hãy thử quest "Gọi điện cho bạn bè" hoặc "Viết nhật ký cảm xúc" trong GameFi!', questType: 'quest_friend' },
+    { keywords: ['lo lắng', 'lo âu', 'sợ', 'hồi hộp', 'bất an'], questHint: '🌟 Gợi ý: Hãy thử quest "Bài tập thở 5 phút" để giảm lo âu!', questType: 'quest_breathing' },
+    { keywords: ['giận', 'tức', 'bực', 'stress', 'căng thẳng', 'áp lực'], questHint: '🌟 Gợi ý: Hãy thử quest "Nghe nhạc thư giãn 10 phút" hoặc "Đi bộ ngoài trời"!', questType: 'quest_music' },
+    { keywords: ['tự ti', 'kém cỏi', 'thất bại', 'không giỏi'], questHint: '🌟 Gợi ý: Hãy thử quest "Viết suy nghĩ tích cực" để thay đổi góc nhìn!', questType: 'quest_positive' },
+    { keywords: ['biết ơn', 'cảm ơn', 'may mắn', 'hạnh phúc'], questHint: '🌟 Gợi ý: Hãy thử quest "Viết 3 điều biết ơn" để nuôi dưỡng cảm xúc tích cực!', questType: 'quest_gratitude' },
+    { keywords: ['ngủ', 'mất ngủ', 'insomnia', 'mệt'], questHint: '🌟 Gợi ý: Hãy thử quest "Ghi nhật ký giấc ngủ" để cải thiện giấc ngủ!', questType: 'quest_sleep' },
+  ];
+  const lastSuggestedQuestRef = useRef<string | null>(null);
+  const suggestNarrativeQuest = useCallback((userMsg: string): string | null => {
+    const lower = userMsg.toLowerCase();
+    for (const entry of NARRATIVE_QUEST_MAP) {
+      if (entry.keywords.some(kw => lower.includes(kw)) && lastSuggestedQuestRef.current !== entry.questType) {
+        lastSuggestedQuestRef.current = entry.questType;
+        return entry.questHint;
+      }
+    }
+    return null;
+  }, [NARRATIVE_QUEST_MAP]);
+
   // Socket.io connection for real-time expert intervention
   // Keep socket alive regardless of chat open/close to receive expert messages
   useEffect(() => {
@@ -1142,6 +1185,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+
+    // Track user message count for quest_chat auto-completion
+    userMsgCountRef.current += 1;
+    if (userMsgCountRef.current >= 3) {
+      tryCompleteChatQuest();
+    }
+
     // Reset textarea height
     if (textareaRef.current) { textareaRef.current.style.height = 'auto'; }
     setIsTyping(true);
@@ -1231,6 +1281,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, nextActionsMessage]);
+      }
+
+      // Narrative quest suggestion based on chat topic
+      const questSuggestion = suggestNarrativeQuest(originalInput);
+      if (questSuggestion && !botResponse.crisisDetected) {
+        const questMsg: ChatMessage = {
+          id: nextMsgId('quest'),
+          text: questSuggestion,
+          isBot: true,
+          timestamp: new Date(),
+          type: 'ai',
+        };
+        setMessages(prev => [...prev, questMsg]);
       }
 
       setIsOnline(true);

@@ -151,8 +151,9 @@ export interface QuestChainInfo {
   id: string;
   theme: string;
   title: string;
-  steps: { order: number; title: string; description: string; xpReward: number }[];
+  steps: { order: number; title: string; description: string; xpReward: number; completed: boolean }[];
   totalXp: number;
+  completedSteps: number;
 }
 
 export interface AdaptiveQuestData {
@@ -160,6 +161,7 @@ export interface AdaptiveQuestData {
   userType: string;
   recommendations: RecommendedQuest[];
   questChain: QuestChainInfo | null;
+  allChains: QuestChainInfo[];
   difficulty: {
     current: string;
     suggested: string;

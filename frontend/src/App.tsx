@@ -4,6 +4,9 @@ import { TestType } from './components/TestSelection';
 import TestTaking from './components/TestTaking';
 import TestResults from './components/TestResults';
 import { TestResult } from './types';
+import { useAuth } from './contexts/AuthContext';
+
+const API_URL = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
 
 /**
  * TestFlow - Step-based test flow component
@@ -21,6 +24,21 @@ function TestFlow() {
   const [currentStep, setCurrentStep] = useState<AppStep>(AppStep.CONSENT);
   const [consentId, setConsentId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const { user } = useAuth();
+
+  // Auto-complete quest_dass when DASS test is finished
+  const completeDassQuest = async () => {
+    const userId = user?.id;
+    if (!userId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, questId: `quest_dass_${today}` }),
+      });
+    } catch { /* best-effort */ }
+  };
 
   const handleConsentGiven = (id: string) => {
     setConsentId(id);
@@ -40,6 +58,7 @@ function TestFlow() {
             onComplete={(results) => {
               setTestResults(results);
               setCurrentStep(AppStep.RESULTS);
+              completeDassQuest();
             }}
             onBack={() => setCurrentStep(AppStep.CONSENT)}
           />

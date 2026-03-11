@@ -23,6 +23,7 @@ import {
   getLoreData,
   getFullGameData,
   getPlayerDashboard,
+  getQuestHistory,
 } from '../services/gamefi';
 import type { PsychEventType } from '../services/gamefi';
 import { logger } from '../utils/logger';
@@ -414,6 +415,25 @@ export class GamefiController {
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getDashboard error:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/v2/gamefi/history/:userId
+   * Get quest completion history
+   */
+  getHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      if (!userId || typeof userId !== 'string' || userId.length > 100) {
+        res.status(400).json({ error: 'Invalid userId' });
+        return;
+      }
+      const data = getQuestHistory(userId);
+      res.json({ success: true, data });
+    } catch (error) {
+      logger.error('GameFi getHistory error:', error);
       next(error);
     }
   };

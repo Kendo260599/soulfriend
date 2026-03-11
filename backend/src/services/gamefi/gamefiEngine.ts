@@ -48,6 +48,7 @@ import {
   getMeaningShifts,
 } from '../../../../gamefi/engine/behaviorLoop';
 import { calculateEmpathyRank } from '../../../../gamefi/engine/empathy';
+import { getLogsForCharacter } from '../../../../gamefi/engine/dataLogger';
 import {
   initLore, getAllPhilosophies, getAllLegends, getAllLocationLores,
   getWorldName, getPlayerRole, getCommunityName, getLoreForEvent,
@@ -174,69 +175,73 @@ export function processEvent(event: PsychEvent): OriginalEventResult & { feedbac
 }
 
 // ══════════════════════════════════════════════
-// DAILY QUESTS
+// DAILY QUESTS — pool of 15, pick 6 per day
 // ══════════════════════════════════════════════
+
+interface DailyQuestTemplate {
+  key: string;      // stable prefix, e.g. "quest_dass"
+  title: string;
+  description: string;
+  icon: string;
+  xpReward: number;
+  eventType: string;
+}
+
+// Core quests (always included)
+const CORE_DAILY_QUESTS: DailyQuestTemplate[] = [
+  { key: 'quest_dass', title: 'Làm test DASS-21', description: 'Hoàn thành bài đánh giá DASS-21 để biết trạng thái tâm lý hôm nay', icon: '🧠', xpReward: 5, eventType: 'quest_completed' },
+  { key: 'quest_chat', title: 'Trò chuyện với AI', description: 'Chat với AI ít nhất 3 tin nhắn về cảm xúc của bạn', icon: '💬', xpReward: 3, eventType: 'emotion_checkin' },
+];
+
+// Rotating pool (pick 4 from these each day)
+const ROTATING_DAILY_QUESTS: DailyQuestTemplate[] = [
+  { key: 'quest_journal', title: 'Ghi nhật ký cảm xúc', description: 'Viết 3 câu về cảm xúc và suy nghĩ của bạn hôm nay', icon: '📝', xpReward: 3, eventType: 'journal_entry' },
+  { key: 'quest_breathing', title: 'Bài tập thở 5 phút', description: 'Thực hành hít thở sâu 5 phút để giảm stress', icon: '🧘', xpReward: 2, eventType: 'emotion_checkin' },
+  { key: 'quest_research', title: 'Đọc nghiên cứu', description: 'Khám phá 1 bài nghiên cứu về sức khỏe tâm lý', icon: '📖', xpReward: 2, eventType: 'quest_completed' },
+  { key: 'quest_share', title: 'Chia sẻ câu chuyện', description: 'Chia sẻ một trải nghiệm hoặc câu chuyện tích cực', icon: '💝', xpReward: 5, eventType: 'story_shared' },
+  { key: 'quest_gratitude', title: 'Ba điều biết ơn', description: 'Viết ra 3 điều bạn biết ơn hôm nay', icon: '🙏', xpReward: 3, eventType: 'journal_entry' },
+  { key: 'quest_music', title: 'Nghe nhạc thư giãn', description: 'Dành 10 phút nghe nhạc nhẹ nhàng và thư giãn', icon: '🎵', xpReward: 2, eventType: 'emotion_checkin' },
+  { key: 'quest_walk', title: 'Đi bộ 10 phút', description: 'Đi dạo ngoài trời để thay đổi không khí', icon: '🚶', xpReward: 2, eventType: 'emotion_checkin' },
+  { key: 'quest_friend', title: 'Gọi cho 1 người bạn', description: 'Kết nối với bạn bè hoặc người thân qua cuộc gọi', icon: '📞', xpReward: 3, eventType: 'story_shared' },
+  { key: 'quest_selfcare', title: 'Chăm sóc bản thân', description: 'Làm 1 điều nhỏ để tự thưởng cho bản thân hôm nay', icon: '💆', xpReward: 2, eventType: 'emotion_checkin' },
+  { key: 'quest_positive', title: 'Suy nghĩ tích cực', description: 'Viết lại 1 suy nghĩ tiêu cực thành tích cực', icon: '☀️', xpReward: 3, eventType: 'journal_entry' },
+  { key: 'quest_water', title: 'Uống đủ nước', description: 'Uống ít nhất 8 ly nước trong ngày hôm nay', icon: '💧', xpReward: 2, eventType: 'emotion_checkin' },
+  { key: 'quest_sleep', title: 'Ghi nhật ký giấc ngủ', description: 'Ghi lại giờ ngủ, giờ dậy và chất lượng giấc ngủ', icon: '🌙', xpReward: 2, eventType: 'journal_entry' },
+  { key: 'quest_kindness', title: 'Hành động tử tế', description: 'Làm 1 điều tốt cho người khác hôm nay', icon: '💕', xpReward: 4, eventType: 'story_shared' },
+];
+
+/** Deterministic seed from date string → pick consistent 4 from rotating pool */
+function dailySeed(dateStr: string): number {
+  let hash = 0;
+  for (let i = 0; i < dateStr.length; i++) {
+    hash = ((hash << 5) - hash + dateStr.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
 
 export function getDailyQuests(userId: string): DailyQuest[] {
   const char = originalGetOrCreate(userId);
   const today = todayStr();
 
-  return [
-    {
-      id: `quest_dass_${today}`,
-      title: 'Làm test DASS-21',
-      description: 'Hoàn thành bài đánh giá DASS-21 để biết trạng thái tâm lý hôm nay',
-      icon: '🧠',
-      xpReward: 5,
-      eventType: 'quest_completed',
-      completed: char.completedQuestIds.includes(`quest_dass_${today}`),
-    },
-    {
-      id: `quest_chat_${today}`,
-      title: 'Trò chuyện với AI',
-      description: 'Chat với AI ít nhất 3 tin nhắn về cảm xúc của bạn',
-      icon: '💬',
-      xpReward: 3,
-      eventType: 'emotion_checkin',
-      completed: char.completedQuestIds.includes(`quest_chat_${today}`),
-    },
-    {
-      id: `quest_journal_${today}`,
-      title: 'Ghi nhật ký cảm xúc',
-      description: 'Viết 3 câu về cảm xúc và suy nghĩ của bạn hôm nay',
-      icon: '📝',
-      xpReward: 3,
-      eventType: 'journal_entry',
-      completed: char.completedQuestIds.includes(`quest_journal_${today}`),
-    },
-    {
-      id: `quest_breathing_${today}`,
-      title: 'Bài tập thở 5 phút',
-      description: 'Thực hành hít thở sâu 5 phút để giảm stress',
-      icon: '🧘',
-      xpReward: 2,
-      eventType: 'emotion_checkin',
-      completed: char.completedQuestIds.includes(`quest_breathing_${today}`),
-    },
-    {
-      id: `quest_research_${today}`,
-      title: 'Đọc nghiên cứu',
-      description: 'Khám phá 1 bài nghiên cứu về sức khỏe tâm lý',
-      icon: '📖',
-      xpReward: 2,
-      eventType: 'quest_completed',
-      completed: char.completedQuestIds.includes(`quest_research_${today}`),
-    },
-    {
-      id: `quest_share_${today}`,
-      title: 'Chia sẻ câu chuyện',
-      description: 'Chia sẻ một trải nghiệm hoặc câu chuyện tích cực',
-      icon: '💝',
-      xpReward: 5,
-      eventType: 'story_shared',
-      completed: char.completedQuestIds.includes(`quest_share_${today}`),
-    },
-  ];
+  // Pick 4 rotating quests deterministically based on date
+  const shuffled = [...ROTATING_DAILY_QUESTS].sort((a, b) => {
+    const ha = dailySeed(today + a.key);
+    const hb = dailySeed(today + b.key);
+    return ha - hb;
+  });
+  const picked = shuffled.slice(0, 4);
+
+  const templates = [...CORE_DAILY_QUESTS, ...picked];
+
+  return templates.map(t => ({
+    id: `${t.key}_${today}`,
+    title: t.title,
+    description: t.description,
+    icon: t.icon,
+    xpReward: t.xpReward,
+    eventType: t.eventType,
+    completed: char.completedQuestIds.includes(`${t.key}_${today}`),
+  }));
 }
 
 export function completeQuest(userId: string, questId: string): (OriginalEventResult & { feedback: string }) | null {
@@ -490,6 +495,9 @@ export function completeFullQuest(userId: string, questId: string): (OriginalEve
   const quest = getAllQuestsDB().find(q => q.id === questId);
   if (quest) {
     completeQuestDB(char, quest);
+  } else {
+    // Chain step or custom quest — manually track completion
+    char.completedQuestIds.push(questId);
   }
 
   return processEvent({
@@ -497,6 +505,56 @@ export function completeFullQuest(userId: string, questId: string): (OriginalEve
     eventType: 'quest_completed',
     content: `Hoàn thành quest: ${questId}`,
   });
+}
+
+// ══════════════════════════════════════════════
+// QUEST COMPLETION HISTORY
+// ══════════════════════════════════════════════
+
+export interface QuestHistoryEntry {
+  questId: string;
+  title: string;
+  category: string;
+  xpReward: number;
+  completedAt: number;
+}
+
+export function getQuestHistory(userId: string): QuestHistoryEntry[] {
+  ensureInit();
+  const char = originalGetOrCreate(userId);
+  const allQuests = getAllQuestsDB();
+  const logs = getLogsForCharacter(char.id);
+
+  // Build history from action logs that have a questId
+  const questLogs = logs
+    .filter(l => l.questId && char.completedQuestIds.includes(l.questId))
+    .map(l => {
+      const quest = allQuests.find(q => q.id === l.questId);
+      return {
+        questId: l.questId!,
+        title: quest ? quest.title : l.questId!,
+        category: quest ? quest.category : 'chain',
+        xpReward: quest ? quest.xpReward : 10,
+        completedAt: l.timestamp,
+      };
+    });
+
+  // Also include completedQuestIds that might not have logs (e.g. daily quests auto-completed)
+  const loggedIds = new Set(questLogs.map(l => l.questId));
+  const extra = char.completedQuestIds
+    .filter(id => !loggedIds.has(id))
+    .map(id => {
+      const quest = allQuests.find(q => q.id === id);
+      return {
+        questId: id,
+        title: quest ? quest.title : id,
+        category: quest ? quest.category : 'daily',
+        xpReward: quest ? quest.xpReward : 10,
+        completedAt: 0,
+      };
+    });
+
+  return [...questLogs, ...extra].sort((a, b) => b.completedAt - a.completedAt);
 }
 
 // ══════════════════════════════════════════════
@@ -538,17 +596,37 @@ export function getAdaptiveQuests(userId: string): AdaptiveQuestData {
         id: chain.id,
         theme: chain.theme,
         title: chain.title,
-        steps: chain.steps.map(s => ({ order: s.order, title: s.title, description: s.description, xpReward: s.xpReward })),
+        steps: chain.steps.map(s => ({
+          order: s.order, title: s.title, description: s.description, xpReward: s.xpReward,
+          completed: char.completedQuestIds.includes(`${chain.id}_step_${s.order}`),
+        })),
         totalXp: chain.totalXp,
+        completedSteps: chain.steps.filter(s => char.completedQuestIds.includes(`${chain.id}_step_${s.order}`)).length,
       };
     }
   }
+
+  // Build all chains with progress
+  const allChains: QuestChainInfo[] = themes.map(t => {
+    const c = getQuestChain(t);
+    if (!c) return null;
+    const steps = c.steps.map(s => ({
+      order: s.order, title: s.title, description: s.description, xpReward: s.xpReward,
+      completed: char.completedQuestIds.includes(`${c.id}_step_${s.order}`),
+    }));
+    return {
+      id: c.id, theme: c.theme, title: c.title, steps,
+      totalXp: c.totalXp,
+      completedSteps: steps.filter(s => s.completed).length,
+    };
+  }).filter(Boolean) as QuestChainInfo[];
 
   return {
     playerPhase: phase,
     userType,
     recommendations,
     questChain,
+    allChains,
     difficulty: {
       current: difficulty.currentDifficulty,
       suggested: difficulty.suggestedDifficulty,

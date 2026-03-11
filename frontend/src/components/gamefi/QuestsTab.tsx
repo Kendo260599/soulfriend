@@ -17,6 +17,7 @@ import {
   QuestDbStats, QuestDetailPanel,
   Overlay, ConfirmBox, ConfirmTitle, ConfirmDesc, ConfirmBtnRow,
 } from './styles';
+import JournalInputModal from './JournalInputModal';
 
 const PAGE_SIZE = 20;
 
@@ -72,9 +73,9 @@ const QuestsTab: React.FC = () => {
     fetchQuestDb(questCat, newPage);
   };
 
-  const handleFullQuestComplete = async (questId: string, title: string) => {
+  const handleFullQuestComplete = async (questId: string, title: string, journalText?: string) => {
     try {
-      const json = await apiPost('/quests/complete', { userId, questId });
+      const json = await apiPost('/quests/complete', { userId, questId, ...(journalText ? { journalText } : {}) });
       if (json.success && json.data) { showToast(`+${json.data.xpGained} XP — ${title}`); await fetchAll(); fetchQuestDb(questCat, page); fetchQuestHistory(); }
       else if (json.message) showToast(json.message);
     } catch (err) {
@@ -98,9 +99,9 @@ const QuestsTab: React.FC = () => {
     handleFullQuestComplete(questId, title);
   };
 
-  const confirmPendingQuest = () => {
+  const confirmPendingQuest = (journalText?: string) => {
     if (!pendingQuest) return;
-    handleFullQuestComplete(pendingQuest.id, pendingQuest.title);
+    handleFullQuestComplete(pendingQuest.id, pendingQuest.title, journalText);
     setPendingQuest(null);
   };
 
@@ -312,22 +313,31 @@ const QuestsTab: React.FC = () => {
         </>
       )}
 
-      {/* Confirm modal for manual_confirm / requires_input quests */}
-      {pendingQuest && (
+      {/* Confirm modal for manual_confirm quests */}
+      {pendingQuest && pendingQuest.mode !== 'requires_input' && (
         <Overlay onClick={() => setPendingQuest(null)}>
           <ConfirmBox onClick={e => e.stopPropagation()}>
             <ConfirmTitle>{pendingQuest.title}</ConfirmTitle>
             <ConfirmDesc>
-              {pendingQuest.mode === 'requires_input'
-                ? `📝 ${pendingQuest.description}\n\nBạn đã thực hiện và hoàn thành nhiệm vụ này chưa?`
-                : `${pendingQuest.description}\n\nXác nhận bạn đã hoàn thành?`}
+              {pendingQuest.description}
+              {`\nXác nhận bạn đã hoàn thành?`}
             </ConfirmDesc>
             <ConfirmBtnRow>
               <ActionBtn variant="secondary" onClick={() => setPendingQuest(null)}>Chưa làm</ActionBtn>
-              <ActionBtn onClick={confirmPendingQuest}>✅ Đã hoàn thành</ActionBtn>
+              <ActionBtn onClick={() => confirmPendingQuest()}>✅ Đã hoàn thành</ActionBtn>
             </ConfirmBtnRow>
           </ConfirmBox>
         </Overlay>
+      )}
+
+      {/* Journal input modal for requires_input quests */}
+      {pendingQuest && pendingQuest.mode === 'requires_input' && (
+        <JournalInputModal
+          title={pendingQuest.title}
+          description={pendingQuest.description}
+          onSubmit={(text) => confirmPendingQuest(text)}
+          onCancel={() => setPendingQuest(null)}
+        />
       )}
     </>
   );

@@ -116,21 +116,26 @@ export class GamefiController {
   /**
    * POST /api/v2/gamefi/quest/complete
    * Complete a daily quest
-   * Body: { userId, questId }
+   * Body: { userId, questId, journalText? }
    */
   completeQuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = getAuthedUserId(req, res, 'body');
       if (!userId) return;
 
-      const { questId } = req.body;
+      const { questId, journalText } = req.body;
 
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
         res.status(400).json({ success: false, error: 'Invalid questId' });
         return;
       }
 
-      const result = await completeQuest(userId, questId);
+      // Validate optional journalText
+      const sanitizedText = journalText && typeof journalText === 'string'
+        ? sanitizeText(journalText.slice(0, 2000))
+        : undefined;
+
+      const result = await completeQuest(userId, questId, sanitizedText);
       if (!result) {
         res.status(409).json({ success: false, error: 'Quest đã hoàn thành trước đó' });
         return;
@@ -250,18 +255,24 @@ export class GamefiController {
   /**
    * POST /api/v2/gamefi/quests/complete
    * Complete a quest from the full database
-   * Body: { userId, questId }
+   * Body: { userId, questId, journalText? }
    */
   completeFullQuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = getAuthedUserId(req, res, 'body');
       if (!userId) return;
-      const { questId } = req.body;
+      const { questId, journalText } = req.body;
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
         res.status(400).json({ success: false, error: 'Invalid questId' });
         return;
       }
-      const result = await completeFullQuest(userId, questId);
+
+      // Validate optional journalText
+      const sanitizedText = journalText && typeof journalText === 'string'
+        ? sanitizeText(journalText.slice(0, 2000))
+        : undefined;
+
+      const result = await completeFullQuest(userId, questId, sanitizedText);
       if (!result) {
         res.status(409).json({ success: false, error: 'Quest đã hoàn thành trước đó' });
         return;

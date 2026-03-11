@@ -318,16 +318,22 @@ export async function getDailyQuests(userId: string): Promise<DailyQuest[]> {
   }));
 }
 
-export async function completeQuest(userId: string, questId: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
+export async function completeQuest(userId: string, questId: string, journalText?: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
   await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
   char.completedQuestIds.push(questId);
+
+  // Determine eventType: journal-type quests use 'journal_entry'
+  const prefix = questId.replace(/_\d{4}-\d{2}-\d{2}$/, '');
+  const template = [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS].find(t => t.key === prefix);
+  const eventType = template?.eventType || 'quest_completed';
+
   const result = await processEvent({
     userId,
-    eventType: 'quest_completed',
-    content: `Hoàn thành quest: ${questId}`,
+    eventType: eventType as any,
+    content: journalText || `Hoàn thành quest: ${questId}`,
   });
   return result;
 }
@@ -589,7 +595,7 @@ export async function getQuestDatabase(userId: string, category?: string, page =
   };
 }
 
-export async function completeFullQuest(userId: string, questId: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
+export async function completeFullQuest(userId: string, questId: string, journalText?: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
   ensureInit();
   await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
@@ -603,10 +609,14 @@ export async function completeFullQuest(userId: string, questId: string): Promis
     char.completedQuestIds.push(questId);
   }
 
+  // Use journal_entry eventType when the quest expects text input
+  const mode = quest?.completionMode || 'manual_confirm';
+  const eventType = (mode === 'requires_input' && journalText) ? 'journal_entry' : 'quest_completed';
+
   return await processEvent({
     userId,
-    eventType: 'quest_completed',
-    content: `Hoàn thành quest: ${questId}`,
+    eventType: eventType as any,
+    content: journalText || `Hoàn thành quest: ${questId}`,
   });
 }
 

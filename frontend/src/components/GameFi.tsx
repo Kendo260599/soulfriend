@@ -23,6 +23,7 @@ import QuestsTab from './gamefi/QuestsTab';
 import BehaviorTab from './gamefi/BehaviorTab';
 import LoreTab from './gamefi/LoreTab';
 import OnboardingModal from './gamefi/OnboardingOverlay';
+import JournalInputModal from './gamefi/JournalInputModal';
 
 const PlayerDashboard = lazy(() => import('./PlayerDashboard'));
 
@@ -45,10 +46,10 @@ const GameFiInner: React.FC = () => {
   const dismissOnboarding = () => { setShowOnboarding(false); localStorage.setItem(ONBOARDING_KEY, '1'); };
 
   // Confirm-complete helper for daily quest dialog
-  const handleConfirmComplete = async () => {
+  const handleConfirmComplete = async (journalText?: string) => {
     if (!confirmQuest) return;
     try {
-      const json = await apiPost('/quest/complete', { userId, questId: confirmQuest.id });
+      const json = await apiPost('/quest/complete', { userId, questId: confirmQuest.id, ...(journalText ? { journalText } : {}) });
       if (json.success && json.data) { showToast(`+${json.data.xpGained} XP — ${confirmQuest.title}`); await fetchAll(); }
     } catch (err) {
       console.error('handleConfirmComplete failed', err);
@@ -70,7 +71,15 @@ const GameFiInner: React.FC = () => {
       {showOnboarding && <OnboardingModal archetype={character.archetype} onDismiss={dismissOnboarding} />}
 
       {/* Confirmation Dialog for self-report quests */}
-      {confirmQuest && (
+      {confirmQuest && confirmQuest.completionMode === 'requires_input' && (
+        <JournalInputModal
+          title={confirmQuest.title}
+          description={QUEST_ROUTES[confirmQuest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '')]?.hint || confirmQuest.description}
+          onSubmit={(text) => handleConfirmComplete(text)}
+          onCancel={() => setConfirmQuest(null)}
+        />
+      )}
+      {confirmQuest && confirmQuest.completionMode !== 'requires_input' && (
         <Overlay onClick={() => setConfirmQuest(null)}>
           <ConfirmBox onClick={e => e.stopPropagation()}>
             <div style={{fontSize:'2.5rem',marginBottom:'0.75rem'}}>{confirmQuest.icon}</div>
@@ -80,7 +89,7 @@ const GameFiInner: React.FC = () => {
             </ConfirmDesc>
             <ConfirmBtnRow>
               <ActionBtn variant="secondary" onClick={() => setConfirmQuest(null)}>Chưa làm</ActionBtn>
-              <ActionBtn onClick={handleConfirmComplete}>✅ Đã hoàn thành</ActionBtn>
+              <ActionBtn onClick={() => handleConfirmComplete()}>✅ Đã hoàn thành</ActionBtn>
             </ConfirmBtnRow>
           </ConfirmBox>
         </Overlay>

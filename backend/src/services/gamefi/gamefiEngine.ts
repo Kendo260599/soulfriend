@@ -2,6 +2,7 @@
 // SoulFriend GameFi — Backend Engine Wrapper
 // ============================================
 // Full adapter around the ORIGINAL 22-system GameFi engine.
+// MongoDB persistence: lazy load + write-through cache.
 
 import {
   processEvent as originalProcessEvent,
@@ -18,6 +19,11 @@ import type {
 import type { Character as OriginalCharacter } from '../../../../gamefi/core/types';
 import { getLevelTitle, getLevelTable } from '../../../../gamefi/core/character';
 import { getStreak, recordStreakActivity, resetEconomy } from '../../../../gamefi/economy/economyEngine';
+import {
+  ensureUserLoaded, saveUserState, saveSkillState, saveActionLog, resetLoadedUsers,
+  registerSkillStateRestorer, registerCreatedAtRestorer,
+  registerSkillStateGetter, registerCreatedAtGetter,
+} from './persistence';
 import { generateFeedback as origGenerateFeedback } from '../../../../integration/gamefiFeedback';
 import {
   initSkillTree, getAllSkills, getAllSynergies, getAllBranchMasteries,
@@ -48,7 +54,7 @@ import {
   getMeaningShifts,
 } from '../../../../gamefi/engine/behaviorLoop';
 import { calculateEmpathyRank } from '../../../../gamefi/engine/empathy';
-import { getLogsForCharacter } from '../../../../gamefi/engine/dataLogger';
+import { getLogsForCharacter, getLogCount } from '../../../../gamefi/engine/dataLogger';
 import {
   initLore, getAllPhilosophies, getAllLegends, getAllLocationLores,
   getWorldName, getPlayerRole, getCommunityName, getLoreForEvent,
@@ -77,6 +83,28 @@ function ensureInit() {
   initWeeklyChallenges();
   initSeasonalGoals();
   initLore();
+
+  // Register persistence restorers
+  registerSkillStateRestorer((userId, data) => {
+    skillStateStore.set(userId, {
+      unlockedSkills: data.unlockedSkills,
+      unlockedSynergies: data.unlockedSynergies,
+      masteredBranches: data.masteredBranches as any[],
+    });
+  });
+  registerCreatedAtRestorer((userId, createdAt) => {
+    createdAtStore.set(userId, createdAt);
+  });
+
+  // Register persistence getters (for save)
+  registerSkillStateGetter((userId) => {
+    const state = skillStateStore.get(userId);
+    return state || null;
+  });
+  registerCreatedAtGetter((userId) => {
+    return createdAtStore.get(userId);
+  });
+
   _initialized = true;
 }
 
@@ -131,14 +159,18 @@ function toFrontendCharacter(char: OriginalCharacter): Character {
 // CHARACTER MANAGEMENT (delegate to original)
 // ══════════════════════════════════════════════
 
-export function getOrCreateCharacter(userId: string): Character {
+export async function getOrCreateCharacter(userId: string): Promise<Character> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
-  return toFrontendCharacter(char);
+  const result = toFrontendCharacter(char);
+  await saveUserState(userId);
+  return result;
 }
 
-export function getCharacter(userId: string): Character | undefined {
+export async function getCharacter(userId: string): Promise<Character | undefined> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetCharacter(userId);
   return char ? toFrontendCharacter(char) : undefined;
 }
@@ -147,8 +179,9 @@ export function getCharacter(userId: string): Character | undefined {
 // EVENT PROCESSING (original engine + enrich)
 // ══════════════════════════════════════════════
 
-export function processEvent(event: PsychEvent): OriginalEventResult & { feedback: string } {
+export async function processEvent(event: PsychEvent): Promise<OriginalEventResult & { feedback: string }> {
   ensureInit();
+  await ensureUserLoaded(event.userId);
   // Full 10-step pipeline from original engine:
   //  1. Map event → action with archetype bonus
   //  2. Update growth stats with archetype growth %
@@ -159,6 +192,7 @@ export function processEvent(event: PsychEvent): OriginalEventResult & { feedbac
   //  7. State snapshot
   //  8. Milestone detection (level + growth milestones)
   //  9. Action logging for research dataset
+  const logCountBefore = getLogCount();
   const result = originalProcessEvent(event);
 
   // Apply rewards to character (original returns but doesn't accumulate)
@@ -171,6 +205,28 @@ export function processEvent(event: PsychEvent): OriginalEventResult & { feedbac
 
   // Generate friendly feedback message
   const feedback = origGenerateFeedback(result);
+
+  // Persist state + action log
+  await saveUserState(event.userId);
+
+  // Persist the action log created by the pipeline
+  const logCountAfter = getLogCount();
+  if (logCountAfter > logCountBefore) {
+    const charLogs = getLogsForCharacter(char.id);
+    const latestLog = charLogs[charLogs.length - 1];
+    if (latestLog) {
+      await saveActionLog(
+        latestLog.characterId,
+        latestLog.id,
+        latestLog.actionType,
+        latestLog.growthChange as Record<string, number>,
+        latestLog.timestamp,
+        latestLog.questId,
+        latestLog.emotion,
+      );
+    }
+  }
+
   return { ...result, feedback };
 }
 
@@ -219,7 +275,8 @@ function dailySeed(dateStr: string): number {
   return Math.abs(hash);
 }
 
-export function getDailyQuests(userId: string): DailyQuest[] {
+export async function getDailyQuests(userId: string): Promise<DailyQuest[]> {
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const today = todayStr();
 
@@ -244,23 +301,26 @@ export function getDailyQuests(userId: string): DailyQuest[] {
   }));
 }
 
-export function completeQuest(userId: string, questId: string): (OriginalEventResult & { feedback: string }) | null {
+export async function completeQuest(userId: string, questId: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
   char.completedQuestIds.push(questId);
-  return processEvent({
+  const result = await processEvent({
     userId,
     eventType: 'quest_completed',
     content: `Hoàn thành quest: ${questId}`,
   });
+  return result;
 }
 
 // ══════════════════════════════════════════════
 // BADGES
 // ══════════════════════════════════════════════
 
-export function getBadges(userId: string): Badge[] {
+export async function getBadges(userId: string): Promise<Badge[]> {
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const streakInfo = getStreak(char.id, 'daily_ritual');
 
@@ -328,11 +388,13 @@ export function getBadges(userId: string): Badge[] {
 // GAME PROFILE
 // ══════════════════════════════════════════════
 
-export function getGameProfile(userId: string): GameProfile {
+export async function getGameProfile(userId: string): Promise<GameProfile> {
+  ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const frontendChar = toFrontendCharacter(char);
-  const quests = getDailyQuests(userId);
-  const badges = getBadges(userId);
+  const quests = await getDailyQuests(userId);
+  const badges = await getBadges(userId);
   const levelTitle = getLevelTitle(char);
   const levelTable = getLevelTable();
   const currentEntry = levelTable.find(l => l.level === char.level);
@@ -367,8 +429,9 @@ export function getSupportedEvents(): PsychEventType[] {
 // SKILL TREE
 // ══════════════════════════════════════════════
 
-export function getSkillTree(userId: string): SkillTreeData {
+export async function getSkillTree(userId: string): Promise<SkillTreeData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const state = getSkillState(userId);
 
@@ -411,21 +474,26 @@ export function getSkillTree(userId: string): SkillTreeData {
     mastered: state.masteredBranches.includes(bm.branch),
   }));
 
-  return {
+  const data: SkillTreeData = {
     skills,
     synergies,
     masteries,
     unlockedCount: state.unlockedSkills.length,
     totalCount: allSkills.length,
   };
+
+  // Persist skill state if changed
+  await saveSkillState(userId, state);
+  return data;
 }
 
 // ══════════════════════════════════════════════
 // WORLD MAP
 // ══════════════════════════════════════════════
 
-export function getWorldMap(userId: string): WorldMapData {
+export async function getWorldMap(userId: string): Promise<WorldMapData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const allLocations = getAllLocations();
 
@@ -447,18 +515,22 @@ export function getWorldMap(userId: string): WorldMapData {
   };
 }
 
-export function travel(userId: string, locationId: string): { success: boolean; message: string } {
+export async function travel(userId: string, locationId: string): Promise<{ success: boolean; message: string }> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
-  return travelTo(char, locationId as any);
+  const result = travelTo(char, locationId as any);
+  if (result.success) await saveUserState(userId);
+  return result;
 }
 
 // ══════════════════════════════════════════════
 // QUEST DATABASE (full 200)
 // ══════════════════════════════════════════════
 
-export function getQuestDatabase(userId: string, category?: string): QuestDatabaseData {
+export async function getQuestDatabase(userId: string, category?: string): Promise<QuestDatabaseData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   let allQuests = getAllQuestsDB();
 
@@ -487,8 +559,9 @@ export function getQuestDatabase(userId: string, category?: string): QuestDataba
   };
 }
 
-export function completeFullQuest(userId: string, questId: string): (OriginalEventResult & { feedback: string }) | null {
+export async function completeFullQuest(userId: string, questId: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
@@ -500,7 +573,7 @@ export function completeFullQuest(userId: string, questId: string): (OriginalEve
     char.completedQuestIds.push(questId);
   }
 
-  return processEvent({
+  return await processEvent({
     userId,
     eventType: 'quest_completed',
     content: `Hoàn thành quest: ${questId}`,
@@ -519,8 +592,9 @@ export interface QuestHistoryEntry {
   completedAt: number;
 }
 
-export function getQuestHistory(userId: string): QuestHistoryEntry[] {
+export async function getQuestHistory(userId: string): Promise<QuestHistoryEntry[]> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const allQuests = getAllQuestsDB();
   const logs = getLogsForCharacter(char.id);
@@ -561,8 +635,9 @@ export function getQuestHistory(userId: string): QuestHistoryEntry[] {
 // ADAPTIVE QUEST AI
 // ══════════════════════════════════════════════
 
-export function getAdaptiveQuests(userId: string): AdaptiveQuestData {
+export async function getAdaptiveQuests(userId: string): Promise<AdaptiveQuestData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const gs = calcGrowthScore(char.growthStats);
   const phase = getPlayerPhase(gs);
@@ -641,8 +716,9 @@ export function getAdaptiveQuests(userId: string): AdaptiveQuestData {
 // STATE & TRAJECTORY
 // ══════════════════════════════════════════════
 
-export function getStateData(userId: string): StateData {
+export async function getStateData(userId: string): Promise<StateData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const gs = calcGrowthScore(char.growthStats);
   const zone = getStateZone(gs);
@@ -667,8 +743,9 @@ export function getStateData(userId: string): StateData {
 // BEHAVIOR LOOPS
 // ══════════════════════════════════════════════
 
-export function getBehaviorData(userId: string): BehaviorData {
+export async function getBehaviorData(userId: string): Promise<BehaviorData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
 
   const ritual = getDailyRitual(char.id);
@@ -708,22 +785,25 @@ export function getBehaviorData(userId: string): BehaviorData {
   };
 }
 
-export function completeDailyRitualStep(userId: string, step: 'checkin' | 'reflection' | 'community') {
+export async function completeDailyRitualStep(userId: string, step: 'checkin' | 'reflection' | 'community') {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const ritual = completeDailyStep(char.id, step);
   if (ritual.completed) {
     // Bonus for completing full daily ritual
-    processEvent({ userId, eventType: 'quest_completed', content: 'Hoàn thành nghi thức hàng ngày' });
+    await processEvent({ userId, eventType: 'quest_completed', content: 'Hoàn thành nghi thức hàng ngày' });
   }
+  await saveUserState(userId);
   return ritual;
 }
 
-export function completeWeekly(userId: string, challengeId: string) {
+export async function completeWeekly(userId: string, challengeId: string) {
   ensureInit();
+  await ensureUserLoaded(userId);
   const ch = completeWeeklyChallenge(challengeId);
   if (ch?.completed) {
-    processEvent({ userId, eventType: 'quest_completed', content: `Hoàn thành thử thách tuần: ${ch.title}` });
+    await processEvent({ userId, eventType: 'quest_completed', content: `Hoàn thành thử thách tuần: ${ch.title}` });
   }
   return ch;
 }
@@ -754,14 +834,15 @@ export function getLoreMessage(trigger: string, ref: string): string | null {
 // FULL GAME DATA
 // ══════════════════════════════════════════════
 
-export function getFullGameData(userId: string): FullGameData {
+export async function getFullGameData(userId: string): Promise<FullGameData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   return {
-    profile: getGameProfile(userId),
-    skillTree: getSkillTree(userId),
-    worldMap: getWorldMap(userId),
-    state: getStateData(userId),
-    behavior: getBehaviorData(userId),
+    profile: await getGameProfile(userId),
+    skillTree: await getSkillTree(userId),
+    worldMap: await getWorldMap(userId),
+    state: await getStateData(userId),
+    behavior: await getBehaviorData(userId),
     lore: getLoreData(),
   };
 }
@@ -831,17 +912,18 @@ function generateSuggestion(char: OriginalCharacter, quests: { id: string; title
   return suggestionMap[weakest[0]] || 'Hãy trò chuyện với AI về cảm xúc của bạn hôm nay';
 }
 
-export function getPlayerDashboard(userId: string): PlayerDashboardData {
+export async function getPlayerDashboard(userId: string): Promise<PlayerDashboardData> {
   ensureInit();
+  await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const frontendChar = toFrontendCharacter(char);
-  const profile = getGameProfile(userId);
-  const skills = getSkillTree(userId);
-  const world = getWorldMap(userId);
-  const stateD = getStateData(userId);
-  const behaviorD = getBehaviorData(userId);
-  const badges = getBadges(userId);
-  const dailyQ = getDailyQuests(userId);
+  const profile = await getGameProfile(userId);
+  const skills = await getSkillTree(userId);
+  const world = await getWorldMap(userId);
+  const stateD = await getStateData(userId);
+  const behaviorD = await getBehaviorData(userId);
+  const badges = await getBadges(userId);
+  const dailyQ = await getDailyQuests(userId);
 
   // Identity
   const identity = {
@@ -1007,5 +1089,6 @@ export function resetEngine(): void {
   resetEconomy();
   createdAtStore.clear();
   skillStateStore.clear();
+  resetLoadedUsers();
   _initialized = false;
 }

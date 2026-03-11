@@ -128,6 +128,16 @@ export function getCharacter(userId: string): Character | undefined {
   return characterMap.get(userId);
 }
 
+/** Load a character into the in-memory map (for persistence restore) */
+export function setCharacter(userId: string, char: Character): void {
+  characterMap.set(userId, char);
+}
+
+/** Get all characters currently in memory (for persistence save) */
+export function getAllCharacters(): Map<string, Character> {
+  return characterMap;
+}
+
 /** Reset event handler (testing) */
 export function resetEventHandler(): void {
   characterMap.clear();

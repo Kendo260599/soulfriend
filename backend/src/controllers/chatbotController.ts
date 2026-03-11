@@ -112,7 +112,7 @@ export class ChatbotController {
       try {
         const detectedEvent = detectEvent(message);
         if (detectedEvent) {
-          const gamefiResult = gamefiProcessEvent({
+          const gamefiResult = await gamefiProcessEvent({
             userId: effectiveUserId,
             eventType: detectedEvent,
             content: message,

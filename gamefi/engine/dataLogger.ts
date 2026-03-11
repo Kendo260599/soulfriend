@@ -51,6 +51,13 @@ export function getLogCount(): number {
   return logs.length;
 }
 
+/** Load logs from persistent storage (for persistence restore) */
+export function loadLogs(savedLogs: ActionLog[]): void {
+  logs.length = 0;
+  logs.push(...savedLogs.slice(-MAX_LOGS));
+  logCounter = savedLogs.length;
+}
+
 /** Clear logs (for testing only) */
 export function clearLogs(): void {
   logs.length = 0;

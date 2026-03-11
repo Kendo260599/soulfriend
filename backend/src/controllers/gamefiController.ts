@@ -41,7 +41,7 @@ export class GamefiController {
         return;
       }
 
-      const profile = getGameProfile(userId);
+      const profile = await getGameProfile(userId);
       res.json({ success: true, data: profile });
     } catch (error) {
       logger.error('GameFi getProfile error:', error);
@@ -76,7 +76,7 @@ export class GamefiController {
         return;
       }
 
-      const result = processEvent({
+      const result = await processEvent({
         userId,
         eventType: eventType as PsychEventType,
         content: content.normalize('NFC'),
@@ -108,7 +108,7 @@ export class GamefiController {
         return;
       }
 
-      const result = completeQuest(userId, questId);
+      const result = await completeQuest(userId, questId);
       if (!result) {
         res.json({ success: true, data: null, message: 'Quest already completed' });
         return;
@@ -162,7 +162,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getSkillTree(userId);
+      const data = await getSkillTree(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getSkillTree error:', error);
@@ -181,7 +181,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getWorldMap(userId);
+      const data = await getWorldMap(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getWorldMap error:', error);
@@ -205,7 +205,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid locationId' });
         return;
       }
-      const result = travel(userId, locationId);
+      const result = await travel(userId, locationId);
       res.json({ success: true, data: result });
     } catch (error) {
       logger.error('GameFi travel error:', error);
@@ -226,7 +226,7 @@ export class GamefiController {
         return;
       }
       const category = typeof req.query.category === 'string' ? req.query.category : undefined;
-      const data = getQuestDatabase(userId, category);
+      const data = await getQuestDatabase(userId, category);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getQuestDatabase error:', error);
@@ -250,7 +250,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid questId' });
         return;
       }
-      const result = completeFullQuest(userId, questId);
+      const result = await completeFullQuest(userId, questId);
       if (!result) {
         res.json({ success: true, data: null, message: 'Quest already completed' });
         return;
@@ -273,7 +273,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getAdaptiveQuests(userId);
+      const data = await getAdaptiveQuests(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getAdaptiveQuests error:', error);
@@ -292,7 +292,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getStateData(userId);
+      const data = await getStateData(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getState error:', error);
@@ -311,7 +311,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getBehaviorData(userId);
+      const data = await getBehaviorData(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getBehavior error:', error);
@@ -335,7 +335,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid step. Must be: checkin, reflection, community' });
         return;
       }
-      const ritual = completeDailyRitualStep(userId, step);
+      const ritual = await completeDailyRitualStep(userId, step);
       res.json({ success: true, data: ritual });
     } catch (error) {
       logger.error('GameFi completeDailyStep error:', error);
@@ -359,7 +359,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid challengeId' });
         return;
       }
-      const result = completeWeekly(userId, challengeId);
+      const result = await completeWeekly(userId, challengeId);
       res.json({ success: true, data: result });
     } catch (error) {
       logger.error('GameFi completeWeeklyChallenge error:', error);
@@ -392,7 +392,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getFullGameData(userId);
+      const data = await getFullGameData(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getFullData error:', error);
@@ -411,7 +411,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getPlayerDashboard(userId);
+      const data = await getPlayerDashboard(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getDashboard error:', error);
@@ -430,7 +430,7 @@ export class GamefiController {
         res.status(400).json({ error: 'Invalid userId' });
         return;
       }
-      const data = getQuestHistory(userId);
+      const data = await getQuestHistory(userId);
       res.json({ success: true, data });
     } catch (error) {
       logger.error('GameFi getHistory error:', error);

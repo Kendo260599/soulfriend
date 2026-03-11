@@ -73,6 +73,16 @@ function dailyKey(charId: string, date: string): string {
 // PUBLIC API — Economy Init
 // ══════════════════════════════════════════════
 
+/** Load a streak into the in-memory map (for persistence restore) */
+export function setStreak(characterId: string, type: StreakInfo['type'], info: StreakInfo): void {
+  streakMap.set(streakKey(characterId, type), info);
+}
+
+/** Get all streaks currently in memory (for persistence) */
+export function getAllStreaks(): Map<string, StreakInfo> {
+  return streakMap;
+}
+
 /** Reset economy stores (testing) */
 export function resetEconomy(): void {
   streakMap.clear();

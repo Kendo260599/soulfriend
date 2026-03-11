@@ -12,7 +12,7 @@ import {
 } from './styles';
 
 const BehaviorTab: React.FC = () => {
-  const { data, userId, apiPost, showToast, fetchAll } = useGameFi();
+  const { data, userId, apiPost, showToast, showReward, fetchAll } = useGameFi();
   if (!data) return null;
 
   const { behavior } = data;
@@ -20,7 +20,14 @@ const BehaviorTab: React.FC = () => {
   const handleRitualStep = async (step: 'checkin' | 'reflection' | 'community') => {
     try {
       const json = await apiPost('/behavior/daily', { userId, step });
-      if (json.success) { showToast(json.data?.completed ? '🎉 Hoàn thành nghi thức ngày!' : `✅ ${step}`); await fetchAll(); }
+      if (json.success) {
+        if (json.data?.eventResult) {
+          showReward(json.data.eventResult, 'Nghi thức hàng ngày');
+        } else {
+          showToast(`✅ ${step}`);
+        }
+        await fetchAll();
+      }
     } catch (err) {
       console.error('handleRitualStep failed', err);
       showToast('❌ Không thể cập nhật');
@@ -30,7 +37,14 @@ const BehaviorTab: React.FC = () => {
   const handleWeeklyComplete = async (id: string) => {
     try {
       const json = await apiPost('/behavior/weekly', { userId, challengeId: id });
-      if (json.success) { showToast('🏆 Hoàn thành thử thách tuần!'); await fetchAll(); }
+      if (json.success) {
+        if (json.data?.eventResult) {
+          showReward(json.data.eventResult, json.data.title || 'Thử thách tuần');
+        } else {
+          showToast('🏆 Hoàn thành thử thách tuần!');
+        }
+        await fetchAll();
+      }
     } catch (err) {
       console.error('handleWeeklyComplete failed', err);
       showToast('❌ Không thể cập nhật');

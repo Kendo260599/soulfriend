@@ -71,7 +71,7 @@ export const LoreStoryCard = styled.div`background:linear-gradient(135deg,#FFF5F
 export const RitualStep = styled.div<{done?:boolean}>`display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:${p=>p.done?'#F0FFF4':'white'};border-radius:12px;border:2px solid ${p=>p.done?'#48BB78':'#E2E8F0'};margin-bottom:0.5rem;cursor:pointer;transition:all 0.2s;&:hover{border-color:${p=>p.done?'#48BB78':'#E8B4B8'};}`;
 
 export const RecommendCard = styled.div`background:linear-gradient(135deg,#667eea08,#764ba208);border-radius:16px;padding:1.25rem;border:2px solid #805AD530;margin-bottom:1rem;cursor:pointer;transition:all 0.2s;&:hover{border-color:#805AD5;transform:translateY(-2px);}`;
-export const ChainCard = styled.div`background:linear-gradient(135deg,#FFF5F5,#F5F0FF);border-radius:16px;padding:1.5rem;border:2px solid #E8B4B8;margin-bottom:1.5rem;`;
+export const ChainCard = styled.div`background:linear-gradient(135deg,#FFF5F5 0%,#F5F0FF 50%,#F0F7FF 100%);border-radius:20px;padding:1.75rem;border:2px solid #E8B4B850;margin-bottom:1.5rem;box-shadow:0 4px 20px rgba(128,90,213,0.08);position:relative;overflow:hidden;&::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#E8B4B8,#805AD5,#667eea);border-radius:20px 20px 0 0;}`;
 
 export const CatTabs = styled.div`display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;`;
 export const CatTab = styled.button<{active?:boolean}>`padding:0.4rem 0.9rem;border:1.5px solid ${p=>p.active?'#805AD5':'#E2E8F0'};border-radius:20px;font-size:0.8rem;font-weight:600;cursor:pointer;background:${p=>p.active?'#805AD510':'white'};color:${p=>p.active?'#805AD5':'#888'};transition:all 0.2s;&:hover{border-color:#805AD5;color:#805AD5;}`;
@@ -85,10 +85,10 @@ export const FilterRow = styled.div`display:flex;gap:0.75rem;align-items:center;
 export const SelectBox = styled.select`padding:0.35rem 0.7rem;border:1.5px solid #E2E8F0;border-radius:10px;font-size:0.82rem;color:#4A4A4A;background:white;cursor:pointer;outline:none;&:focus{border-color:#805AD5;}`;
 export const QuestDetailPanel = styled.div`padding:0.75rem 0 0 0;border-top:1px solid #E2E8F0;margin-top:0.75rem;`;
 export const GrowthBar = styled.div<{w:number;color:string}>`height:6px;border-radius:3px;background:#F0F0F0;position:relative;overflow:hidden;&::after{content:'';position:absolute;left:0;top:0;height:100%;width:${p=>Math.min(100, p.w*25)}%;background:${p=>p.color};border-radius:3px;transition:width 0.4s;}`;
-export const ChainStep = styled.div<{idx:number; done?:boolean}>`display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid #E2E8F0;&:last-child{border-bottom:none;}opacity:${p => p.done ? 0.6 : 1};`;
-export const ChainProgressBar = styled.div`background:#E2E8F0;border-radius:8px;height:8px;margin:0.5rem 0 1rem;overflow:hidden;`;
-export const ChainProgressFill = styled.div<{pct:number}>`height:100%;border-radius:8px;background:linear-gradient(90deg,#E8B4B8,#805AD5);width:${p => p.pct}%;transition:width 0.5s;`;
-export const StepNumber = styled.div`width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#E8B4B8,#D4A5A5);color:white;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;`;
+export const ChainStep = styled.div<{idx:number; done?:boolean; active?:boolean; locked?:boolean}>`display:flex;align-items:flex-start;gap:1rem;padding:0.85rem 1rem;margin:0.25rem 0;border-radius:14px;position:relative;transition:all 0.3s ease;${p => p.done ? `background:#F0FFF4;border:1.5px solid #48BB7840;` : p.active ? `background:linear-gradient(135deg,#805AD508,#E8B4B815);border:2px solid #805AD560;box-shadow:0 0 16px rgba(128,90,213,0.12);` : `background:#F7FAFC80;border:1.5px solid #E2E8F040;opacity:0.55;`}`;
+export const ChainProgressBar = styled.div`background:#E2E8F0;border-radius:8px;height:6px;margin:0.75rem 0 1.25rem;overflow:hidden;`;
+export const ChainProgressFill = styled.div<{pct:number}>`height:100%;border-radius:8px;background:linear-gradient(90deg,#48BB78,#805AD5,#667eea);width:${p => p.pct}%;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1);`;
+export const StepNumber = styled.div<{done?:boolean; active?:boolean; locked?:boolean}>`width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;transition:all 0.3s;${p => p.done ? `background:#48BB78;color:white;box-shadow:0 2px 8px rgba(72,187,120,0.3);` : p.active ? `background:linear-gradient(135deg,#805AD5,#667eea);color:white;box-shadow:0 0 12px rgba(128,90,213,0.4);animation:stepPulse 2s ease-in-out infinite;` : `background:#E2E8F0;color:#A0AEC0;`}@keyframes stepPulse{0%,100%{box-shadow:0 0 12px rgba(128,90,213,0.4);}50%{box-shadow:0 0 20px rgba(128,90,213,0.6);}}`;
 
 export const ZoneBadge = styled.span<{zone:string}>`display:inline-block;padding:0.3rem 0.8rem;border-radius:20px;font-size:0.8rem;font-weight:600;color:white;background:${p=>{const m:Record<string,string>={disorientation:'#E53E3E',self_exploration:'#DD6B20',stabilization:'#ECC94B',growth:'#48BB78',mentor_stage:'#805AD5'};return m[p.zone]||'#888';}};`;
 
@@ -110,3 +110,16 @@ export const OnboardingOverlay = styled.div`position:fixed;top:0;left:0;right:0;
 export const OnboardingCard = styled.div`background:white;border-radius:20px;padding:2.5rem;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;animation:${fadeIn} 0.5s ease-out;`;
 export const OnboardingSteps = styled.div`display:flex;gap:0.5rem;justify-content:center;margin:1.5rem 0;`;
 export const OnboardingDot = styled.div<{active?:boolean}>`width:10px;height:10px;border-radius:50%;background:${p=>p.active?'#805AD5':'#E2E8F0'};transition:all 0.3s;`;
+
+/* Reward Overlay */
+const levelUpGlow = keyframes`0%,100%{box-shadow:0 0 20px rgba(128,90,213,0.3)}50%{box-shadow:0 0 40px rgba(128,90,213,0.6)}`;
+const celebratePop = keyframes`0%{transform:scale(0.3);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}`;
+
+export const RewardOverlay = styled.div`position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;display:flex;align-items:center;justify-content:center;animation:${fadeIn} 0.2s ease-out;`;
+export const RewardCard = styled.div<{levelUp?:boolean}>`background:white;border-radius:20px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;animation:${celebratePop} 0.4s ease-out;${p=>p.levelUp?`animation:${celebratePop} 0.4s ease-out,${levelUpGlow} 2s ease-in-out infinite;border:2px solid #805AD5;`:''}`;
+export const RewardXp = styled.div`font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,#48BB78,#38A169);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0.5rem 0;`;
+export const RewardMilestone = styled.div`background:linear-gradient(135deg,#805AD5,#6B46C1);color:white;padding:0.75rem 1.5rem;border-radius:16px;font-size:1rem;font-weight:700;margin:0.75rem 0;display:inline-block;`;
+export const RewardStatRow = styled.div`display:flex;align-items:center;gap:0.5rem;justify-content:center;font-size:0.85rem;color:#4A4A4A;padding:0.2rem 0;`;
+export const RewardPointsRow = styled.div`display:flex;gap:1rem;justify-content:center;margin:0.75rem 0;`;
+export const RewardPointBadge = styled.span<{color:string}>`font-size:0.82rem;font-weight:600;padding:0.3rem 0.8rem;border-radius:20px;background:${p=>p.color};color:white;`;
+export const RewardDismissBtn = styled.button`margin-top:1rem;padding:0.5rem 1.5rem;border:none;border-radius:10px;background:#F7FAFC;color:#888;font-size:0.85rem;cursor:pointer;transition:all 0.2s;&:hover{background:#E2E8F0;}`;

@@ -5,6 +5,7 @@
 import React from 'react';
 import { useGameFi } from './GameFiContext';
 import { GROWTH_CONFIG, ZONE_NAMES, QUEST_ROUTES } from './config';
+import { resolveCompletionMode } from './questSemanticRegistry';
 import {
   StatsRow, StatCard, StatValue, StatLabel, XpBarBg, XpBarFill,
   PointsRow, PointCard, PointValue, PointLabel,
@@ -16,28 +17,18 @@ import {
 } from './styles';
 
 const DashboardTab: React.FC = () => {
-  const { data, showToast, navigate, setConfirmQuest, userId, apiPost, fetchAll } = useGameFi();
+  const { data, showToast, navigate, setConfirmQuest, userId } = useGameFi();
   if (!data) return null;
 
   const { profile, state } = data;
   const { character, quests, badges, levelTitle, xpToNextLevel, xpProgress } = profile;
   const unlockedBadges = badges.filter(b => b.unlocked).length;
 
-  const doCompleteQuest = async (quest: { id: string; title: string; xpReward?: number }) => {
-    try {
-      const json = await apiPost('/quest/complete', { userId, questId: quest.id });
-      if (json.success && json.data) { showToast(`+${json.data.xpGained} XP — ${quest.title}`); await fetchAll(); }
-    } catch (err) {
-      console.error('doCompleteQuest failed', err);
-      showToast('❌ Không thể hoàn thành quest');
-    }
-  };
-
   const handleDailyQuestClick = (quest: typeof quests[0]) => {
     if (quest.completed) return;
     const prefix = quest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '');
     const routing = QUEST_ROUTES[prefix];
-    const mode = quest.completionMode || routing?.completionMode || 'manual_confirm';
+    const mode = resolveCompletionMode(quest);
 
     if (mode === 'auto_event') {
       // Quest completes via system events — guide user to the relevant page

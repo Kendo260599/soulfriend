@@ -1,32 +1,34 @@
 /**
  * JournalInputModal — Text input modal for requires_input quests.
- * Enforces minimum 3 sentences before allowing submission.
+ * minSentences and maxLength come from the Quest Semantic Registry.
  */
 
 import React, { useState } from 'react';
 import {
   Overlay, ConfirmBox, ConfirmTitle, ConfirmDesc, ConfirmBtnRow, ActionBtn,
 } from './styles';
+import { COMPLETION_MODE_SEMANTICS } from './questSemanticRegistry';
+
+const DEFAULTS = COMPLETION_MODE_SEMANTICS.requires_input.validation;
 
 interface Props {
   title: string;
   description: string;
   onSubmit: (text: string) => void;
   onCancel: () => void;
+  minSentences?: number;
+  maxLength?: number;
 }
 
-const MIN_SENTENCES = 3;
-
 function countSentences(text: string): number {
-  // Split on sentence-ending punctuation followed by whitespace or end-of-string
   const sentences = text.split(/[.!?…。]+\s*/u).filter(s => s.trim().length > 0);
   return sentences.length;
 }
 
-const JournalInputModal: React.FC<Props> = ({ title, description, onSubmit, onCancel }) => {
+const JournalInputModal: React.FC<Props> = ({ title, description, onSubmit, onCancel, minSentences = DEFAULTS.minSentences, maxLength = DEFAULTS.maxTextLength }) => {
   const [text, setText] = useState('');
   const sentenceCount = countSentences(text);
-  const isValid = sentenceCount >= MIN_SENTENCES;
+  const isValid = sentenceCount >= minSentences;
 
   return (
     <Overlay onClick={onCancel}>
@@ -36,8 +38,8 @@ const JournalInputModal: React.FC<Props> = ({ title, description, onSubmit, onCa
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="Viết ít nhất 3 câu..."
-          maxLength={2000}
+          placeholder={`Viết ít nhất ${minSentences} câu...`}
+          maxLength={maxLength || undefined}
           style={{
             width: '100%',
             minHeight: '120px',
@@ -58,7 +60,7 @@ const JournalInputModal: React.FC<Props> = ({ title, description, onSubmit, onCa
           marginBottom: '1rem',
           textAlign: 'right',
         }}>
-          {sentenceCount}/{MIN_SENTENCES} câu {isValid ? '✅' : '(cần thêm)'}
+          {sentenceCount}/{minSentences} câu {isValid ? '✅' : '(cần thêm)'}
         </div>
         <ConfirmBtnRow style={{ justifyContent: 'center' }}>
           <ActionBtn variant="secondary" onClick={onCancel}>Hủy</ActionBtn>

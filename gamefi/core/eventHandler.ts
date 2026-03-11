@@ -53,6 +53,8 @@ export interface PsychEvent {
   eventType: PsychEventType;
   content: string;
   metadata?: Record<string, unknown>;
+  /** Override economy reward instead of using INSTANT_REWARDS table */
+  rewardOverride?: { xp?: number; soulPoints?: number; empathyPoints?: number };
 }
 
 /** Kết quả trả về cho chatbot */
@@ -180,9 +182,9 @@ export function processEvent(event: PsychEvent): EventResult {
     if (delta > 0) growthImpact[key] = delta;
   }
 
-  // 3. Calculate economy reward
+  // 3. Calculate economy reward (rewardOverride takes priority over table)
   const rewardKey = EVENT_TO_REWARD_KEY[eventType];
-  const rewardResult = calculateReward(character.id, rewardKey);
+  const rewardResult = calculateReward(character.id, rewardKey, undefined, undefined, event.rewardOverride);
   const xpGained = rewardResult.cappedXp;
 
   // 4. Apply XP and check level

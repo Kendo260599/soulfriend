@@ -703,6 +703,37 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       });
       if (res.ok) {
         sessionStorage.setItem('quest_chat_done', '1');
+        const json = await res.json();
+        if (json.success && json.data) {
+          const d = json.data;
+          const xp = d.xpGained || 0;
+          const sp = d.rewards?.soulPoints || 0;
+          const ep = d.rewards?.empathyPoints || 0;
+          const gi = d.growthImpact;
+          const milestone = d.milestone;
+
+          let lines = [`🎮 Quest "Trò chuyện hàng ngày" hoàn thành!`];
+          lines.push(`✨ +${xp} XP${sp ? `  ·  💜 +${sp} Soul` : ''}${ep ? `  ·  🤝 +${ep} Empathy` : ''}`);
+          if (gi) {
+            const stats: string[] = [];
+            if (gi.emotionalAwareness) stats.push(`💗EA +${gi.emotionalAwareness}`);
+            if (gi.psychologicalSafety) stats.push(`🛡️PS +${gi.psychologicalSafety}`);
+            if (gi.meaning) stats.push(`✨M +${gi.meaning}`);
+            if (gi.cognitiveFlexibility) stats.push(`🧠CF +${gi.cognitiveFlexibility}`);
+            if (gi.relationshipQuality) stats.push(`🤝RQ +${gi.relationshipQuality}`);
+            if (stats.length) lines.push(`📈 ${stats.join('  ')}`);
+          }
+          if (milestone) lines.push(`🏆 ${milestone}`);
+
+          const questMsg: ChatMessage = {
+            id: `quest_${nextMsgId('qr')}`,
+            text: lines.join('\n'),
+            isBot: true,
+            timestamp: new Date(),
+            type: 'system',
+          };
+          setMessages(prev => [...prev, questMsg]);
+        }
       } else {
         // Server rejected (e.g. already completed) — keep flag true to avoid retries
         chatQuestCompletedRef.current = true;

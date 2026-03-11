@@ -243,8 +243,15 @@ export function calculateReward(
   actionKey: string,
   streakType?: StreakInfo['type'],
   date?: string,
+  rewardOverride?: { xp?: number; soulPoints?: number; empathyPoints?: number },
 ): RewardResult {
-  const base = INSTANT_REWARDS[actionKey] ?? { xp: 2, soulPoints: 0, empathyPoints: 0 };
+  const table = INSTANT_REWARDS[actionKey] ?? { xp: 2, soulPoints: 0, empathyPoints: 0 };
+  // rewardOverride fields take priority; fall back to table values
+  const base = {
+    xp: rewardOverride?.xp ?? table.xp,
+    soulPoints: rewardOverride?.soulPoints ?? table.soulPoints,
+    empathyPoints: rewardOverride?.empathyPoints ?? table.empathyPoints,
+  };
   const rewards: Reward[] = [];
 
   // Base instant reward

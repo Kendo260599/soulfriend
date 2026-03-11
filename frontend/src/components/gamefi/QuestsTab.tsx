@@ -18,11 +18,12 @@ import {
   Overlay, ConfirmBox, ConfirmTitle, ConfirmDesc, ConfirmBtnRow,
 } from './styles';
 import JournalInputModal from './JournalInputModal';
+import { resolveQuestSemantics } from './questSemanticRegistry';
 
 const PAGE_SIZE = 20;
 
 const QuestsTab: React.FC = () => {
-  const { data, userId, authHeaders, apiPost, showToast, fetchAll } = useGameFi();
+  const { data, userId, authHeaders, apiPost, showToast, showReward, fetchAll } = useGameFi();
 
   const [adaptive, setAdaptive] = useState<AdaptiveQuestData | null>(null);
   const [questDb, setQuestDb] = useState<QuestDbData | null>(null);
@@ -76,7 +77,7 @@ const QuestsTab: React.FC = () => {
   const handleFullQuestComplete = async (questId: string, title: string, journalText?: string) => {
     try {
       const json = await apiPost('/quests/complete', { userId, questId, ...(journalText ? { journalText } : {}) });
-      if (json.success && json.data) { showToast(`+${json.data.xpGained} XP — ${title}`); await fetchAll(); fetchQuestDb(questCat, page); fetchQuestHistory(); }
+      if (json.success && json.data) { showReward(json.data, title); await fetchAll(); fetchQuestDb(questCat, page); fetchQuestHistory(); }
       else if (json.message) showToast(json.message);
     } catch (err) {
       console.error('handleFullQuestComplete failed', err);
@@ -84,19 +85,19 @@ const QuestsTab: React.FC = () => {
     }
   };
 
-  /** Gate quest completion by completionMode */
+  /** Gate quest completion by completionMode — never complete without user confirmation */
   const tryCompleteQuest = (questId: string, title: string, description: string, mode?: CompletionMode) => {
     const m = mode || 'manual_confirm';
     if (m === 'auto_event') {
       showToast('💡 Quest này hoàn thành tự động khi bạn thực hiện hành động tương ứng');
       return;
     }
-    if (m === 'manual_confirm' || m === 'requires_input') {
+    if (m === 'requires_input') {
       setPendingQuest({ id: questId, title, description, mode: m });
       return;
     }
-    // instant (if ever used)
-    handleFullQuestComplete(questId, title);
+    // manual_confirm, instant, or any unrecognized mode → confirm overlay
+    setPendingQuest({ id: questId, title, description, mode: 'manual_confirm' });
   };
 
   const confirmPendingQuest = (journalText?: string) => {
@@ -147,36 +148,70 @@ const QuestsTab: React.FC = () => {
             </RecommendCard>
           ))}
 
-          {/* All Quest Chains */}
+          {/* All Quest Chains — Journey Timeline */}
           {adaptive.allChains && adaptive.allChains.length > 0 && (
             <>
-              <SubTitle style={{marginTop:'1.5rem'}}>🔗 Chuỗi Nhiệm Vụ ({adaptive.allChains.length} chuỗi)</SubTitle>
-              {adaptive.allChains.map(chain => (
-                <ChainCard key={chain.id}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <SubTitle style={{margin:0}}>🔗 {chain.title}</SubTitle>
-                    <span style={{color:'#805AD5',fontWeight:600,fontSize:'0.85rem'}}>{chain.completedSteps}/{chain.steps.length} bước • {chain.totalXp} XP</span>
-                  </div>
-                  <ChainProgressBar><ChainProgressFill pct={chain.steps.length > 0 ? (chain.completedSteps / chain.steps.length) * 100 : 0} /></ChainProgressBar>
-                  {chain.steps.map((step, i) => (
-                    <ChainStep key={i} idx={i} done={step.completed}>
-                      <StepNumber style={{background: step.completed ? '#48BB78' : undefined, color: step.completed ? '#fff' : undefined}}>
-                        {step.completed ? '✓' : step.order}
-                      </StepNumber>
-                      <div style={{flex:1}}>
-                        <div style={{fontWeight:600,color: step.completed ? '#A0AEC0' : '#4A4A4A',fontSize:'0.9rem',textDecoration: step.completed ? 'line-through' : 'none'}}>{step.title}</div>
-                        <div style={{color:'#888',fontSize:'0.8rem'}}>{step.description}</div>
-                        <div style={{color:'#E8B4B8',fontSize:'0.75rem',marginTop:'0.25rem'}}>+{step.xpReward} XP</div>
+              <SubTitle style={{marginTop:'1.5rem'}}>🧭 Hành Trình Tâm Hồn ({adaptive.allChains.length} chuỗi)</SubTitle>
+              {adaptive.allChains.map(chain => {
+                const activeIdx = chain.steps.findIndex(s => !s.completed);
+                const allDone = activeIdx === -1;
+                const pct = chain.steps.length > 0 ? (chain.completedSteps / chain.steps.length) * 100 : 0;
+                return (
+                  <ChainCard key={chain.id}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.25rem'}}>
+                      <SubTitle style={{margin:0}}>{allDone ? '🏆' : '🔗'} {chain.title}</SubTitle>
+                      <span style={{color: allDone ? '#48BB78' : '#805AD5',fontWeight:600,fontSize:'0.85rem'}}>
+                        {chain.completedSteps}/{chain.steps.length} bước • {chain.totalXp} XP
+                      </span>
+                    </div>
+                    {allDone && (
+                      <div style={{textAlign:'center',padding:'0.5rem 0 0.25rem',color:'#48BB78',fontWeight:600,fontSize:'0.85rem'}}>
+                        ✨ Bạn đã hoàn thành chuỗi này! Thật tuyệt vời!
                       </div>
-                      {!step.completed && (
-                        <ActionBtn style={{fontSize:'0.75rem',padding:'0.3rem 0.8rem'}} onClick={() => tryCompleteQuest(`${chain.id}_step_${step.order}`, `${chain.title} - ${step.title}`, step.description)}>
-                          Hoàn thành
-                        </ActionBtn>
-                      )}
-                    </ChainStep>
-                  ))}
-                </ChainCard>
-              ))}
+                    )}
+                    <ChainProgressBar><ChainProgressFill pct={pct} /></ChainProgressBar>
+
+                    <div style={{display:'flex',flexDirection:'column',gap:'0.35rem'}}>
+                      {chain.steps.map((step, i) => {
+                        const isDone = step.completed;
+                        const isActive = i === activeIdx;
+                        const isLocked = !isDone && !isActive;
+                        return (
+                          <React.Fragment key={i}>
+                            {/* Connector line between steps */}
+                            {i > 0 && (
+                              <div style={{display:'flex',alignItems:'center',paddingLeft:'1.95rem'}}>
+                                <div style={{width:'2px',height:'16px',background: isDone || isActive ? 'linear-gradient(to bottom,#48BB78,#805AD5)' : '#E2E8F0',borderRadius:'1px'}} />
+                              </div>
+                            )}
+                            <ChainStep idx={i} done={isDone} active={isActive} locked={isLocked}>
+                              <StepNumber done={isDone} active={isActive} locked={isLocked}>
+                                {isDone ? '✓' : isLocked ? '🔒' : step.order}
+                              </StepNumber>
+                              <div style={{flex:1}}>
+                                <div style={{fontWeight:600,fontSize:'0.9rem',color: isDone ? '#48BB78' : isActive ? '#4A4A4A' : '#A0AEC0',textDecoration: isDone ? 'line-through' : 'none'}}>
+                                  {step.title}
+                                </div>
+                                <div style={{color: isActive ? '#666' : '#A0AEC0',fontSize:'0.8rem',marginTop:'0.15rem'}}>
+                                  {isLocked ? 'Hoàn thành bước trước để mở khóa' : step.description}
+                                </div>
+                                <div style={{fontSize:'0.75rem',marginTop:'0.25rem',color: isDone ? '#48BB7880' : isActive ? '#805AD5' : '#CBD5E0'}}>
+                                  {isDone ? '✅ Đã nhận' : `+${step.xpReward} XP`}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <ActionBtn style={{fontSize:'0.75rem',padding:'0.35rem 0.9rem',boxShadow:'0 2px 8px rgba(128,90,213,0.2)'}} onClick={() => tryCompleteQuest(`${chain.id}_step_${step.order}`, `${chain.title} - ${step.title}`, step.description, step.completionMode)}>
+                                  ▶ Bắt đầu
+                                </ActionBtn>
+                              )}
+                            </ChainStep>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  </ChainCard>
+                );
+              })}
             </>
           )}
         </>
@@ -331,14 +366,19 @@ const QuestsTab: React.FC = () => {
       )}
 
       {/* Journal input modal for requires_input quests */}
-      {pendingQuest && pendingQuest.mode === 'requires_input' && (
-        <JournalInputModal
-          title={pendingQuest.title}
-          description={pendingQuest.description}
-          onSubmit={(text) => confirmPendingQuest(text)}
-          onCancel={() => setPendingQuest(null)}
-        />
-      )}
+      {pendingQuest && pendingQuest.mode === 'requires_input' && (() => {
+        const sem = resolveQuestSemantics({ completionMode: pendingQuest.mode });
+        return (
+          <JournalInputModal
+            title={pendingQuest.title}
+            description={pendingQuest.description}
+            onSubmit={(text) => confirmPendingQuest(text)}
+            onCancel={() => setPendingQuest(null)}
+            minSentences={sem.validation.minSentences}
+            maxLength={sem.validation.maxTextLength}
+          />
+        );
+      })()}
     </>
   );
 };

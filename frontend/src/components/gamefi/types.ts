@@ -31,7 +31,7 @@ export interface LocationInfo { id: string; ten: string; moTa: string; levelRequ
 export interface WorldMapData { locations: LocationInfo[]; currentLocation: string; unlockedCount: number; totalCount: number; }
 
 export interface RecommendedQuest { questId: string; title: string; description: string; category: string; xpReward: number; totalScore: number; reason: string; completionMode: CompletionMode; }
-export interface QuestChainInfo { id: string; theme: string; title: string; steps: { order: number; title: string; description: string; xpReward: number; completed: boolean }[]; totalXp: number; completedSteps: number; }
+export interface QuestChainInfo { id: string; theme: string; title: string; steps: { order: number; title: string; description: string; xpReward: number; completed: boolean; completionMode: CompletionMode }[]; totalXp: number; completedSteps: number; }
 export interface AdaptiveQuestData {
   playerPhase: string; userType: string; recommendations: RecommendedQuest[];
   questChain: QuestChainInfo | null;
@@ -59,6 +59,18 @@ export interface QuestDbData { quests: QuestDbItem[]; totalCount: number; comple
 export interface FullGameData {
   profile: GameProfile; skillTree: SkillTreeData; worldMap: WorldMapData;
   state: StateData; behavior: BehaviorData; lore: LoreData;
+}
+
+export interface RewardData {
+  xpGained: number;
+  growthImpact: Partial<GrowthStats>;
+  newLevel: number;
+  levelTitle: string;
+  milestone: string | null;
+  rewards: { soulPoints: number; empathyPoints: number };
+  feedback: string;
+  questTitle: string;
+  eventType?: string;
 }
 
 export type TabType = 'profile' | 'dashboard' | 'world' | 'skills' | 'quests' | 'behavior' | 'lore';

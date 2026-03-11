@@ -2,10 +2,10 @@
  * GameFi — Shared Context (state, fetchers, helpers)
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import type { FullGameData, AdaptiveQuestData, QuestDbData, DailyQuest } from './types';
+import type { FullGameData, AdaptiveQuestData, QuestDbData, DailyQuest, RewardData } from './types';
 import { API_URL, QUEST_ROUTES } from './config';
 
 interface GameFiCtx {
@@ -14,11 +14,14 @@ interface GameFiCtx {
   error: string | null;
   userId: string;
   toast: { msg: string; visible: boolean };
+  rewardData: RewardData | null;
   confirmQuest: DailyQuest | null;
   setConfirmQuest: React.Dispatch<React.SetStateAction<DailyQuest | null>>;
   fetchAll: () => Promise<void>;
   apiPost: (path: string, body: Record<string, unknown>) => Promise<any>;
   showToast: (msg: string) => void;
+  showReward: (data: any, questTitle: string) => void;
+  dismissReward: () => void;
   navigate: NavigateFunction;
   authHeaders: HeadersInit;
 }
@@ -38,18 +41,37 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState({ msg: '', visible: false });
+  const [rewardData, setRewardData] = useState<RewardData | null>(null);
   const [confirmQuest, setConfirmQuest] = useState<DailyQuest | null>(null);
 
   const userId = user?.id || 'anonymous';
 
-  const authHeaders: HeadersInit = token
-    ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-    : { 'Content-Type': 'application/json' };
+  const authHeaders: HeadersInit = useMemo(() => {
+    const h: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) h['Authorization'] = `Bearer ${token}`;
+    return h;
+  }, [token]);
 
   const showToast = (msg: string) => {
     setToast({ msg, visible: true });
     setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000);
   };
+
+  const showReward = (data: any, questTitle: string) => {
+    setRewardData({
+      xpGained: data.xpGained || 0,
+      growthImpact: data.growthImpact || {},
+      newLevel: data.newLevel || 0,
+      levelTitle: data.levelTitle || '',
+      milestone: data.milestone || null,
+      rewards: data.rewards || { soulPoints: 0, empathyPoints: 0 },
+      feedback: data.feedback || '',
+      questTitle,
+      eventType: data.eventType || undefined,
+    });
+  };
+
+  const dismissReward = () => setRewardData(null);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -73,7 +95,7 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   return (
-    <Ctx.Provider value={{ data, loading, error, userId, toast, confirmQuest, setConfirmQuest, fetchAll, apiPost, showToast, navigate, authHeaders }}>
+    <Ctx.Provider value={{ data, loading, error, userId, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, apiPost, showToast, showReward, dismissReward, navigate, authHeaders }}>
       {children}
     </Ctx.Provider>
   );

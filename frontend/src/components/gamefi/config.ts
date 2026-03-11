@@ -52,21 +52,22 @@ export const CATEGORY_LABELS: Record<string,string> = {
   community_impact: '🌍 Cộng Đồng',
 };
 
-/** Quest routing config — maps quest ID prefix to navigation or self-report behavior */
-export const QUEST_ROUTES: Record<string, { route?: string; needConfirm?: boolean; hint: string; completionMode?: import('./types').CompletionMode }> = {
-  quest_dass: { route: '/start', completionMode: 'auto_event', hint: 'Hãy hoàn thành bài test DASS-21 — quest sẽ tự hoàn thành khi bạn nộp bài!' },
-  quest_chat: { completionMode: 'auto_event', hint: '💬 Hãy mở chatbot và trò chuyện ít nhất 3 tin nhắn — quest sẽ tự hoàn thành!' },
-  quest_journal: { needConfirm: true, completionMode: 'requires_input', hint: 'Bạn đã viết nhật ký cảm xúc (ít nhất 3 câu) chưa?' },
-  quest_breathing: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã thực hành bài tập thở 5 phút chưa?' },
-  quest_research: { route: '/research', completionMode: 'auto_event', hint: 'Hãy đọc 1 bài nghiên cứu về sức khỏe tâm lý' },
-  quest_share: { needConfirm: true, completionMode: 'requires_input', hint: 'Bạn đã chia sẻ câu chuyện tích cực với ai đó chưa?' },
-  quest_gratitude: { needConfirm: true, completionMode: 'requires_input', hint: 'Bạn đã viết 3 điều biết ơn hôm nay chưa?' },
-  quest_music: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã dành 10 phút nghe nhạc thư giãn chưa?' },
-  quest_walk: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã đi bộ 10 phút ngoài trời chưa?' },
-  quest_friend: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã gọi cho bạn bè hoặc người thân chưa?' },
-  quest_selfcare: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã làm 1 điều nhỏ để tự thưởng cho bản thân chưa?' },
-  quest_positive: { needConfirm: true, completionMode: 'requires_input', hint: 'Bạn đã viết lại 1 suy nghĩ tiêu cực thành tích cực chưa?' },
-  quest_water: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã uống đủ 8 ly nước hôm nay chưa?' },
-  quest_sleep: { needConfirm: true, completionMode: 'requires_input', hint: 'Bạn đã ghi nhật ký giấc ngủ hôm nay chưa?' },
-  quest_kindness: { needConfirm: true, completionMode: 'manual_confirm', hint: 'Bạn đã làm 1 điều tốt cho người khác hôm nay chưa?' },
+/** Quest routing config — maps quest ID prefix to navigation or self-report behavior.
+ *  completionMode is resolved centrally via questSemanticRegistry — NOT duplicated here. */
+export const QUEST_ROUTES: Record<string, { route?: string; needConfirm?: boolean; hint: string }> = {
+  quest_dass: { route: '/start', hint: 'Hãy hoàn thành bài test DASS-21 — quest sẽ tự hoàn thành khi bạn nộp bài!' },
+  quest_chat: { hint: '💬 Hãy mở chatbot và trò chuyện ít nhất 3 tin nhắn — quest sẽ tự hoàn thành!' },
+  quest_journal: { needConfirm: true, hint: 'Bạn đã viết nhật ký cảm xúc (ít nhất 3 câu) chưa?' },
+  quest_breathing: { needConfirm: true, hint: 'Bạn đã thực hành bài tập thở 5 phút chưa?' },
+  quest_research: { route: '/research', hint: 'Hãy đọc 1 bài nghiên cứu về sức khỏe tâm lý' },
+  quest_share: { needConfirm: true, hint: 'Bạn đã chia sẻ câu chuyện tích cực với ai đó chưa?' },
+  quest_gratitude: { needConfirm: true, hint: 'Bạn đã viết 3 điều biết ơn hôm nay chưa?' },
+  quest_music: { needConfirm: true, hint: 'Bạn đã dành 10 phút nghe nhạc thư giãn chưa?' },
+  quest_walk: { needConfirm: true, hint: 'Bạn đã đi bộ 10 phút ngoài trời chưa?' },
+  quest_friend: { needConfirm: true, hint: 'Bạn đã gọi cho bạn bè hoặc người thân chưa?' },
+  quest_selfcare: { needConfirm: true, hint: 'Bạn đã làm 1 điều nhỏ để tự thưởng cho bản thân chưa?' },
+  quest_positive: { needConfirm: true, hint: 'Bạn đã viết lại 1 suy nghĩ tiêu cực thành tích cực chưa?' },
+  quest_water: { needConfirm: true, hint: 'Bạn đã uống đủ 8 ly nước hôm nay chưa?' },
+  quest_sleep: { needConfirm: true, hint: 'Bạn đã ghi nhật ký giấc ngủ hôm nay chưa?' },
+  quest_kindness: { needConfirm: true, hint: 'Bạn đã làm 1 điều tốt cho người khác hôm nay chưa?' },
 };

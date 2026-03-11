@@ -159,7 +159,7 @@ export interface QuestChainInfo {
   id: string;
   theme: string;
   title: string;
-  steps: { order: number; title: string; description: string; xpReward: number; completed: boolean }[];
+  steps: { order: number; title: string; description: string; xpReward: number; completed: boolean; completionMode: CompletionMode }[];
   totalXp: number;
   completedSteps: number;
 }

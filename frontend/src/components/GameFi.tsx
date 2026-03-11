@@ -7,13 +7,15 @@
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { GameFiProvider, useGameFi, useAuth } from './gamefi/GameFiContext';
-import { QUEST_ROUTES } from './gamefi/config';
+import { QUEST_ROUTES, GROWTH_CONFIG } from './gamefi/config';
+import { resolveQuestSemantics, getRewardPersonality } from './gamefi/questSemanticRegistry';
 import type { TabType } from './gamefi/types';
 import {
   Container, UserBar, UserInfo, UserAvatar, UserName, ArchetypeTag, LogoutBtn,
   TabBar, Tab, Toast,
   Overlay, ConfirmBox, ConfirmTitle, ConfirmDesc, ConfirmBtnRow, ActionBtn,
   LoadingContainer, ErrorContainer, RetryButton,
+  RewardOverlay, RewardCard, RewardXp, RewardMilestone, RewardStatRow, RewardPointsRow, RewardPointBadge, RewardDismissBtn,
 } from './gamefi/styles';
 
 import DashboardTab from './gamefi/DashboardTab';
@@ -31,7 +33,7 @@ const ONBOARDING_KEY = 'gamefi_onboarding_done';
 
 const GameFiInner: React.FC = () => {
   const { user, logout } = useAuth();
-  const { data, loading, error, toast, confirmQuest, setConfirmQuest, fetchAll, userId, apiPost, showToast, navigate } = useGameFi();
+  const { data, loading, error, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, userId, apiPost, showToast, showReward, dismissReward, navigate } = useGameFi();
   const [tab, setTab] = useState<TabType>('profile');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -50,7 +52,7 @@ const GameFiInner: React.FC = () => {
     if (!confirmQuest) return;
     try {
       const json = await apiPost('/quest/complete', { userId, questId: confirmQuest.id, ...(journalText ? { journalText } : {}) });
-      if (json.success && json.data) { showToast(`+${json.data.xpGained} XP — ${confirmQuest.title}`); await fetchAll(); }
+      if (json.success && json.data) { showReward(json.data, confirmQuest.title); await fetchAll(); }
     } catch (err) {
       console.error('handleConfirmComplete failed', err);
       showToast('❌ Không thể hoàn thành quest');
@@ -67,18 +69,53 @@ const GameFiInner: React.FC = () => {
     <Container>
       <Toast visible={toast.visible}>{toast.msg}</Toast>
 
+      {/* Reward Overlay — shows rich reward details after quest completion */}
+      {rewardData && (() => {
+        const personality = getRewardPersonality(rewardData.eventType);
+        return (
+        <RewardOverlay onClick={dismissReward}>
+          <RewardCard levelUp={!!rewardData.milestone} onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:'2.5rem',marginBottom:'0.25rem'}}>{rewardData.milestone ? '🎉' : personality.icon}</div>
+            <div style={{fontWeight:600,fontSize:'1.05rem',margin:'0.25rem 0'}}>{personality.heading}</div>
+            <div style={{fontSize:'0.85rem',color:'#888',marginBottom:'0.25rem'}}>{personality.subtitle}</div>
+            <div style={{fontSize:'0.8rem',color:'#666',fontStyle:'italic',marginBottom:'0.5rem'}}>{personality.encouragement}</div>
+            <div style={{fontSize:'0.8rem',color:'#aaa'}}>{rewardData.questTitle}</div>
+            <RewardXp>+{rewardData.xpGained} XP</RewardXp>
+            {rewardData.milestone && <RewardMilestone>🏆 {rewardData.milestone}</RewardMilestone>}
+            {Object.keys(rewardData.growthImpact).length > 0 && (
+              <div style={{margin:'0.5rem 0'}}>
+                {GROWTH_CONFIG.filter(g => (rewardData.growthImpact as any)[g.key]).map(g => (
+                  <RewardStatRow key={g.key}>{g.icon} {g.label} <span style={{color:g.color,fontWeight:700}}>+{(rewardData.growthImpact as any)[g.key]}</span></RewardStatRow>
+                ))}
+              </div>
+            )}
+            <RewardPointsRow>
+              {rewardData.rewards.soulPoints > 0 && <RewardPointBadge color="linear-gradient(135deg,#667eea,#764ba2)">✨ +{rewardData.rewards.soulPoints} Soul</RewardPointBadge>}
+              {rewardData.rewards.empathyPoints > 0 && <RewardPointBadge color="linear-gradient(135deg,#f093fb,#f5576c)">💜 +{rewardData.rewards.empathyPoints} Empathy</RewardPointBadge>}
+            </RewardPointsRow>
+            <RewardDismissBtn onClick={dismissReward}>Đóng</RewardDismissBtn>
+          </RewardCard>
+        </RewardOverlay>
+        );
+      })()}
+
       {/* I4: Onboarding overlay for new players */}
       {showOnboarding && <OnboardingModal archetype={character.archetype} onDismiss={dismissOnboarding} />}
 
       {/* Confirmation Dialog for self-report quests */}
-      {confirmQuest && confirmQuest.completionMode === 'requires_input' && (
-        <JournalInputModal
-          title={confirmQuest.title}
-          description={QUEST_ROUTES[confirmQuest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '')]?.hint || confirmQuest.description}
-          onSubmit={(text) => handleConfirmComplete(text)}
-          onCancel={() => setConfirmQuest(null)}
-        />
-      )}
+      {confirmQuest && confirmQuest.completionMode === 'requires_input' && (() => {
+        const sem = resolveQuestSemantics({ completionMode: confirmQuest.completionMode });
+        return (
+          <JournalInputModal
+            title={confirmQuest.title}
+            description={QUEST_ROUTES[confirmQuest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '')]?.hint || confirmQuest.description}
+            onSubmit={(text) => handleConfirmComplete(text)}
+            onCancel={() => setConfirmQuest(null)}
+            minSentences={sem.validation.minSentences}
+            maxLength={sem.validation.maxTextLength}
+          />
+        );
+      })()}
       {confirmQuest && confirmQuest.completionMode !== 'requires_input' && (
         <Overlay onClick={() => setConfirmQuest(null)}>
           <ConfirmBox onClick={e => e.stopPropagation()}>

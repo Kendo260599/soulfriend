@@ -525,6 +525,7 @@ export interface QuestChainStep {
   description: string;
   xpReward: number;
   growthImpact: Partial<GrowthStats>;
+  completionMode?: CompletionMode;
 }
 
 /** Chuỗi quest liên kết (quest chain) */

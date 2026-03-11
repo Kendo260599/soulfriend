@@ -21,8 +21,9 @@ interface Props {
 }
 
 function countSentences(text: string): number {
-  const sentences = text.split(/[.!?…。]+\s*/u).filter(s => s.trim().length > 0);
-  return sentences.length;
+  // Split by sentence-ending punctuation OR newlines (supports bullet-point style input)
+  const parts = text.split(/[.!?…。]+\s*|\n+/u).filter(s => s.trim().length > 0);
+  return parts.length;
 }
 
 const JournalInputModal: React.FC<Props> = ({ title, description, onSubmit, onCancel, minSentences = DEFAULTS.minSentences, maxLength = DEFAULTS.maxTextLength }) => {

@@ -83,6 +83,9 @@ export type QuestCategory =
 /** How a quest is completed */
 export type CompletionMode = 'instant' | 'manual_confirm' | 'requires_input' | 'auto_event';
 
+/** Quest lifecycle state (state machine) */
+export type QuestState = 'locked' | 'available' | 'in_progress' | 'awaiting_validation' | 'completed' | 'rewarded';
+
 /** Quest definition */
 export interface Quest {
   id: string;

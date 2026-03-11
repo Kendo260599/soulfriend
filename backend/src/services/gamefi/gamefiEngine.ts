@@ -40,6 +40,10 @@ import {
   completeQuest as completeQuestDB,
 } from '../../../../gamefi/quests/questEngine';
 import {
+  advanceQuestTo, hasBeenRewarded, getQuestState as getQuestStateFn,
+  getAllQuestStates, resetQuestStates, InvalidTransitionError,
+} from '../../../../gamefi/quests/questStateMachine';
+import {
   getPlayerPhase, buildPlayerProfile, recommendQuests,
   getQuestChain, assessDifficulty, getAvailableChainThemes,
   classifyUserType,
@@ -350,6 +354,9 @@ export async function completeQuest(userId: string, questId: string, opts: Quest
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
+  // State machine guard: already rewarded → skip
+  if (hasBeenRewarded(userId, questId)) return null;
+
   // Resolve template & validate completionMode
   const prefix = questId.replace(/_\d{4}-\d{2}-\d{2}$/, '');
   const template = [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS].find(t => t.key === prefix);
@@ -357,15 +364,23 @@ export async function completeQuest(userId: string, questId: string, opts: Quest
   const validation = validateCompletionMode(mode, opts);
   if (!validation.ok) throw new QuestValidationError(validation.error);
 
+  // Advance state machine: locked → … → awaiting_validation → completed
+  advanceQuestTo(userId, questId, 'completed');
+
   char.completedQuestIds.push(questId);
 
   const eventType = template?.eventType || 'quest_completed';
 
+  // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
   const result = await processEvent({
     userId,
     eventType: eventType as any,
     content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
   });
+
+  // Mark rewarded only after successful processEvent
+  advanceQuestTo(userId, questId, 'rewarded');
+
   return result;
 }
 
@@ -632,12 +647,18 @@ export async function completeFullQuest(userId: string, questId: string, opts: Q
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
+  // State machine guard: already rewarded → skip
+  if (hasBeenRewarded(userId, questId)) return null;
+
   const quest = getAllQuestsDB().find(q => q.id === questId);
 
   // Validate completionMode
   const mode: CompletionMode = (quest?.completionMode as CompletionMode) || 'manual_confirm';
   const validation = validateCompletionMode(mode, opts);
   if (!validation.ok) throw new QuestValidationError(validation.error);
+
+  // Advance state machine: locked → … → awaiting_validation → completed
+  advanceQuestTo(userId, questId, 'completed');
 
   if (quest) {
     completeQuestDB(char, quest);
@@ -649,11 +670,17 @@ export async function completeFullQuest(userId: string, questId: string, opts: Q
   // Use journal_entry eventType when the quest expects text input
   const eventType = (mode === 'requires_input' && opts.journalText) ? 'journal_entry' : 'quest_completed';
 
-  return await processEvent({
+  // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
+  const result = await processEvent({
     userId,
     eventType: eventType as any,
-    content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
+    content: opts.journalText || `Hoàn thành quest: ${questId}`,
   });
+
+  // Mark rewarded only after successful processEvent
+  advanceQuestTo(userId, questId, 'rewarded');
+
+  return result;
 }
 
 // ══════════════════════════════════════════════
@@ -1166,6 +1193,7 @@ export function resetEngine(): void {
   resetEconomy();
   createdAtStore.clear();
   skillStateStore.clear();
+  resetQuestStates();
   resetLoadedUsers();
   _initialized = false;
 }

@@ -33,6 +33,15 @@ export {
   QuestValidationError,
 } from './gamefiEngine';
 
+// Quest State Machine (re-export from gamefi/quests)
+export {
+  getQuestState,
+  advanceQuestTo,
+  hasBeenRewarded,
+  getAllQuestStates,
+  InvalidTransitionError,
+} from '../../../../gamefi/quests/questStateMachine';
+
 // Narrative Detector (re-export from integration/narrativeTrigger)
 export { detectEvent, detectEventWithScores } from './narrativeDetector';
 
@@ -41,7 +50,7 @@ export { generateFeedback, generateShortFeedback, generateSafetyMessage } from '
 
 // Types — from original engine
 export type { PsychEventType, PsychEvent, EventResult } from '../../../../gamefi/core/eventHandler';
-export type { GrowthStats } from '../../../../gamefi/core/types';
+export type { GrowthStats, QuestState } from '../../../../gamefi/core/types';
 
 // Types — backend API response types
 export type {

@@ -11,7 +11,10 @@ import {
   getCharacter as getCoreCharacter,
   setCharacter,
 } from '../../../../gamefi/core/eventHandler';
-import type { Character, StreakInfo, ActionType } from '../../../../gamefi/core/types';
+import type { Character, StreakInfo, ActionType, QuestState } from '../../../../gamefi/core/types';
+import {
+  restoreQuestStates, getAllQuestStates,
+} from '../../../../gamefi/quests/questStateMachine';
 import { getStreak, setStreak } from '../../../../gamefi/economy/economyEngine';
 import { getLogsForCharacter, loadLogs } from '../../../../gamefi/engine/dataLogger';
 import { logger } from '../../utils/logger';
@@ -134,6 +137,16 @@ async function _loadUserFromDb(userId: string): Promise<void> {
         }
       }
 
+      // Restore quest states from DB (or derive from completedQuestIds)
+      if (doc.questStates && Object.keys(doc.questStates).length > 0) {
+        restoreQuestStates(userId, doc.questStates as Record<string, QuestState>);
+      } else if (doc.completedQuestIds?.length) {
+        // Back-compat: existing completed quests get 'rewarded' state
+        const legacy: Record<string, QuestState> = {};
+        for (const qid of doc.completedQuestIds) legacy[qid] = 'rewarded';
+        restoreQuestStates(userId, legacy);
+      }
+
       // Restore action logs for this character
       const logDocs = await GameFiLog.find({ characterId: doc.characterId })
         .sort({ timestamp: 1 })
@@ -224,6 +237,7 @@ export async function saveUserState(userId: string): Promise<void> {
       badges: char.badges,
       currentLocation: char.currentLocation,
       completedQuestIds: char.completedQuestIds,
+      questStates: getAllQuestStates(userId),
       streaks,
     };
 

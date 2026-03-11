@@ -25,6 +25,7 @@ import {
   getPlayerDashboard,
   getQuestHistory,
   QuestValidationError,
+  InvalidTransitionError,
 } from '../services/gamefi';
 import type { PsychEventType } from '../services/gamefi';
 import { logger } from '../utils/logger';
@@ -147,8 +148,8 @@ export class GamefiController {
 
       res.json({ success: true, data: result });
     } catch (error) {
-      if (error instanceof QuestValidationError) {
-        res.status(400).json({ success: false, error: error.message });
+      if (error instanceof QuestValidationError || error instanceof InvalidTransitionError) {
+        res.status(400).json({ success: false, error: (error as Error).message });
         return;
       }
       logger.error('GameFi completeQuest error:', error);
@@ -290,8 +291,8 @@ export class GamefiController {
       }
       res.json({ success: true, data: result });
     } catch (error) {
-      if (error instanceof QuestValidationError) {
-        res.status(400).json({ success: false, error: error.message });
+      if (error instanceof QuestValidationError || error instanceof InvalidTransitionError) {
+        res.status(400).json({ success: false, error: (error as Error).message });
         return;
       }
       logger.error('GameFi completeFullQuest error:', error);

@@ -54,6 +54,7 @@ export interface IGameFiState extends Document {
   badges: string[];
   currentLocation: string;
   completedQuestIds: string[];
+  questStates: Record<string, string>;
   // Skill state
   unlockedSkills: string[];
   unlockedSynergies: string[];
@@ -94,6 +95,7 @@ const GameFiStateSchema = new Schema<IGameFiState>(
     badges: [{ type: String }],
     currentLocation: { type: String, default: 'thung_lung_cau_hoi' },
     completedQuestIds: [{ type: String }],
+    questStates: { type: Schema.Types.Mixed, default: {} },
     // Skill state
     unlockedSkills: [{ type: String }],
     unlockedSynergies: [{ type: String }],

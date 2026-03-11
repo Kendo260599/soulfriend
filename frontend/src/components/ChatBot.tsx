@@ -673,20 +673,45 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   const chatQuestCompletedRef = useRef(false);
   const userMsgCountRef = useRef(0);
 
+  // Restore persisted state from sessionStorage on mount
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const storedDay = sessionStorage.getItem('quest_chat_day');
+    if (storedDay === today) {
+      userMsgCountRef.current = parseInt(sessionStorage.getItem('quest_chat_count') || '0', 10);
+      chatQuestCompletedRef.current = sessionStorage.getItem('quest_chat_done') === '1';
+    } else {
+      // New day — reset
+      sessionStorage.setItem('quest_chat_day', today);
+      sessionStorage.setItem('quest_chat_count', '0');
+      sessionStorage.removeItem('quest_chat_done');
+    }
+  }, []);
+
   const tryCompleteChatQuest = useCallback(async () => {
     if (chatQuestCompletedRef.current) return;
     const gamefiUserId = authUser?.id;
     if (!gamefiUserId || !authToken) return;
     const today = new Date().toISOString().slice(0, 10);
     const questId = `quest_chat_${today}`;
-    chatQuestCompletedRef.current = true;
+    chatQuestCompletedRef.current = true; // optimistic — prevent double-fire
     try {
-      await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ userId: gamefiUserId, questId }),
       });
-    } catch { /* silent — quest completion is best-effort */ }
+      if (res.ok) {
+        sessionStorage.setItem('quest_chat_done', '1');
+      } else {
+        // Server rejected (e.g. already completed) — keep flag true to avoid retries
+        chatQuestCompletedRef.current = true;
+      }
+    } catch {
+      // Network error — allow retry on next message
+      chatQuestCompletedRef.current = false;
+      sessionStorage.removeItem('quest_chat_done');
+    }
   }, [authUser, authToken]);
 
   // --- Narrative Quest Suggestion: map chat topics to quest suggestions ---
@@ -1188,6 +1213,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
     // Track user message count for quest_chat auto-completion
     userMsgCountRef.current += 1;
+    sessionStorage.setItem('quest_chat_count', String(userMsgCountRef.current));
     if (userMsgCountRef.current >= 3) {
       tryCompleteChatQuest();
     }

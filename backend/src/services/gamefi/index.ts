@@ -30,6 +30,7 @@ export {
   getFullGameData,
   getPlayerDashboard,
   getQuestHistory,
+  QuestValidationError,
 } from './gamefiEngine';
 
 // Narrative Detector (re-export from integration/narrativeTrigger)

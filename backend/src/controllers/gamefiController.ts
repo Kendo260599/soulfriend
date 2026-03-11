@@ -24,6 +24,7 @@ import {
   getFullGameData,
   getPlayerDashboard,
   getQuestHistory,
+  QuestValidationError,
 } from '../services/gamefi';
 import type { PsychEventType } from '../services/gamefi';
 import { logger } from '../utils/logger';
@@ -116,14 +117,14 @@ export class GamefiController {
   /**
    * POST /api/v2/gamefi/quest/complete
    * Complete a daily quest
-   * Body: { userId, questId, journalText? }
+   * Body: { userId, questId, journalText?, autoEvent? }
    */
   completeQuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = getAuthedUserId(req, res, 'body');
       if (!userId) return;
 
-      const { questId, journalText } = req.body;
+      const { questId, journalText, autoEvent } = req.body;
 
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
         res.status(400).json({ success: false, error: 'Invalid questId' });
@@ -135,7 +136,10 @@ export class GamefiController {
         ? sanitizeText(journalText.slice(0, 2000))
         : undefined;
 
-      const result = await completeQuest(userId, questId, sanitizedText);
+      const result = await completeQuest(userId, questId, {
+        journalText: sanitizedText,
+        autoEvent: autoEvent === true,
+      });
       if (!result) {
         res.status(409).json({ success: false, error: 'Quest đã hoàn thành trước đó' });
         return;
@@ -143,6 +147,10 @@ export class GamefiController {
 
       res.json({ success: true, data: result });
     } catch (error) {
+      if (error instanceof QuestValidationError) {
+        res.status(400).json({ success: false, error: error.message });
+        return;
+      }
       logger.error('GameFi completeQuest error:', error);
       next(error);
     }
@@ -255,13 +263,13 @@ export class GamefiController {
   /**
    * POST /api/v2/gamefi/quests/complete
    * Complete a quest from the full database
-   * Body: { userId, questId, journalText? }
+   * Body: { userId, questId, journalText?, autoEvent? }
    */
   completeFullQuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = getAuthedUserId(req, res, 'body');
       if (!userId) return;
-      const { questId, journalText } = req.body;
+      const { questId, journalText, autoEvent } = req.body;
       if (!questId || typeof questId !== 'string' || questId.length > 200) {
         res.status(400).json({ success: false, error: 'Invalid questId' });
         return;
@@ -272,13 +280,20 @@ export class GamefiController {
         ? sanitizeText(journalText.slice(0, 2000))
         : undefined;
 
-      const result = await completeFullQuest(userId, questId, sanitizedText);
+      const result = await completeFullQuest(userId, questId, {
+        journalText: sanitizedText,
+        autoEvent: autoEvent === true,
+      });
       if (!result) {
         res.status(409).json({ success: false, error: 'Quest đã hoàn thành trước đó' });
         return;
       }
       res.json({ success: true, data: result });
     } catch (error) {
+      if (error instanceof QuestValidationError) {
+        res.status(400).json({ success: false, error: error.message });
+        return;
+      }
       logger.error('GameFi completeFullQuest error:', error);
       next(error);
     }

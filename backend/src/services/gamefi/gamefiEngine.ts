@@ -318,22 +318,53 @@ export async function getDailyQuests(userId: string): Promise<DailyQuest[]> {
   }));
 }
 
-export async function completeQuest(userId: string, questId: string, journalText?: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
+export class QuestValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'QuestValidationError';
+  }
+}
+
+export interface QuestCompleteOptions {
+  journalText?: string;
+  autoEvent?: boolean;  // true when called by system event (chatbot, DASS, etc.)
+}
+
+/** Validate completionMode rules before completing a quest */
+function validateCompletionMode(
+  mode: CompletionMode,
+  opts: QuestCompleteOptions,
+): { ok: true } | { ok: false; error: string } {
+  if (mode === 'auto_event' && !opts.autoEvent) {
+    return { ok: false, error: 'Quest này hoàn thành tự động — không thể hoàn thành trực tiếp' };
+  }
+  if (mode === 'requires_input' && !opts.journalText) {
+    return { ok: false, error: 'Quest này cần nội dung nhập liệu để hoàn thành' };
+  }
+  // instant and manual_confirm: always allowed
+  return { ok: true };
+}
+
+export async function completeQuest(userId: string, questId: string, opts: QuestCompleteOptions = {}): Promise<(OriginalEventResult & { feedback: string }) | null> {
   await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
-  char.completedQuestIds.push(questId);
-
-  // Determine eventType: journal-type quests use 'journal_entry'
+  // Resolve template & validate completionMode
   const prefix = questId.replace(/_\d{4}-\d{2}-\d{2}$/, '');
   const template = [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS].find(t => t.key === prefix);
+  const mode: CompletionMode = template?.completionMode || 'manual_confirm';
+  const validation = validateCompletionMode(mode, opts);
+  if (!validation.ok) throw new QuestValidationError(validation.error);
+
+  char.completedQuestIds.push(questId);
+
   const eventType = template?.eventType || 'quest_completed';
 
   const result = await processEvent({
     userId,
     eventType: eventType as any,
-    content: journalText || `Hoàn thành quest: ${questId}`,
+    content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
   });
   return result;
 }
@@ -595,13 +626,19 @@ export async function getQuestDatabase(userId: string, category?: string, page =
   };
 }
 
-export async function completeFullQuest(userId: string, questId: string, journalText?: string): Promise<(OriginalEventResult & { feedback: string }) | null> {
+export async function completeFullQuest(userId: string, questId: string, opts: QuestCompleteOptions = {}): Promise<(OriginalEventResult & { feedback: string }) | null> {
   ensureInit();
   await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   if (char.completedQuestIds.includes(questId)) return null;
 
   const quest = getAllQuestsDB().find(q => q.id === questId);
+
+  // Validate completionMode
+  const mode: CompletionMode = (quest?.completionMode as CompletionMode) || 'manual_confirm';
+  const validation = validateCompletionMode(mode, opts);
+  if (!validation.ok) throw new QuestValidationError(validation.error);
+
   if (quest) {
     completeQuestDB(char, quest);
   } else {
@@ -610,13 +647,12 @@ export async function completeFullQuest(userId: string, questId: string, journal
   }
 
   // Use journal_entry eventType when the quest expects text input
-  const mode = quest?.completionMode || 'manual_confirm';
-  const eventType = (mode === 'requires_input' && journalText) ? 'journal_entry' : 'quest_completed';
+  const eventType = (mode === 'requires_input' && opts.journalText) ? 'journal_entry' : 'quest_completed';
 
   return await processEvent({
     userId,
     eventType: eventType as any,
-    content: journalText || `Hoàn thành quest: ${questId}`,
+    content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
   });
 }
 

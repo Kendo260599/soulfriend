@@ -699,7 +699,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       const res = await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ userId: gamefiUserId, questId }),
+        body: JSON.stringify({ userId: gamefiUserId, questId, autoEvent: true }),
       });
       if (res.ok) {
         sessionStorage.setItem('quest_chat_done', '1');

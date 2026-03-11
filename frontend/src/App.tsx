@@ -35,7 +35,7 @@ function TestFlow() {
       await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ userId, questId: `quest_dass_${today}` }),
+        body: JSON.stringify({ userId, questId: `quest_dass_${today}`, autoEvent: true }),
       });
     } catch { /* best-effort */ }
   };

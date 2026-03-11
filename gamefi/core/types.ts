@@ -80,6 +80,9 @@ export type QuestCategory =
   | 'self_compassion'
   | 'community_impact';
 
+/** How a quest is completed */
+export type CompletionMode = 'instant' | 'manual_confirm' | 'requires_input' | 'auto_event';
+
 /** Quest definition */
 export interface Quest {
   id: string;
@@ -91,6 +94,7 @@ export interface Quest {
   actionType: ActionType;
   growthImpact: Partial<GrowthStats>;
   location: LocationId;
+  completionMode?: CompletionMode;
 }
 
 // ── Level ────────────────────────────────────

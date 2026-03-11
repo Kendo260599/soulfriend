@@ -29,6 +29,8 @@ export interface Character {
 
 // ── Quest ────────────────────────────────────
 
+export type CompletionMode = 'instant' | 'manual_confirm' | 'requires_input' | 'auto_event';
+
 export interface DailyQuest {
   id: string;
   title: string;
@@ -37,6 +39,7 @@ export interface DailyQuest {
   xpReward: number;
   eventType: string;
   completed: boolean;
+  completionMode: CompletionMode;
 }
 
 // ── Badge ────────────────────────────────────
@@ -126,6 +129,7 @@ export interface QuestInfo {
   xpReward: number;
   loai: string;
   completed: boolean;
+  completionMode: CompletionMode;
 }
 
 export interface QuestDatabaseData {
@@ -148,6 +152,7 @@ export interface RecommendedQuest {
   xpReward: number;
   totalScore: number;
   reason: string;
+  completionMode: CompletionMode;
 }
 
 export interface QuestChainInfo {

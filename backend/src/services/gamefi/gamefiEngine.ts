@@ -68,6 +68,7 @@ import type {
   StateData, BehaviorData, LoreData, FullGameData,
   PlayerDashboardData,
   DashboardSkillBranch, DashboardNarrativeEvent, DashboardMilestone,
+  CompletionMode,
 } from './types';
 
 // ══════════════════════════════════════════════
@@ -255,29 +256,30 @@ interface DailyQuestTemplate {
   icon: string;
   xpReward: number;
   eventType: string;
+  completionMode: CompletionMode;
 }
 
 // Core quests (always included)
 const CORE_DAILY_QUESTS: DailyQuestTemplate[] = [
-  { key: 'quest_dass', title: 'Làm test DASS-21', description: 'Hoàn thành bài đánh giá DASS-21 để biết trạng thái tâm lý hôm nay', icon: '🧠', xpReward: 5, eventType: 'quest_completed' },
-  { key: 'quest_chat', title: 'Trò chuyện với AI', description: 'Chat với AI ít nhất 3 tin nhắn về cảm xúc của bạn', icon: '💬', xpReward: 3, eventType: 'emotion_checkin' },
+  { key: 'quest_dass', title: 'Làm test DASS-21', description: 'Hoàn thành bài đánh giá DASS-21 để biết trạng thái tâm lý hôm nay', icon: '🧠', xpReward: 5, eventType: 'quest_completed', completionMode: 'auto_event' },
+  { key: 'quest_chat', title: 'Trò chuyện với AI', description: 'Chat với AI ít nhất 3 tin nhắn về cảm xúc của bạn', icon: '💬', xpReward: 3, eventType: 'emotion_checkin', completionMode: 'auto_event' },
 ];
 
 // Rotating pool (pick 4 from these each day)
 const ROTATING_DAILY_QUESTS: DailyQuestTemplate[] = [
-  { key: 'quest_journal', title: 'Ghi nhật ký cảm xúc', description: 'Viết 3 câu về cảm xúc và suy nghĩ của bạn hôm nay', icon: '📝', xpReward: 3, eventType: 'journal_entry' },
-  { key: 'quest_breathing', title: 'Bài tập thở 5 phút', description: 'Thực hành hít thở sâu 5 phút để giảm stress', icon: '🧘', xpReward: 2, eventType: 'emotion_checkin' },
-  { key: 'quest_research', title: 'Đọc nghiên cứu', description: 'Khám phá 1 bài nghiên cứu về sức khỏe tâm lý', icon: '📖', xpReward: 2, eventType: 'quest_completed' },
-  { key: 'quest_share', title: 'Chia sẻ câu chuyện', description: 'Chia sẻ một trải nghiệm hoặc câu chuyện tích cực', icon: '💝', xpReward: 5, eventType: 'story_shared' },
-  { key: 'quest_gratitude', title: 'Ba điều biết ơn', description: 'Viết ra 3 điều bạn biết ơn hôm nay', icon: '🙏', xpReward: 3, eventType: 'journal_entry' },
-  { key: 'quest_music', title: 'Nghe nhạc thư giãn', description: 'Dành 10 phút nghe nhạc nhẹ nhàng và thư giãn', icon: '🎵', xpReward: 2, eventType: 'emotion_checkin' },
-  { key: 'quest_walk', title: 'Đi bộ 10 phút', description: 'Đi dạo ngoài trời để thay đổi không khí', icon: '🚶', xpReward: 2, eventType: 'emotion_checkin' },
-  { key: 'quest_friend', title: 'Gọi cho 1 người bạn', description: 'Kết nối với bạn bè hoặc người thân qua cuộc gọi', icon: '📞', xpReward: 3, eventType: 'story_shared' },
-  { key: 'quest_selfcare', title: 'Chăm sóc bản thân', description: 'Làm 1 điều nhỏ để tự thưởng cho bản thân hôm nay', icon: '💆', xpReward: 2, eventType: 'emotion_checkin' },
-  { key: 'quest_positive', title: 'Suy nghĩ tích cực', description: 'Viết lại 1 suy nghĩ tiêu cực thành tích cực', icon: '☀️', xpReward: 3, eventType: 'journal_entry' },
-  { key: 'quest_water', title: 'Uống đủ nước', description: 'Uống ít nhất 8 ly nước trong ngày hôm nay', icon: '💧', xpReward: 2, eventType: 'emotion_checkin' },
-  { key: 'quest_sleep', title: 'Ghi nhật ký giấc ngủ', description: 'Ghi lại giờ ngủ, giờ dậy và chất lượng giấc ngủ', icon: '🌙', xpReward: 2, eventType: 'journal_entry' },
-  { key: 'quest_kindness', title: 'Hành động tử tế', description: 'Làm 1 điều tốt cho người khác hôm nay', icon: '💕', xpReward: 4, eventType: 'story_shared' },
+  { key: 'quest_journal', title: 'Ghi nhật ký cảm xúc', description: 'Viết 3 câu về cảm xúc và suy nghĩ của bạn hôm nay', icon: '📝', xpReward: 3, eventType: 'journal_entry', completionMode: 'requires_input' },
+  { key: 'quest_breathing', title: 'Bài tập thở 5 phút', description: 'Thực hành hít thở sâu 5 phút để giảm stress', icon: '🧘', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
+  { key: 'quest_research', title: 'Đọc nghiên cứu', description: 'Khám phá 1 bài nghiên cứu về sức khỏe tâm lý', icon: '📖', xpReward: 2, eventType: 'quest_completed', completionMode: 'auto_event' },
+  { key: 'quest_share', title: 'Chia sẻ câu chuyện', description: 'Chia sẻ một trải nghiệm hoặc câu chuyện tích cực', icon: '💝', xpReward: 5, eventType: 'story_shared', completionMode: 'requires_input' },
+  { key: 'quest_gratitude', title: 'Ba điều biết ơn', description: 'Viết ra 3 điều bạn biết ơn hôm nay', icon: '🙏', xpReward: 3, eventType: 'journal_entry', completionMode: 'requires_input' },
+  { key: 'quest_music', title: 'Nghe nhạc thư giãn', description: 'Dành 10 phút nghe nhạc nhẹ nhàng và thư giãn', icon: '🎵', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
+  { key: 'quest_walk', title: 'Đi bộ 10 phút', description: 'Đi dạo ngoài trời để thay đổi không khí', icon: '🚶', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
+  { key: 'quest_friend', title: 'Gọi cho 1 người bạn', description: 'Kết nối với bạn bè hoặc người thân qua cuộc gọi', icon: '📞', xpReward: 3, eventType: 'story_shared', completionMode: 'manual_confirm' },
+  { key: 'quest_selfcare', title: 'Chăm sóc bản thân', description: 'Làm 1 điều nhỏ để tự thưởng cho bản thân hôm nay', icon: '💆', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
+  { key: 'quest_positive', title: 'Suy nghĩ tích cực', description: 'Viết lại 1 suy nghĩ tiêu cực thành tích cực', icon: '☀️', xpReward: 3, eventType: 'journal_entry', completionMode: 'requires_input' },
+  { key: 'quest_water', title: 'Uống đủ nước', description: 'Uống ít nhất 8 ly nước trong ngày hôm nay', icon: '💧', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
+  { key: 'quest_sleep', title: 'Ghi nhật ký giấc ngủ', description: 'Ghi lại giờ ngủ, giờ dậy và chất lượng giấc ngủ', icon: '🌙', xpReward: 2, eventType: 'journal_entry', completionMode: 'requires_input' },
+  { key: 'quest_kindness', title: 'Hành động tử tế', description: 'Làm 1 điều tốt cho người khác hôm nay', icon: '💕', xpReward: 4, eventType: 'story_shared', completionMode: 'manual_confirm' },
 ];
 
 /** Deterministic seed from date string → pick consistent 4 from rotating pool */
@@ -312,6 +314,7 @@ export async function getDailyQuests(userId: string): Promise<DailyQuest[]> {
     xpReward: t.xpReward,
     eventType: t.eventType,
     completed: char.completedQuestIds.includes(`${t.key}_${today}`),
+    completionMode: t.completionMode,
   }));
 }
 
@@ -561,6 +564,7 @@ export async function getQuestDatabase(userId: string, category?: string, page =
     xpReward: q.xpReward,
     loai: q.loai,
     completed: char.completedQuestIds.includes(q.id),
+    completionMode: (q.completionMode as CompletionMode) || 'manual_confirm',
   }));
 
   const totalCount = allQuestInfos.length;
@@ -685,6 +689,7 @@ export async function getAdaptiveQuests(userId: string): Promise<AdaptiveQuestDa
     xpReward: s.quest.xpReward,
     totalScore: s.totalScore,
     reason: s.statNeed > 30 ? 'Cải thiện điểm yếu' : s.narrativeRelevance > 0 ? 'Phù hợp câu chuyện' : 'Khám phá mới',
+    completionMode: ((s.quest as any).completionMode as CompletionMode) || 'manual_confirm',
   }));
 
   // Get a quest chain based on weakest stat

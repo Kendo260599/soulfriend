@@ -86,7 +86,12 @@ const GameFiInner: React.FC = () => {
     if (!confirmQuest) return;
     try {
       const json = await apiPost('/quest/complete', { userId, questId: confirmQuest.id, ...(journalText ? { journalText } : {}) });
-      if (json.success && json.data) { showReward(json.data, confirmQuest.title); await fetchAll(); }
+      if (json.success && json.data) {
+        showReward(json.data, confirmQuest.title);
+        await fetchAll();
+      } else {
+        showToast(`❌ ${json.error || 'Không thể hoàn thành quest'}`);
+      }
     } catch (err) {
       console.error('handleConfirmComplete failed', err);
       showToast('❌ Không thể hoàn thành quest');
@@ -117,7 +122,7 @@ const GameFiInner: React.FC = () => {
       {rewardData && (() => {
         const personality = getRewardPersonality(rewardData.eventType);
         return (
-        <RewardOverlay onClick={dismissReward}>
+        <RewardOverlay onClick={handleDismissReward}>
           <RewardCard levelUp={!!rewardData.milestone} onClick={e => e.stopPropagation()}>
             <div style={{fontSize:'2.5rem',marginBottom:'0.25rem'}}>{rewardData.milestone ? '🎉' : personality.icon}</div>
             <div style={{fontWeight:600,fontSize:'1.05rem',margin:'0.25rem 0'}}>{personality.heading}</div>

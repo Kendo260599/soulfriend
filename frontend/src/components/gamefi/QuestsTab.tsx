@@ -77,8 +77,14 @@ const QuestsTab: React.FC = () => {
   const handleFullQuestComplete = async (questId: string, title: string, journalText?: string) => {
     try {
       const json = await apiPost('/quests/complete', { userId, questId, ...(journalText ? { journalText } : {}) });
-      if (json.success && json.data) { showReward(json.data, title); await fetchAll(); fetchQuestDb(questCat, page); fetchQuestHistory(); }
-      else if (json.message) showToast(json.message);
+      if (json.success && json.data) {
+        showReward(json.data, title);
+        await fetchAll();
+        fetchQuestDb(questCat, page);
+        fetchQuestHistory();
+      } else {
+        showToast(`❌ ${json.error || 'Không thể hoàn thành quest'}`);
+      }
     } catch (err) {
       console.error('handleFullQuestComplete failed', err);
       showToast('❌ Không thể hoàn thành quest');

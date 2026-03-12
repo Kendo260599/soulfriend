@@ -747,12 +747,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
   // --- Narrative Quest Suggestion: map chat topics to quest suggestions ---
   const NARRATIVE_QUEST_MAP: { keywords: string[]; questHint: string; questType: string }[] = [
-    { keywords: ['buồn', 'cô đơn', 'một mình', 'lẻ loi'], questHint: '🌟 Gợi ý: Hãy thử quest "Gọi điện cho bạn bè" hoặc "Viết nhật ký cảm xúc" trong GameFi!', questType: 'quest_friend' },
+    { keywords: ['buồn', 'cô đơn', 'một mình', 'lẻ loi'], questHint: '🌟 Gợi ý: Hãy thử quest "Chia sẻ câu chuyện" hoặc "Viết nhật ký cảm xúc" trong GameFi!', questType: 'quest_share' },
     { keywords: ['lo lắng', 'lo âu', 'sợ', 'hồi hộp', 'bất an'], questHint: '🌟 Gợi ý: Hãy thử quest "Bài tập thở 5 phút" để giảm lo âu!', questType: 'quest_breathing' },
-    { keywords: ['giận', 'tức', 'bực', 'stress', 'căng thẳng', 'áp lực'], questHint: '🌟 Gợi ý: Hãy thử quest "Nghe nhạc thư giãn 10 phút" hoặc "Đi bộ ngoài trời"!', questType: 'quest_music' },
-    { keywords: ['tự ti', 'kém cỏi', 'thất bại', 'không giỏi'], questHint: '🌟 Gợi ý: Hãy thử quest "Viết suy nghĩ tích cực" để thay đổi góc nhìn!', questType: 'quest_positive' },
+    { keywords: ['giận', 'tức', 'bực', 'stress', 'căng thẳng', 'áp lực'], questHint: '🌟 Gợi ý: Hãy thử quest "Bài tập thở 5 phút" hoặc "Viết nhật ký cảm xúc" để giảm áp lực!', questType: 'quest_breathing' },
+    { keywords: ['tự ti', 'kém cỏi', 'thất bại', 'không giỏi'], questHint: '🌟 Gợi ý: Hãy thử quest "Viết nhật ký cảm xúc" để chuyển hóa suy nghĩ và lấy lại sự tự tin!', questType: 'quest_journal' },
     { keywords: ['biết ơn', 'cảm ơn', 'may mắn', 'hạnh phúc'], questHint: '🌟 Gợi ý: Hãy thử quest "Viết 3 điều biết ơn" để nuôi dưỡng cảm xúc tích cực!', questType: 'quest_gratitude' },
-    { keywords: ['ngủ', 'mất ngủ', 'insomnia', 'mệt'], questHint: '🌟 Gợi ý: Hãy thử quest "Ghi nhật ký giấc ngủ" để cải thiện giấc ngủ!', questType: 'quest_sleep' },
+    { keywords: ['ngủ', 'mất ngủ', 'insomnia', 'mệt'], questHint: '🌟 Gợi ý: Hãy thử quest "Bài tập thở 5 phút" trước khi ngủ để cơ thể thư giãn hơn!', questType: 'quest_breathing' },
   ];
   const lastSuggestedQuestRef = useRef<string | null>(null);
   const suggestNarrativeQuest = useCallback((userMsg: string): string | null => {

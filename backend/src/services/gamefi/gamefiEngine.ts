@@ -254,7 +254,7 @@ export async function processEvent(event: PsychEvent): Promise<OriginalEventResu
 }
 
 // ══════════════════════════════════════════════
-// DAILY QUESTS — pool of 15, pick 6 per day
+// DAILY QUESTS — 6 quests/day (2 core + 4 rotating)
 // ══════════════════════════════════════════════
 
 interface DailyQuestTemplate {
@@ -334,12 +334,14 @@ export async function completeQuest(userId: string, questId: string, opts: Quest
   char.completedQuestIds.push(questId);
 
   const eventType = template?.eventType || 'quest_completed';
+  const xpOverride = template?.xpReward;
 
   // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
   const result = await processEvent({
     userId,
     eventType: eventType as any,
     content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
+    rewardOverride: xpOverride != null ? { xp: xpOverride } : undefined,
   });
 
   // Mark rewarded only after successful processEvent

@@ -17,13 +17,29 @@ import {
   ZoneBadge,
 } from './styles';
 
+type QuestLane = 'all' | 'calm' | 'connect' | 'reflect';
+
+const QUEST_LANE_META: Record<Exclude<QuestLane, 'all'>, { label: string; icon: string; hint: string }> = {
+  calm: { label: 'Calm', icon: '🧘', hint: 'Ổn định cảm xúc và giảm căng thẳng' },
+  connect: { label: 'Connect', icon: '💝', hint: 'Kết nối với người khác và chia sẻ' },
+  reflect: { label: 'Reflect', icon: '📝', hint: 'Phản tư, hiểu bản thân sâu hơn' },
+};
+
+const getQuestLane = (questId: string): Exclude<QuestLane, 'all'> => {
+  const prefix = questId.replace(/_\d{4}-\d{2}-\d{2}$/, '');
+  if (prefix === 'quest_breathing') return 'calm';
+  if (prefix === 'quest_chat' || prefix === 'quest_share') return 'connect';
+  return 'reflect';
+};
+
 const DashboardTab: React.FC = () => {
-  const { data, showToast, navigate, setConfirmQuest, userId } = useGameFi();
+  const { data, showToast, navigate, setConfirmQuest } = useGameFi();
   if (!data) return null;
 
   const { profile, state } = data;
   const { character, quests, badges, levelTitle, xpToNextLevel, xpProgress } = profile;
   const unlockedBadges = badges.filter(b => b.unlocked).length;
+  const [activeLane, setActiveLane] = useState<QuestLane>('all');
 
   // Chat counter for quest_chat (Phase 1 feedback)
   const [chatMessageCount, setChatMessageCount] = useState(0);
@@ -72,6 +88,10 @@ const DashboardTab: React.FC = () => {
     // manual_confirm (default)
     setConfirmQuest(quest);
   };
+
+  const displayedQuests = activeLane === 'all'
+    ? quests
+    : quests.filter(q => getQuestLane(q.id) === activeLane);
 
   return (
     <>
@@ -123,8 +143,45 @@ const DashboardTab: React.FC = () => {
 
       {/* Daily Quests */}
       <SectionTitle>📋 Nhiệm Vụ Hàng Ngày</SectionTitle>
+      <Card style={{ marginBottom: '1rem' }}>
+        <SubTitle>🎯 Chọn hướng hôm nay</SubTitle>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+          <button
+            onClick={() => setActiveLane('all')}
+            style={{
+              border: 'none',
+              borderRadius: '999px',
+              padding: '0.4rem 0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              background: activeLane === 'all' ? '#805AD5' : '#F3F4F6',
+              color: activeLane === 'all' ? '#fff' : '#4B5563',
+            }}
+          >
+            🌈 Tất cả
+          </button>
+          {(Object.keys(QUEST_LANE_META) as Array<Exclude<QuestLane, 'all'>>).map((lane) => (
+            <button
+              key={lane}
+              onClick={() => setActiveLane(lane)}
+              title={QUEST_LANE_META[lane].hint}
+              style={{
+                border: 'none',
+                borderRadius: '999px',
+                padding: '0.4rem 0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: activeLane === lane ? '#E8B4B8' : '#F3F4F6',
+                color: activeLane === lane ? '#fff' : '#4B5563',
+              }}
+            >
+              {QUEST_LANE_META[lane].icon} {QUEST_LANE_META[lane].label}
+            </button>
+          ))}
+        </div>
+      </Card>
       <Grid>
-        {quests.map(q => (
+        {displayedQuests.map(q => (
           <QuestCard key={q.id} done={q.completed} onClick={() => handleDailyQuestClick(q)}>
             <QuestIcon>{q.icon}</QuestIcon>
             <QuestTitle>{q.title}<QuestStatus done={q.completed}>{q.completed ? '✅' : ''}</QuestStatus></QuestTitle>

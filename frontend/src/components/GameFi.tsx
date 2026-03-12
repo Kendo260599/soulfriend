@@ -30,12 +30,24 @@ import JournalInputModal from './gamefi/JournalInputModal';
 const PlayerDashboard = lazy(() => import('./PlayerDashboard'));
 
 const ONBOARDING_KEY = 'gamefi_onboarding_done';
+const FIRST_FOCUS_START_KEY = 'gamefi_first_focus_started_at';
+const FIRST_FOCUS_WINDOW_MS = 10 * 60 * 1000;
 
 const GameFiInner: React.FC = () => {
   const { user, logout } = useAuth();
   const { data, loading, error, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, userId, apiPost, showToast, showReward, dismissReward, navigate } = useGameFi();
   const [tab, setTab] = useState<TabType>('profile');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isFocusWindowActive, setIsFocusWindowActive] = useState(false);
+
+  const getTopGrowthInsight = () => {
+    if (!rewardData || !rewardData.growthImpact) return null;
+    const impacts = Object.entries(rewardData.growthImpact).filter(([, value]) => (value || 0) > 0);
+    if (impacts.length === 0) return null;
+    const [topKey, topValue] = impacts.sort((a, b) => (b[1] || 0) - (a[1] || 0))[0];
+    const growthName = GROWTH_CONFIG.find(g => g.key === topKey)?.label || topKey;
+    return `Hôm nay bạn tăng mạnh ${growthName} (+${topValue}). Đây là tiến bộ thật, không chỉ là điểm số.`;
+  };
 
   // I4: detect new player for onboarding
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -44,6 +56,20 @@ const GameFiInner: React.FC = () => {
       if (!localStorage.getItem(ONBOARDING_KEY)) setShowOnboarding(true);
     }
   }, [data]);
+
+  useEffect(() => {
+    const now = Date.now();
+    const stored = localStorage.getItem(FIRST_FOCUS_START_KEY);
+    const startedAt = stored ? parseInt(stored, 10) : now;
+    if (!stored) localStorage.setItem(FIRST_FOCUS_START_KEY, String(now));
+
+    const updateFocusWindow = () => {
+      setIsFocusWindowActive(Date.now() - startedAt < FIRST_FOCUS_WINDOW_MS);
+    };
+    updateFocusWindow();
+    const interval = setInterval(updateFocusWindow, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const dismissOnboarding = () => { setShowOnboarding(false); localStorage.setItem(ONBOARDING_KEY, '1'); };
 
@@ -72,6 +98,16 @@ const GameFiInner: React.FC = () => {
   if (error || !data || !data.profile?.character) return <Container><ErrorContainer><div style={{fontSize:'3rem',marginBottom:'1rem'}}>⚠️</div><p>{error || 'Không thể tải dữ liệu'}</p><RetryButton onClick={fetchAll}>Thử lại</RetryButton></ErrorContainer></Container>;
 
   const { character } = data.profile;
+  const topGrowthInsight = getTopGrowthInsight();
+  const isAdvancedTab = (t: TabType) => t === 'world' || t === 'skills' || t === 'behavior' || t === 'lore';
+  const canAccessTab = (t: TabType) => !isFocusWindowActive || !isAdvancedTab(t);
+  const handleTabClick = (t: TabType) => {
+    if (canAccessTab(t)) {
+      setTab(t);
+      return;
+    }
+    showToast('🎯 10 phút đầu: tập trung Dashboard + Quests để tạo đà tiến bộ trước.');
+  };
 
   return (
     <Container>
@@ -95,6 +131,20 @@ const GameFiInner: React.FC = () => {
                 {GROWTH_CONFIG.filter(g => (rewardData.growthImpact as any)[g.key]).map(g => (
                   <RewardStatRow key={g.key}>{g.icon} {g.label} <span style={{color:g.color,fontWeight:700}}>+{(rewardData.growthImpact as any)[g.key]}</span></RewardStatRow>
                 ))}
+              </div>
+            )}
+            {topGrowthInsight && (
+              <div style={{
+                margin: '0.5rem 0 0.75rem 0',
+                padding: '0.55rem 0.75rem',
+                borderRadius: '10px',
+                background: '#F7FAFC',
+                color: '#4A5568',
+                fontSize: '0.82rem',
+                lineHeight: 1.45,
+                textAlign: 'left',
+              }}>
+                💡 {topGrowthInsight}
               </div>
             )}
             <RewardPointsRow>
@@ -152,13 +202,37 @@ const GameFiInner: React.FC = () => {
       </UserBar>
 
       <TabBar>
-        <Tab active={tab === 'profile'} onClick={() => setTab('profile')}>🌸 Profile</Tab>
-        <Tab active={tab === 'dashboard'} onClick={() => setTab('dashboard')}>🏠 Dashboard</Tab>
-        <Tab active={tab === 'world'} onClick={() => setTab('world')}>🗺️ World Map</Tab>
-        <Tab active={tab === 'skills'} onClick={() => setTab('skills')}>🌳 Skill Tree</Tab>
-        <Tab active={tab === 'quests'} onClick={() => setTab('quests')}>🎯 Quests AI</Tab>
-        <Tab active={tab === 'behavior'} onClick={() => setTab('behavior')}>🔄 Behavior</Tab>
-        <Tab active={tab === 'lore'} onClick={() => setTab('lore')}>📜 Lore</Tab>
+        <Tab active={tab === 'profile'} onClick={() => handleTabClick('profile')}>🌸 Profile</Tab>
+        <Tab active={tab === 'dashboard'} onClick={() => handleTabClick('dashboard')}>🏠 Dashboard</Tab>
+        <Tab
+          active={tab === 'world'}
+          onClick={() => handleTabClick('world')}
+          style={!canAccessTab('world') ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+        >
+          🗺️ World Map
+        </Tab>
+        <Tab
+          active={tab === 'skills'}
+          onClick={() => handleTabClick('skills')}
+          style={!canAccessTab('skills') ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+        >
+          🌳 Skill Tree
+        </Tab>
+        <Tab active={tab === 'quests'} onClick={() => handleTabClick('quests')}>🎯 Quests AI</Tab>
+        <Tab
+          active={tab === 'behavior'}
+          onClick={() => handleTabClick('behavior')}
+          style={!canAccessTab('behavior') ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+        >
+          🔄 Behavior
+        </Tab>
+        <Tab
+          active={tab === 'lore'}
+          onClick={() => handleTabClick('lore')}
+          style={!canAccessTab('lore') ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+        >
+          📜 Lore
+        </Tab>
       </TabBar>
 
       {tab === 'profile' && <Suspense fallback={<LoadingContainer><div style={{fontSize:'2rem'}}>🌸</div>Đang tải...</LoadingContainer>}><PlayerDashboard /></Suspense>}

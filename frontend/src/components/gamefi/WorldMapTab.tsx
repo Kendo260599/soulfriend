@@ -20,7 +20,12 @@ const WorldMapTab: React.FC = () => {
   const handleTravel = async (locId: string) => {
     try {
       const json = await apiPost('/world/travel', { userId, locationId: locId });
-      if (json.success) { showToast(json.data.message); await fetchAll(); }
+      if (json.success) {
+        showToast(json.data.message);
+        await fetchAll();
+      } else {
+        showToast(`❌ ${json.error || 'Không thể di chuyển'}`);
+      }
     } catch (err) {
       console.error('handleTravel failed', err);
       showToast('❌ Không thể di chuyển');

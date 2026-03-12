@@ -27,6 +27,8 @@ const BehaviorTab: React.FC = () => {
           showToast(`✅ ${step}`);
         }
         await fetchAll();
+      } else {
+        showToast(`❌ ${json.error || 'Không thể cập nhật'}`);
       }
     } catch (err) {
       console.error('handleRitualStep failed', err);
@@ -44,6 +46,8 @@ const BehaviorTab: React.FC = () => {
           showToast('🏆 Hoàn thành thử thách tuần!');
         }
         await fetchAll();
+      } else {
+        showToast(`❌ ${json.error || 'Không thể cập nhật'}`);
       }
     } catch (err) {
       console.error('handleWeeklyComplete failed', err);

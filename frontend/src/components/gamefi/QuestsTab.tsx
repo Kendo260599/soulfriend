@@ -38,11 +38,21 @@ const QuestsTab: React.FC = () => {
   const fetchAdaptive = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/v2/gamefi/adaptive/${encodeURIComponent(userId)}`, { headers: authHeaders });
-      if (res.ok) { const json = await res.json(); if (json.success) setAdaptive(json.data); }
+      if (!res.ok) {
+        showToast(`❌ Không thể tải gợi ý AI (HTTP ${res.status})`);
+        return;
+      }
+      const json = await res.json();
+      if (json.success) {
+        setAdaptive(json.data);
+      } else {
+        showToast(`❌ ${json.error || 'Không thể tải gợi ý AI'}`);
+      }
     } catch (err) {
       console.error('fetchAdaptive failed', err);
+      showToast('❌ Không thể tải gợi ý AI');
     }
-  }, [userId, authHeaders]);
+  }, [userId, authHeaders, showToast]);
 
   const fetchQuestDb = useCallback(async (category?: string, p = 1, limit = PAGE_SIZE) => {
     try {
@@ -51,20 +61,40 @@ const QuestsTab: React.FC = () => {
       params.set('page', String(p));
       params.set('limit', String(limit));
       const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}?${params}`, { headers: authHeaders });
-      if (res.ok) { const json = await res.json(); if (json.success) setQuestDb(json.data); }
+      if (!res.ok) {
+        showToast(`❌ Không thể tải kho nhiệm vụ (HTTP ${res.status})`);
+        return;
+      }
+      const json = await res.json();
+      if (json.success) {
+        setQuestDb(json.data);
+      } else {
+        showToast(`❌ ${json.error || 'Không thể tải kho nhiệm vụ'}`);
+      }
     } catch (err) {
       console.error('fetchQuestDb failed', err);
+      showToast('❌ Không thể tải kho nhiệm vụ');
     }
-  }, [userId, authHeaders]);
+  }, [userId, authHeaders, showToast]);
 
   const fetchQuestHistory = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/v2/gamefi/history/${encodeURIComponent(userId)}`, { headers: authHeaders });
-      if (res.ok) { const json = await res.json(); if (json.success) setQuestHistory(json.data); }
+      if (!res.ok) {
+        showToast(`❌ Không thể tải lịch sử nhiệm vụ (HTTP ${res.status})`);
+        return;
+      }
+      const json = await res.json();
+      if (json.success) {
+        setQuestHistory(json.data);
+      } else {
+        showToast(`❌ ${json.error || 'Không thể tải lịch sử nhiệm vụ'}`);
+      }
     } catch (err) {
       console.error('fetchQuestHistory failed', err);
+      showToast('❌ Không thể tải lịch sử nhiệm vụ');
     }
-  }, [userId, authHeaders]);
+  }, [userId, authHeaders, showToast]);
 
   useEffect(() => { fetchAdaptive(); fetchQuestDb(); fetchQuestHistory(); }, [fetchAdaptive, fetchQuestDb, fetchQuestHistory]);
   useEffect(() => { setPage(1); fetchQuestDb(questCat, 1); }, [questCat, fetchQuestDb]);

@@ -128,11 +128,56 @@ const UserRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 /**
  * Navigation component with active state & auth
  */
+const NameInput = styled.input`
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border: 1.5px solid #E8B4B8;
+  border-radius: 6px;
+  outline: none;
+  width: 130px;
+  color: #4A4A4A;
+  &:focus { border-color: #D4A5A5; }
+`;
+
+const SaveBtn = styled.button`
+  background: #E8B4B8;
+  border: none;
+  color: white;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  &:hover { background: #D4A5A5; }
+`;
+
 const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, updateDisplayName } = useAuth();
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [nameError, setNameError] = useState('');
+
+  const startEdit = () => {
+    setNameInput(user?.displayName || '');
+    setNameError('');
+    setEditingName(true);
+  };
+
+  const saveName = async () => {
+    const trimmed = nameInput.trim();
+    if (trimmed.length < 2 || trimmed.length > 30) {
+      setNameError('Tên từ 2-30 ký tự');
+      return;
+    }
+    const result = await updateDisplayName(trimmed);
+    if (result.success) {
+      setEditingName(false);
+    } else {
+      setNameError(result.error || 'Lỗi');
+    }
+  };
 
   // Hide nav on expert pages, test flow, login page
   if (path.startsWith('/expert') || path.startsWith('/start') || path === '/login') {
@@ -152,9 +197,28 @@ const Navigation: React.FC = () => {
         <NavLinkBtn active={path === '/progress'} onClick={() => navigate('/progress')}>📊 Tiến trình</NavLinkBtn>
         <NavLinkBtn active={path === '/start'} onClick={() => navigate('/start')}>Làm test DASS-21</NavLinkBtn>
         {isAuthenticated ? (
-          <NavLinkBtn onClick={() => { logout(); navigate('/'); }}>
-            👤 {user?.displayName} · Đăng xuất
-          </NavLinkBtn>
+          editingName ? (
+            <>
+              <NameInput
+                value={nameInput}
+                onChange={e => { setNameInput(e.target.value); setNameError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
+                maxLength={30}
+                autoFocus
+                title={nameError || 'Nhập tên mới (2-30 ký tự)'}
+                style={nameError ? { borderColor: '#e74c3c' } : {}}
+              />
+              <SaveBtn onClick={saveName}>Lưu</SaveBtn>
+              <NavLinkBtn onClick={() => setEditingName(false)}>✕</NavLinkBtn>
+            </>
+          ) : (
+            <>
+              <NavLinkBtn onClick={startEdit} title="Nhấn để đổi tên hiển thị">
+                👤 {user?.displayName} ✏️
+              </NavLinkBtn>
+              <NavLinkBtn onClick={() => { logout(); navigate('/'); }}>Đăng xuất</NavLinkBtn>
+            </>
+          )
         ) : (
           <NavLinkBtn active={path === '/login'} onClick={() => navigate('/login')}>
             Đăng nhập

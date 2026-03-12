@@ -45,6 +45,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateDisplayName: (name: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -178,6 +179,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('userData');
   }, []);
 
+  const updateDisplayName = useCallback(async (name: string) => {
+    const savedToken = token || localStorage.getItem('userToken');
+    if (!savedToken) return { success: false, error: 'Chưa đăng nhập' };
+    try {
+      const response = await fetchWithRetry(`${API_URL}/api/v2/auth/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${savedToken}` },
+        body: JSON.stringify({ displayName: name }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        const updated = { ...data.user };
+        setUser(updated);
+        localStorage.setItem('userData', JSON.stringify(updated));
+        return { success: true };
+      }
+      return { success: false, error: data.errors?.[0] || data.message || 'Cập nhật thất bại' };
+    } catch {
+      return { success: false, error: 'Không thể kết nối máy chủ' };
+    }
+  }, [token]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -188,6 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         register,
         logout,
+        updateDisplayName,
       }}
     >
       {children}

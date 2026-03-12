@@ -206,4 +206,63 @@ router.get('/me', async (req: Request, res: Response) => {
   }
 });
 
+// =============================================================================
+// PATCH /api/v2/auth/profile — Update display name
+// =============================================================================
+router.patch(
+  '/profile',
+  [
+    body('displayName')
+      .trim()
+      .isLength({ min: 2, max: 30 })
+      .withMessage('Tên hiển thị từ 2-30 ký tự')
+      .matches(/^[^\s].*[^\s]$|^[^\s]$/)
+      .withMessage('Tên không được bắt đầu hoặc kết thúc bằng khoảng trắng'),
+  ],
+  async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.header('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
+      }
+
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array().map((e) => e.msg),
+        });
+      }
+
+      const { displayName } = req.body;
+
+      const user = await User.findById(decoded.userId);
+      if (!user || !user.isActive) {
+        return res.status(401).json({ success: false, message: 'Tài khoản không hợp lệ' });
+      }
+
+      user.displayName = displayName.trim();
+      await user.save();
+
+      logger.info(`✅ User updated displayName: ${user.email} → "${displayName}"`);
+
+      res.json({
+        success: true,
+        message: 'Cập nhật tên thành công',
+        user: {
+          id: user._id,
+          email: user.email,
+          displayName: user.displayName,
+        },
+      });
+    } catch (error) {
+      logger.error('Error updating profile:', error);
+      res.status(500).json({ success: false, message: 'Cập nhật thất bại' });
+    }
+  }
+);
+
 export default router;

@@ -2,7 +2,7 @@
  * GameFi — Shared Styled Components
  */
 
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 export const fadeIn = keyframes`from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}`;
 export const pulse = keyframes`0%,100%{transform:scale(1)}50%{transform:scale(1.05)}`;
@@ -48,7 +48,7 @@ export const QuestReward = styled.span`font-size:0.8rem;background:linear-gradie
 export const QuestStatus = styled.span<{done?:boolean}>`font-size:0.8rem;color:${p=>p.done?'#48BB78':'#888'};font-weight:600;margin-left:0.5rem;`;
 
 export const BadgeGrid = styled.div`display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem;`;
-export const BadgeCard = styled.div<{unlocked?:boolean}>`background:${p=>p.unlocked?'white':'#F5F5F5'};border-radius:16px;padding:1.25rem;text-align:center;box-shadow:${p=>p.unlocked?'0 4px 15px rgba(232,180,184,0.2)':'none'};opacity:${p=>p.unlocked?1:0.5};transition:all 0.2s;${p=>p.unlocked?`animation:${pulse} 2s ease-in-out infinite;`:''};`;
+export const BadgeCard = styled.div<{unlocked?:boolean}>`background:${p=>p.unlocked?'white':'#F5F5F5'};border-radius:16px;padding:1.25rem;text-align:center;box-shadow:${p=>p.unlocked?'0 4px 15px rgba(232,180,184,0.2)':'none'};opacity:${p=>p.unlocked?1:0.5};transition:all 0.2s;${p=>p.unlocked?css`animation:${pulse} 2s ease-in-out infinite;`:''};`;
 export const BadgeIcon = styled.div`font-size:2.5rem;margin-bottom:0.5rem;`;
 export const BadgeName = styled.div`font-size:0.8rem;font-weight:600;color:#4A4A4A;`;
 export const BadgeStatus = styled.div`font-size:0.7rem;color:#888;margin-top:0.25rem;`;
@@ -116,7 +116,7 @@ const levelUpGlow = keyframes`0%,100%{box-shadow:0 0 20px rgba(128,90,213,0.3)}5
 const celebratePop = keyframes`0%{transform:scale(0.3);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}`;
 
 export const RewardOverlay = styled.div`position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1001;display:flex;align-items:center;justify-content:center;animation:${fadeIn} 0.2s ease-out;`;
-export const RewardCard = styled.div<{levelUp?:boolean}>`background:white;border-radius:20px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;animation:${celebratePop} 0.4s ease-out;${p=>p.levelUp?`animation:${celebratePop} 0.4s ease-out,${levelUpGlow} 2s ease-in-out infinite;border:2px solid #805AD5;`:''}`;
+export const RewardCard = styled.div<{levelUp?:boolean}>`background:white;border-radius:20px;padding:2rem;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center;animation:${celebratePop} 0.4s ease-out;${p=>p.levelUp?css`animation:${celebratePop} 0.4s ease-out,${levelUpGlow} 2s ease-in-out infinite;border:2px solid #805AD5;`:''}` ;
 export const RewardXp = styled.div`font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,#48BB78,#38A169);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0.5rem 0;`;
 export const RewardMilestone = styled.div`background:linear-gradient(135deg,#805AD5,#6B46C1);color:white;padding:0.75rem 1.5rem;border-radius:16px;font-size:1rem;font-weight:700;margin:0.75rem 0;display:inline-block;`;
 export const RewardStatRow = styled.div`display:flex;align-items:center;gap:0.5rem;justify-content:center;font-size:0.85rem;color:#4A4A4A;padding:0.2rem 0;`;

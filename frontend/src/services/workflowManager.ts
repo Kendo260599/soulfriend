@@ -158,11 +158,11 @@ export class WorkflowManager {
       
       case WorkflowStep.DASHBOARD:
         return userProgress.hasCompletedTests 
-          ? "Chào mừng trở lại! AI Companion đã sẵn sàng với insights cá nhân hóa"
+          ? "Chào mừng trở lại! 𝑺𝒆𝒄𝒓𝒆𝒕❤️ đã sẵn sàng với insights cá nhân hóa"
           : "Dashboard của bạn";
       
       case WorkflowStep.AI_COMPANION:
-        return "AI Companion - Phân tích và gợi ý cá nhân hóa";
+        return "𝑺𝒆𝒄𝒓𝒆𝒕❤️ - Phân tích và gợi ý cá nhân hóa";
       
       default:
         return "Đang tải...";

@@ -113,7 +113,7 @@ app.post('/api/chatbot/message', async (req: Request, res: Response) => {
     console.log(`📨 User (${userId}): ${message}`);
 
     // Generate AI response using OpenAI
-    const systemPrompt = `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+    const systemPrompt = `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
     
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý

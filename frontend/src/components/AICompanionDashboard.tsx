@@ -322,7 +322,7 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
 
       // No demo data - only real user data
       if (!userProfile) {
-        console.log('⚠️ No AI Companion profile found. Please complete tests first.');
+        console.log('⚠️ No 𝑺𝒆𝒄𝒓𝒆𝒕❤️ profile found. Please complete tests first.');
         setProfile(null);
         setInsights([]);
         setInterventions([]);
@@ -351,7 +351,7 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
 
     } catch (error) {
       console.error('Error loading companion data:', error);
-      setError('Có lỗi xảy ra khi tải dữ liệu AI companion.');
+      setError('Có lỗi xảy ra khi tải dữ liệu của 𝑺𝒆𝒄𝒓𝒆𝒕❤️.');
     } finally {
       setLoading(false);
     }
@@ -377,7 +377,7 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
     return (
       <Container>
         <LoadingSpinner>
-          🤖 AI Companion đang phân tích dữ liệu của bạn...
+          🌸 𝑺𝒆𝒄𝒓𝒆𝒕❤️ đang phân tích dữ liệu của bạn...
         </LoadingSpinner>
       </Container>
     );
@@ -403,10 +403,10 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
     return (
       <Container>
         <Card>
-          <CardTitle>🤖 AI Companion</CardTitle>
+          <CardTitle>𝑺𝒆𝒄𝒓𝒆𝒕❤️</CardTitle>
           <p style={{ textAlign: 'center', color: '#666', lineHeight: '1.6' }}>
-            <strong>Chưa có dữ liệu phân tích AI</strong><br />
-            Để sử dụng AI Companion, bạn cần hoàn thành ít nhất một bài test.<br />
+            <strong>Chưa có dữ liệu phân tích</strong><br />
+            Để sử dụng 𝑺𝒆𝒄𝒓𝒆𝒕❤️, bạn cần hoàn thành ít nhất một bài test.<br />
             <br />
             AI sẽ phân tích kết quả test của bạn và tạo ra:<br />
             • Insights cá nhân hóa<br />
@@ -429,7 +429,7 @@ const AICompanionDashboard: React.FC<AICompanionDashboardProps> = ({ userId, onB
   return (
     <Container>
       <Header>
-        <Title>🤖 AI Companion Dashboard</Title>
+        <Title>𝑺𝒆𝒄𝒓𝒆𝒕❤️ Dashboard</Title>
         <Subtitle>Trí tuệ nhân tạo cá nhân hóa cho sức khỏe tâm lý phụ nữ</Subtitle>
       </Header>
 

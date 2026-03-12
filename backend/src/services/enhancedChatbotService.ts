@@ -393,7 +393,7 @@ export class EnhancedChatbotService {
         if (this.openAIService && this.openAIService.isReady()) {
           try {
             const aiContext = {
-              systemPrompt: `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+              systemPrompt: `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý

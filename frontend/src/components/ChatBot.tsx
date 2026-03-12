@@ -954,7 +954,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       // Professional welcome message with disclaimer (Conference-compliant)
-      let welcomeText = `Xin chào! Mình là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ 🌸 - AI Companion hỗ trợ sức khỏe tâm lý.
+      let welcomeText = `Xin chào! Mình là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ 🌸 hỗ trợ sức khỏe tâm lý.
 
 ⚠️ QUAN TRỌNG - VUI LÒNG ĐỌC:
 • Mình là công cụ hỗ trợ, KHÔNG THAY THẾ chuyên gia y tế/tâm lý
@@ -1566,7 +1566,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         <BotAvatar>{expertConnected ? '❤️' : '🌸'}</BotAvatar>
         <BotInfo>
           <BotName>
-            {expertConnected ? 'CHUN❤️' : '𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion'}
+            {expertConnected ? 'CHUN❤️' : '𝑺𝒆𝒄𝒓𝒆𝒕❤️'}
           </BotName>
           <BotStatus>
             <StatusDot online={isOnline} />

@@ -59,7 +59,7 @@ export class OpenAIService {
       // Use custom system prompt if provided, otherwise use default 𝑺𝒆𝒄𝒓𝒆𝒕❤️ prompt
       const systemPrompt =
         context?.systemPrompt ||
-        `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+        `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý
@@ -160,7 +160,7 @@ export class OpenAIService {
 
     try {
       const systemPrompt =
-        'Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam. Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt và xưng hô "Mình" (𝑺𝒆𝒄𝒓𝒆𝒕❤️) - "Bạn" (User).';
+        'Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam. Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt và xưng hô "Mình" (𝑺𝒆𝒄𝒓𝒆𝒕❤️) - "Bạn" (User).';
 
       // Build conversation history
       const messages = [

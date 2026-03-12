@@ -134,7 +134,7 @@ Trả về CHÍNH XÁC JSON format:
  * Yêu cầu OpenAI tạo response chatbot cho người dùng.
  */
 async function generateChatResponse(userMessage: string): Promise<string> {
-  const systemPrompt = `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+  const systemPrompt = `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 Bạn ấm áp, đồng cảm và chuyên nghiệp. Sử dụng tiếng Việt.
 Trả lời ngắn gọn (2-3 câu). Xưng hô: "Mình" - "Bạn".`;
 

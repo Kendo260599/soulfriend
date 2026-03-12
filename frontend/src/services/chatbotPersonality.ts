@@ -21,7 +21,7 @@ export interface ChatbotPersonality {
 }
 
 export const CHUN_PERSONALITY: ChatbotPersonality = {
-  name: "𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion",
+  name: "𝑺𝒆𝒄𝒓𝒆𝒕❤️",
   avatar: "🌸",
   
   greeting: [
@@ -96,7 +96,7 @@ export function getRandomPhrase(phrases: string[]): string {
  */
 export function buildCHUNSystemPrompt(testResults?: any[]): string {
   let prompt = `
-Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ - AI Companion chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 🏥 MEDICAL DISCLAIMER (BẮT BUỘC):
 ⚠️ BẠN KHÔNG PHẢI LÀ CHUYÊN GIA Y TẾ/TÂM LÝ

@@ -304,7 +304,7 @@ const getRecommendationForTest = (testType: string, score: number, maxScore: num
       return 'Lòng tự trọng cần được cải thiện. Nên tìm kiếm hỗ trợ để xây dựng hình ảnh bản thân tích cực.';
 
     default:
-      return 'Kết quả test đã hoàn thành. Hãy tham khảo AI Companion để có phân tích chi tiết hơn.';
+      return 'Kết quả test đã hoàn thành. Hãy tham khảo 𝑺𝒆𝒄𝒓𝒆𝒕❤️ để có phân tích chi tiết hơn.';
   }
 };
 
@@ -666,8 +666,8 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
             </AIStatusText>
             <AIStatusDescription>
               {isAnalyzing
-                ? 'AI Companion đang phân tích kết quả test của bạn và tạo ra những insights cá nhân hóa...'
-                : 'AI Companion đã tạo ra những insights và gợi ý cá nhân hóa dựa trên kết quả test của bạn.'
+                ? '𝑺𝒆𝒄𝒓𝒆𝒕❤️ đang phân tích kết quả test của bạn và tạo ra những insights cá nhân hóa...'
+                : '𝑺𝒆𝒄𝒓𝒆𝒕❤️ đã tạo ra những insights và gợi ý cá nhân hóa dựa trên kết quả test của bạn.'
               }
             </AIStatusDescription>
           </AIStatus>
@@ -716,7 +716,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
             onClick={onViewAI}
             animation="glow"
           >
-            🤖 Xem AI Companion
+            🌸 Xem 𝑺𝒆𝒄𝒓𝒆𝒕❤️
           </AnimatedButton>
         )}
       </ActionButtons>

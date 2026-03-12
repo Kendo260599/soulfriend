@@ -524,7 +524,7 @@ const ProfessionalWelcomePage: React.FC<ProfessionalWelcomePageProps> = ({
   const features = [
     {
       icon: '🧠',
-      title: 'AI Companion',
+      title: '𝑺𝒆𝒄𝒓𝒆𝒕❤️',
       description: 'Khám phá insights cá nhân hóa và gợi ý can thiệp từ AI dựa trên kết quả test của bạn.',
       action: onAICompanion,
       variant: 'primary' as const

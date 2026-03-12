@@ -273,46 +273,21 @@ const CORE_DAILY_QUESTS: DailyQuestTemplate[] = [
   { key: 'quest_chat', title: 'Trò chuyện với AI', description: 'Chat với AI ít nhất 3 tin nhắn về cảm xúc của bạn', icon: '💬', xpReward: 3, eventType: 'emotion_checkin', completionMode: 'auto_event' },
 ];
 
-// Rotating pool (pick 4 from these each day)
+// Rotating pool (4 core authentic quests - Phase 1 focus)
 const ROTATING_DAILY_QUESTS: DailyQuestTemplate[] = [
   { key: 'quest_journal', title: 'Ghi nhật ký cảm xúc', description: 'Viết 3 câu về cảm xúc và suy nghĩ của bạn hôm nay', icon: '📝', xpReward: 3, eventType: 'journal_entry', completionMode: 'requires_input' },
   { key: 'quest_breathing', title: 'Bài tập thở 5 phút', description: 'Thực hành hít thở sâu 5 phút để giảm stress', icon: '🧘', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
-  { key: 'quest_research', title: 'Đọc nghiên cứu', description: 'Khám phá 1 bài nghiên cứu về sức khỏe tâm lý', icon: '📖', xpReward: 2, eventType: 'quest_completed', completionMode: 'auto_event' },
   { key: 'quest_share', title: 'Chia sẻ câu chuyện', description: 'Chia sẻ một trải nghiệm hoặc câu chuyện tích cực', icon: '💝', xpReward: 5, eventType: 'story_shared', completionMode: 'requires_input' },
   { key: 'quest_gratitude', title: 'Ba điều biết ơn', description: 'Viết ra 3 điều bạn biết ơn hôm nay', icon: '🙏', xpReward: 3, eventType: 'journal_entry', completionMode: 'requires_input' },
-  { key: 'quest_music', title: 'Nghe nhạc thư giãn', description: 'Dành 10 phút nghe nhạc nhẹ nhàng và thư giãn', icon: '🎵', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
-  { key: 'quest_walk', title: 'Đi bộ 10 phút', description: 'Đi dạo ngoài trời để thay đổi không khí', icon: '🚶', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
-  { key: 'quest_friend', title: 'Gọi cho 1 người bạn', description: 'Kết nối với bạn bè hoặc người thân qua cuộc gọi', icon: '📞', xpReward: 3, eventType: 'story_shared', completionMode: 'manual_confirm' },
-  { key: 'quest_selfcare', title: 'Chăm sóc bản thân', description: 'Làm 1 điều nhỏ để tự thưởng cho bản thân hôm nay', icon: '💆', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
-  { key: 'quest_positive', title: 'Suy nghĩ tích cực', description: 'Viết lại 1 suy nghĩ tiêu cực thành tích cực', icon: '☀️', xpReward: 3, eventType: 'journal_entry', completionMode: 'requires_input' },
-  { key: 'quest_water', title: 'Uống đủ nước', description: 'Uống ít nhất 8 ly nước trong ngày hôm nay', icon: '💧', xpReward: 2, eventType: 'emotion_checkin', completionMode: 'manual_confirm' },
-  { key: 'quest_sleep', title: 'Ghi nhật ký giấc ngủ', description: 'Ghi lại giờ ngủ, giờ dậy và chất lượng giấc ngủ', icon: '🌙', xpReward: 2, eventType: 'journal_entry', completionMode: 'requires_input' },
-  { key: 'quest_kindness', title: 'Hành động tử tế', description: 'Làm 1 điều tốt cho người khác hôm nay', icon: '💕', xpReward: 4, eventType: 'story_shared', completionMode: 'manual_confirm' },
 ];
-
-/** Deterministic seed from date string → pick consistent 4 from rotating pool */
-function dailySeed(dateStr: string): number {
-  let hash = 0;
-  for (let i = 0; i < dateStr.length; i++) {
-    hash = ((hash << 5) - hash + dateStr.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-}
 
 export async function getDailyQuests(userId: string): Promise<DailyQuest[]> {
   await ensureUserLoaded(userId);
   const char = originalGetOrCreate(userId);
   const today = todayStr();
 
-  // Pick 4 rotating quests deterministically based on date
-  const shuffled = [...ROTATING_DAILY_QUESTS].sort((a, b) => {
-    const ha = dailySeed(today + a.key);
-    const hb = dailySeed(today + b.key);
-    return ha - hb;
-  });
-  const picked = shuffled.slice(0, 4);
-
-  const templates = [...CORE_DAILY_QUESTS, ...picked];
+  // Return all core + all rotating quests (simplified to 6 total)
+  const templates = [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS];
 
   return templates.map(t => ({
     id: `${t.key}_${today}`,

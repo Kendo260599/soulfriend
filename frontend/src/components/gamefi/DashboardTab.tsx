@@ -6,6 +6,7 @@ import React from 'react';
 import { useGameFi } from './GameFiContext';
 import { GROWTH_CONFIG, ZONE_NAMES, QUEST_ROUTES } from './config';
 import { resolveCompletionMode } from './questSemanticRegistry';
+import { useState, useEffect } from 'react';
 import {
   StatsRow, StatCard, StatValue, StatLabel, XpBarBg, XpBarFill,
   PointsRow, PointCard, PointValue, PointLabel,
@@ -23,6 +24,33 @@ const DashboardTab: React.FC = () => {
   const { profile, state } = data;
   const { character, quests, badges, levelTitle, xpToNextLevel, xpProgress } = profile;
   const unlockedBadges = badges.filter(b => b.unlocked).length;
+
+  // Chat counter for quest_chat (Phase 1 feedback)
+  const [chatMessageCount, setChatMessageCount] = useState(0);
+
+  useEffect(() => {
+    const updateChatCount = () => {
+      const count = parseInt(sessionStorage.getItem('quest_chat_count') || '0', 10);
+      setChatMessageCount(count);
+    };
+    updateChatCount();
+    // Listen for storage changes from ChatBot
+    window.addEventListener('storage', updateChatCount);
+    // Also check periodically for same-tab updates (sessionStorage doesn't fire storage event on same tab)
+    const interval = setInterval(updateChatCount, 500);
+    return () => {
+      window.removeEventListener('storage', updateChatCount);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const getQuestFeedback = (questId: string) => {
+    const prefix = questId?.replace(/_\d{4}-\d{2}-\d{2}$/, '');
+    if (prefix === 'quest_chat' && chatMessageCount > 0) {
+      return `💬 ${chatMessageCount}/3 tin nhắn được phát hiện`;
+    }
+    return null;
+  };
 
   const handleDailyQuestClick = (quest: typeof quests[0]) => {
     if (quest.completed) return;
@@ -101,6 +129,11 @@ const DashboardTab: React.FC = () => {
             <QuestIcon>{q.icon}</QuestIcon>
             <QuestTitle>{q.title}<QuestStatus done={q.completed}>{q.completed ? '✅' : ''}</QuestStatus></QuestTitle>
             <QuestDesc>{q.description}</QuestDesc>
+            {getQuestFeedback(q.id) && (
+              <div style={{ fontSize: '0.8rem', color: '#667eea', fontWeight: '600', marginTop: '0.3rem' }}>
+                ✨ {getQuestFeedback(q.id)}
+              </div>
+            )}
             <QuestReward>+{q.xpReward} XP</QuestReward>
           </QuestCard>
         ))}

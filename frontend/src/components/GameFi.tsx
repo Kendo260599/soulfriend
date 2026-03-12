@@ -47,6 +47,14 @@ const GameFiInner: React.FC = () => {
 
   const dismissOnboarding = () => { setShowOnboarding(false); localStorage.setItem(ONBOARDING_KEY, '1'); };
 
+  const handleDismissReward = () => {
+    dismissReward();
+    // Phase 1 Step C: Show motivational CTA after reward dismissed
+    setTimeout(() => {
+      showToast('🌸 Hẹn gặp bạn vào ngày mai để tiếp tục hành trình 💖');
+    }, 300);
+  };
+
   // Confirm-complete helper for daily quest dialog
   const handleConfirmComplete = async (journalText?: string) => {
     if (!confirmQuest) return;
@@ -93,7 +101,7 @@ const GameFiInner: React.FC = () => {
               {rewardData.rewards.soulPoints > 0 && <RewardPointBadge color="linear-gradient(135deg,#667eea,#764ba2)">✨ +{rewardData.rewards.soulPoints} Soul</RewardPointBadge>}
               {rewardData.rewards.empathyPoints > 0 && <RewardPointBadge color="linear-gradient(135deg,#f093fb,#f5576c)">💜 +{rewardData.rewards.empathyPoints} Empathy</RewardPointBadge>}
             </RewardPointsRow>
-            <RewardDismissBtn onClick={dismissReward}>Đóng</RewardDismissBtn>
+            <RewardDismissBtn onClick={handleDismissReward}>Đóng</RewardDismissBtn>
           </RewardCard>
         </RewardOverlay>
         );

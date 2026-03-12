@@ -8,7 +8,7 @@
  *   EXPERT  (expert login): Expert Dashboard
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Component, ErrorInfo, ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 
@@ -266,18 +266,63 @@ const RoutedApp: React.FC = () => {
   );
 };
 
+/* ── Global Error Boundary ─────────────────────────── */
+const ErrorFallback = styled.div`
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 2rem; text-align: center;
+  background: linear-gradient(135deg, #E8B4B8 0%, #F5E6E8 100%);
+  font-family: 'Inter', sans-serif;
+`;
+const ErrorCard = styled.div`
+  background: white; border-radius: 20px; padding: 2.5rem; max-width: 420px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+`;
+const ErrorRetry = styled.button`
+  background: linear-gradient(135deg, #E8B4B8, #D4A5A5); color: white; border: none;
+  padding: 0.75rem 2rem; border-radius: 12px; font-size: 1rem; font-weight: 600;
+  cursor: pointer; margin-top: 1rem;
+  &:hover { opacity: 0.9; }
+`;
+
+interface EBState { hasError: boolean; error?: Error }
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, EBState> {
+  state: EBState = { hasError: false };
+  static getDerivedStateFromError(error: Error): EBState { return { hasError: true, error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('[AppErrorBoundary]', error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <ErrorFallback>
+          <ErrorCard>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>😔</div>
+            <h2 style={{ margin: '0.5rem 0', color: '#4A4A4A' }}>Đã xảy ra lỗi</h2>
+            <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              Ứng dụng gặp sự cố. Vui lòng tải lại trang.
+            </p>
+            <ErrorRetry onClick={() => window.location.reload()}>🔄 Tải lại trang</ErrorRetry>
+          </ErrorCard>
+        </ErrorFallback>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const AppRouter: React.FC = () => {
   return (
-    <AuthProvider>
-      <AIProvider>
-        <GlobalStyle />
-        <AppContainer>
-          <BrowserRouter>
-            <RoutedApp />
-          </BrowserRouter>
-        </AppContainer>
-      </AIProvider>
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <AIProvider>
+          <GlobalStyle />
+          <AppContainer>
+            <BrowserRouter>
+              <RoutedApp />
+            </BrowserRouter>
+          </AppContainer>
+        </AIProvider>
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 };
 

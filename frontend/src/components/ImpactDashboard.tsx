@@ -25,6 +25,78 @@ interface DashboardData {
   trends: TrendPoint[];
 }
 
+const EMPTY_METRIC_SET: MetricSet = {
+  totalInteractions: 0,
+  avgResponseTime: 0,
+  positiveOutcomeRate: 0,
+  riskEscalationRate: 0,
+  aiResponseQuality: 0,
+  userSatisfactionRate: 0,
+  psychologicalSafetyIndex: 0,
+  crisisDetectionAccuracy: 0,
+};
+
+const toMetricSet = (source: any): MetricSet => {
+  if (!source || typeof source !== 'object') return { ...EMPTY_METRIC_SET };
+  return {
+    totalInteractions: Number(source.totalInteractions || 0),
+    avgResponseTime: Number(source.avgResponseTime || 0),
+    positiveOutcomeRate: Number(source.positiveOutcomeRate || 0),
+    riskEscalationRate: Number(source.riskEscalationRate || 0),
+    aiResponseQuality: Number(source.aiResponseQuality || 0),
+    userSatisfactionRate: Number(source.userSatisfactionRate || 0),
+    psychologicalSafetyIndex: Number(source.psychologicalSafetyIndex || 0),
+    crisisDetectionAccuracy: Number(source.crisisDetectionAccuracy || 0),
+  };
+};
+
+const normalizeTrends = (source: any): TrendPoint[] => {
+  if (Array.isArray(source)) {
+    return source.map((point: any) => ({
+      date: String(point?.date || ''),
+      interactions: Number(point?.interactions || 0),
+      avgQuality: Number(point?.avgQuality || 0),
+      satisfaction: Number(point?.satisfaction || 0),
+    }));
+  }
+
+  if (source && typeof source === 'object' && Array.isArray(source.interactions)) {
+    const interactionMap = new Map<string, number>();
+    source.interactions.forEach((p: any) => interactionMap.set(String(p?.date || ''), Number(p?.value || 0)));
+
+    const qualityMap = new Map<string, number>();
+    if (Array.isArray(source.quality)) {
+      source.quality.forEach((p: any) => qualityMap.set(String(p?.date || ''), Number(p?.value || 0)));
+    }
+
+    const satisfactionMap = new Map<string, number>();
+    if (Array.isArray(source.satisfaction)) {
+      source.satisfaction.forEach((p: any) => satisfactionMap.set(String(p?.date || ''), Number(p?.value || 0)));
+    }
+
+    return source.interactions.map((p: any) => {
+      const date = String(p?.date || '');
+      return {
+        date,
+        interactions: Number(p?.value || 0),
+        avgQuality: Number(qualityMap.get(date) || 0),
+        satisfaction: Number(satisfactionMap.get(date) || 0),
+      };
+    });
+  }
+
+  return [];
+};
+
+const normalizeDashboardData = (payload: any): DashboardData => {
+  const source = payload && typeof payload === 'object' ? payload : {};
+  return {
+    period30d: toMetricSet(source.period30d || source.current),
+    period7d: toMetricSet(source.period7d || source.weekly),
+    trends: normalizeTrends(source.trends),
+  };
+};
+
 interface MetricSet {
   totalInteractions: number;
   avgResponseTime: number;
@@ -340,7 +412,7 @@ const ImpactDashboard: React.FC = () => {
       }
 
       const dashJson = await dashRes.json();
-      setData(dashJson.data);
+      setData(normalizeDashboardData(dashJson.data));
 
       if (safetyRes?.ok) {
         const safetyJson = await safetyRes.json();

@@ -16,7 +16,7 @@ import {
 // ══════════════════════════════════════════════
 
 const dailyRitualMap: Map<string, DailyRitual> = new Map();       // key: charId_date
-const weeklyMap: Map<string, WeeklyChallenge> = new Map();
+const weeklyMap: Map<string, WeeklyChallenge> = new Map(); // key: characterId_challengeId
 const seasonalMap: Map<string, SeasonalGoal> = new Map();
 const meaningShifts: MeaningShift[] = [];
 
@@ -34,6 +34,10 @@ function todayStr(): string {
 
 function ritualKey(charId: string, date: string): string {
   return `${charId}_${date}`;
+}
+
+function weeklyKey(charId: string, challengeId: string): string {
+  return `${charId}_${challengeId}`;
 }
 
 // ══════════════════════════════════════════════
@@ -134,26 +138,34 @@ const WEEKLY_TEMPLATES: Omit<WeeklyChallenge, 'completed' | 'weekStart'>[] = [
 ];
 
 /** Initialize weekly challenges */
-export function initWeeklyChallenges(weekStart?: string): void {
+export function initWeeklyChallenges(characterId: string, weekStart?: string): void {
   const ws = weekStart ?? todayStr();
   for (const t of WEEKLY_TEMPLATES) {
-    weeklyMap.set(t.id, { ...t, completed: false, weekStart: ws });
+    const key = weeklyKey(characterId, t.id);
+    if (!weeklyMap.has(key)) {
+      weeklyMap.set(key, { ...t, completed: false, weekStart: ws });
+    }
   }
 }
 
 /** Get all weekly challenges */
-export function getAllWeeklyChallenges(): WeeklyChallenge[] {
-  return Array.from(weeklyMap.values());
+export function getAllWeeklyChallenges(characterId: string): WeeklyChallenge[] {
+  initWeeklyChallenges(characterId);
+  return WEEKLY_TEMPLATES
+    .map(t => weeklyMap.get(weeklyKey(characterId, t.id)))
+    .filter((ch): ch is WeeklyChallenge => !!ch);
 }
 
 /** Get a weekly challenge by ID */
-export function getWeeklyChallenge(id: string): WeeklyChallenge | undefined {
-  return weeklyMap.get(id);
+export function getWeeklyChallenge(characterId: string, id: string): WeeklyChallenge | undefined {
+  initWeeklyChallenges(characterId);
+  return weeklyMap.get(weeklyKey(characterId, id));
 }
 
 /** Complete a weekly challenge */
-export function completeWeeklyChallenge(id: string): WeeklyChallenge | undefined {
-  const ch = weeklyMap.get(id);
+export function completeWeeklyChallenge(characterId: string, id: string): WeeklyChallenge | undefined {
+  initWeeklyChallenges(characterId);
+  const ch = weeklyMap.get(weeklyKey(characterId, id));
   if (!ch || ch.completed) return ch;
   ch.completed = true;
   return ch;

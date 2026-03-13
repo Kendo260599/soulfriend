@@ -90,7 +90,6 @@ function ensureInit() {
   initSkillTree();
   initWorldMap();
   initQuestDB();
-  initWeeklyChallenges();
   initSeasonalGoals();
   initLore();
 
@@ -882,7 +881,7 @@ export async function getBehaviorData(userId: string): Promise<BehaviorData> {
   const char = originalGetOrCreate(userId);
 
   const ritual = getDailyRitual(char.id);
-  const weeklyChallenges = getAllWeeklyChallenges().map(ch => ({
+  const weeklyChallenges = getAllWeeklyChallenges(char.id).map(ch => ({
     id: ch.id,
     title: ch.title,
     description: ch.description,
@@ -966,15 +965,16 @@ export async function completeWeekly(userId: string, challengeId: string) {
   await ensureUserLoaded(userId);
   const weeklyLockKey = `weekly:${userId}:${challengeId}`;
   if (inFlightWeeklyCompletions.has(weeklyLockKey)) {
-    const existing = getWeeklyChallenge(challengeId);
+    const existing = getWeeklyChallenge(originalGetOrCreate(userId).id, challengeId);
     return { ...existing, eventResult: null };
   }
   inFlightWeeklyCompletions.add(weeklyLockKey);
 
   try {
-    const before = getWeeklyChallenge(challengeId);
+    const char = originalGetOrCreate(userId);
+    const before = getWeeklyChallenge(char.id, challengeId);
     const wasCompleted = !!before?.completed;
-    const ch = completeWeeklyChallenge(challengeId);
+    const ch = completeWeeklyChallenge(char.id, challengeId);
     let eventResult: Awaited<ReturnType<typeof processEvent>> | null = null;
     if (ch?.completed && !wasCompleted) {
       // Use designed weekly challenge XP

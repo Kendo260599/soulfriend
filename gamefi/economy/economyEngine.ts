@@ -285,8 +285,9 @@ export function calculateReward(
 
   // Apply daily caps (XP, SoulPoints, EmpathyPoints)
   const daily = getDailyEconomy(characterId, date);
+  const isGuaranteedXpReward = typeof rewardOverride?.xp === 'number';
   const remainingXp = Math.max(0, daily.maxDailyXp - daily.xpEarned);
-  const cappedXp = Math.min(totalXp, remainingXp);
+  const cappedXp = isGuaranteedXpReward ? totalXp : Math.min(totalXp, remainingXp);
 
   const remainingSp = Math.max(0, MAX_DAILY_SOULPOINTS - daily.soulPointsEarned);
   const cappedSoulPoints = Math.min(totalSoulPoints, remainingSp);

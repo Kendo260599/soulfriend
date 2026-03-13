@@ -257,8 +257,10 @@ class Logger {
   }
 
   api(method: string, path: string, statusCode: number, duration: number, metadata?: any): void {
+    // Only server-side failures should be treated as ERROR.
+    // 4xx are client/request issues and should not be captured as exceptions in Sentry.
     const level =
-      statusCode >= 400 ? LogLevel.ERROR : statusCode >= 300 ? LogLevel.WARN : LogLevel.INFO;
+      statusCode >= 500 ? LogLevel.ERROR : statusCode >= 400 ? LogLevel.WARN : LogLevel.INFO;
 
     const message = `🌐 API: ${method} ${path} - ${statusCode} (${duration}ms)`;
 

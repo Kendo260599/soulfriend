@@ -45,6 +45,13 @@ interface Assessment {
   responseQuality: number;
 }
 
+interface ApiLikeError {
+  error?: unknown;
+  message?: unknown;
+  status?: unknown;
+  retryable?: unknown;
+}
+
 // ===========================
 // STYLED COMPONENTS
 // ===========================
@@ -212,6 +219,31 @@ const SuccessMessage = styled.div`
   font-weight: 500;
 `;
 
+const formatApiError = (payload: unknown, fallbackMsg: string): string => {
+  const fallback = fallbackMsg || 'Có lỗi xảy ra';
+
+  if (payload && typeof payload === 'object') {
+    const maybe = payload as ApiLikeError;
+    const status = typeof maybe.status === 'number' ? maybe.status : null;
+    const rawMsg = typeof maybe.error === 'string'
+      ? maybe.error
+      : typeof maybe.message === 'string'
+        ? maybe.message
+        : fallback;
+    const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+    const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+    const retryable = explicitRetryable ?? byStatus ?? /không thể kết nối|network|timeout|temporar|tạm thời|too many requests/i.test(rawMsg);
+    return retryable ? `${rawMsg} (có thể thử lại)` : rawMsg;
+  }
+
+  if (payload instanceof Error) {
+    const retryable = /network|timeout|abort|fetch/i.test(payload.message);
+    return retryable ? `${fallback} (có thể thử lại)` : fallback;
+  }
+
+  return `${fallback} (có thể thử lại)`;
+};
+
 // ===========================
 // COMPONENT
 // ===========================
@@ -252,12 +284,16 @@ const ExpertReviewPanel: React.FC = () => {
         const json = await res.json();
         setPendingInteractions(json.data || []);
       } else {
-        setLoadError(`API trả về lỗi: ${res.status} ${res.statusText}`);
+        setLoadError(formatApiError({
+          status: res.status,
+          error: `API trả về lỗi: ${res.status} ${res.statusText}`,
+          retryable: res.status >= 500 || res.status === 408 || res.status === 429,
+        }, 'Không thể tải danh sách cần review'));
         setPendingInteractions([]);
       }
     } catch (err: any) {
       console.warn('Failed to load pending interactions:', err);
-      setLoadError(err.message || 'Không thể kết nối tới server');
+      setLoadError(formatApiError(err, 'Không thể kết nối tới server'));
       setPendingInteractions([]);
     } finally {
       setLoading(false);
@@ -337,12 +373,24 @@ const ExpertReviewPanel: React.FC = () => {
           setSelectedInteraction(null);
           setSubmitted(false);
         }, 2000);
+      } else {
+        const errPayload = {
+          status: res.status,
+          error: `API trả về lỗi: ${res.status} ${res.statusText}`,
+          retryable: res.status >= 500 || res.status === 408 || res.status === 429,
+        };
+        setLoadError(formatApiError(errPayload, 'Không thể gửi expert review'));
       }
     } catch (err) {
       console.error('Submit review failed:', err);
-      // Still show success in demo mode
-      setSubmitted(true);
-      setPendingInteractions(prev => prev.filter(i => i._id !== selectedInteraction._id));
+      // Keep demo-mode fallback behavior only for non-retryable failures.
+      const formatted = formatApiError(err, 'Không thể gửi expert review');
+      setLoadError(formatted);
+      const retryable = /có thể thử lại/i.test(formatted);
+      if (!retryable) {
+        setSubmitted(true);
+        setPendingInteractions(prev => prev.filter(i => i._id !== selectedInteraction._id));
+      }
     } finally {
       setLoading(false);
     }

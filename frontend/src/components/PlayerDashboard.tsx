@@ -8,7 +8,7 @@
  * 4. Bước tiếp theo của tôi là gì?
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -459,26 +459,68 @@ const PlayerDashboard: React.FC = () => {
   const [data, setData] = useState<PlayerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const dashboardAbortRef = useRef<AbortController | null>(null);
 
   const userId = user?.id || 'anonymous';
 
+  const formatDashboardError = useCallback((payload: unknown, fallbackMsg: string): string => {
+    const fallback = fallbackMsg || 'Có lỗi xảy ra';
+
+    if (payload instanceof DOMException && payload.name === 'AbortError') {
+      return fallback;
+    }
+
+    if (payload && typeof payload === 'object') {
+      const maybe = payload as { error?: unknown; message?: unknown; status?: unknown; retryable?: unknown };
+      const status = typeof maybe.status === 'number' ? maybe.status : null;
+      const rawMsg = typeof maybe.error === 'string'
+        ? maybe.error
+        : typeof maybe.message === 'string'
+          ? maybe.message
+          : fallback;
+      const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+      const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+      const retryable = explicitRetryable ?? byStatus ?? /không thể kết nối|network|timeout|temporar|tạm thời|too many requests/i.test(rawMsg);
+      return retryable ? `${rawMsg} (có thể thử lại)` : rawMsg;
+    }
+
+    if (payload instanceof Error) {
+      const retryable = /network|timeout|abort|fetch/i.test(payload.message);
+      return retryable ? `${fallback} (có thể thử lại)` : fallback;
+    }
+
+    return `${fallback} (có thể thử lại)`;
+  }, []);
+
   const fetchDashboard = useCallback(async () => {
+    dashboardAbortRef.current?.abort();
+    const controller = new AbortController();
+    dashboardAbortRef.current = controller;
+
     try {
       setLoading(true); setError(null);
       const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch(`${API_URL}/api/v2/gamefi/dashboard/${encodeURIComponent(userId)}`, { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(`${API_URL}/api/v2/gamefi/dashboard/${encodeURIComponent(userId)}`, { headers, signal: controller.signal });
+      if (!res.ok) {
+        throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
+      }
       const json = await res.json();
       if (json.success) setData(json.data);
-      else throw new Error(json.error || 'Failed');
+      else throw json;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu');
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError(formatDashboardError(err, 'Không thể tải dữ liệu'));
     } finally {
       setLoading(false);
     }
-  }, [userId, token]);
+  }, [userId, token, formatDashboardError]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+  useEffect(() => {
+    return () => {
+      dashboardAbortRef.current?.abort();
+    };
+  }, []);
 
   if (loading) {
     return (

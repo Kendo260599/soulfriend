@@ -52,6 +52,14 @@ export const CATEGORY_LABELS: Record<string,string> = {
   community_impact: '🌍 Cộng Đồng',
 };
 
+export const LOAI_LABELS: Record<string,string> = {
+  tu_nhan_thuc: '🪞 Tự nhận thức',
+  cam_xuc: '💗 Cảm xúc',
+  ket_noi: '🤝 Kết nối',
+  y_nghia: '✨ Ý nghĩa',
+  resilience: '💪 Kiên cường',
+};
+
 /** Quest routing config — maps quest ID prefix to navigation or self-report behavior.
  *  completionMode is resolved centrally via questSemanticRegistry — NOT duplicated here. */
 export const QUEST_ROUTES: Record<string, { route?: string; needConfirm?: boolean; hint: string }> = {

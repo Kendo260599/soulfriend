@@ -16,14 +16,28 @@ export class RateLimiter {
   private store: RateLimitStore = {};
   private windowMs: number;
   private maxRequests: number;
+  private cleanupTimer: NodeJS.Timeout | null = null;
 
   constructor(windowMs: number = 15 * 60 * 1000, maxRequests: number = 100) {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
 
-    // Clean up old entries every minute
-    setInterval(() => this.cleanup(), 60 * 1000);
+    // Clean up old entries every minute (disabled in test to avoid open handles)
+    if (process.env.NODE_ENV !== 'test' && process.env.RATE_LIMITER_DISABLE_TIMER !== 'true') {
+      this.cleanupTimer = setInterval(() => this.cleanup(), 60 * 1000);
+      // Do not keep Node process alive only for this timer.
+      if (typeof this.cleanupTimer.unref === 'function') {
+        this.cleanupTimer.unref();
+      }
+    }
   }
+
+  dispose = (): void => {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+  };
 
   middleware = (req: Request, res: Response, next: NextFunction): void => {
     // Skip rate limiting for OPTIONS requests (preflight)
@@ -97,5 +111,12 @@ export const authRateLimiter = new AuthRateLimiter();
 // GameFi rate limiter — tighter limits for game endpoints
 export const gamefiReadLimiter = new RateLimiter(60 * 1000, 60);   // 60 reads/min
 export const gamefiWriteLimiter = new RateLimiter(60 * 1000, 20);  // 20 writes/min
+
+export function disposeRateLimitersForTests(): void {
+  rateLimiter.dispose();
+  authRateLimiter.dispose();
+  gamefiReadLimiter.dispose();
+  gamefiWriteLimiter.dispose();
+}
 
 export default rateLimiter;

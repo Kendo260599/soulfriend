@@ -77,6 +77,11 @@ const DashboardTab: React.FC = () => {
     if (mode === 'auto_event') {
       // Quest completes via system events — guide user to the relevant page
       if (routing?.route) { showToast(`📍 ${routing.hint}`); navigate(routing.route); return; }
+      if (prefix === 'quest_chat') {
+        showToast(`💡 ${routing?.hint || quest.description}`);
+        document.dispatchEvent(new CustomEvent('soulfriend:open-chatbot'));
+        return;
+      }
       showToast(`💡 ${routing?.hint || quest.description}`);
       return;
     }

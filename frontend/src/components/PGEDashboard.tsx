@@ -619,21 +619,46 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
 
   const token = localStorage.getItem('expertToken') || localStorage.getItem('sf_token');
 
+  const formatApiError = useCallback((payload: unknown, fallbackMsg: string): string => {
+    const fallback = fallbackMsg || 'Có lỗi xảy ra';
+
+    if (payload && typeof payload === 'object') {
+      const maybe = payload as { error?: unknown; message?: unknown; status?: unknown; retryable?: unknown };
+      const status = typeof maybe.status === 'number' ? maybe.status : null;
+      const rawMsg = typeof maybe.error === 'string'
+        ? maybe.error
+        : typeof maybe.message === 'string'
+          ? maybe.message
+          : fallback;
+      const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+      const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+      const retryable = explicitRetryable ?? byStatus ?? /không thể kết nối|network|timeout|temporar|tạm thời|too many requests/i.test(rawMsg);
+      return retryable ? `${rawMsg} (có thể thử lại)` : rawMsg;
+    }
+
+    if (payload instanceof Error) {
+      const retryable = /network|timeout|abort|fetch/i.test(payload.message);
+      return retryable ? `${fallback} (có thể thử lại)` : fallback;
+    }
+
+    return `${fallback} (có thể thử lại)`;
+  }, []);
+
   const fetchSummary = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/pge/summary`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setSummary(data.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải tổng quan PGE'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchFieldMap = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -643,15 +668,15 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/field-map/${uid}?days=30`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setFieldMap(data.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải bản đồ trường lực'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchTopology = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -666,18 +691,18 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
-      if (!topoRes.ok) throw new Error(`Topology HTTP ${topoRes.status}`);
-      if (!landRes.ok) throw new Error(`Landscape HTTP ${landRes.status}`);
+      if (!topoRes.ok) throw { status: topoRes.status, error: `Topology HTTP ${topoRes.status}`, retryable: topoRes.status >= 500 || topoRes.status === 408 || topoRes.status === 429 };
+      if (!landRes.ok) throw { status: landRes.status, error: `Landscape HTTP ${landRes.status}`, retryable: landRes.status >= 500 || landRes.status === 408 || landRes.status === 429 };
       const topoJson = await topoRes.json();
       const landJson = await landRes.json();
       if (topoJson.success) setTopologyData(topoJson.data);
       if (landJson.success) setLandscapeData(landJson.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải topology'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchForecast = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -687,15 +712,15 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/forecast/${uid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setForecastData(data.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải dự báo'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchSessionAnalytics = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -705,15 +730,15 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/session-analytics/${uid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setSessionAnalytics(data.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải analytics phiên'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchCohortDashboard = useCallback(async (uid?: string) => {
     try {
@@ -725,15 +750,15 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setCohortData(data.data);
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải dữ liệu cohort'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const generateSnapshot = useCallback(async () => {
     try {
@@ -744,19 +769,19 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ k: 4 }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) {
         await fetchCohortDashboard(selectedUserId || undefined);
       } else {
-        setError(data.message || 'Failed to generate snapshot');
+        setError(formatApiError(data, 'Failed to generate snapshot'));
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tạo snapshot'));
     } finally {
       setLoading(false);
     }
-  }, [token, fetchCohortDashboard, selectedUserId]);
+  }, [token, fetchCohortDashboard, selectedUserId, formatApiError]);
 
   const fetchNarrativeDashboard = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -766,16 +791,16 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/narrative/dashboard/${encodeURIComponent(uid)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setNarrativeData(data.data);
-      else setError(data.error || 'Failed to fetch narrative data');
+      else setError(formatApiError(data, 'Failed to fetch narrative data'));
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải dữ liệu narrative'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchResilienceDashboard = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -785,16 +810,16 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/resilience/dashboard/${encodeURIComponent(uid)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setResilienceData(data.data);
-      else setError(data.error || 'Failed to fetch resilience data');
+      else setError(formatApiError(data, 'Failed to fetch resilience data'));
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải dữ liệu resilience'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchTreatmentDashboard = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -804,16 +829,16 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/treatment/dashboard/${encodeURIComponent(uid)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setTreatmentData(data.data);
-      else setError(data.error || 'Failed to fetch treatment data');
+      else setError(formatApiError(data, 'Failed to fetch treatment data'));
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải dữ liệu treatment'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   const fetchOutcomesDashboard = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -823,16 +848,16 @@ const PGEDashboard: React.FC<PGEDashboardProps> = ({ userId }) => {
       const res = await fetch(`${API_URL}/api/pge/outcomes/dashboard/${encodeURIComponent(uid)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw { status: res.status, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 408 || res.status === 429 };
       const data = await res.json();
       if (data.success) setOutcomesData(data.data);
-      else setError(data.error || 'Failed to fetch outcomes data');
+      else setError(formatApiError(data, 'Failed to fetch outcomes data'));
     } catch (err: any) {
-      setError(err.message);
+      setError(formatApiError(err, 'Không thể tải dữ liệu outcomes'));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, formatApiError]);
 
   useEffect(() => {
     fetchSummary();

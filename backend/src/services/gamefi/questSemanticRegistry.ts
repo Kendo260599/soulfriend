@@ -131,7 +131,7 @@ export function validateQuestCompletion(
   }
 
   if (validation.minSentences > 0 && opts.journalText) {
-    const sentences = opts.journalText.split(/[.!?…。]+\s*/u).filter(s => s.trim().length > 0);
+    const sentences = opts.journalText.split(/[.!?…。]+\s*|\n+/u).filter(s => s.trim().length > 0);
     if (sentences.length < validation.minSentences) {
       return { ok: false, error: `Cần ít nhất ${validation.minSentences} câu` };
     }

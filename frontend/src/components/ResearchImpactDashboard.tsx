@@ -49,6 +49,13 @@ interface DashboardData {
   trends: TrendPoint[];
 }
 
+interface ApiLikeError {
+  error?: unknown;
+  message?: unknown;
+  status?: unknown;
+  retryable?: unknown;
+}
+
 // ================================
 // ANIMATIONS
 // ================================
@@ -284,6 +291,31 @@ const FormulaBox = styled.div`
   text-align: center;
 `;
 
+const formatApiError = (payload: unknown, fallbackMsg: string): string => {
+  const fallback = fallbackMsg || 'Có lỗi xảy ra';
+
+  if (payload && typeof payload === 'object') {
+    const maybe = payload as ApiLikeError;
+    const status = typeof maybe.status === 'number' ? maybe.status : null;
+    const rawMsg = typeof maybe.error === 'string'
+      ? maybe.error
+      : typeof maybe.message === 'string'
+        ? maybe.message
+        : fallback;
+    const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+    const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+    const retryable = explicitRetryable ?? byStatus ?? /không thể kết nối|network|timeout|temporar|tạm thời|too many requests/i.test(rawMsg);
+    return retryable ? `${rawMsg} (có thể thử lại)` : rawMsg;
+  }
+
+  if (payload instanceof Error) {
+    const retryable = /network|timeout|abort|fetch/i.test(payload.message);
+    return retryable ? `${fallback} (có thể thử lại)` : fallback;
+  }
+
+  return `${fallback} (có thể thử lại)`;
+};
+
 // ================================
 // COMPONENT
 // ================================
@@ -313,7 +345,11 @@ const ResearchImpactDashboard: React.FC<ResearchImpactDashboardProps> = ({ onBac
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw {
+          status: response.status,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          retryable: response.status >= 500 || response.status === 408 || response.status === 429,
+        };
       }
 
       const result = await response.json();
@@ -321,11 +357,11 @@ const ResearchImpactDashboard: React.FC<ResearchImpactDashboardProps> = ({ onBac
         setData(result.data);
         setLastUpdated(new Date());
       } else {
-        throw new Error(result.error || 'Failed to fetch dashboard data');
+        throw result;
       }
     } catch (err: any) {
       console.error('Dashboard fetch error:', err);
-      setError(err.message || 'Không thể tải dữ liệu dashboard');
+      setError(formatApiError(err, 'Không thể tải dữ liệu dashboard'));
       
       // Show demo data for development
       setData(getDemoData());

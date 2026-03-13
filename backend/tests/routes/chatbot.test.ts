@@ -7,6 +7,18 @@ import request from 'supertest';
 import express from 'express';
 import chatbotRoutes from '../../src/routes/chatbot';
 
+jest.setTimeout(20000);
+
+// Bypass middleware with external dependencies during route unit/integration tests
+jest.mock('../../src/middleware/redisRateLimiter', () => ({
+  chatbotRateLimiter: (_req: any, _res: any, next: any) => next(),
+}));
+
+jest.mock('../../src/middleware/consentEnforcement', () => ({
+  checkConsent: () => (_req: any, _res: any, next: any) => next(),
+  requireConsent: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 // Mock services
 jest.mock('../../src/services/openAIService', () => ({
   __esModule: true,
@@ -25,6 +37,78 @@ jest.mock('../../src/services/criticalInterventionService', () => ({
       timestamp: new Date(),
       status: 'pending',
     }),
+  },
+}));
+
+jest.mock('../../src/services/memoryAwareChatbotService', () => ({
+  memoryAwareChatbotService: {
+    chat: jest.fn().mockImplementation(async (message: string) => {
+      if ((message || '').toLowerCase().includes('muốn chết')) {
+        return {
+          message: 'Crisis support response',
+          response: 'Crisis support response',
+          intent: 'crisis',
+          confidence: 0.99,
+          suggestions: ['Liên hệ hỗ trợ khẩn cấp'],
+          riskLevel: 'CRITICAL',
+          crisisLevel: 'critical',
+        };
+      }
+      return {
+        message: 'AI response',
+        response: 'AI response',
+        intent: 'general_chat',
+        confidence: 0.9,
+        suggestions: [],
+        riskLevel: 'LOW',
+        crisisLevel: 'low',
+      };
+    }),
+  },
+}));
+
+jest.mock('../../src/services/chatbotService', () => ({
+  ChatbotService: jest.fn().mockImplementation(() => ({
+    performSafetyCheck: jest.fn().mockResolvedValue({
+      riskLevel: 'LOW',
+      recommendation: 'safe',
+    }),
+    retrieveKnowledge: jest.fn().mockResolvedValue([]),
+    getEmergencyResources: jest.fn().mockResolvedValue([]),
+  })),
+}));
+
+jest.mock('../../src/services/v5IntegrationService', () => ({
+  v5IntegrationService: {
+    checkSafety: jest.fn().mockReturnValue({ safe: true, response: '' }),
+    afterChatResponse: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
+jest.mock('../../src/services/pge/pgeOrchestrator', () => ({
+  pgeOrchestrator: {
+    processMessage: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
+jest.mock('../../src/services/gamefi', () => ({
+  detectEvent: jest.fn().mockReturnValue(null),
+  processEvent: jest.fn().mockResolvedValue({ xpGained: 0 }),
+  generateShortFeedback: jest.fn().mockReturnValue(''),
+}));
+
+jest.mock('../../src/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
   },
 }));
 

@@ -374,3 +374,141 @@ describe('GameFi Error Format', () => {
     expect(typeof res3.body.error).toBe('string');
   });
 });
+
+// ══════════════════════════════════════════════
+// 8. REGRESSION TESTS — RECENT GAMEFI FIXES
+// ══════════════════════════════════════════════
+
+describe('GameFi Regression — Recent Fixes', () => {
+  it('POST /quest/complete rejects stale daily quest id from previous UTC day', async () => {
+    const userId = 'test_fix_daily_boundary';
+    const token = createToken(userId);
+
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const dayStr = `${yesterday.getUTCFullYear()}-${String(yesterday.getUTCMonth() + 1).padStart(2, '0')}-${String(yesterday.getUTCDate()).padStart(2, '0')}`;
+    const staleQuestId = `quest_gratitude_${dayStr}`;
+
+    const res = await request(app)
+      .post('/api/v2/gamefi/quest/complete')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        userId,
+        questId: staleQuestId,
+        journalText: 'Biết ơn gia đình.\nBiết ơn sức khỏe.\nBiết ơn hôm nay.',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toContain('hết hạn');
+  });
+
+  it('POST /quest/complete is idempotent under concurrent requests for same quest', async () => {
+    const userId = 'test_fix_concurrent_idempotency';
+    const token = createToken(userId);
+    const now = new Date();
+    const dayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+    const questId = `quest_breathing_${dayStr}`;
+
+    const [a, b] = await Promise.all([
+      request(app)
+        .post('/api/v2/gamefi/quest/complete')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ userId, questId }),
+      request(app)
+        .post('/api/v2/gamefi/quest/complete')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ userId, questId }),
+    ]);
+
+    const statuses = [a.status, b.status].sort((x, y) => x - y);
+    expect(statuses).toEqual([200, 409]);
+  });
+
+  it('POST /behavior/daily reflection rejects missing journalText', async () => {
+    const userId = 'test_fix_reflection_missing';
+    const token = createToken(userId);
+
+    const res = await request(app)
+      .post('/api/v2/gamefi/behavior/daily')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ userId, step: 'reflection' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toContain('nội dung');
+  });
+
+  it('POST /behavior/daily reflection accepts 3 newline-based sentences', async () => {
+    const userId = 'test_fix_reflection_newline';
+    const token = createToken(userId);
+
+    const res = await request(app)
+      .post('/api/v2/gamefi/behavior/daily')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        userId,
+        step: 'reflection',
+        journalText: 'Hôm nay mình thấy mệt\nMình đã cố gắng tiếp tục\nMình muốn ngủ sớm hơn',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.reflectionDone).toBe(true);
+  });
+
+  it('POST /behavior/weekly awards eventResult only once for same challenge', async () => {
+    const userId = 'test_fix_weekly_once';
+    const token = createToken(userId);
+
+    const first = await request(app)
+      .post('/api/v2/gamefi/behavior/weekly')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ userId, challengeId: 'weekly_rewrite_story' });
+
+    const second = await request(app)
+      .post('/api/v2/gamefi/behavior/weekly')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ userId, challengeId: 'weekly_rewrite_story' });
+
+    expect(first.status).toBe(200);
+    expect(first.body.success).toBe(true);
+    expect(first.body.data.eventResult).toBeDefined();
+
+    expect(second.status).toBe(200);
+    expect(second.body.success).toBe(true);
+    expect(second.body.data.eventResult).toBeNull();
+  });
+
+  it('GET /history maps daily quest title and xp correctly', async () => {
+    const userId = 'test_fix_history_daily';
+    const token = createToken(userId);
+    const today = new Date();
+    const dayStr = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}-${String(today.getUTCDate()).padStart(2, '0')}`;
+    const questId = `quest_gratitude_${dayStr}`;
+
+    const complete = await request(app)
+      .post('/api/v2/gamefi/quest/complete')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        userId,
+        questId,
+        journalText: 'Mình biết ơn gia đình.\nMình biết ơn sức khỏe.\nMình biết ơn một ngày bình an.',
+      });
+
+    expect(complete.status).toBe(200);
+    expect(complete.body.success).toBe(true);
+
+    const history = await request(app)
+      .get(`/api/v2/gamefi/history/${userId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(history.status).toBe(200);
+    expect(history.body.success).toBe(true);
+
+    const entry = (history.body.data as any[]).find((h) => h.questId === questId);
+    expect(entry).toBeDefined();
+    expect(entry.title).toBe('Ba điều biết ơn');
+    expect(entry.xpReward).toBe(3);
+  });
+});

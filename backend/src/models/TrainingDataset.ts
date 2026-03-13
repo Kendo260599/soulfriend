@@ -88,6 +88,5 @@ const TrainingDatasetSchema = new Schema<ITrainingDataset>(
 
 TrainingDatasetSchema.index({ status: 1, qualityScore: -1 });
 TrainingDatasetSchema.index({ category: 1, status: 1 });
-TrainingDatasetSchema.index({ datasetId: 1 });
 
 export default mongoose.model<ITrainingDataset>('TrainingDataset', TrainingDatasetSchema);

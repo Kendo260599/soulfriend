@@ -47,7 +47,7 @@ export interface ISafetyLog extends Document {
 
 const SafetyLogSchema = new Schema<ISafetyLog>(
   {
-    timestamp: { type: Date, default: Date.now, index: true },
+    timestamp: { type: Date, default: Date.now },
     eventType: {
       type: String,
       enum: ['guardrail_violation', 'crisis_detected', 'content_blocked', 'pii_leak_prevented'],

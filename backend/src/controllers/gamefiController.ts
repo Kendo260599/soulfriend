@@ -357,14 +357,21 @@ export class GamefiController {
     try {
       const userId = getAuthedUserId(req, res, 'body');
       if (!userId) return;
-      const { step } = req.body;
+      const { step, journalText } = req.body;
       if (!['checkin', 'reflection', 'community'].includes(step)) {
         res.status(400).json({ success: false, error: 'Invalid step. Must be: checkin, reflection, community' });
         return;
       }
-      const ritual = await completeDailyRitualStep(userId, step);
+      const sanitizedText = journalText && typeof journalText === 'string'
+        ? sanitizeText(journalText.slice(0, 2000))
+        : undefined;
+      const ritual = await completeDailyRitualStep(userId, step, sanitizedText);
       res.json({ success: true, data: ritual });
     } catch (error) {
+      if (error instanceof QuestValidationError || error instanceof InvalidTransitionError) {
+        res.status(400).json({ success: false, error: (error as Error).message });
+        return;
+      }
       logger.error('GameFi completeDailyStep error:', error);
       next(error);
     }

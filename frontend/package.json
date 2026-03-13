@@ -37,6 +37,10 @@
         "start": "react-scripts start",
         "build": "react-scripts build",
         "test": "react-scripts test",
+        "e2e": "playwright test",
+        "e2e:publisher": "playwright test e2e/gamefi.mobile.publisher.spec.ts e2e/gamefi.multitab.refresh.spec.ts e2e/gamefi.chatbot.autocomplete.spec.ts e2e/gamefi.network.chaos.spec.ts e2e/gamefi.soak.spec.ts",
+        "e2e:headed": "playwright test --headed",
+        "e2e:ui": "playwright test --ui",
         "eject": "react-scripts eject"
     },
     "browserslist": {
@@ -52,6 +56,7 @@
         ]
     },
     "devDependencies": {
+        "@playwright/test": "^1.54.2",
         "eslint-config-react-app": "^7.0.1",
         "eslint-plugin-react-hooks": "^7.0.0",
         "glob": "^11.0.3",

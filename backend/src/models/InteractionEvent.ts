@@ -56,7 +56,7 @@ const InteractionEventSchema = new Schema<IInteractionEvent>(
   {
     sessionId: { type: String, required: true, index: true },
     userId: { type: String, required: true, index: true },
-    timestamp: { type: Date, default: Date.now, index: true },
+    timestamp: { type: Date, default: Date.now },
 
     userText: { type: String, required: true },
     userTextLength: { type: Number, required: true },

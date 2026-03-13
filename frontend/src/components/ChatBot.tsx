@@ -688,6 +688,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const openFromGameFi = () => setIsOpen(true);
+    document.addEventListener('soulfriend:open-chatbot', openFromGameFi as EventListener);
+    return () => {
+      document.removeEventListener('soulfriend:open-chatbot', openFromGameFi as EventListener);
+    };
+  }, []);
+
   const tryCompleteChatQuest = useCallback(async () => {
     if (chatQuestCompletedRef.current) return;
     const gamefiUserId = authUser?.id;
@@ -701,6 +709,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ userId: gamefiUserId, questId, autoEvent: true }),
       });
+      const isRetryableStatus = res.status >= 500 || res.status === 408 || res.status === 429;
       if (res.ok) {
         sessionStorage.setItem('quest_chat_done', '1');
         const json = await res.json();
@@ -735,8 +744,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           setMessages(prev => [...prev, questMsg]);
         }
       } else {
-        // Server rejected (e.g. already completed) — keep flag true to avoid retries
-        chatQuestCompletedRef.current = true;
+        // Retryable server failures should allow next-message retry; validation/conflict should not.
+        chatQuestCompletedRef.current = !isRetryableStatus;
+        if (isRetryableStatus) {
+          sessionStorage.removeItem('quest_chat_done');
+        }
       }
     } catch {
       // Network error — allow retry on next message

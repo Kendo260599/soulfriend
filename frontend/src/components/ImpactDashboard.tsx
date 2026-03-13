@@ -268,6 +268,31 @@ const formatMs = (ms: number): string => {
   return (ms / 1000).toFixed(1) + 's';
 };
 
+const formatApiError = (payload: unknown, fallbackMsg: string): string => {
+  const fallback = fallbackMsg || 'Có lỗi xảy ra';
+
+  if (payload && typeof payload === 'object') {
+    const maybe = payload as { error?: unknown; message?: unknown; status?: unknown; retryable?: unknown };
+    const status = typeof maybe.status === 'number' ? maybe.status : null;
+    const rawMsg = typeof maybe.error === 'string'
+      ? maybe.error
+      : typeof maybe.message === 'string'
+        ? maybe.message
+        : fallback;
+    const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+    const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+    const retryable = explicitRetryable ?? byStatus ?? /không thể kết nối|network|timeout|temporar|tạm thời|too many requests/i.test(rawMsg);
+    return retryable ? `${rawMsg} (có thể thử lại)` : rawMsg;
+  }
+
+  if (payload instanceof Error) {
+    const retryable = /network|timeout|abort|fetch/i.test(payload.message);
+    return retryable ? `${fallback} (có thể thử lại)` : fallback;
+  }
+
+  return `${fallback} (có thể thử lại)`;
+};
+
 const getChangeIndicator = (current: number, previous: number): { text: string; color: string } => {
   if (previous === 0) return { text: 'Mới', color: '#4285f4' };
   const change = ((current - previous) / previous) * 100;
@@ -307,7 +332,11 @@ const ImpactDashboard: React.FC = () => {
       ]);
 
       if (!dashRes.ok) {
-        throw new Error(`Dashboard API: ${dashRes.status} ${dashRes.statusText}`);
+        throw {
+          status: dashRes.status,
+          error: `Dashboard API: ${dashRes.status} ${dashRes.statusText}`,
+          retryable: dashRes.status >= 500 || dashRes.status === 408 || dashRes.status === 429,
+        };
       }
 
       const dashJson = await dashRes.json();
@@ -319,7 +348,7 @@ const ImpactDashboard: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to load dashboard:', err);
-      setError(err.message || 'Không thể tải dữ liệu dashboard');
+      setError(formatApiError(err, 'Không thể tải dữ liệu dashboard'));
     } finally {
       setLoading(false);
     }

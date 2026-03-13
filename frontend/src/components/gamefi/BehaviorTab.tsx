@@ -2,7 +2,7 @@
  * BehaviorTab — Daily ritual, weekly challenges, seasonal goals, meaning shifts
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameFi } from './GameFiContext';
 import {
   SectionTitle, SubTitle, Card, Grid,
@@ -10,16 +10,55 @@ import {
   QuestCard, QuestTitle, QuestDesc, QuestReward, QuestStatus,
   RitualStep,
 } from './styles';
+import JournalInputModal from './JournalInputModal';
 
 const BehaviorTab: React.FC = () => {
-  const { data, userId, apiPost, showToast, showReward, fetchAll } = useGameFi();
+  const { data, userId, apiPost, formatApiError, showToast, showReward, fetchAll } = useGameFi();
+  const [submittingRitualSteps, setSubmittingRitualSteps] = useState<Set<'checkin' | 'reflection' | 'community'>>(new Set());
+  const [submittingWeeklyIds, setSubmittingWeeklyIds] = useState<Set<string>>(new Set());
+  const [showReflectionModal, setShowReflectionModal] = useState(false);
   if (!data) return null;
 
   const { behavior } = data;
 
-  const handleRitualStep = async (step: 'checkin' | 'reflection' | 'community') => {
+  const beginRitualSubmit = (step: 'checkin' | 'reflection' | 'community'): boolean => {
+    if (submittingRitualSteps.has(step)) return false;
+    setSubmittingRitualSteps(prev => new Set(prev).add(step));
+    return true;
+  };
+
+  const endRitualSubmit = (step: 'checkin' | 'reflection' | 'community') => {
+    setSubmittingRitualSteps(prev => {
+      if (!prev.has(step)) return prev;
+      const next = new Set(prev);
+      next.delete(step);
+      return next;
+    });
+  };
+
+  const isRitualSubmitting = (step: 'checkin' | 'reflection' | 'community') => submittingRitualSteps.has(step);
+
+  const beginWeeklySubmit = (id: string): boolean => {
+    if (submittingWeeklyIds.has(id)) return false;
+    setSubmittingWeeklyIds(prev => new Set(prev).add(id));
+    return true;
+  };
+
+  const endWeeklySubmit = (id: string) => {
+    setSubmittingWeeklyIds(prev => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const isWeeklySubmitting = (id: string) => submittingWeeklyIds.has(id);
+
+  const handleRitualStep = async (step: 'checkin' | 'reflection' | 'community', journalText?: string) => {
+    if (!beginRitualSubmit(step)) return;
     try {
-      const json = await apiPost('/behavior/daily', { userId, step });
+      const json = await apiPost('/behavior/daily', { userId, step, ...(journalText ? { journalText } : {}) });
       if (json.success) {
         if (json.data?.eventResult) {
           showReward(json.data.eventResult, 'Nghi thức hàng ngày');
@@ -28,15 +67,18 @@ const BehaviorTab: React.FC = () => {
         }
         await fetchAll();
       } else {
-        showToast(`❌ ${json.error || 'Không thể cập nhật'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể cập nhật')}`);
       }
     } catch (err) {
       console.error('handleRitualStep failed', err);
-      showToast('❌ Không thể cập nhật');
+      showToast(`❌ ${formatApiError(err, 'Không thể cập nhật')}`);
+    } finally {
+      endRitualSubmit(step);
     }
   };
 
   const handleWeeklyComplete = async (id: string) => {
+    if (!beginWeeklySubmit(id)) return;
     try {
       const json = await apiPost('/behavior/weekly', { userId, challengeId: id });
       if (json.success) {
@@ -47,11 +89,13 @@ const BehaviorTab: React.FC = () => {
         }
         await fetchAll();
       } else {
-        showToast(`❌ ${json.error || 'Không thể cập nhật'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể cập nhật')}`);
       }
     } catch (err) {
       console.error('handleWeeklyComplete failed', err);
-      showToast('❌ Không thể cập nhật');
+      showToast(`❌ ${formatApiError(err, 'Không thể cập nhật')}`);
+    } finally {
+      endWeeklySubmit(id);
     }
   };
 
@@ -63,17 +107,17 @@ const BehaviorTab: React.FC = () => {
       <SubTitle>☀️ Nghi Thức Hàng Ngày ({behavior.dailyRitual.date})</SubTitle>
       <Card style={{marginBottom:'1.5rem'}}>
         {behavior.dailyRitual.completed && <div style={{color:'#48BB78',fontWeight:600,marginBottom:'0.75rem'}}>🎉 Hoàn thành! Phần thưởng +15 XP, +5 Soul Points</div>}
-        <RitualStep done={behavior.dailyRitual.checkinDone} onClick={() => !behavior.dailyRitual.checkinDone && handleRitualStep('checkin')}>
+        <RitualStep done={behavior.dailyRitual.checkinDone} onClick={() => !behavior.dailyRitual.checkinDone && !isRitualSubmitting('checkin') && handleRitualStep('checkin')}>
           <span style={{fontSize:'1.3rem'}}>💬</span>
           <div><strong>Check-in cảm xúc</strong><div style={{color:'#888',fontSize:'0.8rem'}}>Chia sẻ cảm xúc hôm nay</div></div>
           <span style={{marginLeft:'auto',fontWeight:600}}>{behavior.dailyRitual.checkinDone ? '✅' : '⭕'}</span>
         </RitualStep>
-        <RitualStep done={behavior.dailyRitual.reflectionDone} onClick={() => !behavior.dailyRitual.reflectionDone && handleRitualStep('reflection')}>
+        <RitualStep done={behavior.dailyRitual.reflectionDone} onClick={() => !behavior.dailyRitual.reflectionDone && !isRitualSubmitting('reflection') && setShowReflectionModal(true)}>
           <span style={{fontSize:'1.3rem'}}>📝</span>
           <div><strong>Suy ngẫm</strong><div style={{color:'#888',fontSize:'0.8rem'}}>Viết ít nhất 3 câu về bản thân</div></div>
           <span style={{marginLeft:'auto',fontWeight:600}}>{behavior.dailyRitual.reflectionDone ? '✅' : '⭕'}</span>
         </RitualStep>
-        <RitualStep done={behavior.dailyRitual.communityDone} onClick={() => !behavior.dailyRitual.communityDone && handleRitualStep('community')}>
+        <RitualStep done={behavior.dailyRitual.communityDone} onClick={() => !behavior.dailyRitual.communityDone && !isRitualSubmitting('community') && handleRitualStep('community')}>
           <span style={{fontSize:'1.3rem'}}>🤝</span>
           <div><strong>Kết nối cộng đồng</strong><div style={{color:'#888',fontSize:'0.8rem'}}>Hỗ trợ hoặc chia sẻ với ai đó</div></div>
           <span style={{marginLeft:'auto',fontWeight:600}}>{behavior.dailyRitual.communityDone ? '✅' : '⭕'}</span>
@@ -84,7 +128,7 @@ const BehaviorTab: React.FC = () => {
       <SubTitle>📅 Thử Thách Tuần</SubTitle>
       <Grid cols="280px">
         {behavior.weeklyChallenges.map(ch => (
-          <QuestCard key={ch.id} done={ch.completed} onClick={() => !ch.completed && handleWeeklyComplete(ch.id)}>
+            <QuestCard key={ch.id} done={ch.completed} onClick={() => !ch.completed && !isWeeklySubmitting(ch.id) && handleWeeklyComplete(ch.id)}>
             <QuestTitle>{ch.title}<QuestStatus done={ch.completed}>{ch.completed ? '✅' : ''}</QuestStatus></QuestTitle>
             <QuestDesc>{ch.description}</QuestDesc>
             <QuestReward>+{ch.xpReward} XP</QuestReward>
@@ -131,6 +175,20 @@ const BehaviorTab: React.FC = () => {
             </Card>
           ))}
         </>
+      )}
+
+      {showReflectionModal && (
+        <JournalInputModal
+          title="Suy ngẫm trong nghi thức hàng ngày"
+          description="Viết ít nhất 3 câu về cảm xúc hoặc điều bạn học được hôm nay"
+          onSubmit={(text) => {
+            setShowReflectionModal(false);
+            handleRitualStep('reflection', text);
+          }}
+          onCancel={() => setShowReflectionModal(false)}
+          minSentences={3}
+          maxLength={2000}
+        />
       )}
     </>
   );

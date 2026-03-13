@@ -1445,6 +1445,31 @@ const ClinicalReportView: React.FC = () => {
 
   const token = localStorage.getItem('expertToken');
 
+  const formatApiError = (payload: unknown, fallbackMsg: string): string => {
+    const fallback = fallbackMsg || 'Có lỗi xảy ra';
+
+    if (payload && typeof payload === 'object') {
+      const maybe = payload as { error?: unknown; message?: unknown; status?: unknown; retryable?: unknown };
+      const status = typeof maybe.status === 'number' ? maybe.status : null;
+      const rawMsg = typeof maybe.error === 'string'
+        ? maybe.error
+        : typeof maybe.message === 'string'
+          ? maybe.message
+          : fallback;
+      const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+      const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+      const retryable = explicitRetryable ?? byStatus ?? /không thể kết nối|network|timeout|temporar|tạm thời|too many requests/i.test(rawMsg);
+      return retryable ? `${rawMsg} (có thể thử lại)` : rawMsg;
+    }
+
+    if (payload instanceof Error) {
+      const retryable = /network|timeout|abort|fetch/i.test(payload.message);
+      return retryable ? `${fallback} (có thể thử lại)` : fallback;
+    }
+
+    return `${fallback} (có thể thử lại)`;
+  };
+
   const generateReport = async () => {
     if (!userId.trim()) { setError('Vui lòng nhập mã bệnh nhân'); return; }
     setLoading(true); setError(''); setReport(null);
@@ -1454,8 +1479,8 @@ const ClinicalReportView: React.FC = () => {
       });
       const json = await res.json();
       if (json.success) { setReport(json.data); }
-      else { setError(json.error || 'Lỗi tạo báo cáo'); }
-    } catch (e: any) { setError(e.message || 'Lỗi kết nối'); }
+      else { setError(formatApiError(json, 'Lỗi tạo báo cáo')); }
+    } catch (e: any) { setError(formatApiError(e, 'Lỗi kết nối')); }
     setLoading(false);
   };
 
@@ -1466,7 +1491,7 @@ const ClinicalReportView: React.FC = () => {
       const res = await fetch(`${API_URL}/api/pge/report/pdf/${encodeURIComponent(userId.trim())}?days=${days}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) { setError('Lỗi tải PDF'); setDownloading(false); return; }
+      if (!res.ok) { setError(formatApiError({ status: res.status, error: 'Lỗi tải PDF', retryable: res.status >= 500 || res.status === 408 || res.status === 429 }, 'Lỗi tải PDF')); setDownloading(false); return; }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1476,7 +1501,7 @@ const ClinicalReportView: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-    } catch (e: any) { setError(e.message || 'Lỗi tải PDF'); }
+    } catch (e: any) { setError(formatApiError(e, 'Lỗi tải PDF')); }
     setDownloading(false);
   };
 

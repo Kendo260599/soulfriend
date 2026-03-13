@@ -35,10 +35,11 @@ const FIRST_FOCUS_WINDOW_MS = 10 * 60 * 1000;
 
 const GameFiInner: React.FC = () => {
   const { user, logout } = useAuth();
-  const { data, loading, error, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, userId, apiPost, showToast, showReward, dismissReward, navigate } = useGameFi();
+  const { data, loading, error, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, userId, apiPost, formatApiError, showToast, showReward, dismissReward, navigate } = useGameFi();
   const [tab, setTab] = useState<TabType>('profile');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isFocusWindowActive, setIsFocusWindowActive] = useState(false);
+  const [isCompletingQuest, setIsCompletingQuest] = useState(false);
 
   const getTopGrowthInsight = () => {
     if (!rewardData || !rewardData.growthImpact) return null;
@@ -84,17 +85,21 @@ const GameFiInner: React.FC = () => {
   // Confirm-complete helper for daily quest dialog
   const handleConfirmComplete = async (journalText?: string) => {
     if (!confirmQuest) return;
+    if (isCompletingQuest) return;
+    setIsCompletingQuest(true);
     try {
       const json = await apiPost('/quest/complete', { userId, questId: confirmQuest.id, ...(journalText ? { journalText } : {}) });
       if (json.success && json.data) {
         showReward(json.data, confirmQuest.title);
         await fetchAll();
       } else {
-        showToast(`❌ ${json.error || 'Không thể hoàn thành quest'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể hoàn thành quest')}`);
       }
     } catch (err) {
       console.error('handleConfirmComplete failed', err);
-      showToast('❌ Không thể hoàn thành quest');
+      showToast(`❌ ${formatApiError(err, 'Không thể hoàn thành quest')}`);
+    } finally {
+      setIsCompletingQuest(false);
     }
     setConfirmQuest(null);
   };
@@ -173,7 +178,7 @@ const GameFiInner: React.FC = () => {
             title={confirmQuest.title}
             description={QUEST_ROUTES[confirmQuest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '')]?.hint || confirmQuest.description}
             onSubmit={(text) => handleConfirmComplete(text)}
-            onCancel={() => setConfirmQuest(null)}
+            onCancel={() => { if (!isCompletingQuest) setConfirmQuest(null); }}
             minSentences={sem.validation.minSentences}
             maxLength={sem.validation.maxTextLength}
           />
@@ -188,8 +193,8 @@ const GameFiInner: React.FC = () => {
               {QUEST_ROUTES[confirmQuest.id.replace(/_\d{4}-\d{2}-\d{2}$/, '')]?.hint || confirmQuest.description}
             </ConfirmDesc>
             <ConfirmBtnRow>
-              <ActionBtn variant="secondary" onClick={() => setConfirmQuest(null)}>Chưa làm</ActionBtn>
-              <ActionBtn onClick={() => handleConfirmComplete()}>✅ Đã hoàn thành</ActionBtn>
+              <ActionBtn variant="secondary" onClick={() => setConfirmQuest(null)} disabled={isCompletingQuest} style={isCompletingQuest ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}>Chưa làm</ActionBtn>
+              <ActionBtn onClick={() => handleConfirmComplete()} disabled={isCompletingQuest} style={isCompletingQuest ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}>{isCompletingQuest ? 'Đang xử lý...' : '✅ Đã hoàn thành'}</ActionBtn>
             </ConfirmBtnRow>
           </ConfirmBox>
         </Overlay>

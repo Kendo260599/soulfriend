@@ -1,22 +1,30 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
+
+function renderWithProviders() {
+  return render(
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
 
 test('renders SoulFriend application', () => {
-  render(<App />);
-  const title = screen.getByText(/SoulFriend/i);
+  renderWithProviders();
+  const title = screen.getByRole('heading', { name: /soulfriend/i });
   expect(title).toBeInTheDocument();
 });
 
-test('renders main navigation button', () => {
-  render(<App />);
-  const startButton = screen.getByText(/🚀 Khám phá ngay/i);
-  expect(startButton).toBeInTheDocument();
+test('renders consent action button', () => {
+  renderWithProviders();
+  const consentButton = screen.getByRole('button', { name: /bắt đầu khảo sát/i });
+  expect(consentButton).toBeInTheDocument();
 });
 
-test('renders AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️ features', () => {
-  render(<App />);
-  const aiChatbots = screen.getAllByText(/AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️/i);
-  expect(aiChatbots.length).toBeGreaterThan(0);
-  expect(aiChatbots[0]).toBeInTheDocument();
+test('renders consent agreement text', () => {
+  renderWithProviders();
+  const consentText = screen.getByText(/tôi đã đọc và hiểu rõ các thông tin trên/i);
+  expect(consentText).toBeInTheDocument();
 });

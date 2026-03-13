@@ -5,7 +5,7 @@
  */
 
 import cors from 'cors';
-import express, { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import * as Sentry from '@sentry/node';
@@ -25,6 +25,11 @@ import config from './config/environment';
 import { qstashService } from './config/qstash';
 import { redisConnection } from './config/redis';
 import { initSentry } from './config/sentry';
+
+// Initialize Sentry before loading Express so instrumentation can hook correctly.
+initSentry();
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const express = require('express') as typeof import('express');
 
 // Redis Service
 import redisService from './services/redisService';
@@ -116,11 +121,6 @@ const PORT = config.PORT;
 
 // Create HTTP Server for Socket.io
 const httpServer = createServer(app);
-
-// ====================
-// SENTRY INITIALIZATION
-// ====================
-initSentry();
 
 // ====================
 // PREFLIGHT HANDLER - MUST BE FIRST

@@ -79,7 +79,7 @@ UserSchema.methods.comparePassword = async function (
 };
 
 // Index for fast lookups
-UserSchema.index({ email: 1 });
+// email already has unique index from field definition
 UserSchema.index({ createdAt: -1 });
 
 const User = mongoose.model<IUser>('User', UserSchema);

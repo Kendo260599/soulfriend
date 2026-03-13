@@ -12,7 +12,7 @@ import {
 } from './styles';
 
 const WorldMapTab: React.FC = () => {
-  const { data, userId, apiPost, showToast, fetchAll } = useGameFi();
+  const { data, userId, apiPost, formatApiError, showToast, fetchAll } = useGameFi();
   if (!data) return null;
 
   const { worldMap, lore } = data;
@@ -24,11 +24,11 @@ const WorldMapTab: React.FC = () => {
         showToast(json.data.message);
         await fetchAll();
       } else {
-        showToast(`❌ ${json.error || 'Không thể di chuyển'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể di chuyển')}`);
       }
     } catch (err) {
       console.error('handleTravel failed', err);
-      showToast('❌ Không thể di chuyển');
+      showToast(`❌ ${formatApiError(err, 'Không thể di chuyển')}`);
     }
   };
 
@@ -41,7 +41,17 @@ const WorldMapTab: React.FC = () => {
       <Grid cols="300px">
         {worldMap.locations.map(loc => (
           <LocationCard key={loc.id} unlocked={loc.unlocked} current={loc.isCurrent}
-            onClick={() => loc.unlocked && !loc.isCurrent && handleTravel(loc.id)}>
+            onClick={() => {
+              if (!loc.unlocked) {
+                showToast(`🔒 Cần Level ${loc.levelRequired} và Growth ${loc.growthScoreRequired} để mở khóa`);
+                return;
+              }
+              if (loc.isCurrent) {
+                showToast('📍 Bạn đang ở vùng này rồi');
+                return;
+              }
+              handleTravel(loc.id);
+            }}>
             <LocationIcon>{LOCATION_ICONS[loc.id] || '🏔️'}</LocationIcon>
             <LocationName>{loc.ten} {loc.isCurrent && '📍'}</LocationName>
             <LocationDesc>{loc.moTa}</LocationDesc>

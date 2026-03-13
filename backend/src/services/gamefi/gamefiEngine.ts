@@ -53,7 +53,7 @@ import {
 } from '../../../../gamefi/engine/stateEngine';
 import {
   getDailyRitual, completeDailyStep, getDailyRitualReward, initWeeklyChallenges,
-  getAllWeeklyChallenges, completeWeeklyChallenge,
+  getAllWeeklyChallenges, getWeeklyChallenge, completeWeeklyChallenge,
   initSeasonalGoals, getAllSeasonalGoals, updateSeasonalProgress,
   getMeaningShifts,
 } from '../../../../gamefi/engine/behaviorLoop';
@@ -78,6 +78,7 @@ import {
   resolveCompletionMode, resolveQuestSemantics, validateQuestCompletion,
 } from './questSemanticRegistry';
 import type { QuestCompleteOpts } from './questSemanticRegistry';
+import { isTodayDailyQuestId, parseDailyQuestId, utcDateKey } from './dailyBoundary';
 
 // ══════════════════════════════════════════════
 // INITIALIZATION
@@ -124,6 +125,9 @@ function ensureInit() {
 const MAX_METADATA_ENTRIES = 10000;
 const createdAtStore: Map<string, string> = new Map();
 const skillStateStore: Map<string, CharacterSkillState> = new Map();
+const inFlightQuestCompletions: Set<string> = new Set();
+const inFlightRitualCompletions: Set<string> = new Set();
+const inFlightWeeklyCompletions: Set<string> = new Set();
 
 /** FIFO eviction: remove oldest entries when map exceeds cap */
 function evictIfNeeded<V>(map: Map<string, V>, max: number): void {
@@ -141,8 +145,15 @@ function evictIfNeeded<V>(map: Map<string, V>, max: number): void {
 // ══════════════════════════════════════════════
 
 function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return utcDateKey();
+}
+
+function countSentences(text: string): number {
+  return text.split(/[.!?…。]+\s*|\n+/u).filter(s => s.trim().length > 0).length;
+}
+
+function getDailyQuestTemplateByPrefix(prefix: string): DailyQuestTemplate | undefined {
+  return [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS].find(t => t.key === prefix);
 }
 
 function getSkillState(userId: string) {
@@ -313,41 +324,63 @@ export interface QuestCompleteOptions {
   autoEvent?: boolean;  // true when called by system event (chatbot, DASS, etc.)
 }
 
+function ensureDailyQuestBoundary(questId: string): void {
+  const parsed = parseDailyQuestId(questId);
+  if (!parsed) {
+    throw new QuestValidationError('Quest hàng ngày không hợp lệ: sai định dạng ngày');
+  }
+  if (!isTodayDailyQuestId(questId)) {
+    throw new QuestValidationError('Quest hàng ngày đã hết hạn. Vui lòng làm quest của ngày hôm nay.');
+  }
+}
+
 export async function completeQuest(userId: string, questId: string, opts: QuestCompleteOptions = {}): Promise<(OriginalEventResult & { feedback: string; eventType: string }) | null> {
   await ensureUserLoaded(userId);
-  const char = originalGetOrCreate(userId);
-  if (char.completedQuestIds.includes(questId)) return null;
+  const lockKey = `quest:${userId}:${questId}`;
+  if (inFlightQuestCompletions.has(lockKey)) return null;
+  inFlightQuestCompletions.add(lockKey);
 
-  // State machine guard: already rewarded → skip
-  if (hasBeenRewarded(userId, questId)) return null;
+  try {
+    const char = originalGetOrCreate(userId);
+    if (char.completedQuestIds.includes(questId)) return null;
 
-  // Resolve template & validate via Semantic Registry
-  const prefix = questId.replace(/_\d{4}-\d{2}-\d{2}$/, '');
-  const template = [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS].find(t => t.key === prefix);
-  const semantics = resolveQuestSemantics(template || {});
-  const validation = validateQuestCompletion(semantics, opts);
-  if (!validation.ok) throw new QuestValidationError(validation.error);
+    // State machine guard: already rewarded → skip
+    if (hasBeenRewarded(userId, questId)) return null;
 
-  // Advance state machine: locked → … → awaiting_validation → completed
-  advanceQuestTo(userId, questId, 'completed');
+    // Resolve template & validate via Semantic Registry
+    const prefix = questId.replace(/_\d{4}-\d{2}-\d{2}$/, '');
+    const template = [...CORE_DAILY_QUESTS, ...ROTATING_DAILY_QUESTS].find(t => t.key === prefix);
+    if (template) {
+      ensureDailyQuestBoundary(questId);
+    }
 
-  char.completedQuestIds.push(questId);
+    const semantics = resolveQuestSemantics(template || {});
+    const validation = validateQuestCompletion(semantics, opts);
+    if (!validation.ok) throw new QuestValidationError(validation.error);
 
-  const eventType = template?.eventType || 'quest_completed';
-  const xpOverride = template?.xpReward;
+    // Advance state machine: locked → … → awaiting_validation → completed
+    advanceQuestTo(userId, questId, 'completed');
 
-  // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
-  const result = await processEvent({
-    userId,
-    eventType: eventType as any,
-    content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
-    rewardOverride: xpOverride != null ? { xp: xpOverride } : undefined,
-  });
+    char.completedQuestIds.push(questId);
 
-  // Mark rewarded only after successful processEvent
-  advanceQuestTo(userId, questId, 'rewarded');
+    const eventType = template?.eventType || 'quest_completed';
+    const xpOverride = template?.xpReward;
 
-  return { ...result, eventType };
+    // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
+    const result = await processEvent({
+      userId,
+      eventType: eventType as any,
+      content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
+      rewardOverride: xpOverride != null ? { xp: xpOverride } : undefined,
+    });
+
+    // Mark rewarded only after successful processEvent
+    advanceQuestTo(userId, questId, 'rewarded');
+
+    return { ...result, eventType };
+  } finally {
+    inFlightQuestCompletions.delete(lockKey);
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -612,59 +645,67 @@ export async function getQuestDatabase(userId: string, category?: string, page =
 export async function completeFullQuest(userId: string, questId: string, opts: QuestCompleteOptions = {}): Promise<(OriginalEventResult & { feedback: string; eventType: string }) | null> {
   ensureInit();
   await ensureUserLoaded(userId);
-  const char = originalGetOrCreate(userId);
-  if (char.completedQuestIds.includes(questId)) return null;
+  const lockKey = `quest:${userId}:${questId}`;
+  if (inFlightQuestCompletions.has(lockKey)) return null;
+  inFlightQuestCompletions.add(lockKey);
 
-  // State machine guard: already rewarded → skip
-  if (hasBeenRewarded(userId, questId)) return null;
+  try {
+    const char = originalGetOrCreate(userId);
+    if (char.completedQuestIds.includes(questId)) return null;
 
-  const quest = getAllQuestsDB().find(q => q.id === questId);
+    // State machine guard: already rewarded → skip
+    if (hasBeenRewarded(userId, questId)) return null;
 
-  // Validate via Semantic Registry
-  const semantics = resolveQuestSemantics(quest || {});
-  const validation = validateQuestCompletion(semantics, opts);
-  if (!validation.ok) throw new QuestValidationError(validation.error);
+    const quest = getAllQuestsDB().find(q => q.id === questId);
 
-  // Advance state machine: locked → … → awaiting_validation → completed
-  advanceQuestTo(userId, questId, 'completed');
+    // Validate via Semantic Registry
+    const semantics = resolveQuestSemantics(quest || {});
+    const validation = validateQuestCompletion(semantics, opts);
+    if (!validation.ok) throw new QuestValidationError(validation.error);
 
-  if (quest) {
-    completeQuestDB(char, quest);
-  } else {
-    // Chain step or custom quest — manually track completion
-    char.completedQuestIds.push(questId);
-  }
+    // Advance state machine: locked → … → awaiting_validation → completed
+    advanceQuestTo(userId, questId, 'completed');
 
-  // Use journal_entry eventType when the quest expects text input
-  const eventType = (semantics.completionMode === 'requires_input' && opts.journalText) ? 'journal_entry' : 'quest_completed';
-
-  // Resolve XP override: use quest.xpReward (DB) or chain step xpReward
-  let xpOverride: number | undefined;
-  if (quest) {
-    xpOverride = quest.xpReward;
-  } else {
-    // Chain step: parse "chain_{theme}_step_{order}" → lookup step xpReward
-    const chainMatch = questId.match(/^chain_(.+)_step_(\d+)$/);
-    if (chainMatch) {
-      const chain = getQuestChain(chainMatch[1]);
-      const stepOrder = parseInt(chainMatch[2], 10);
-      const step = chain?.steps.find(s => s.order === stepOrder);
-      if (step) xpOverride = step.xpReward;
+    if (quest) {
+      completeQuestDB(char, quest);
+    } else {
+      // Chain step or custom quest — manually track completion
+      char.completedQuestIds.push(questId);
     }
+
+    // Use journal_entry eventType when the quest expects text input
+    const eventType = (semantics.completionMode === 'requires_input' && opts.journalText) ? 'journal_entry' : 'quest_completed';
+
+    // Resolve XP override: use quest.xpReward (DB) or chain step xpReward
+    let xpOverride: number | undefined;
+    if (quest) {
+      xpOverride = quest.xpReward;
+    } else {
+      // Chain step: parse "chain_{theme}_step_{order}" → lookup step xpReward
+      const chainMatch = questId.match(/^chain_(.+)_step_(\d+)$/);
+      if (chainMatch) {
+        const chain = getQuestChain(chainMatch[1]);
+        const stepOrder = parseInt(chainMatch[2], 10);
+        const step = chain?.steps.find(s => s.order === stepOrder);
+        if (step) xpOverride = step.xpReward;
+      }
+    }
+
+    // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
+    const result = await processEvent({
+      userId,
+      eventType: eventType as any,
+      content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
+      rewardOverride: xpOverride != null ? { xp: xpOverride } : undefined,
+    });
+
+    // Mark rewarded only after successful processEvent
+    advanceQuestTo(userId, questId, 'rewarded');
+
+    return { ...result, eventType };
+  } finally {
+    inFlightQuestCompletions.delete(lockKey);
   }
-
-  // Reward phase: processEvent awards XP/SP/EP — transition to rewarded
-  const result = await processEvent({
-    userId,
-    eventType: eventType as any,
-    content: opts.journalText || `Ho\u00e0n th\u00e0nh quest: ${questId}`,
-    rewardOverride: xpOverride != null ? { xp: xpOverride } : undefined,
-  });
-
-  // Mark rewarded only after successful processEvent
-  advanceQuestTo(userId, questId, 'rewarded');
-
-  return { ...result, eventType };
 }
 
 // ══════════════════════════════════════════════
@@ -706,11 +747,13 @@ export async function getQuestHistory(userId: string): Promise<QuestHistoryEntry
     .filter(id => !loggedIds.has(id))
     .map(id => {
       const quest = allQuests.find(q => q.id === id);
+      const dailyPrefix = id.replace(/_\d{4}-\d{2}-\d{2}$/, '');
+      const dailyTemplate = getDailyQuestTemplateByPrefix(dailyPrefix);
       return {
         questId: id,
-        title: quest ? quest.title : id,
+        title: quest ? quest.title : (dailyTemplate?.title || id),
         category: quest ? quest.category : 'daily',
-        xpReward: quest ? quest.xpReward : 10,
+        xpReward: quest ? quest.xpReward : (dailyTemplate?.xpReward || 10),
         completedAt: 0,
       };
     });
@@ -875,41 +918,77 @@ export async function getBehaviorData(userId: string): Promise<BehaviorData> {
   };
 }
 
-export async function completeDailyRitualStep(userId: string, step: 'checkin' | 'reflection' | 'community') {
+export async function completeDailyRitualStep(userId: string, step: 'checkin' | 'reflection' | 'community', journalText?: string) {
   ensureInit();
   await ensureUserLoaded(userId);
-  const char = originalGetOrCreate(userId);
-  const ritual = completeDailyStep(char.id, step);
-  let eventResult: Awaited<ReturnType<typeof processEvent>> | null = null;
-  if (ritual.completed) {
-    // Bonus for completing full daily ritual — use designed reward (15 XP, 5 SP)
-    const ritualReward = getDailyRitualReward();
-    eventResult = await processEvent({
-      userId,
-      eventType: 'quest_completed',
-      content: 'Hoàn thành nghi thức hàng ngày',
-      rewardOverride: { xp: ritualReward.xp, soulPoints: ritualReward.soulPoints },
-    });
+  const ritualLockKey = `ritual:${userId}:${utcDateKey()}`;
+  if (inFlightRitualCompletions.has(ritualLockKey)) {
+    const ritualNow = getDailyRitual(originalGetOrCreate(userId).id);
+    return { ...ritualNow, eventResult: null };
   }
-  await saveUserState(userId);
-  return { ...ritual, eventResult };
+  inFlightRitualCompletions.add(ritualLockKey);
+
+  try {
+    const char = originalGetOrCreate(userId);
+    if (step === 'reflection') {
+      const normalizedText = journalText?.trim() || '';
+      if (!normalizedText) {
+        throw new QuestValidationError('Bước suy ngẫm cần nội dung nhập liệu');
+      }
+      if (countSentences(normalizedText) < 3) {
+        throw new QuestValidationError('Bước suy ngẫm cần ít nhất 3 câu');
+      }
+    }
+
+    const before = getDailyRitual(char.id);
+    const wasCompleted = before.completed;
+    const ritual = completeDailyStep(char.id, step);
+    let eventResult: Awaited<ReturnType<typeof processEvent>> | null = null;
+    if (ritual.completed && !wasCompleted) {
+      // Bonus for completing full daily ritual — use designed reward (15 XP, 5 SP)
+      const ritualReward = getDailyRitualReward();
+      eventResult = await processEvent({
+        userId,
+        eventType: 'quest_completed',
+        content: step === 'reflection' && journalText ? `Hoàn thành nghi thức hàng ngày: ${journalText}` : 'Hoàn thành nghi thức hàng ngày',
+        rewardOverride: { xp: ritualReward.xp, soulPoints: ritualReward.soulPoints },
+      });
+    }
+    await saveUserState(userId);
+    return { ...ritual, eventResult };
+  } finally {
+    inFlightRitualCompletions.delete(ritualLockKey);
+  }
 }
 
 export async function completeWeekly(userId: string, challengeId: string) {
   ensureInit();
   await ensureUserLoaded(userId);
-  const ch = completeWeeklyChallenge(challengeId);
-  let eventResult: Awaited<ReturnType<typeof processEvent>> | null = null;
-  if (ch?.completed) {
-    // Use designed weekly challenge XP
-    eventResult = await processEvent({
-      userId,
-      eventType: 'quest_completed',
-      content: `Hoàn thành thử thách tuần: ${ch.title}`,
-      rewardOverride: { xp: ch.xpReward },
-    });
+  const weeklyLockKey = `weekly:${userId}:${challengeId}`;
+  if (inFlightWeeklyCompletions.has(weeklyLockKey)) {
+    const existing = getWeeklyChallenge(challengeId);
+    return { ...existing, eventResult: null };
   }
-  return { ...ch, eventResult };
+  inFlightWeeklyCompletions.add(weeklyLockKey);
+
+  try {
+    const before = getWeeklyChallenge(challengeId);
+    const wasCompleted = !!before?.completed;
+    const ch = completeWeeklyChallenge(challengeId);
+    let eventResult: Awaited<ReturnType<typeof processEvent>> | null = null;
+    if (ch?.completed && !wasCompleted) {
+      // Use designed weekly challenge XP
+      eventResult = await processEvent({
+        userId,
+        eventType: 'quest_completed',
+        content: `Hoàn thành thử thách tuần: ${ch.title}`,
+        rewardOverride: { xp: ch.xpReward },
+      });
+    }
+    return { ...ch, eventResult };
+  } finally {
+    inFlightWeeklyCompletions.delete(weeklyLockKey);
+  }
 }
 
 // ══════════════════════════════════════════════

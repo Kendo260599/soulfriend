@@ -4,9 +4,9 @@
  * Fixes I2 (silent catches → console.error + showToast) and I5 (quest pagination)
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameFi } from './GameFiContext';
-import { API_URL, GROWTH_CONFIG, PHASE_NAMES, DIFF_LABELS, CATEGORY_LABELS } from './config';
+import { API_URL, GROWTH_CONFIG, PHASE_NAMES, DIFF_LABELS, CATEGORY_LABELS, LOAI_LABELS } from './config';
 import type { AdaptiveQuestData, QuestDbData, CompletionMode } from './types';
 import {
   SectionTitle, SubTitle, Card, Grid,
@@ -23,7 +23,7 @@ import { resolveQuestSemantics } from './questSemanticRegistry';
 const PAGE_SIZE = 20;
 
 const QuestsTab: React.FC = () => {
-  const { data, userId, authHeaders, apiPost, showToast, showReward, fetchAll } = useGameFi();
+  const { data, userId, authHeaders, apiPost, formatApiError, showToast, showReward, fetchAll } = useGameFi();
 
   const [adaptive, setAdaptive] = useState<AdaptiveQuestData | null>(null);
   const [questDb, setQuestDb] = useState<QuestDbData | null>(null);
@@ -34,70 +34,114 @@ const QuestsTab: React.FC = () => {
   const [questHistory, setQuestHistory] = useState<{ questId: string; title: string; category: string; xpReward: number; completedAt: number }[]>([]);
   const [page, setPage] = useState(1);
   const [pendingQuest, setPendingQuest] = useState<{ id: string; title: string; description: string; mode: CompletionMode } | null>(null);
+  const [submittingQuestIds, setSubmittingQuestIds] = useState<Set<string>>(new Set());
+
+  const adaptiveAbortRef = useRef<AbortController | null>(null);
+  const questDbAbortRef = useRef<AbortController | null>(null);
+  const historyAbortRef = useRef<AbortController | null>(null);
+
+  const beginQuestSubmit = (questId: string): boolean => {
+    if (submittingQuestIds.has(questId)) return false;
+    setSubmittingQuestIds(prev => new Set(prev).add(questId));
+    return true;
+  };
+
+  const endQuestSubmit = (questId: string) => {
+    setSubmittingQuestIds(prev => {
+      if (!prev.has(questId)) return prev;
+      const next = new Set(prev);
+      next.delete(questId);
+      return next;
+    });
+  };
+
+  const isQuestSubmitting = (questId: string): boolean => submittingQuestIds.has(questId);
 
   const fetchAdaptive = useCallback(async () => {
+    adaptiveAbortRef.current?.abort();
+    const controller = new AbortController();
+    adaptiveAbortRef.current = controller;
+
     try {
-      const res = await fetch(`${API_URL}/api/v2/gamefi/adaptive/${encodeURIComponent(userId)}`, { headers: authHeaders });
+      const res = await fetch(`${API_URL}/api/v2/gamefi/adaptive/${encodeURIComponent(userId)}`, { headers: authHeaders, signal: controller.signal });
       if (!res.ok) {
-        showToast(`❌ Không thể tải gợi ý AI (HTTP ${res.status})`);
+        showToast(`❌ ${formatApiError({ status: res.status, error: `HTTP ${res.status}` }, 'Không thể tải gợi ý AI')}`);
         return;
       }
       const json = await res.json();
       if (json.success) {
         setAdaptive(json.data);
       } else {
-        showToast(`❌ ${json.error || 'Không thể tải gợi ý AI'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể tải gợi ý AI')}`);
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('fetchAdaptive failed', err);
-      showToast('❌ Không thể tải gợi ý AI');
+      showToast(`❌ ${formatApiError(err, 'Không thể tải gợi ý AI')}`);
     }
-  }, [userId, authHeaders, showToast]);
+  }, [userId, authHeaders, formatApiError, showToast]);
 
   const fetchQuestDb = useCallback(async (category?: string, p = 1, limit = PAGE_SIZE) => {
+    questDbAbortRef.current?.abort();
+    const controller = new AbortController();
+    questDbAbortRef.current = controller;
+
     try {
       const params = new URLSearchParams();
       if (category && category !== 'all') params.set('category', category);
       params.set('page', String(p));
       params.set('limit', String(limit));
-      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}?${params}`, { headers: authHeaders });
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quests/${encodeURIComponent(userId)}?${params}`, { headers: authHeaders, signal: controller.signal });
       if (!res.ok) {
-        showToast(`❌ Không thể tải kho nhiệm vụ (HTTP ${res.status})`);
+        showToast(`❌ ${formatApiError({ status: res.status, error: `HTTP ${res.status}` }, 'Không thể tải kho nhiệm vụ')}`);
         return;
       }
       const json = await res.json();
       if (json.success) {
         setQuestDb(json.data);
       } else {
-        showToast(`❌ ${json.error || 'Không thể tải kho nhiệm vụ'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể tải kho nhiệm vụ')}`);
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('fetchQuestDb failed', err);
-      showToast('❌ Không thể tải kho nhiệm vụ');
+      showToast(`❌ ${formatApiError(err, 'Không thể tải kho nhiệm vụ')}`);
     }
-  }, [userId, authHeaders, showToast]);
+  }, [userId, authHeaders, formatApiError, showToast]);
 
   const fetchQuestHistory = useCallback(async () => {
+    historyAbortRef.current?.abort();
+    const controller = new AbortController();
+    historyAbortRef.current = controller;
+
     try {
-      const res = await fetch(`${API_URL}/api/v2/gamefi/history/${encodeURIComponent(userId)}`, { headers: authHeaders });
+      const res = await fetch(`${API_URL}/api/v2/gamefi/history/${encodeURIComponent(userId)}`, { headers: authHeaders, signal: controller.signal });
       if (!res.ok) {
-        showToast(`❌ Không thể tải lịch sử nhiệm vụ (HTTP ${res.status})`);
+        showToast(`❌ ${formatApiError({ status: res.status, error: `HTTP ${res.status}` }, 'Không thể tải lịch sử nhiệm vụ')}`);
         return;
       }
       const json = await res.json();
       if (json.success) {
         setQuestHistory(json.data);
       } else {
-        showToast(`❌ ${json.error || 'Không thể tải lịch sử nhiệm vụ'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể tải lịch sử nhiệm vụ')}`);
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('fetchQuestHistory failed', err);
-      showToast('❌ Không thể tải lịch sử nhiệm vụ');
+      showToast(`❌ ${formatApiError(err, 'Không thể tải lịch sử nhiệm vụ')}`);
     }
-  }, [userId, authHeaders, showToast]);
+  }, [userId, authHeaders, formatApiError, showToast]);
 
   useEffect(() => { fetchAdaptive(); fetchQuestDb(); fetchQuestHistory(); }, [fetchAdaptive, fetchQuestDb, fetchQuestHistory]);
   useEffect(() => { setPage(1); fetchQuestDb(questCat, 1); }, [questCat, fetchQuestDb]);
+  useEffect(() => {
+    return () => {
+      adaptiveAbortRef.current?.abort();
+      questDbAbortRef.current?.abort();
+      historyAbortRef.current?.abort();
+    };
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -105,6 +149,7 @@ const QuestsTab: React.FC = () => {
   };
 
   const handleFullQuestComplete = async (questId: string, title: string, journalText?: string) => {
+    if (!beginQuestSubmit(questId)) return;
     try {
       const json = await apiPost('/quests/complete', { userId, questId, ...(journalText ? { journalText } : {}) });
       if (json.success && json.data) {
@@ -113,11 +158,13 @@ const QuestsTab: React.FC = () => {
         fetchQuestDb(questCat, page);
         fetchQuestHistory();
       } else {
-        showToast(`❌ ${json.error || 'Không thể hoàn thành quest'}`);
+        showToast(`❌ ${formatApiError(json, 'Không thể hoàn thành quest')}`);
       }
     } catch (err) {
       console.error('handleFullQuestComplete failed', err);
-      showToast('❌ Không thể hoàn thành quest');
+      showToast(`❌ ${formatApiError(err, 'Không thể hoàn thành quest')}`);
+    } finally {
+      endQuestSubmit(questId);
     }
   };
 
@@ -301,11 +348,11 @@ const QuestsTab: React.FC = () => {
                   <QuestBrowserMeta>
                     <MetaTag color="#F0E6FF">{CATEGORY_LABELS[q.category] || q.category}</MetaTag>
                     <MetaTag color="#E6F7FF">{q.location}</MetaTag>
-                    <MetaTag color="#FFF5E6">{q.loai}</MetaTag>
+                    <MetaTag color="#FFF5E6">{LOAI_LABELS[q.loai] || q.loai}</MetaTag>
                   </QuestBrowserMeta>
                   {expandedQuestId === q.id && (
                     <QuestDetailPanel>
-                      <div style={{fontSize:'0.82rem',color:'#666',marginBottom:'0.5rem'}}>📍 Vùng đất: <strong>{q.location}</strong> • Loại: <strong>{q.loai}</strong></div>
+                      <div style={{fontSize:'0.82rem',color:'#666',marginBottom:'0.5rem'}}>📍 Vùng đất: <strong>{q.location}</strong> • Loại: <strong>{LOAI_LABELS[q.loai] || q.loai}</strong></div>
                       {!q.completed && (
                         <ActionBtn onClick={e => { e.stopPropagation(); tryCompleteQuest(q.id, q.title, q.description, q.completionMode); }}>
                           ✨ Hoàn thành quest (+{q.xpReward} XP)
@@ -395,7 +442,13 @@ const QuestsTab: React.FC = () => {
             </ConfirmDesc>
             <ConfirmBtnRow>
               <ActionBtn variant="secondary" onClick={() => setPendingQuest(null)}>Chưa làm</ActionBtn>
-              <ActionBtn onClick={() => confirmPendingQuest()}>✅ Đã hoàn thành</ActionBtn>
+              <ActionBtn
+                onClick={() => confirmPendingQuest()}
+                disabled={!!pendingQuest && isQuestSubmitting(pendingQuest.id)}
+                style={pendingQuest && isQuestSubmitting(pendingQuest.id) ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+              >
+                {pendingQuest && isQuestSubmitting(pendingQuest.id) ? 'Đang xử lý...' : '✅ Đã hoàn thành'}
+              </ActionBtn>
             </ConfirmBtnRow>
           </ConfirmBox>
         </Overlay>

@@ -76,11 +76,14 @@ class EventQueueService extends EventEmitter {
    * Subscribe handler cho event type
    */
   subscribe(type: EventType, handler: (data: any) => Promise<void>): void {
-    if (!this.handlers.has(type)) {
+    const hasType = this.handlers.has(type);
+    if (!hasType) {
       this.handlers.set(type, []);
     }
     this.handlers.get(type)!.push(handler);
-    logger.info(`[EventQueue] Subscribed handler for ${type}`);
+    if (!hasType) {
+      logger.info(`[EventQueue] Subscribed handler for ${type}`);
+    }
   }
 
   /**

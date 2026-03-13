@@ -78,6 +78,5 @@ const ResearchConsentSchema = new Schema<IResearchConsent>(
 
 // Index for consent lookup
 ResearchConsentSchema.index({ userId: 1, consentGiven: 1 });
-ResearchConsentSchema.index({ participantHash: 1 });
 
 export const ResearchConsent = mongoose.model<IResearchConsent>('ResearchConsent', ResearchConsentSchema);

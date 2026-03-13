@@ -2,7 +2,7 @@
  * GameFi — Shared Context (state, fetchers, helpers)
  */
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import type { FullGameData, AdaptiveQuestData, QuestDbData, DailyQuest, RewardData } from './types';
@@ -19,11 +19,21 @@ interface GameFiCtx {
   setConfirmQuest: React.Dispatch<React.SetStateAction<DailyQuest | null>>;
   fetchAll: () => Promise<void>;
   apiPost: (path: string, body: Record<string, unknown>) => Promise<any>;
+  formatApiError: (payload: unknown, fallbackMsg: string) => string;
   showToast: (msg: string) => void;
   showReward: (data: any, questTitle: string) => void;
   dismissReward: () => void;
   navigate: NavigateFunction;
   authHeaders: HeadersInit;
+}
+
+type ApiErrorKind = 'abort' | 'network' | 'cors' | 'http' | 'unknown';
+
+interface ApiErrorMeta {
+  message: string;
+  retryable: boolean;
+  kind: ApiErrorKind;
+  action?: string;
 }
 
 const Ctx = createContext<GameFiCtx | null>(null);
@@ -43,6 +53,8 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [toast, setToast] = useState({ msg: '', visible: false });
   const [rewardData, setRewardData] = useState<RewardData | null>(null);
   const [confirmQuest, setConfirmQuest] = useState<DailyQuest | null>(null);
+  const fetchAllAbortRef = useRef<AbortController | null>(null);
+  const fetchAllInFlightRef = useRef<Promise<void> | null>(null);
 
   const userId = user?.id || 'anonymous';
 
@@ -73,29 +85,257 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const dismissReward = () => setRewardData(null);
 
+  const classifyApiError = useCallback((payload: unknown, fallbackMsg: string): ApiErrorMeta => {
+    const fallback = fallbackMsg || 'Có lỗi xảy ra';
+    const retryAction = 'Vui lòng kiểm tra mạng/CORS rồi bấm "Thử lại".';
+    const isAbortLike = (text: string) => /abort|aborted|cancelled|canceled/i.test(text);
+    const isCorsLike = (text: string) => /cors|cross-origin|access-control-allow-origin|blocked by c/i.test(text);
+    const isNetworkLike = (text: string) => /network|timeout|timed out|failed to fetch|err_connection|err_name_not_resolved|err_internet_disconnected/i.test(text);
+
+    if (payload instanceof DOMException && payload.name === 'AbortError') {
+      return {
+        message: 'Yêu cầu đã bị gián đoạn',
+        retryable: true,
+        kind: 'abort',
+        action: retryAction,
+      };
+    }
+
+    if (payload && typeof payload === 'object') {
+      const maybe = payload as { error?: unknown; message?: unknown; status?: unknown; retryable?: unknown };
+      const status = typeof maybe.status === 'number' ? maybe.status : null;
+      const rawMsg = typeof maybe.error === 'string'
+        ? maybe.error
+        : typeof maybe.message === 'string'
+          ? maybe.message
+          : fallback;
+
+      const explicitRetryable = typeof maybe.retryable === 'boolean' ? maybe.retryable : null;
+      const byStatus = status != null ? status >= 500 || status === 408 || status === 429 : null;
+      const retryable = explicitRetryable ?? byStatus ?? isNetworkLike(rawMsg);
+
+      if (status === 0 || isCorsLike(rawMsg)) {
+        return {
+          message: 'Không thể truy cập API (khả năng CORS/chứng chỉ/HTTPS)',
+          retryable: true,
+          kind: 'cors',
+          action: 'Kiểm tra REACT_APP_API_URL, cấu hình CORS của backend, rồi thử lại.',
+        };
+      }
+
+      if (isAbortLike(rawMsg)) {
+        return {
+          message: 'Yêu cầu đã bị gián đoạn',
+          retryable: true,
+          kind: 'abort',
+          action: retryAction,
+        };
+      }
+
+      if (retryable && isNetworkLike(rawMsg)) {
+        return {
+          message: 'Kết nối mạng chưa ổn định',
+          retryable: true,
+          kind: 'network',
+          action: retryAction,
+        };
+      }
+
+      return {
+        message: rawMsg,
+        retryable,
+        kind: status != null ? 'http' : 'unknown',
+        action: retryable ? retryAction : undefined,
+      };
+    }
+
+    if (payload instanceof Error) {
+      const msg = payload.message || fallback;
+
+      if (isAbortLike(msg)) {
+        return {
+          message: 'Yêu cầu đã bị gián đoạn',
+          retryable: true,
+          kind: 'abort',
+          action: retryAction,
+        };
+      }
+
+      if (isCorsLike(msg)) {
+        return {
+          message: 'Không thể truy cập API (khả năng CORS/chứng chỉ/HTTPS)',
+          retryable: true,
+          kind: 'cors',
+          action: 'Kiểm tra REACT_APP_API_URL, cấu hình CORS của backend, rồi thử lại.',
+        };
+      }
+
+      const retryable = isNetworkLike(msg);
+      return {
+        message: retryable ? 'Kết nối mạng chưa ổn định' : fallback,
+        retryable,
+        kind: retryable ? 'network' : 'unknown',
+        action: retryable ? retryAction : undefined,
+      };
+    }
+
+    return {
+      message: fallback,
+      retryable: true,
+      kind: 'unknown',
+      action: retryAction,
+    };
+  }, []);
+
+  const formatApiError = useCallback((payload: unknown, fallbackMsg: string) => {
+    const meta = classifyApiError(payload, fallbackMsg);
+    const retryableSuffix = meta.retryable ? ' (có thể thử lại)' : '';
+    const action = meta.action ? ` ${meta.action}` : '';
+    return `${meta.message}${retryableSuffix}${action}`;
+  }, [classifyApiError]);
+
+  const waitWithAbort = useCallback((ms: number, signal: AbortSignal): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (signal.aborted) {
+        reject(new DOMException('Aborted', 'AbortError'));
+        return;
+      }
+      const timer = setTimeout(() => {
+        signal.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+      const onAbort = () => {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', onAbort);
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
+  }, []);
+
   const fetchAll = useCallback(async () => {
+    if (fetchAllInFlightRef.current) {
+      return fetchAllInFlightRef.current;
+    }
+
+    fetchAllAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAllAbortRef.current = controller;
+
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+
+      const maxAttempts = 2;
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          const res = await fetch(`${API_URL}/api/v2/gamefi/full/${encodeURIComponent(userId)}`, {
+            headers: authHeaders,
+            signal: controller.signal,
+          });
+
+          if (!res.ok) {
+            throw {
+              status: res.status,
+              error: `HTTP ${res.status}`,
+              retryable: res.status >= 500 || res.status === 408 || res.status === 429,
+            };
+          }
+
+          const json = await res.json();
+          if (!json.success) {
+            throw json;
+          }
+
+          setData(json.data);
+          return;
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            return;
+          }
+
+          const meta = classifyApiError(err, 'Không thể tải dữ liệu');
+          const canRetry = meta.retryable && attempt < maxAttempts;
+
+          if (canRetry) {
+            const backoffMs = 350 * (2 ** (attempt - 1));
+            try {
+              await waitWithAbort(backoffMs, controller.signal);
+              continue;
+            } catch {
+              return;
+            }
+          }
+
+          setError(formatApiError(err, 'Không thể tải dữ liệu'));
+          return;
+        }
+      }
+    };
+
+    fetchAllInFlightRef.current = run();
+
     try {
-      setLoading(true); setError(null);
-      const res = await fetch(`${API_URL}/api/v2/gamefi/full/${encodeURIComponent(userId)}`, { headers: authHeaders });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.success) setData(json.data);
-      else throw new Error(json.error || 'Failed');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu');
-    } finally { setLoading(false); }
-  }, [userId, token]); // eslint-disable-line react-hooks/exhaustive-deps
+      await fetchAllInFlightRef.current;
+    } finally {
+      if (fetchAllInFlightRef.current) {
+        fetchAllInFlightRef.current = null;
+      }
+      setLoading(false);
+    }
+  }, [userId, authHeaders, classifyApiError, formatApiError, waitWithAbort]);
+
+  useEffect(() => {
+    return () => {
+      fetchAllAbortRef.current?.abort();
+      fetchAllInFlightRef.current = null;
+    };
+  }, []);
 
   const apiPost = async (path: string, body: Record<string, unknown>) => {
-    const res = await fetch(`${API_URL}/api/v2/gamefi${path}`, {
-      method: 'POST', headers: authHeaders,
-      body: JSON.stringify(body),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`${API_URL}/api/v2/gamefi${path}`, {
+        method: 'POST', headers: authHeaders,
+        body: JSON.stringify(body),
+      });
+
+      let json: any;
+      try {
+        json = await res.json();
+      } catch {
+        return {
+          success: false,
+          error: `HTTP ${res.status}: Phản hồi không hợp lệ`,
+          status: res.status,
+          retryable: res.status >= 500 || res.status === 408 || res.status === 429,
+        };
+      }
+
+      if (!res.ok) {
+        const normalized = (json && typeof json === 'object') ? json : {};
+        return {
+          ...normalized,
+          success: false,
+          status: res.status,
+          retryable: res.status >= 500 || res.status === 408 || res.status === 429,
+          error: normalized.error || normalized.message || `HTTP ${res.status}`,
+        };
+      }
+
+      return json;
+    } catch (err) {
+      const meta = classifyApiError(err, 'Không thể kết nối máy chủ');
+      return {
+        success: false,
+        error: formatApiError(err, 'Không thể kết nối máy chủ'),
+        retryable: meta.retryable,
+        kind: meta.kind,
+      };
+    }
   };
 
   return (
-    <Ctx.Provider value={{ data, loading, error, userId, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, apiPost, showToast, showReward, dismissReward, navigate, authHeaders }}>
+    <Ctx.Provider value={{ data, loading, error, userId, toast, rewardData, confirmQuest, setConfirmQuest, fetchAll, apiPost, formatApiError, showToast, showReward, dismissReward, navigate, authHeaders }}>
       {children}
     </Ctx.Provider>
   );

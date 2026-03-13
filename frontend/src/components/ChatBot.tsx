@@ -72,10 +72,12 @@ const FloatingHeart = styled.span<{ delay: number; left: number; size: number; d
   will-change: transform, opacity;
 `;
 
-const ChatContainer = styled.div<{ isOpen: boolean }>`
+const ChatContainer = styled.div<{ isOpen: boolean; $left: number; $top: number }>`
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  left: ${props => props.isOpen ? 'auto' : `${props.$left}px`};
+  top: ${props => props.isOpen ? 'auto' : `${props.$top}px`};
+  bottom: ${props => props.isOpen ? '20px' : 'auto'};
+  right: ${props => props.isOpen ? '20px' : 'auto'};
   width: ${props => props.isOpen ? '420px' : '60px'};
   height: ${props => props.isOpen ? '650px' : '60px'};
   max-height: ${props => props.isOpen ? 'calc(100vh - 40px)' : '60px'};
@@ -94,8 +96,10 @@ const ChatContainer = styled.div<{ isOpen: boolean }>`
     width: ${props => props.isOpen ? 'calc(100vw - 20px)' : '60px'};
     height: ${props => props.isOpen ? 'calc(100vh - 20px)' : '60px'};
     max-height: ${props => props.isOpen ? 'calc(100vh - 20px)' : '60px'};
-    bottom: 10px;
-    right: 10px;
+    left: ${props => props.isOpen ? 'auto' : `${props.$left}px`};
+    top: ${props => props.isOpen ? 'auto' : `${props.$top}px`};
+    bottom: ${props => props.isOpen ? '10px' : 'auto'};
+    right: ${props => props.isOpen ? '10px' : 'auto'};
     border-radius: ${props => props.isOpen ? '15px' : '50%'};
   }
   
@@ -121,7 +125,7 @@ const ChatToggle = styled.button<{ isOpen: boolean }>`
   height: ${props => props.isOpen ? '44px' : '60px'};
   color: white;
   font-size: ${props => props.isOpen ? '1.3rem' : '1.8rem'};
-  cursor: pointer;
+  cursor: ${props => props.isOpen ? 'pointer' : 'grab'};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10000;
   box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
@@ -136,6 +140,7 @@ const ChatToggle = styled.button<{ isOpen: boolean }>`
   
   &:active {
     transform: ${props => props.isOpen ? 'rotate(90deg) scale(0.95)' : 'translate(50%, -50%) scale(1.05)'};
+    cursor: ${props => props.isOpen ? 'pointer' : 'grabbing'};
   }
 `;
 
@@ -631,7 +636,51 @@ interface ChatBotProps {
 }
 
 const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
+  const FLOATING_BUTTON_SIZE = 60;
+  const FLOATING_BUTTON_PADDING = 8;
+  const FLOATING_POS_STORAGE_KEY = 'sf_chatbot_floating_pos_v1';
+
+  const clampFloatingPosition = useCallback((left: number, top: number) => {
+    if (typeof window === 'undefined') {
+      return { left, top };
+    }
+    const maxLeft = Math.max(FLOATING_BUTTON_PADDING, window.innerWidth - FLOATING_BUTTON_SIZE - FLOATING_BUTTON_PADDING);
+    const maxTop = Math.max(FLOATING_BUTTON_PADDING, window.innerHeight - FLOATING_BUTTON_SIZE - FLOATING_BUTTON_PADDING);
+    return {
+      left: Math.min(Math.max(left, FLOATING_BUTTON_PADDING), maxLeft),
+      top: Math.min(Math.max(top, FLOATING_BUTTON_PADDING), maxTop),
+    };
+  }, []);
+
+  const getDefaultFloatingPosition = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return { left: 20, top: 20 };
+    }
+    return clampFloatingPosition(window.innerWidth - FLOATING_BUTTON_SIZE - 20, window.innerHeight - FLOATING_BUTTON_SIZE - 20);
+  }, [clampFloatingPosition]);
+
+  const getInitialFloatingPosition = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return { left: 20, top: 20 };
+    }
+
+    try {
+      const raw = localStorage.getItem(FLOATING_POS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { left?: number; top?: number };
+        if (typeof parsed.left === 'number' && typeof parsed.top === 'number') {
+          return clampFloatingPosition(parsed.left, parsed.top);
+        }
+      }
+    } catch {
+      // Ignore invalid persisted position and use default.
+    }
+
+    return getDefaultFloatingPosition();
+  }, [clampFloatingPosition, getDefaultFloatingPosition]);
+
   const [isOpen, setIsOpen] = useState(false);
+  const [floatingPos, setFloatingPos] = useState<{ left: number; top: number }>(() => getInitialFloatingPosition());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -663,6 +712,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     localStorage.getItem('sf_sessionId') || (() => { const id = `session_${Date.now()}`; localStorage.setItem('sf_sessionId', id); return id; })()
   );
   const msgIdCounter = useRef(0);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startLeft: number;
+    startTop: number;
+    dragged: boolean;
+  } | null>(null);
+  const suppressToggleRef = useRef(false);
   const sendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hitlStateResolved = useRef(false);
   const nextMsgId = (prefix = 'msg') => `${prefix}_${Date.now()}_${msgIdCounter.current++}`;
@@ -695,6 +753,83 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       document.removeEventListener('soulfriend:open-chatbot', openFromGameFi as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FLOATING_POS_STORAGE_KEY, JSON.stringify(floatingPos));
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [floatingPos]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setFloatingPos(prev => clampFloatingPosition(prev.left, prev.top));
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [clampFloatingPosition]);
+
+  const handleTogglePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (isOpen) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    dragStateRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: floatingPos.left,
+      startTop: floatingPos.top,
+      dragged: false,
+    };
+  };
+
+  const handleTogglePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (isOpen) return;
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - state.startX;
+    const dy = e.clientY - state.startY;
+
+    if (!state.dragged && Math.hypot(dx, dy) > 4) {
+      state.dragged = true;
+      suppressToggleRef.current = true;
+    }
+
+    if (!state.dragged) return;
+    e.preventDefault();
+
+    const nextLeft = state.startLeft + dx;
+    const nextTop = state.startTop + dy;
+    setFloatingPos(clampFloatingPosition(nextLeft, nextTop));
+  };
+
+  const handleTogglePointerEnd = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== e.pointerId) return;
+
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    const didDrag = state.dragged;
+    dragStateRef.current = null;
+
+    if (didDrag) {
+      e.preventDefault();
+      window.setTimeout(() => {
+        suppressToggleRef.current = false;
+      }, 0);
+    }
+  };
+
+  const handleToggleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (suppressToggleRef.current) {
+      e.preventDefault();
+      return;
+    }
+    setIsOpen(prev => !prev);
+  };
 
   const tryCompleteChatQuest = useCallback(async () => {
     if (chatQuestCompletedRef.current) return;
@@ -1565,10 +1700,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
   };
 
   return (
-    <ChatContainer isOpen={isOpen}>
+    <ChatContainer isOpen={isOpen} $left={floatingPos.left} $top={floatingPos.top}>
       <ChatToggle 
         isOpen={isOpen} 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggleClick}
+        onPointerDown={handleTogglePointerDown}
+        onPointerMove={handleTogglePointerMove}
+        onPointerUp={handleTogglePointerEnd}
+        onPointerCancel={handleTogglePointerEnd}
         aria-label={isOpen ? "Đóng chat" : "Mở chat"}
       >
         {isOpen ? '✕' : '🤖'}

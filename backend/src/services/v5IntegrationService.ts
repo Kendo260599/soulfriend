@@ -22,6 +22,84 @@ import { SafetyLog } from '../models/SafetyLog';
 const EVAL_SAMPLE_RATE = Math.min(1, Math.max(0, parseFloat(process.env.V5_EVAL_SAMPLE_RATE || '0.5')));
 
 class V5IntegrationService {
+  private mapSentiment(emotionalState?: string): string {
+    const sentimentMap: Record<string, string> = {
+      crisis: 'very_negative',
+      despair: 'very_negative',
+      panic: 'very_negative',
+      exhaustion: 'very_negative',
+      abandonment: 'negative',
+      guilt: 'negative',
+      loneliness: 'negative',
+      disappointment: 'negative',
+      neglect: 'negative',
+      manipulation: 'negative',
+      anxiety: 'negative',
+      neutral: 'neutral',
+      positive: 'positive',
+      very_positive: 'very_positive',
+      negative: 'negative',
+      very_negative: 'very_negative',
+    };
+    return sentimentMap[emotionalState || 'neutral'] || 'neutral';
+  }
+
+  /**
+   * SYNC: Capture interaction và trả về interactionEventId để frontend map feedback chuẩn.
+   */
+  async captureInteraction(params: {
+    sessionId: string;
+    userId: string;
+    userMessage: string;
+    aiResponse: string;
+    responseTimeMs: number;
+    riskLevel?: string;
+    emotionalState?: string;
+    intent?: string;
+    crisisLevel?: string;
+  }): Promise<string | null> {
+    try {
+      const captured = await interactionCaptureService.capture({
+        sessionId: params.sessionId,
+        userId: params.userId,
+        userText: params.userMessage,
+        aiResponse: params.aiResponse,
+        responseTimeMs: params.responseTimeMs,
+        riskLevel: params.riskLevel || 'NONE',
+        sentiment: this.mapSentiment(params.emotionalState),
+        escalationTriggered: params.crisisLevel === 'high' || params.crisisLevel === 'critical',
+        escalationType: params.crisisLevel === 'critical' ? 'crisis' : 'none',
+        aiModelUsed: 'gpt-4o-mini',
+        topicCategory: params.intent,
+      });
+
+      const interactionEventId = (captured as any)?._id?.toString?.() || null;
+      if (!interactionEventId) return null;
+
+      await eventQueueService.publish('interaction.captured', {
+        interactionId: interactionEventId,
+        sessionId: params.sessionId,
+        userId: params.userId,
+        riskLevel: params.riskLevel,
+      });
+
+      if (params.crisisLevel === 'high' || params.crisisLevel === 'critical') {
+        await eventQueueService.publish('crisis.detected', {
+          interactionId: interactionEventId,
+          sessionId: params.sessionId,
+          userId: params.userId,
+          crisisLevel: params.crisisLevel,
+          riskLevel: params.riskLevel,
+        });
+      }
+
+      return interactionEventId;
+    } catch (error) {
+      logger.error('[V5 Integration] captureInteraction failed:', error);
+      return null;
+    }
+  }
+
   /**
    * SYNC: Kiểm tra safety guardrails trước khi gửi response cho user.
    * Nếu response vi phạm → trả về sanitized version hoặc fallback.
@@ -100,60 +178,30 @@ class V5IntegrationService {
     qualityScore?: number;
     intent?: string;
     crisisLevel?: string;
+    interactionEventId?: string | null;
   }): Promise<void> {
     try {
-      // ================================
-      // 1. CAPTURE INTERACTION (Module 1)
-      // ================================
-      // Map emotionalState to valid sentiment enum values
-      const sentimentMap: Record<string, string> = {
-        crisis: 'very_negative',
-        despair: 'very_negative',
-        panic: 'very_negative',
-        exhaustion: 'very_negative',
-        abandonment: 'negative',
-        guilt: 'negative',
-        loneliness: 'negative',
-        disappointment: 'negative',
-        neglect: 'negative',
-        manipulation: 'negative',
-        anxiety: 'negative',
-        neutral: 'neutral',
-        positive: 'positive',
-        very_positive: 'very_positive',
-        negative: 'negative',
-        very_negative: 'very_negative',
-      };
-      const mappedSentiment = sentimentMap[params.emotionalState || 'neutral'] || 'neutral';
-
-      const captured = await interactionCaptureService.capture({
-        sessionId: params.sessionId,
-        userId: params.userId,
-        userText: params.userMessage,
-        aiResponse: params.aiResponse,
-        responseTimeMs: params.responseTimeMs,
-        riskLevel: params.riskLevel || 'NONE',
-        sentiment: mappedSentiment,
-        escalationTriggered: params.crisisLevel === 'high' || params.crisisLevel === 'critical',
-        escalationType: params.crisisLevel === 'critical' ? 'crisis' : 'none',
-        aiModelUsed: 'gpt-4o-mini',
-        topicCategory: params.intent,
-      });
-
-      if (captured) {
-        // Publish capture event
-        await eventQueueService.publish('interaction.captured', {
-          interactionId: (captured as any)._id?.toString(),
+      let interactionEventId = params.interactionEventId || null;
+      if (!interactionEventId) {
+        interactionEventId = await this.captureInteraction({
           sessionId: params.sessionId,
           userId: params.userId,
+          userMessage: params.userMessage,
+          aiResponse: params.aiResponse,
+          responseTimeMs: params.responseTimeMs,
           riskLevel: params.riskLevel,
+          emotionalState: params.emotionalState,
+          intent: params.intent,
+          crisisLevel: params.crisisLevel,
         });
+      }
 
+      if (interactionEventId) {
         // ================================
         // 2. AUTO-EVALUATE (Module 2) — async, non-blocking
         // ================================
         this.triggerAutoEvaluation({
-          interactionEventId: (captured as any)._id?.toString(),
+          interactionEventId,
           sessionId: params.sessionId,
           userId: params.userId,
           userMessage: params.userMessage,
@@ -161,24 +209,11 @@ class V5IntegrationService {
         }).catch(err => {
           logger.warn('[V5] Auto-evaluation failed (non-critical):', err instanceof Error ? err.message : err);
         });
-
-        // ================================
-        // 3. CRISIS DETECTION EVENT
-        // ================================
-        if (params.crisisLevel === 'high' || params.crisisLevel === 'critical') {
-          await eventQueueService.publish('crisis.detected', {
-            interactionId: (captured as any)._id?.toString(),
-            sessionId: params.sessionId,
-            userId: params.userId,
-            crisisLevel: params.crisisLevel,
-            riskLevel: params.riskLevel,
-          });
-        }
       }
 
       logger.debug('[V5 Integration] afterChatResponse completed', {
         sessionId: params.sessionId,
-        captured: !!captured,
+        captured: !!interactionEventId,
       });
     } catch (error) {
       // Non-blocking — log and continue

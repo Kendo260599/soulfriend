@@ -10,6 +10,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { authenticateAdmin } from '../../middleware/auth';
 import { authenticateExpert } from '../expertAuth';
@@ -204,6 +205,10 @@ router.post(
 
     if (!['helpful', 'not_helpful'].includes(rating)) {
       return res.status(400).json({ success: false, error: 'rating phải là helpful hoặc not_helpful' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(interactionEventId)) {
+      return res.status(400).json({ success: false, error: 'interactionEventId không hợp lệ' });
     }
 
     const feedback = await userFeedbackService.submitFeedback({
@@ -469,6 +474,19 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const readiness = await modelImprovementService.checkFineTuningReadiness();
     res.json({ success: true, data: readiness });
+  })
+);
+
+/**
+ * POST /api/v5/learning/improve/fine-tuning-trigger
+ * Trigger fine-tuning (guarded by feature flag)
+ */
+router.post(
+  '/improve/fine-tuning-trigger',
+  authenticateAdmin,
+  asyncHandler(async (_req: Request, res: Response) => {
+    const result = await modelImprovementService.triggerFineTuning();
+    res.json({ success: true, data: result });
   })
 );
 

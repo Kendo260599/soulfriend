@@ -596,6 +596,7 @@ interface ChatMessage {
   text: string;
   isBot: boolean;
   timestamp: Date;
+  interactionEventId?: string | null;
   feedback?: 'positive' | 'negative' | null;
   emotionChange?: 'feel_better' | 'same' | 'still_confused' | 'feel_worse' | null;
   showEmotionPicker?: boolean;
@@ -1154,11 +1155,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     return crisisKeywords.some(keyword => lowerMessage.includes(keyword));
   };
 
-  const generateBotResponse = async (userMessage: string): Promise<{ text: string; crisisDetected: boolean; recommendations: string[]; nextActions: string[] }> => {
+  const generateBotResponse = async (userMessage: string): Promise<{ text: string; crisisDetected: boolean; recommendations: string[]; nextActions: string[]; interactionEventId?: string | null }> => {
     // Special keyword trigger
     const lowerMsg = userMessage.toLowerCase().trim();
     if (lowerMsg.includes('chun ơi') || lowerMsg.includes('anh ơi')) {
-      return { text: 'Ơi anh đây 💙', crisisDetected: false, recommendations: [], nextActions: [] };
+      return { text: 'Ơi anh đây 💙', crisisDetected: false, recommendations: [], nextActions: [], interactionEventId: null };
     }
 
     // Tạo user profile từ test results
@@ -1172,12 +1173,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
     try {
       // Thử sử dụng AI service trước
-      const response = await processMessage(userMessage, userProfile, testResults, sessionIdRef.current);
+      const effectiveUserId = authUser?.id || userIdRef.current;
+      const response = await processMessage(userMessage, userProfile, testResults, sessionIdRef.current, effectiveUserId);
       return {
         text: response.text,
         crisisDetected: response.crisisDetected || false,
         recommendations: response.recommendations || [],
-        nextActions: response.nextActions || []
+        nextActions: response.nextActions || [],
+        interactionEventId: response.interactionEventId || null,
       };
     } catch (error) {
       console.error('AI processing error, using offline service:', error);
@@ -1191,7 +1194,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           text: offlineResponse.text,
           crisisDetected: false,
           recommendations: [],
-          nextActions: []
+          nextActions: [],
+          interactionEventId: null,
         };
       } catch (offlineError) {
         console.error('Offline service error:', offlineError);
@@ -1201,7 +1205,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
           text: "Xin lỗi, tôi đang gặp vấn đề kỹ thuật. Vui lòng thử lại sau ít phút.",
           crisisDetected: false,
           recommendations: [],
-          nextActions: []
+          nextActions: [],
+          interactionEventId: null,
         };
       }
     }
@@ -1210,6 +1215,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
   // Feedback handling - V5 Learning Pipeline
   const handleFeedback = async (messageId: string, feedback: 'positive' | 'negative') => {
+    const targetMessage = messages.find(msg => msg.id === messageId);
+    const interactionEventId = targetMessage?.interactionEventId;
+
     setMessages(prev => prev.map(msg => 
       msg.id === messageId 
         ? { 
@@ -1221,6 +1229,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
     ));
 
     // Send to V5 Learning Pipeline
+    if (!interactionEventId) {
+      console.warn('Skip feedback: interactionEventId missing for message', messageId);
+      return;
+    }
+
     try {
       const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
       await fetch(`${apiUrl}/api/v5/learning/feedback`, {
@@ -1228,7 +1241,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         credentials: 'include',
         body: JSON.stringify({
-          interactionEventId: messageId,
+          interactionEventId,
           userId: userIdRef.current,
           sessionId: sessionIdRef.current,
           rating: feedback === 'positive' ? 'helpful' : 'not_helpful',
@@ -1241,11 +1254,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
   // Emotion change tracking - V5 Learning Pipeline
   const handleEmotionChange = async (messageId: string, emotion: 'feel_better' | 'same' | 'still_confused' | 'feel_worse') => {
+    const targetMessage = messages.find(msg => msg.id === messageId);
+    const interactionEventId = targetMessage?.interactionEventId;
+
     setMessages(prev => prev.map(msg =>
       msg.id === messageId
         ? { ...msg, emotionChange: emotion, showEmotionPicker: false }
         : msg
     ));
+
+    if (!interactionEventId) {
+      console.warn('Skip emotion feedback: interactionEventId missing for message', messageId);
+      return;
+    }
 
     try {
       const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
@@ -1254,7 +1275,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         credentials: 'include',
         body: JSON.stringify({
-          interactionEventId: messageId,
+          interactionEventId,
           userId: userIdRef.current,
           sessionId: sessionIdRef.current,
           rating: 'not_helpful',
@@ -1306,7 +1327,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         id: nextMsgId('bot'),
         text: botResponse.text,
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
+        interactionEventId: botResponse.interactionEventId || null,
       };
       setMessages(prev => [...prev, botMessage]);
 
@@ -1444,6 +1466,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
         isBot: true,
         timestamp: new Date(),
         type: 'ai',
+        interactionEventId: botResponse.interactionEventId || null,
       };
       setMessages(prev => [...prev, botMessage]);
 
@@ -1546,6 +1569,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
             isBot: true,
             timestamp: new Date(),
             type: 'ai',
+            interactionEventId: botResponse.interactionEventId || null,
           };
           setMessages(prev => [...prev, botMessage]);
           setIsTyping(false);

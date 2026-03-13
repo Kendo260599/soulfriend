@@ -31,6 +31,7 @@ export interface AIResponse {
   nextActions: string[];
   confidence?: number;
   aiGenerated?: boolean;
+  interactionEventId?: string | null;
 }
 
 export interface AIInsight {
@@ -48,7 +49,7 @@ export interface AIContextType {
   insights: AIInsight[];
 
   // Methods
-  processMessage: (message: string, userProfile?: UserProfile, testResults?: TestResult[], sessionId?: string) => Promise<AIResponse>;
+  processMessage: (message: string, userProfile?: UserProfile, testResults?: TestResult[], sessionId?: string, userId?: string) => Promise<AIResponse>;
   analyzeTestResults: (testResults: TestResult[]) => void;
   clearError: () => void;
   setOnlineStatus: (status: boolean) => void;
@@ -73,7 +74,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     message: string,
     userProfile: UserProfile = {},
     testResults: TestResult[] = [],
-    sessionId?: string
+    sessionId?: string,
+    userId?: string
   ): Promise<AIResponse> => {
     setIsProcessing(true);
     setLastError(null);
@@ -90,6 +92,9 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         const apiUrl = (process.env.REACT_APP_API_URL || 'https://soulfriend-api.onrender.com').replace(/\/$/, '');
         console.log('🌐 Sending to backend:', `${apiUrl}/api/v2/chatbot/message`);
         
+        const resolvedSessionId = sessionId || `session_${Date.now()}`;
+        const resolvedUserId = userId || `anon_${resolvedSessionId}`;
+
         const response = await fetch(`${apiUrl}/api/v2/chatbot/message`, {
           method: 'POST',
           headers: {
@@ -98,8 +103,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
           credentials: 'include', // Required for CORS with credentials
           body: JSON.stringify({
             message,
-            userId: 'web_user',
-            sessionId: sessionId || `session_${Date.now()}`,
+            userId: resolvedUserId,
+            sessionId: resolvedSessionId,
             context: {
               userProfile,
               testResults
@@ -138,7 +143,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
               nextActions: data.data.emergencyContacts ?
                 data.data.emergencyContacts.map((contact: any) => `${contact.name}: ${contact.phone || contact.contact}`) : [],
               confidence: data.data.confidence || 0.8,
-              aiGenerated: data.data.aiGenerated || false
+              aiGenerated: data.data.aiGenerated || false,
+              interactionEventId: data.data.interactionEventId || null,
             };
           }
         } else {

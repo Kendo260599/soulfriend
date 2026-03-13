@@ -88,9 +88,30 @@ export class ChatbotController {
         (response as any).response = safetyCheck.response;
       }
 
+      // V5: Capture interaction sync để trả interactionEventId chuẩn cho frontend feedback mapping
+      let interactionEventId: string | null = null;
+      try {
+        interactionEventId = await v5IntegrationService.captureInteraction({
+          sessionId: effectiveSessionId,
+          userId: effectiveUserId,
+          userMessage: message,
+          aiResponse: response.message,
+          responseTimeMs,
+          riskLevel: response.riskLevel,
+          emotionalState: response.emotionalState,
+          intent: response.intent,
+          crisisLevel: response.crisisLevel,
+        });
+      } catch {
+        interactionEventId = null;
+      }
+
       res.json({
         success: true,
-        data: response,
+        data: {
+          ...response,
+          interactionEventId,
+        },
         timestamp: new Date().toISOString(),
       });
 
@@ -106,6 +127,7 @@ export class ChatbotController {
         qualityScore: response.qualityScore,
         intent: response.intent,
         crisisLevel: response.crisisLevel,
+        interactionEventId,
       }).catch(() => {});
 
       // 🎮 GameFi: Detect event from user message and process

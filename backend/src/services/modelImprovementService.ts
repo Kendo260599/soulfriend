@@ -42,6 +42,11 @@ class ModelImprovementService {
   private currentPromptVersion = '1.0';
   private improvementPlans: ImprovementPlan[] = [];
 
+  private isFineTuningEnabled(): boolean {
+    const raw = (process.env.FINE_TUNING_ENABLED || '').toLowerCase().trim();
+    return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  }
+
   // ===========================
   // LEVEL 1: PROMPT OPTIMIZATION
   // ===========================
@@ -235,15 +240,18 @@ class ModelImprovementService {
 
       const MIN_SAMPLES = 500;
       const MIN_QUALITY = 0.75;
+      const featureEnabled = this.isFineTuningEnabled();
 
       return {
         level: 3,
+        featureEnabled,
         ready: totalApproved >= MIN_SAMPLES && avgQuality >= MIN_QUALITY,
         totalSamples: totalApproved,
         minRequired: MIN_SAMPLES,
         avgQuality: Number(avgQuality.toFixed(3)),
         minQuality: MIN_QUALITY,
         categoryDistribution: stats,
+        gateStatus: featureEnabled ? 'enabled' : 'disabled',
         recommendation: totalApproved < MIN_SAMPLES
           ? `Cần thêm ${MIN_SAMPLES - totalApproved} training samples`
           : avgQuality < MIN_QUALITY
@@ -260,6 +268,13 @@ class ModelImprovementService {
    * Trigger fine-tuning job (placeholder — cần OpenAI Fine-tuning API)
    */
   async triggerFineTuning(): Promise<any> {
+    if (!this.isFineTuningEnabled()) {
+      return {
+        status: 'not_enabled',
+        message: 'Fine-tuning hiện đang bị tắt. Bật FINE_TUNING_ENABLED=true để cho phép trigger.',
+      };
+    }
+
     const readiness = await this.checkFineTuningReadiness();
     if (!readiness.ready) {
       return {
@@ -277,13 +292,13 @@ class ModelImprovementService {
     //   model: 'gpt-4o-mini-2024-07-18',
     // });
 
-    logger.info(`[ModelImprovement] Fine-tuning triggered: ${trainingRunId}, ${dataset.length} samples`);
+    logger.warn(`[ModelImprovement] Fine-tuning requested but provider integration is not implemented. trainingRunId=${trainingRunId}, dataset=${dataset.length}`);
 
     return {
-      status: 'triggered',
+      status: 'not_implemented',
       trainingRunId,
       datasetSize: dataset.length,
-      message: 'Fine-tuning job queued (requires OpenAI Fine-tuning API integration)',
+      message: 'Fine-tuning provider integration chưa được triển khai. Dataset đã được export để chuẩn bị tích hợp.',
     };
   }
 

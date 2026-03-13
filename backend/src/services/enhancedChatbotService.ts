@@ -25,6 +25,7 @@ import { logger } from '../utils/logger';
 import { criticalInterventionService } from './criticalInterventionService';
 import openAIService from './openAIService';
 import { centralRiskScoringService } from './riskScoringService';
+import { promptConfigService } from './promptConfigService';
 
 export interface EnhancedChatMessage {
   id: string;
@@ -96,6 +97,7 @@ export interface EnhancedResponse {
   emergencyContacts?: any[]; // For crisis situations
   nextActions?: string[]; // For follow-up actions
   aiGenerated?: boolean; // Indicates if response is AI-generated
+  promptVersion?: string;
 }
 
 export class EnhancedChatbotService {
@@ -226,6 +228,7 @@ export class EnhancedChatbotService {
       let referralInfo: any[] = [];
       const disclaimer: string = '';
       const followUpActions: string[] = [];
+      let activePromptVersion: string | undefined;
 
       // Activate HITL based on unified risk assessment
       const shouldActivateHITL = riskAssessment.shouldActivateHITL;
@@ -392,8 +395,10 @@ export class EnhancedChatbotService {
         // ALWAYS use OpenAI API for personalized responses instead of template
         if (this.openAIService && this.openAIService.isReady()) {
           try {
+            const activePrompt = await promptConfigService.getActivePrompt();
+            activePromptVersion = activePrompt?.version;
             const aiContext = {
-              systemPrompt: `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
+              systemPrompt: activePrompt?.systemPrompt || `Bạn là 𝑺𝒆𝒄𝒓𝒆𝒕❤️ chuyên về sức khỏe tâm lý cho phụ nữ Việt Nam.
 
 ⚠️ QUAN TRỌNG:
 - Bạn KHÔNG phải chuyên gia y tế/tâm lý
@@ -420,7 +425,9 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
             };
             const aiResponse = await this.openAIService.generateResponse(message, aiContext);
             response = aiResponse.text;
-            logger.info('✅ Generated AI response using OpenAI');
+            logger.info('✅ Generated AI response using OpenAI', {
+              promptVersion: activePromptVersion || 'default',
+            });
           } catch (error) {
             logger.error('AI generation failed, using fallback template:', error);
             // Fallback to template only if AI fails
@@ -465,6 +472,7 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
         emotionalState: nuancedEmotion.emotion,
         crisisLevel: riskAssessment.level,
         qualityScore: qualityEvaluation.qualityScore,
+        promptVersion: activePromptVersion || 'default',
       });
 
       const finalResponse: EnhancedResponse = {
@@ -484,6 +492,7 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
         emergencyContacts: riskAssessment.shouldActivateHITL ? referralInfo : [],
         nextActions: followUpActions,
         aiGenerated: true,
+        promptVersion: activePromptVersion || 'default',
       };
 
       return finalResponse;
@@ -512,6 +521,7 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
   ): Promise<string> {
     if (this.useAI) {
       try {
+        const activePrompt = await promptConfigService.getActivePrompt();
         const context = `
           User Segment: ${userSegment.name}
           Description: ${userSegment.description}
@@ -528,7 +538,9 @@ Please provide a warm, empathetic, and personalized response in Vietnamese.`,
           5. Uses warm, supportive tone
         `;
 
-        const aiResponse = await openAIService.generateResponse(context, {});
+        const aiResponse = await openAIService.generateResponse(context, {
+          ...(activePrompt?.systemPrompt ? { systemPrompt: activePrompt.systemPrompt } : {}),
+        });
         return aiResponse.text;
       } catch (error) {
         logger.error('AI generation failed, using fallback:', error);

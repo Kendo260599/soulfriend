@@ -11,11 +11,44 @@
  */
 
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { authenticateExpert } from '../expertAuth';
 import { logger } from '../../utils/logger';
 
 const router = Router();
+
+const SENTRY_API_BASE = 'https://sentry.io/api/0';
+
+async function resolveSentryContext(authToken: string): Promise<{ orgSlug: string; projectSlug?: string }> {
+  const orgRes = await axios.get(`${SENTRY_API_BASE}/organizations/`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+    timeout: 10000,
+  });
+
+  const orgs = Array.isArray(orgRes.data) ? orgRes.data : [];
+  if (!orgs.length || !orgs[0]?.slug) {
+    throw new Error('Không tìm thấy organization trong Sentry token');
+  }
+
+  const orgSlug = orgs[0].slug as string;
+
+  const projectRes = await axios.get(`${SENTRY_API_BASE}/organizations/${orgSlug}/projects/`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+    timeout: 10000,
+  });
+  const projects = Array.isArray(projectRes.data) ? projectRes.data : [];
+  const preferred = projects.find((p: any) => {
+    const slug = String(p?.slug || '').toLowerCase();
+    const name = String(p?.name || '').toLowerCase();
+    return slug.includes('soulfriend') || name.includes('soulfriend');
+  }) || projects[0];
+
+  return {
+    orgSlug,
+    projectSlug: preferred?.slug,
+  };
+}
 
 /**
  * GET /api/v5/health
@@ -204,6 +237,130 @@ router.get(
         ],
       },
     });
+  })
+);
+
+/**
+ * GET /api/v5/health/sentry/recent-issues
+ * Fetch recent Sentry issues for production diagnostics (expert only)
+ */
+router.get(
+  '/sentry/recent-issues',
+  authenticateExpert,
+  asyncHandler(async (req: Request, res: Response) => {
+    const token = process.env.SENTRY_AUTH_TOKEN;
+    if (!token) {
+      return res.status(503).json({
+        success: false,
+        error: 'SENTRY_AUTH_TOKEN chưa được cấu hình',
+      });
+    }
+
+    const limit = Math.min(parseInt((req.query.limit as string) || '10', 10), 25);
+    const query = (req.query.query as string) || 'is:unresolved level:error';
+
+    try {
+      const ctx = await resolveSentryContext(token);
+      const issueRes = await axios.get(`${SENTRY_API_BASE}/organizations/${ctx.orgSlug}/issues/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          project: ctx.projectSlug,
+          query,
+          sort: 'date',
+          limit,
+        },
+        timeout: 12000,
+      });
+
+      const issues = Array.isArray(issueRes.data) ? issueRes.data.map((i: any) => ({
+        id: i.id,
+        shortId: i.shortId,
+        title: i.title,
+        level: i.level,
+        culprit: i.culprit,
+        status: i.status,
+        count: i.count,
+        firstSeen: i.firstSeen,
+        lastSeen: i.lastSeen,
+        permalink: i.permalink,
+      })) : [];
+
+      return res.json({
+        success: true,
+        data: {
+          orgSlug: ctx.orgSlug,
+          projectSlug: ctx.projectSlug,
+          query,
+          count: issues.length,
+          issues,
+        },
+      });
+    } catch (err: any) {
+      logger.error('[V5 Health] Sentry recent issues fetch failed:', err?.message || err);
+      return res.status(502).json({
+        success: false,
+        error: 'Không thể truy vấn Sentry issues',
+        detail: err?.message || 'Unknown error',
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/v5/health/sentry/recent-events
+ * Fetch recent error events from Sentry Event Search (expert only)
+ */
+router.get(
+  '/sentry/recent-events',
+  authenticateExpert,
+  asyncHandler(async (req: Request, res: Response) => {
+    const token = process.env.SENTRY_AUTH_TOKEN;
+    if (!token) {
+      return res.status(503).json({
+        success: false,
+        error: 'SENTRY_AUTH_TOKEN chưa được cấu hình',
+      });
+    }
+
+    const limit = Math.min(parseInt((req.query.limit as string) || '20', 10), 50);
+    const query = (req.query.query as string) || 'event.type:error';
+    const statsPeriod = (req.query.statsPeriod as string) || '24h';
+
+    try {
+      const ctx = await resolveSentryContext(token);
+      const eventsRes = await axios.get(`${SENTRY_API_BASE}/organizations/${ctx.orgSlug}/events/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          project: ctx.projectSlug,
+          query,
+          field: ['timestamp', 'project', 'level', 'message', 'transaction', 'title'],
+          sort: '-timestamp',
+          statsPeriod,
+          per_page: limit,
+        },
+        timeout: 12000,
+      });
+
+      const rows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
+      return res.json({
+        success: true,
+        data: {
+          orgSlug: ctx.orgSlug,
+          projectSlug: ctx.projectSlug,
+          query,
+          statsPeriod,
+          count: rows.length,
+          rows,
+        },
+      });
+    } catch (err: any) {
+      logger.error('[V5 Health] Sentry recent events fetch failed:', err?.message || err);
+      return res.status(502).json({
+        success: false,
+        error: 'Không thể truy vấn Sentry events',
+        detail: err?.message || 'Unknown error',
+      });
+    }
   })
 );
 

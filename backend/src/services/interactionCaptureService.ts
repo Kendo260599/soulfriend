@@ -137,6 +137,7 @@ class InteractionCaptureService {
         { riskLevel: { $in: ['HIGH', 'CRITICAL', 'EXTREME'] } },
         { sentiment: { $in: ['very_negative'] } },
         { escalationTriggered: true },
+        { expertReviewRecommended: true },
       ],
     })
       .sort({ timestamp: -1 })

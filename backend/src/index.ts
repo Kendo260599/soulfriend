@@ -690,7 +690,7 @@ const startServer = async () => {
         const eventTypes = [
           'interaction.captured', 'evaluation.completed', 'feedback.received',
           'expert_review.submitted', 'training_data.curated', 'model.improved',
-          'experiment.started', 'experiment.completed', 'crisis.detected', 'guardrail.violated',
+          'experiment.started', 'experiment.completed', 'crisis.detected', 'guardrail.violated', 'ebh.warning',
         ] as const;
         
         for (const type of eventTypes) {
@@ -764,6 +764,28 @@ const startServer = async () => {
             }
           } catch (err) {
             console.warn('⚠️ [V5 Reactive] Crisis handling failed:', err instanceof Error ? err.message : err);
+          }
+        });
+
+        // Khi EBH warning cao → gửi thông báo expert để review chủ động
+        eventQueueService.subscribe('ebh.warning', async (data: any) => {
+          try {
+            const expertEmails = process.env.EXPERT_NOTIFICATION_EMAILS?.split(',').filter(Boolean) || [];
+            if (expertEmails.length === 0) return;
+
+            const { emailService } = await import('./services/emailService');
+            const subject = `⚠️ [SoulFriend V5] EBH ${String(data?.tier || '').toUpperCase()} Warning - ${data?.userId || 'unknown_user'}`;
+            const html =
+              '<h2>⚠️ EBH Early Warning</h2>' +
+              `<p><b>User:</b> ${data?.userId || 'unknown'}</p>` +
+              `<p><b>Tier:</b> ${data?.tier || 'unknown'}</p>` +
+              `<p><b>Score:</b> ${data?.score ?? 'n/a'}</p>` +
+              `<p><b>Reason:</b> ${data?.reason || 'ebh_policy_trigger'}</p>` +
+              '<p>Vui lòng kiểm tra Expert Dashboard để review sớm.</p>';
+
+            await emailService.send({ to: expertEmails, subject, html });
+          } catch (err) {
+            console.warn('⚠️ [V5 Reactive] EBH warning notification failed:', err instanceof Error ? err.message : err);
           }
         });
 

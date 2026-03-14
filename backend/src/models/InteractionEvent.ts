@@ -37,6 +37,8 @@ export interface IInteractionEvent extends Document {
   // Escalation
   escalationTriggered: boolean;
   escalationType?: 'crisis' | 'expert_referral' | 'hotline' | 'none';
+  expertReviewRecommended?: boolean;
+  expertReviewReason?: string;
 
   // Quality signals
   aiModelUsed: string;
@@ -91,6 +93,8 @@ const InteractionEventSchema = new Schema<IInteractionEvent>(
       enum: ['crisis', 'expert_referral', 'hotline', 'none'],
       default: 'none',
     },
+    expertReviewRecommended: { type: Boolean, default: false, index: true },
+    expertReviewReason: { type: String },
 
     aiModelUsed: { type: String, default: 'gpt-4o-mini' },
     promptTokens: { type: Number },
@@ -112,6 +116,7 @@ InteractionEventSchema.index({ sessionId: 1, conversationDepth: 1 });
 InteractionEventSchema.index({ riskLevel: 1, timestamp: -1 });
 InteractionEventSchema.index({ sentiment: 1, timestamp: -1 });
 InteractionEventSchema.index({ escalationTriggered: 1, timestamp: -1 });
+InteractionEventSchema.index({ expertReviewRecommended: 1, timestamp: -1 });
 
 // TTL: auto-delete after 2 years (anonymized data kept separately)
 InteractionEventSchema.index({ timestamp: 1 }, { expireAfterSeconds: 63072000 });

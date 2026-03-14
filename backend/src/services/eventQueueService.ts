@@ -22,7 +22,8 @@ type EventType =
   | 'experiment.started'
   | 'experiment.completed'
   | 'crisis.detected'
-  | 'guardrail.violated';
+  | 'guardrail.violated'
+  | 'ebh.warning';
 
 interface QueueEvent {
   id: string;

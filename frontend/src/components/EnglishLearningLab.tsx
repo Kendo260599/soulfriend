@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { apiService } from '../services/apiService';
 
 type WordItem = {
   word: string;
@@ -13,6 +14,13 @@ type QuizState = {
   choices: string[];
 };
 
+type ProgressState = {
+  learned: number;
+  avgMemoryPercent: number;
+  attempts: number;
+  avgPronunciationScore: number;
+};
+
 type PronunciationState = {
   target: string;
   recognized: string;
@@ -21,30 +29,31 @@ type PronunciationState = {
 };
 
 const WORD_BANK: WordItem[] = [
-  { word: 'trust', meaningVi: 'tin tuong' },
-  { word: 'hope', meaningVi: 'hy vong' },
-  { word: 'fear', meaningVi: 'so hai' },
-  { word: 'care', meaningVi: 'quan tam' },
-  { word: 'love', meaningVi: 'tinh yeu' },
-  { word: 'friend', meaningVi: 'ban be' },
-  { word: 'family', meaningVi: 'gia dinh' },
-  { word: 'support', meaningVi: 'ho tro' },
-  { word: 'respect', meaningVi: 'ton trong' },
-  { word: 'listen', meaningVi: 'lang nghe' },
-  { word: 'speak', meaningVi: 'noi' },
-  { word: 'understand', meaningVi: 'thau hieu' },
-  { word: 'practice', meaningVi: 'luyen tap' },
-  { word: 'review', meaningVi: 'on tap' },
-  { word: 'focus', meaningVi: 'tap trung' },
-  { word: 'balance', meaningVi: 'can bang' },
-  { word: 'growth', meaningVi: 'phat trien' },
-  { word: 'progress', meaningVi: 'tien bo' },
-  { word: 'healing', meaningVi: 'chua lanh' },
-  { word: 'calm', meaningVi: 'binh tinh' },
+  { word: 'trust', meaningVi: 'tin tưởng' },
+  { word: 'hope', meaningVi: 'hy vọng' },
+  { word: 'fear', meaningVi: 'sợ hãi' },
+  { word: 'care', meaningVi: 'quan tâm' },
+  { word: 'love', meaningVi: 'tình yêu' },
+  { word: 'friend', meaningVi: 'bạn bè' },
+  { word: 'family', meaningVi: 'gia đình' },
+  { word: 'support', meaningVi: 'hỗ trợ' },
+  { word: 'respect', meaningVi: 'tôn trọng' },
+  { word: 'listen', meaningVi: 'lắng nghe' },
+  { word: 'speak', meaningVi: 'nói' },
+  { word: 'understand', meaningVi: 'thấu hiểu' },
+  { word: 'practice', meaningVi: 'luyện tập' },
+  { word: 'review', meaningVi: 'ôn tập' },
+  { word: 'focus', meaningVi: 'tập trung' },
+  { word: 'balance', meaningVi: 'cân bằng' },
+  { word: 'growth', meaningVi: 'phát triển' },
+  { word: 'progress', meaningVi: 'tiến bộ' },
+  { word: 'healing', meaningVi: 'chữa lành' },
+  { word: 'calm', meaningVi: 'bình tĩnh' },
 ];
 
 const STORAGE_MEMORY_KEY = 'lexical.frontend.memory';
 const STORAGE_HISTORY_KEY = 'lexical.frontend.pronunciationHistory';
+const STORAGE_USER_KEY = 'lexical.frontend.userId';
 
 const Page = styled.div`
   min-height: 100vh;
@@ -111,6 +120,22 @@ const Row = styled.div`
   flex-wrap: wrap;
 `;
 
+const RowTopMd = styled(Row)`
+  margin-top: 0.8rem;
+`;
+
+const RowTopSm = styled(Row)`
+  margin-top: 0.7rem;
+`;
+
+const RowTopXs = styled(Row)`
+  margin-top: 0.5rem;
+`;
+
+const BlockTopSm = styled.div`
+  margin-top: 0.7rem;
+`;
+
 const Button = styled.button`
   border: none;
   border-radius: 10px;
@@ -145,6 +170,10 @@ const ChoiceButton = styled(Button)<{ isCorrect?: boolean; isWrong?: boolean }>`
 const Small = styled.div`
   color: #607287;
   font-size: 0.88rem;
+`;
+
+const SmallTop = styled(Small)`
+  margin-top: 0.5rem;
 `;
 
 const Score = styled.div<{ positive?: boolean }>`
@@ -230,7 +259,7 @@ function pronunciationScore(targetWord: string, recognizedText: string): Pronunc
       target,
       recognized,
       score: 0,
-      feedback: 'Chua nhan duoc gi. Hay noi ro hon va thu lai.',
+      feedback: 'Chưa nhận được gì. Hãy nói rõ hơn và thử lại.',
     };
   }
 
@@ -240,10 +269,10 @@ function pronunciationScore(targetWord: string, recognizedText: string): Pronunc
   const endingScore = Math.round(similarityRatio(targetEnding, recognizedEnding) * 100);
   const score = Math.round(charScore * 0.7 + endingScore * 0.3);
 
-  let feedback = 'Can luyen them am cuoi va do ro.';
-  if (score >= 90) feedback = 'Rat tot. Phat am gan nhu chinh xac.';
-  else if (score >= 70) feedback = 'Gan dung. Thu cham va ro am cuoi hon.';
-  else if (score >= 50) feedback = 'Tam on. Can dieu chinh do ro va nhip.';
+  let feedback = 'Cần luyện thêm âm cuối và độ rõ.';
+  if (score >= 90) feedback = 'Rất tốt. Phát âm gần như chính xác.';
+  else if (score >= 70) feedback = 'Gần đúng. Thử chậm và rõ âm cuối hơn.';
+  else if (score >= 50) feedback = 'Tạm ổn. Cần điều chỉnh độ rõ và nhịp.';
 
   return { target, recognized, score, feedback };
 }
@@ -270,8 +299,26 @@ const EnglishLearningLab: React.FC = () => {
   const [pronResult, setPronResult] = useState<PronunciationState | null>(null);
   const [history, setHistory] = useState<Array<{ at: string; word: string; score: number; recognized: string }>>([]);
   const [isRecognizing, setIsRecognizing] = useState<boolean>(false);
+  const [isBackendRecording, setIsBackendRecording] = useState<boolean>(false);
+  const [bridgeStatus, setBridgeStatus] = useState<string>('');
+  const [userId, setUserId] = useState<string>('anonymous');
+  const [apiMode, setApiMode] = useState<boolean>(true);
+  const [remoteProgress, setRemoteProgress] = useState<ProgressState>({
+    learned: 0,
+    avgMemoryPercent: 0,
+    attempts: 0,
+    avgPronunciationScore: 0,
+  });
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   useEffect(() => {
+    const existingUserId = localStorage.getItem(STORAGE_USER_KEY);
+    const finalUserId = existingUserId || `user-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(STORAGE_USER_KEY, finalUserId);
+    setUserId(finalUserId);
+
     try {
       const saved = localStorage.getItem(STORAGE_MEMORY_KEY);
       if (saved) {
@@ -287,6 +334,51 @@ const EnglishLearningLab: React.FC = () => {
     } catch {
       // Keep default state if localStorage parse fails.
     }
+
+    const bootstrapRemote = async () => {
+      try {
+        const [quizRes, progressRes, historyRes] = await Promise.all([
+          apiService.getEnglishLabNextQuiz(finalUserId),
+          apiService.getEnglishLabProgress(finalUserId),
+          apiService.getEnglishLabHistory(finalUserId, 20),
+        ]);
+
+        const remoteQuiz = quizRes.data?.data;
+        if (remoteQuiz?.item && Array.isArray(remoteQuiz?.choices)) {
+          setQuiz({ item: remoteQuiz.item, choices: remoteQuiz.choices });
+          setMemoryMap(progressRes.data?.data?.memory || {});
+          localStorage.setItem(STORAGE_MEMORY_KEY, JSON.stringify(progressRes.data?.data?.memory || {}));
+        }
+
+        const remoteHist = historyRes.data?.data?.history;
+        if (Array.isArray(remoteHist)) {
+          const normalized = remoteHist.map((row: any) => ({
+            at: String(row.at || ''),
+            word: String(row.word || ''),
+            score: Number(row.score || 0),
+            recognized: String(row.recognized || ''),
+          }));
+          setHistory(normalized);
+          localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
+        }
+
+        const prog = progressRes.data?.data?.progress;
+        if (prog) {
+          setRemoteProgress({
+            learned: Number(prog.learned || 0),
+            avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
+            attempts: Number(prog.attempts || 0),
+            avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
+          });
+        }
+
+        setApiMode(true);
+      } catch {
+        setApiMode(false);
+      }
+    };
+
+    void bootstrapRemote();
   }, []);
 
   const stats = useMemo(() => {
@@ -310,18 +402,63 @@ const EnglishLearningLab: React.FC = () => {
 
     const isCorrect = choice === quiz.item.meaningVi;
     setSelected(choice);
-    setQuizMessage(isCorrect ? 'Dung roi. + memory strength' : 'Chua dung. - memory strength');
+    setQuizMessage(isCorrect ? 'Đúng rồi. + memory strength' : 'Chưa đúng. - memory strength');
 
     const current = memoryMap[quiz.item.word] ?? 0;
     const updated = Math.max(0, Math.min(1, current + (isCorrect ? 0.2 : -0.3)));
     const nextMap = { ...memoryMap, [quiz.item.word]: updated };
     persistMemory(nextMap);
+
+    const syncRemote = async () => {
+      if (!apiMode) return;
+      try {
+        const res = await apiService.submitEnglishLabQuizAnswer({
+          userId,
+          word: quiz.item.word,
+          selectedMeaning: choice,
+        });
+
+        const message = String(res.data?.data?.message || '');
+        if (message) setQuizMessage(message);
+
+        const prog = res.data?.data?.progress;
+        if (prog) {
+          setRemoteProgress({
+            learned: Number(prog.learned || 0),
+            avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
+            attempts: Number(prog.attempts || 0),
+            avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
+          });
+        }
+      } catch {
+        setApiMode(false);
+      }
+    };
+
+    void syncRemote();
   };
 
   const nextQuiz = () => {
     setSelected('');
     setQuizMessage('');
-    setQuiz(chooseQuizItem(memoryMap));
+
+    const localNext = chooseQuizItem(memoryMap);
+    setQuiz(localNext);
+
+    const fetchRemoteNext = async () => {
+      if (!apiMode) return;
+      try {
+        const res = await apiService.getEnglishLabNextQuiz(userId);
+        const payload = res.data?.data;
+        if (payload?.item && Array.isArray(payload?.choices)) {
+          setQuiz({ item: payload.item, choices: payload.choices });
+        }
+      } catch {
+        setApiMode(false);
+      }
+    };
+
+    void fetchRemoteNext();
   };
 
   const speakWord = (rate: number) => {
@@ -360,6 +497,53 @@ const EnglishLearningLab: React.FC = () => {
     const next = [row, ...history].slice(0, 50);
     setHistory(next);
     localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(next));
+
+    const syncRemote = async () => {
+      if (!apiMode) return;
+      try {
+        const res = await apiService.scoreEnglishLabPronunciation({
+          userId,
+          targetWord: quiz.item.word,
+          recognizedText: recognized,
+        });
+
+        const remoteResult = res.data?.data?.result;
+        if (remoteResult) {
+          setPronResult({
+            target: String(remoteResult.target || ''),
+            recognized: String(remoteResult.recognized || ''),
+            score: Number(remoteResult.score || 0),
+            feedback: String(remoteResult.feedback || ''),
+          });
+        }
+
+        const remoteHistory = res.data?.data?.history;
+        if (Array.isArray(remoteHistory)) {
+          const normalized = remoteHistory.map((item: any) => ({
+            at: String(item.at || ''),
+            word: String(item.word || ''),
+            score: Number(item.score || 0),
+            recognized: String(item.recognized || ''),
+          }));
+          setHistory(normalized);
+          localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
+        }
+
+        const prog = res.data?.data?.progress;
+        if (prog) {
+          setRemoteProgress({
+            learned: Number(prog.learned || 0),
+            avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
+            attempts: Number(prog.attempts || 0),
+            avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
+          });
+        }
+      } catch {
+        setApiMode(false);
+      }
+    };
+
+    void syncRemote();
   };
 
   const startRecognition = () => {
@@ -386,6 +570,125 @@ const EnglishLearningLab: React.FC = () => {
     recognition.start();
   };
 
+  const stopBackendRecording = () => {
+    const recorder = recorderRef.current;
+    if (!recorder) {
+      setIsBackendRecording(false);
+      return;
+    }
+
+    if (recorder.state !== 'inactive') {
+      recorder.stop();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  const startBackendRecording = async () => {
+    if (!apiMode) {
+      setBridgeStatus('Bridge chỉ hoạt động khi backend API sẵn sàng.');
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setBridgeStatus('Trình duyệt không hỗ trợ MediaRecorder/getUserMedia.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
+
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      recorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        setIsBackendRecording(false);
+        setBridgeStatus('Ghi âm backend bị lỗi. Vui lòng thử lại.');
+      };
+
+      recorder.onstop = async () => {
+        setIsBackendRecording(false);
+
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        chunksRef.current = [];
+
+        if (audioBlob.size <= 0) {
+          setBridgeStatus('Không thu được dữ liệu âm thanh.');
+          return;
+        }
+
+        setBridgeStatus('Đang gửi audio tới Python worker...');
+
+        try {
+          const res = await apiService.transcribeAndScoreEnglishLab({
+            userId,
+            targetWord: quiz.item.word,
+            audioBlob,
+            model: 'base',
+            language: 'en',
+          });
+
+          const remoteResult = res.data?.data?.result;
+          if (remoteResult) {
+            setPronResult({
+              target: String(remoteResult.target || ''),
+              recognized: String(remoteResult.recognized || ''),
+              score: Number(remoteResult.score || 0),
+              feedback: String(remoteResult.feedback || ''),
+            });
+            setManualText(String(remoteResult.recognized || ''));
+          }
+
+          const remoteHistory = res.data?.data?.history;
+          if (Array.isArray(remoteHistory)) {
+            const normalized = remoteHistory.map((item: any) => ({
+              at: String(item.at || ''),
+              word: String(item.word || ''),
+              score: Number(item.score || 0),
+              recognized: String(item.recognized || ''),
+            }));
+            setHistory(normalized);
+            localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
+          }
+
+          const prog = res.data?.data?.progress;
+          if (prog) {
+            setRemoteProgress({
+              learned: Number(prog.learned || 0),
+              avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
+              attempts: Number(prog.attempts || 0),
+              avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
+            });
+          }
+
+          const transcribed = String(res.data?.data?.transcription?.text || '');
+          setBridgeStatus(`Bridge OK: ${transcribed || '(rỗng)'}`);
+        } catch (error: any) {
+          const msg = error?.response?.data?.message || 'Bridge transcription thất bại.';
+          setBridgeStatus(msg);
+        }
+      };
+
+      recorder.start();
+      setIsBackendRecording(true);
+      setBridgeStatus('Đang ghi âm cho backend bridge...');
+    } catch {
+      setBridgeStatus('Không thể truy cập microphone để ghi âm backend.');
+      setIsBackendRecording(false);
+    }
+  };
+
   const useManualInput = () => {
     savePronunciationResult(manualText);
   };
@@ -395,14 +698,14 @@ const EnglishLearningLab: React.FC = () => {
       <Wrap>
         <Title>English Learning Lab</Title>
         <SubTitle>
-          Ban co the test truc tiep tren frontend: Quiz + Memory + Audio + Mic + Speech-to-text + Score.
+          Bạn có thể test trực tiếp trên frontend: Quiz + Memory + Audio + Mic + Speech-to-text + Score.
         </SubTitle>
 
         <Grid>
           <Card>
             <CardTitle>Quiz + Memory</CardTitle>
             <Word>{quiz.item.word}</Word>
-            <Meta>Chon nghia tieng Viet dung nhat.</Meta>
+            <Meta>Chọn nghĩa tiếng Việt đúng nhất.</Meta>
 
             <Row>
               {quiz.choices.map(choice => (
@@ -417,71 +720,86 @@ const EnglishLearningLab: React.FC = () => {
               ))}
             </Row>
 
-            <Score positive={quizMessage.startsWith('Dung')}>{quizMessage}</Score>
+            <Score positive={quizMessage.startsWith('Đúng')}>{quizMessage}</Score>
 
-            <Row style={{ marginTop: '0.8rem' }}>
-              <Button onClick={nextQuiz}>Cau tiep theo</Button>
-            </Row>
+            <RowTopMd>
+              <Button onClick={nextQuiz}>Câu tiếp theo</Button>
+            </RowTopMd>
 
             <StatBox>
               <Kpi>
-                <Small>So tu da vung</Small>
-                <strong>{stats.learned}</strong>
+                <Small>Số từ đã vững</Small>
+                <strong>{apiMode ? remoteProgress.learned : stats.learned}</strong>
               </Kpi>
               <Kpi>
-                <Small>Memory trung binh</Small>
-                <strong>{stats.avg}%</strong>
+                <Small>Memory trung bình</Small>
+                <strong>{apiMode ? remoteProgress.avgMemoryPercent : stats.avg}%</strong>
               </Kpi>
               <Kpi>
-                <Small>Lan phat am</Small>
-                <strong>{stats.attempts}</strong>
+                <Small>Lần phát âm</Small>
+                <strong>{apiMode ? remoteProgress.attempts : stats.attempts}</strong>
               </Kpi>
             </StatBox>
+            <SmallTop>
+              Chế độ dữ liệu: {apiMode ? 'Backend API' : 'Local fallback'} | User: {userId}
+            </SmallTop>
           </Card>
 
           <Card>
             <CardTitle>Audio + Mic + Speech + Score</CardTitle>
             <Word>{quiz.item.word}</Word>
-            <Meta>Test phat am truc tiep tren browser.</Meta>
+            <Meta>Test phát âm trực tiếp trên browser.</Meta>
 
             <Row>
-              <Button onClick={() => speakWord(1)}>Phat am (normal)</Button>
-              <Button onClick={() => speakWord(0.75)}>Phat am (slow)</Button>
+              <Button onClick={() => speakWord(1)}>Phát âm (normal)</Button>
+              <Button onClick={() => speakWord(0.75)}>Phát âm (slow)</Button>
             </Row>
 
-            <Row style={{ marginTop: '0.7rem' }}>
-              <Button onClick={enableMicrophone}>Kiem tra microphone</Button>
-              <Small>Mic: {micReady ? 'san sang' : 'chua cap quyen/khong ho tro'}</Small>
-            </Row>
+            <RowTopSm>
+              <Button onClick={enableMicrophone}>Kiểm tra microphone</Button>
+              <Small>Mic: {micReady ? 'sẵn sàng' : 'chưa cấp quyền/không hỗ trợ'}</Small>
+            </RowTopSm>
 
-            <Row style={{ marginTop: '0.7rem' }}>
+            <RowTopSm>
               <Button onClick={startRecognition} disabled={isRecognizing}>
-                {isRecognizing ? 'Dang nghe...' : 'Noi va cham diem (Web Speech)'}
+                {isRecognizing ? 'Đang nghe...' : 'Nói và chấm điểm (Web Speech)'}
               </Button>
-            </Row>
+            </RowTopSm>
 
-            <div style={{ marginTop: '0.7rem' }}>
-              <Small>Fallback nhap tay neu trinh duyet khong ho tro Web Speech:</Small>
+            <RowTopSm>
+              {!isBackendRecording ? (
+                <Button onClick={startBackendRecording} disabled={!apiMode}>
+                  Ghi âm và chấm bằng Backend Whisper
+                </Button>
+              ) : (
+                <Button onClick={stopBackendRecording}>Dừng ghi âm backend</Button>
+              )}
+            </RowTopSm>
+            {bridgeStatus ? <Small>{bridgeStatus}</Small> : null}
+
+            <BlockTopSm>
+              <Small>Fallback nhập tay nếu trình duyệt không hỗ trợ Web Speech:</Small>
               <Input
                 value={manualText}
                 onChange={e => setManualText(e.target.value)}
-                placeholder="Vi du: trust"
+                placeholder="Ví dụ: trust"
               />
-              <Row style={{ marginTop: '0.5rem' }}>
-                <Button onClick={useManualInput}>Cham diem tu text</Button>
-              </Row>
-            </div>
+              <RowTopXs>
+                <Button onClick={useManualInput}>Chấm điểm từ text</Button>
+              </RowTopXs>
+            </BlockTopSm>
 
             {pronResult && (
               <>
                 <Score positive={pronResult.score >= 70}>Score: {pronResult.score}/100</Score>
                 <Small>Recognized: {pronResult.recognized || '(rong)'}</Small>
                 <Small>Feedback: {pronResult.feedback}</Small>
+                <Small>Avg score (API): {remoteProgress.avgPronunciationScore}</Small>
               </>
             )}
 
             <HistoryList>
-              <Small>Lich su phat am gan day:</Small>
+              <Small>Lịch sử phát âm gần đây:</Small>
               {history.slice(0, 8).map(row => (
                 <HistoryRow key={`${row.at}-${row.word}`}>
                   {row.at.slice(0, 19).replace('T', ' ')} | {row.word} | {row.score} | {row.recognized || '(rong)'}

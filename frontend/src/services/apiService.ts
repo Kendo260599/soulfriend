@@ -94,6 +94,55 @@ class ApiService {
   public async adminLogin(credentials: any): Promise<AxiosResponse> {
     return this.post('/api/v2/admin/login', credentials);
   }
+
+  public async getEnglishLabNextQuiz(userId: string): Promise<AxiosResponse> {
+    return this.get(`/api/v2/english-lab/quiz/next?userId=${encodeURIComponent(userId)}`);
+  }
+
+  public async submitEnglishLabQuizAnswer(payload: {
+    userId: string;
+    word: string;
+    selectedMeaning: string;
+  }): Promise<AxiosResponse> {
+    return this.post('/api/v2/english-lab/quiz/answer', payload);
+  }
+
+  public async scoreEnglishLabPronunciation(payload: {
+    userId: string;
+    targetWord: string;
+    recognizedText: string;
+  }): Promise<AxiosResponse> {
+    return this.post('/api/v2/english-lab/pronunciation/score', payload);
+  }
+
+  public async getEnglishLabHistory(userId: string, limit = 20): Promise<AxiosResponse> {
+    return this.get(`/api/v2/english-lab/history?userId=${encodeURIComponent(userId)}&limit=${limit}`);
+  }
+
+  public async getEnglishLabProgress(userId: string): Promise<AxiosResponse> {
+    return this.get(`/api/v2/english-lab/progress?userId=${encodeURIComponent(userId)}`);
+  }
+
+  public async transcribeAndScoreEnglishLab(payload: {
+    userId: string;
+    targetWord: string;
+    audioBlob: Blob;
+    model?: string;
+    language?: string;
+  }): Promise<AxiosResponse> {
+    const form = new FormData();
+    form.append('userId', payload.userId);
+    form.append('targetWord', payload.targetWord);
+    if (payload.model) form.append('model', payload.model);
+    if (payload.language) form.append('language', payload.language);
+    form.append('audio', payload.audioBlob, 'speech.webm');
+
+    return this.post('/api/v2/english-lab/pronunciation/transcribe-score', form, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
 }
 
 // Export a singleton instance

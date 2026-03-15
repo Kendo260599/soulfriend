@@ -59,6 +59,7 @@ import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
 import userAuthRoutes from './routes/userAuth';
 import memoryTestRoutes from './routes/memoryTest';
+import englishLabRoutes from './routes/englishLab';
 
 // V5 Routes - Self-Improving AI System
 import v5LearningPipelineRoutes from './routes/v5/learningPipeline';
@@ -323,6 +324,7 @@ app.use('/api/v2/user', userRoutes);
 app.use('/api/v2/auth', userAuthRoutes);
 app.use('/api/v2/research', researchRoutes);
 app.use('/api/v2/chatbot', chatbotRoutes);
+app.use('/api/v2/english-lab', englishLabRoutes);
 
 // ✨ NEW: HITL Feedback Loop & Conversation Learning
 app.use('/api/hitl-feedback', hitlFeedbackRoutes);

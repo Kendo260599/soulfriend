@@ -1,0 +1,17 @@
+# SoulFriend Lexical Engine — Phase 1 dependencies
+# Standard library only for Phase 1 (tkinter + sqlite3 are built-in).
+# pytest is only needed for running tests.
+pytest==9.0.2
+# Phase D: local microphone recording backend
+numpy==2.3.2
+sounddevice==0.5.5
+# Phase E: real local Whisper transcription backend
+openai-whisper==20250625
+imageio-ffmpeg==0.6.0
+# Whisper runtime pins for reproducible setup
+torch==2.10.0
+tiktoken==0.12.0
+numba==0.64.0
+llvmlite==0.46.0
+regex==2026.2.28
+tqdm==4.67.3

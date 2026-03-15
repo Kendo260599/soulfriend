@@ -1,0 +1,22 @@
+[
+  { "word": "trust", "audio": "trust.wav" },
+  { "word": "hope", "audio": "hope.wav" },
+  { "word": "fear", "audio": "fear.wav" },
+  { "word": "care", "audio": "care.wav" },
+  { "word": "love", "audio": "love.wav" },
+  { "word": "friend", "audio": "friend.wav" },
+  { "word": "family", "audio": "family.wav" },
+  { "word": "support", "audio": "support.wav" },
+  { "word": "respect", "audio": "respect.wav" },
+  { "word": "listen", "audio": "listen.wav" },
+  { "word": "speak", "audio": "speak.wav" },
+  { "word": "understand", "audio": "understand.wav" },
+  { "word": "practice", "audio": "practice.wav" },
+  { "word": "review", "audio": "review.wav" },
+  { "word": "focus", "audio": "focus.wav" },
+  { "word": "balance", "audio": "balance.wav" },
+  { "word": "growth", "audio": "growth.wav" },
+  { "word": "progress", "audio": "progress.wav" },
+  { "word": "healing", "audio": "healing.wav" },
+  { "word": "calm", "audio": "calm.wav" }
+]

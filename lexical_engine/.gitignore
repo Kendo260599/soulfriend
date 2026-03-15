@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local runtime caches
+.cache/
+.pytest_cache/
+
+# Local database
+data/lexical_engine.db
+
+# Generated recordings / benchmark artifacts
+assets/recordings/*.wav
+assets/whisper_benchmark/*.wav
+assets/whisper_benchmark/manifest.json
+assets/whisper_benchmark/reports/

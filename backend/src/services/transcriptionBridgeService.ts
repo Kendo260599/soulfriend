@@ -36,6 +36,44 @@ function resolvePythonBin(): string {
   return process.env.PYTHON_BRIDGE_BIN || 'python';
 }
 
+type PythonCandidate = {
+  bin: string;
+  args: string[];
+};
+
+function splitArgs(value?: string): string[] {
+  if (!value) return [];
+  return value
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function resolvePythonCandidates(): PythonCandidate[] {
+  const candidates: PythonCandidate[] = [];
+
+  const envBin = (process.env.PYTHON_BRIDGE_BIN || '').trim();
+  const envArgs = splitArgs(process.env.PYTHON_BRIDGE_ARGS);
+  if (envBin) {
+    candidates.push({ bin: envBin, args: envArgs });
+  }
+
+  if (process.platform === 'win32') {
+    candidates.push({ bin: 'py', args: ['-3'] });
+  }
+
+  candidates.push({ bin: resolvePythonBin(), args: [] });
+  candidates.push({ bin: 'python3', args: [] });
+
+  const seen = new Set<string>();
+  return candidates.filter((item) => {
+    const key = `${item.bin}::${item.args.join(' ')}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function extFromMime(mimeType: string): string {
   const lower = mimeType.toLowerCase();
   if (lower.includes('wav')) return '.wav';
@@ -69,22 +107,12 @@ export async function transcribeAudioBuffer(params: {
   const audioPath = path.join(tmpDir, `input${extension}`);
   fs.writeFileSync(audioPath, params.audioBuffer);
 
-  const pyBin = resolvePythonBin();
+  const pythonCandidates = resolvePythonCandidates();
   const model = params.model || process.env.WHISPER_MODEL || 'base';
   const language = params.language || 'en';
 
-  const args = [
-    workerPath,
-    '--audio',
-    audioPath,
-    '--model',
-    model,
-    '--language',
-    language,
-  ];
-
   logger.info('Transcription bridge spawn', {
-    pyBin,
+    pythonCandidates: pythonCandidates.map((item) => `${item.bin} ${item.args.join(' ')}`.trim()),
     workerPath,
     lexicalRoot,
     audioPath,
@@ -93,80 +121,115 @@ export async function transcribeAudioBuffer(params: {
   });
 
   const result = await new Promise<BridgeTranscriptionResult>((resolve) => {
-    const child = spawn(pyBin, args, {
-      cwd: lexicalRoot,
-      windowsHide: true,
-    });
+    const args = [
+      workerPath,
+      '--audio',
+      audioPath,
+      '--model',
+      model,
+      '--language',
+      language,
+    ];
 
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
+    const tried = pythonCandidates.map((item) => `${item.bin} ${item.args.join(' ')}`.trim());
+    let lastSpawnError = '';
 
-    const timeout = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      child.kill();
-      resolve({
-        ok: false,
-        text: '',
-        mode: 'error',
-        message: `Transcription timeout after ${TRANSCRIBE_TIMEOUT_MS}ms`,
-      });
-    }, TRANSCRIBE_TIMEOUT_MS);
-
-    child.stdout.on('data', (chunk) => {
-      stdout += String(chunk);
-    });
-
-    child.stderr.on('data', (chunk) => {
-      stderr += String(chunk);
-    });
-
-    child.on('error', (err) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      resolve({
-        ok: false,
-        text: '',
-        mode: 'error',
-        message: `Failed to spawn python worker: ${err.message}`,
-      });
-    });
-
-    child.on('close', (code) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-
-      const trimmedOut = stdout.trim();
-      if (!trimmedOut) {
+    const runAttempt = (index: number) => {
+      if (index >= pythonCandidates.length) {
         resolve({
           ok: false,
           text: '',
           mode: 'error',
-          message: `Worker returned empty output. stderr=${stderr.trim()}`,
+          message: `Failed to spawn python worker. Tried: ${tried.join(' | ')}${lastSpawnError ? `; lastError=${lastSpawnError}` : ''}`,
         });
         return;
       }
 
-      try {
-        const parsed = JSON.parse(trimmedOut);
-        resolve({
-          ok: Boolean(parsed.ok),
-          text: String(parsed.text || ''),
-          mode: String(parsed.mode || (parsed.ok ? 'transcribed' : 'error')),
-          message: String(parsed.message || ''),
-        });
-      } catch {
+      const candidate = pythonCandidates[index];
+      const child = spawn(candidate.bin, [...candidate.args, ...args], {
+        cwd: lexicalRoot,
+        windowsHide: true,
+      });
+
+      let stdout = '';
+      let stderr = '';
+      let settled = false;
+
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        child.kill();
         resolve({
           ok: false,
           text: '',
           mode: 'error',
-          message: `Invalid worker JSON. code=${code} stdout=${trimmedOut} stderr=${stderr.trim()}`,
+          message: `Transcription timeout after ${TRANSCRIBE_TIMEOUT_MS}ms`,
         });
-      }
-    });
+      }, TRANSCRIBE_TIMEOUT_MS);
+
+      child.stdout.on('data', (chunk) => {
+        stdout += String(chunk);
+      });
+
+      child.stderr.on('data', (chunk) => {
+        stderr += String(chunk);
+      });
+
+      child.on('error', (err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+
+        if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+          lastSpawnError = err.message;
+          runAttempt(index + 1);
+          return;
+        }
+
+        resolve({
+          ok: false,
+          text: '',
+          mode: 'error',
+          message: `Failed to spawn python worker: ${err.message}`,
+        });
+      });
+
+      child.on('close', (code) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+
+        const trimmedOut = stdout.trim();
+        if (!trimmedOut) {
+          resolve({
+            ok: false,
+            text: '',
+            mode: 'error',
+            message: `Worker returned empty output. stderr=${stderr.trim()}`,
+          });
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(trimmedOut);
+          resolve({
+            ok: Boolean(parsed.ok),
+            text: String(parsed.text || ''),
+            mode: String(parsed.mode || (parsed.ok ? 'transcribed' : 'error')),
+            message: String(parsed.message || ''),
+          });
+        } catch {
+          resolve({
+            ok: false,
+            text: '',
+            mode: 'error',
+            message: `Invalid worker JSON. code=${code} stdout=${trimmedOut} stderr=${stderr.trim()}`,
+          });
+        }
+      });
+    };
+
+    runAttempt(0);
   });
 
   try {

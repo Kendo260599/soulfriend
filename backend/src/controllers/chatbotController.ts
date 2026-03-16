@@ -8,7 +8,9 @@ import { ChatbotService } from '../services/chatbotService';
 import { EnhancedChatbotService } from '../services/enhancedChatbotService';
 import { memoryAwareChatbotService } from '../services/memoryAwareChatbotService';
 import { v5IntegrationService } from '../services/v5IntegrationService';
+import { eventQueueService } from '../services/eventQueueService';
 import { pgeOrchestrator } from '../services/pge/pgeOrchestrator';
+import { triadicCanaryService } from '../services/triadic/triadicCanaryService';
 import { RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
 import { detectEvent, processEvent as gamefiProcessEvent, generateShortFeedback } from '../services/gamefi';
@@ -79,6 +81,28 @@ export class ChatbotController {
         context?.userProfile,
         chatbotMode
       );
+
+      const canaryDecision = triadicCanaryService.evaluateUserCanary({
+        userId: effectiveUserId,
+        riskLevel: String(response.riskLevel || ''),
+        crisisLevel: response.crisisLevel,
+      });
+
+      const pivotHint = triadicCanaryService.selectPivotHint(response.suggestions);
+      if (canaryDecision.enabled) {
+        const canaryMessage = triadicCanaryService.applyOnePivotRule(response.message, pivotHint);
+        response.message = canaryMessage;
+        response.response = canaryMessage;
+      }
+
+      (response as any).triadicCanary = {
+        enabled: canaryDecision.enabled,
+        reason: canaryDecision.reason,
+        cohortBucket: canaryDecision.cohortBucket,
+        canaryPercent: canaryDecision.canaryPercent,
+        onePivotApplied: canaryDecision.enabled && Boolean(pivotHint),
+      };
+
       const responseTimeMs = Date.now() - startTime;
 
       // V5: Safety guardrail check (SYNC — trước khi gửi response)
@@ -87,6 +111,44 @@ export class ChatbotController {
         response.message = safetyCheck.response;
         (response as any).response = safetyCheck.response;
       }
+
+      const canaryOutcome = triadicCanaryService.recordOutcome({
+        decision: canaryDecision,
+        riskLevel: String(response.riskLevel || ''),
+        crisisLevel: response.crisisLevel,
+        qualityScore: response.qualityScore,
+        safetyPassed: safetyCheck.safe,
+      });
+
+      eventQueueService.publish('triadic.canary.exposure', {
+        userId: effectiveUserId,
+        sessionId: effectiveSessionId,
+        enabled: canaryDecision.enabled,
+        reason: canaryDecision.reason,
+        cohortBucket: canaryDecision.cohortBucket,
+        canaryPercent: canaryDecision.canaryPercent,
+        onePivotApplied: canaryDecision.enabled && Boolean(pivotHint),
+        safetyPassed: safetyCheck.safe,
+        qualityScore: response.qualityScore,
+        kpi: canaryOutcome.snapshot,
+        timestamp: new Date().toISOString(),
+      }).catch(() => {});
+
+      if (canaryOutcome.kpiBreached) {
+        eventQueueService.publish('triadic.canary.kpi_breached', {
+          userId: effectiveUserId,
+          sessionId: effectiveSessionId,
+          reason: canaryDecision.reason,
+          kpi: canaryOutcome.snapshot,
+          timestamp: new Date().toISOString(),
+        }).catch(() => {});
+      }
+
+      (response as any).triadicCanary = {
+        ...(response as any).triadicCanary,
+        autoDisabledByKpi: canaryOutcome.autoDisabled,
+        kpi: canaryOutcome.snapshot,
+      };
 
       // V5: Capture interaction sync để trả interactionEventId chuẩn cho frontend feedback mapping
       let interactionEventId: string | null = null;

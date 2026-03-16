@@ -6,6 +6,8 @@
 import request from 'supertest';
 import express from 'express';
 import chatbotRoutes from '../../src/routes/chatbot';
+import { triadicCanaryService } from '../../src/services/triadic/triadicCanaryService';
+import { eventQueueService } from '../../src/services/eventQueueService';
 
 jest.setTimeout(20000);
 
@@ -85,6 +87,12 @@ jest.mock('../../src/services/v5IntegrationService', () => ({
   },
 }));
 
+jest.mock('../../src/services/eventQueueService', () => ({
+  eventQueueService: {
+    publish: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 jest.mock('../../src/services/pge/pgeOrchestrator', () => ({
   pgeOrchestrator: {
     processMessage: jest.fn().mockResolvedValue(undefined),
@@ -95,6 +103,24 @@ jest.mock('../../src/services/gamefi', () => ({
   detectEvent: jest.fn().mockReturnValue(null),
   processEvent: jest.fn().mockResolvedValue({ xpGained: 0 }),
   generateShortFeedback: jest.fn().mockReturnValue(''),
+}));
+
+jest.mock('../../src/services/triadic/triadicCanaryService', () => ({
+  triadicCanaryService: {
+    evaluateUserCanary: jest.fn().mockReturnValue({
+      enabled: false,
+      reason: 'disabled',
+      cohortBucket: 0,
+      canaryPercent: 0,
+    }),
+    selectPivotHint: jest.fn().mockReturnValue(null),
+    applyOnePivotRule: jest.fn().mockImplementation((message: string) => message),
+    recordOutcome: jest.fn().mockReturnValue({
+      kpiBreached: false,
+      autoDisabled: false,
+      snapshot: null,
+    }),
+  },
 }));
 
 jest.mock('../../src/utils/logger', () => ({
@@ -175,6 +201,119 @@ describe('Chatbot API Routes', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
+    });
+
+    it('should apply one-pivot canary response for in-cohort low-risk users', async () => {
+      (triadicCanaryService.evaluateUserCanary as jest.Mock).mockReturnValueOnce({
+        enabled: true,
+        reason: 'in_cohort',
+        cohortBucket: 12,
+        canaryPercent: 20,
+      });
+      (triadicCanaryService.selectPivotHint as jest.Mock).mockReturnValueOnce('thu hit tho sau 4 nhip');
+      (triadicCanaryService.applyOnePivotRule as jest.Mock).mockReturnValueOnce('AI response\n\nNeu phu hop, ban co the thu 1 buoc nho: thu hit tho sau 4 nhip');
+
+      const response = await request(app)
+        .post('/api/v2/chatbot/message')
+        .send({
+          message: 'Hom nay toi hoi met',
+          userId: 'canary_user_1',
+          sessionId: 'canary_session_1',
+        })
+        .expect(200);
+
+      expect(triadicCanaryService.applyOnePivotRule).toHaveBeenCalled();
+      expect(response.body.data.message).toContain('1 buoc nho');
+      expect(response.body.data.triadicCanary).toEqual(
+        expect.objectContaining({
+          enabled: true,
+          reason: 'in_cohort',
+          onePivotApplied: true,
+        })
+      );
+
+      expect(eventQueueService.publish).toHaveBeenCalledWith(
+        'triadic.canary.exposure',
+        expect.objectContaining({
+          userId: 'canary_user_1',
+          enabled: true,
+          reason: 'in_cohort',
+          onePivotApplied: true,
+        })
+      );
+    });
+
+    it('should block canary one-pivot for high-risk users', async () => {
+      (triadicCanaryService.evaluateUserCanary as jest.Mock).mockReturnValueOnce({
+        enabled: false,
+        reason: 'high_risk_block',
+        cohortBucket: 5,
+        canaryPercent: 20,
+      });
+      (triadicCanaryService.selectPivotHint as jest.Mock).mockReturnValueOnce('goi nguoi than ban tin');
+
+      const response = await request(app)
+        .post('/api/v2/chatbot/message')
+        .send({
+          message: 'Toi muon chet',
+          userId: 'critical_user_1',
+          sessionId: 'critical_session_1',
+        })
+        .expect(200);
+
+      expect(triadicCanaryService.applyOnePivotRule).not.toHaveBeenCalled();
+      expect(response.body.data.triadicCanary).toEqual(
+        expect.objectContaining({
+          enabled: false,
+          reason: 'high_risk_block',
+          onePivotApplied: false,
+        })
+      );
+    });
+
+    it('should publish KPI breach audit event when canary thresholds are violated', async () => {
+      (triadicCanaryService.evaluateUserCanary as jest.Mock).mockReturnValueOnce({
+        enabled: true,
+        reason: 'in_cohort',
+        cohortBucket: 9,
+        canaryPercent: 20,
+      });
+      (triadicCanaryService.selectPivotHint as jest.Mock).mockReturnValueOnce('ghi lai cam xuc 2 phut');
+      (triadicCanaryService.applyOnePivotRule as jest.Mock).mockReturnValueOnce('AI response\n\nNeu phu hop, ban co the thu 1 buoc nho: ghi lai cam xuc 2 phut');
+      (triadicCanaryService.recordOutcome as jest.Mock).mockReturnValueOnce({
+        kpiBreached: true,
+        autoDisabled: true,
+        snapshot: {
+          sampleSize: 20,
+          helpfulnessRate: 0.4,
+          unsafeRate: 0.1,
+          minHelpfulnessRate: 0.55,
+          maxUnsafeRate: 0.05,
+        },
+      });
+
+      const response = await request(app)
+        .post('/api/v2/chatbot/message')
+        .send({
+          message: 'Toi can sap xep lai suy nghi',
+          userId: 'canary_user_breach',
+          sessionId: 'canary_session_breach',
+        })
+        .expect(200);
+
+      expect(eventQueueService.publish).toHaveBeenCalledWith(
+        'triadic.canary.kpi_breached',
+        expect.objectContaining({
+          userId: 'canary_user_breach',
+          sessionId: 'canary_session_breach',
+        })
+      );
+
+      expect(response.body.data.triadicCanary).toEqual(
+        expect.objectContaining({
+          autoDisabledByKpi: true,
+        })
+      );
     });
   });
 

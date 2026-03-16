@@ -122,6 +122,97 @@ interface SafetyStats {
   unreviewed: number;
 }
 
+interface ReenableActorReadiness {
+  total: number;
+  withReadiness: number;
+  pass: number;
+  fail: number;
+  unknown: number;
+  passRate: number;
+}
+
+interface ReenableSummary {
+  total: number;
+  uniqueActors: number;
+  byActor: Record<string, number>;
+  readiness: {
+    withReadiness: number;
+    pass: number;
+    fail: number;
+    unknown: number;
+    passRate: number;
+  };
+  failReasons: Record<string, number>;
+  byActorReadiness: Record<string, ReenableActorReadiness>;
+}
+
+const EMPTY_REENABLE_SUMMARY: ReenableSummary = {
+  total: 0,
+  uniqueActors: 0,
+  byActor: {},
+  readiness: {
+    withReadiness: 0,
+    pass: 0,
+    fail: 0,
+    unknown: 0,
+    passRate: 0,
+  },
+  failReasons: {},
+  byActorReadiness: {},
+};
+
+const normalizeReenableSummary = (source: any): ReenableSummary => {
+  if (!source || typeof source !== 'object') return { ...EMPTY_REENABLE_SUMMARY };
+
+  const readiness = source.readiness && typeof source.readiness === 'object'
+    ? {
+      withReadiness: Number(source.readiness.withReadiness || 0),
+      pass: Number(source.readiness.pass || 0),
+      fail: Number(source.readiness.fail || 0),
+      unknown: Number(source.readiness.unknown || 0),
+      passRate: Number(source.readiness.passRate || 0),
+    }
+    : { ...EMPTY_REENABLE_SUMMARY.readiness };
+
+  const byActor = source.byActor && typeof source.byActor === 'object'
+    ? Object.entries(source.byActor).reduce((acc: Record<string, number>, [actor, count]) => {
+      acc[String(actor)] = Number(count || 0);
+      return acc;
+    }, {})
+    : {};
+
+  const failReasons = source.failReasons && typeof source.failReasons === 'object'
+    ? Object.entries(source.failReasons).reduce((acc: Record<string, number>, [reason, count]) => {
+      acc[String(reason)] = Number(count || 0);
+      return acc;
+    }, {})
+    : {};
+
+  const byActorReadiness = source.byActorReadiness && typeof source.byActorReadiness === 'object'
+    ? Object.entries(source.byActorReadiness).reduce((acc: Record<string, ReenableActorReadiness>, [actor, item]) => {
+      const normalized = item && typeof item === 'object' ? item : {};
+      acc[String(actor)] = {
+        total: Number((normalized as any).total || 0),
+        withReadiness: Number((normalized as any).withReadiness || 0),
+        pass: Number((normalized as any).pass || 0),
+        fail: Number((normalized as any).fail || 0),
+        unknown: Number((normalized as any).unknown || 0),
+        passRate: Number((normalized as any).passRate || 0),
+      };
+      return acc;
+    }, {})
+    : {};
+
+  return {
+    total: Number(source.total || 0),
+    uniqueActors: Number(source.uniqueActors || 0),
+    byActor,
+    readiness,
+    failReasons,
+    byActorReadiness,
+  };
+};
+
 // ===========================
 // STYLED COMPONENTS
 // ===========================
@@ -382,6 +473,8 @@ const getChangeIndicator = (current: number, previous: number): { text: string; 
 const ImpactDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [safety, setSafety] = useState<SafetyStats | null>(null);
+  const [reenableSummary, setReenableSummary] = useState<ReenableSummary | null>(null);
+  const [reenableWindowDays, setReenableWindowDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -398,9 +491,14 @@ const ImpactDashboard: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [dashRes, safetyRes] = await Promise.all([
+      const until = new Date();
+      const since = new Date(until.getTime() - reenableWindowDays * 24 * 60 * 60 * 1000);
+      const triadicQuery = `limit=100&since=${encodeURIComponent(since.toISOString())}&until=${encodeURIComponent(until.toISOString())}`;
+
+      const [dashRes, safetyRes, reenableRes] = await Promise.all([
         fetch(`${API_URL}/api/v5/analytics/dashboard`, { headers: getAuthHeaders() }),
         fetch(`${API_URL}/api/v5/health/safety-stats`, { headers: getAuthHeaders() }).catch(() => null),
+        fetch(`${API_URL}/api/v5/analytics/triadic/canary/decision-gate/re-enable/history?${triadicQuery}`, { headers: getAuthHeaders() }).catch(() => null),
       ]);
 
       if (!dashRes.ok) {
@@ -418,13 +516,20 @@ const ImpactDashboard: React.FC = () => {
         const safetyJson = await safetyRes.json();
         setSafety(safetyJson.data);
       }
+
+      if (reenableRes?.ok) {
+        const reenableJson = await reenableRes.json();
+        setReenableSummary(normalizeReenableSummary(reenableJson?.data?.summary));
+      } else {
+        setReenableSummary(null);
+      }
     } catch (err: any) {
       console.error('Failed to load dashboard:', err);
       setError(formatApiError(err, 'Không thể tải dữ liệu dashboard'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reenableWindowDays]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
@@ -460,11 +565,52 @@ const ImpactDashboard: React.FC = () => {
     ? Math.max(...data.trends.map(t => t.interactions), 1)
     : 1;
 
+  const topFailReasons = reenableSummary
+    ? Object.entries(reenableSummary.failReasons)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+    : [];
+
+  const actorReadinessRows = reenableSummary
+    ? Object.entries(reenableSummary.byActorReadiness)
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 5)
+    : [];
+
   return (
     <Container>
       <Header>
         <h1>📊 V5 Impact Dashboard</h1>
         <p>Phân tích hiệu quả hệ thống AI tự cải tiến — cập nhật lần cuối: {new Date().toLocaleString('vi-VN')}</p>
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: '#666' }}>Khung triadic re-enable:</span>
+          <select
+            value={reenableWindowDays}
+            onChange={(e) => setReenableWindowDays(Number(e.target.value))}
+            style={{ padding: '6px 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 13 }}
+          >
+            <option value={7}>7 ngày</option>
+            <option value={14}>14 ngày</option>
+            <option value={30}>30 ngày</option>
+            <option value={60}>60 ngày</option>
+            <option value={90}>90 ngày</option>
+          </select>
+          <button
+            onClick={loadDashboard}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 6,
+              border: 'none',
+              background: '#1565c0',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            Làm mới dữ liệu
+          </button>
+        </div>
       </Header>
 
       {/* ===== PSI SCORE ===== */}
@@ -575,6 +721,67 @@ const ImpactDashboard: React.FC = () => {
           <div className="label">Chưa review</div>
         </SafetyCard>
       </SafetyGrid>
+
+      {/* ===== TRIADIC MANUAL RE-ENABLE READINESS ===== */}
+      <SectionTitle>🧭 Triadic Manual Re-enable Readiness</SectionTitle>
+      {reenableSummary ? (
+        <>
+          <MetricsGrid>
+            <MetricCard accent="#00695c">
+              <div className="metric-value">{formatPercent(reenableSummary.readiness.passRate)}</div>
+              <div className="metric-label">Readiness Pass Rate</div>
+            </MetricCard>
+            <MetricCard accent="#1565c0">
+              <div className="metric-value">{reenableSummary.total}</div>
+              <div className="metric-label">Lần manual re-enable</div>
+            </MetricCard>
+            <MetricCard accent="#6a1b9a">
+              <div className="metric-value">{reenableSummary.uniqueActors}</div>
+              <div className="metric-label">Số actor tham gia</div>
+            </MetricCard>
+            <MetricCard accent="#f57c00">
+              <div className="metric-value">{reenableSummary.readiness.unknown}</div>
+              <div className="metric-label">Unknown readiness</div>
+            </MetricCard>
+          </MetricsGrid>
+
+          <ComparisonRow>
+            <ComparisonCard>
+              <h3>Top Fail Reasons</h3>
+              {topFailReasons.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#666' }}>Không có fail reason trong phạm vi dữ liệu hiện tại.</div>
+              ) : (
+                topFailReasons.map(([reason, count], idx) => (
+                  <div key={idx} style={{ fontSize: 13, color: '#444', marginBottom: 8 }}>
+                    • {reason} ({count})
+                  </div>
+                ))
+              )}
+            </ComparisonCard>
+
+            <ComparisonCard>
+              <h3>By Actor Readiness (Top 5)</h3>
+              {actorReadinessRows.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#666' }}>Chưa có actor readiness data.</div>
+              ) : (
+                actorReadinessRows.map(([actor, stat], idx) => (
+                  <div key={idx} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{actor}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>
+                      total: {stat.total} | pass: {stat.pass} | fail: {stat.fail} | unknown: {stat.unknown}
+                    </div>
+                    <ProgressBar value={stat.passRate} color="#00695c" />
+                  </div>
+                ))
+              )}
+            </ComparisonCard>
+          </ComparisonRow>
+        </>
+      ) : (
+        <div style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+          Triadic readiness summary chưa khả dụng trong môi trường hiện tại.
+        </div>
+      )}
 
       {/* ===== PSI BREAKDOWN ===== */}
       <SectionTitle>🧮 PSI Breakdown</SectionTitle>

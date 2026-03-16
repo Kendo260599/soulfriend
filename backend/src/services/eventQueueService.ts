@@ -23,6 +23,11 @@ type EventType =
   | 'experiment.completed'
   | 'crisis.detected'
   | 'guardrail.violated'
+  | 'triadic.latency_budget.breached'
+  | 'triadic.canary.exposure'
+  | 'triadic.canary.kpi_breached'
+  | 'triadic.canary.action_status.updated'
+  | 'triadic.canary.manual_reenabled'
   | 'ebh.warning';
 
 interface QueueEvent {

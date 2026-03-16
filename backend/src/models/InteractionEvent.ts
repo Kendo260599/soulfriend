@@ -49,6 +49,16 @@ export interface IInteractionEvent extends Document {
   // Metadata
   platform: 'web' | 'mobile' | 'api';
   locale: string;
+
+  // Shadow analytics metadata (non-blocking, read-only inference)
+  triadic?: {
+    mode: 'shadow';
+    sampleSize: number;
+    structural: any;
+    operational: any;
+    symbolic: any;
+    synthesis: any;
+  };
   
   createdAt: Date;
   updatedAt: Date;
@@ -103,6 +113,7 @@ const InteractionEventSchema = new Schema<IInteractionEvent>(
 
     platform: { type: String, enum: ['web', 'mobile', 'api'], default: 'web' },
     locale: { type: String, default: 'vi' },
+    triadic: { type: Schema.Types.Mixed },
   },
   {
     timestamps: true,

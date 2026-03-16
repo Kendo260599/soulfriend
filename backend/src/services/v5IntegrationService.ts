@@ -17,11 +17,162 @@ import { safetyGuardrailService } from './safetyGuardrailService';
 import { responseEvaluationService } from './responseEvaluationService';
 import { eventQueueService } from './eventQueueService';
 import { SafetyLog } from '../models/SafetyLog';
+import InteractionEvent from '../models/InteractionEvent';
+import { triadicSynthesizer } from './triadic/triadicSynthesizer';
+import { TriadicTurn } from './triadic/triadicTypes';
 
 // Configurable evaluation sampling rate (env: V5_EVAL_SAMPLE_RATE, default: 0.5 = 50%)
 const EVAL_SAMPLE_RATE = Math.min(1, Math.max(0, parseFloat(process.env.V5_EVAL_SAMPLE_RATE || '0.5')));
+const TRIADIC_ATTACH_TIMEOUT_MS = Math.max(50, parseInt(process.env.V5_TRIADIC_ATTACH_TIMEOUT_MS || '250', 10));
+const TRIADIC_P95_BUDGET_MS = Math.max(50, parseInt(process.env.V5_TRIADIC_P95_BUDGET_MS || '200', 10));
+const TRIADIC_P95_WINDOW_SIZE = Math.max(10, parseInt(process.env.V5_TRIADIC_P95_WINDOW_SIZE || '60', 10));
+const TRIADIC_P95_MIN_SAMPLES = Math.max(5, parseInt(process.env.V5_TRIADIC_P95_MIN_SAMPLES || '20', 10));
+const TRIADIC_P95_ALERT_COOLDOWN_MS = Math.max(10_000, parseInt(process.env.V5_TRIADIC_P95_ALERT_COOLDOWN_MS || '300000', 10));
+
+function triadicLatencyBucket(durationMs: number): string {
+  if (durationMs < 20) return 'lt20ms';
+  if (durationMs < 50) return '20to49ms';
+  if (durationMs < 100) return '50to99ms';
+  if (durationMs < 200) return '100to199ms';
+  if (durationMs < 500) return '200to499ms';
+  return 'gte500ms';
+}
 
 class V5IntegrationService {
+  private triadicLatencySamples: number[] = [];
+  private triadicLastBudgetAlertAt = 0;
+  private triadicP95BudgetMs = TRIADIC_P95_BUDGET_MS;
+  private triadicP95MinSamples = TRIADIC_P95_MIN_SAMPLES;
+  private triadicP95AlertCooldownMs = TRIADIC_P95_ALERT_COOLDOWN_MS;
+
+  private recordTriadicLatencySample(durationMs: number): { p95Ms: number; sampleSize: number } {
+    this.triadicLatencySamples.push(durationMs);
+    if (this.triadicLatencySamples.length > TRIADIC_P95_WINDOW_SIZE) {
+      this.triadicLatencySamples.shift();
+    }
+
+    const sorted = [...this.triadicLatencySamples].sort((a, b) => a - b);
+    const idx = Math.max(0, Math.ceil(0.95 * sorted.length) - 1);
+    return {
+      p95Ms: sorted[idx] || 0,
+      sampleSize: sorted.length,
+    };
+  }
+
+  private enforceTriadicLatencyBudget(durationMs: number, latencyBucket: string): void {
+    const latency = this.recordTriadicLatencySample(durationMs);
+    if (latency.sampleSize < this.triadicP95MinSamples) {
+      return;
+    }
+
+    if (latency.p95Ms <= this.triadicP95BudgetMs) {
+      return;
+    }
+
+    const now = Date.now();
+    if (
+      this.triadicLastBudgetAlertAt > 0
+      && now - this.triadicLastBudgetAlertAt < this.triadicP95AlertCooldownMs
+    ) {
+      return;
+    }
+    this.triadicLastBudgetAlertAt = now;
+
+    logger.error('[V5 Integration] triadic latency budget breached', {
+      budgetP95Ms: this.triadicP95BudgetMs,
+      observedP95Ms: latency.p95Ms,
+      sampleSize: latency.sampleSize,
+      latestDurationMs: durationMs,
+      latestLatencyBucket: latencyBucket,
+    });
+
+    eventQueueService.publish('triadic.latency_budget.breached', {
+      budgetP95Ms: this.triadicP95BudgetMs,
+      observedP95Ms: latency.p95Ms,
+      sampleSize: latency.sampleSize,
+      latestDurationMs: durationMs,
+      latestLatencyBucket: latencyBucket,
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  }
+
+  private normalizeRiskLevel(value: string | undefined): TriadicTurn['riskLevel'] {
+    if (value === 'NONE' || value === 'LOW' || value === 'MODERATE' || value === 'HIGH' || value === 'CRITICAL' || value === 'EXTREME') {
+      return value;
+    }
+    return 'NONE';
+  }
+
+  private normalizeSentiment(value: string | undefined): TriadicTurn['sentiment'] {
+    if (value === 'very_negative' || value === 'negative' || value === 'neutral' || value === 'positive' || value === 'very_positive') {
+      return value;
+    }
+    return 'neutral';
+  }
+
+  private async attachTriadicShadow(interactionEventId: string, userId: string): Promise<void> {
+    const startedAt = Date.now();
+    try {
+      const recentEvents = await InteractionEvent.find({ userId })
+        .sort({ timestamp: -1 })
+        .limit(60)
+        .lean();
+
+      if (!recentEvents || recentEvents.length === 0) {
+        return;
+      }
+
+      const turns: TriadicTurn[] = recentEvents
+        .reverse()
+        .map((event: any) => ({
+          timestamp: new Date(event.timestamp),
+          sessionId: String(event.sessionId || 'unknown_session'),
+          userText: String(event.userText || ''),
+          aiResponse: String(event.aiResponse || ''),
+          riskLevel: this.normalizeRiskLevel(event.riskLevel),
+          sentiment: this.normalizeSentiment(event.sentiment),
+          sentimentScore: typeof event.sentimentScore === 'number' ? event.sentimentScore : 0,
+          escalationTriggered: Boolean(event.escalationTriggered),
+        }));
+
+      const triadic = triadicSynthesizer.runShadowAnalysis(turns);
+
+      await Promise.race([
+        InteractionEvent.findByIdAndUpdate(interactionEventId, {
+          $set: { triadic },
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`triadic attach timeout after ${TRIADIC_ATTACH_TIMEOUT_MS}ms`)), TRIADIC_ATTACH_TIMEOUT_MS)
+        ),
+      ]);
+
+      const durationMs = Date.now() - startedAt;
+      const latencyBucket = triadicLatencyBucket(durationMs);
+
+      logger.debug('[V5 Integration] attachTriadicShadow completed', {
+        interactionEventId,
+        userId,
+        sampleSize: turns.length,
+        durationMs,
+        latencyBucket,
+      });
+
+      this.enforceTriadicLatencyBudget(durationMs, latencyBucket);
+
+      if (durationMs >= 200) {
+        logger.warn('[V5 Integration] attachTriadicShadow slow path', {
+          interactionEventId,
+          userId,
+          durationMs,
+          latencyBucket,
+          sampleSize: turns.length,
+        });
+      }
+    } catch (error) {
+      logger.warn('[V5 Integration] attachTriadicShadow failed (non-critical):', error instanceof Error ? error.message : error);
+    }
+  }
+
   private mapSentiment(emotionalState?: string): string {
     const sentimentMap: Record<string, string> = {
       crisis: 'very_negative',
@@ -75,6 +226,8 @@ class V5IntegrationService {
 
       const interactionEventId = (captured as any)?._id?.toString?.() || null;
       if (!interactionEventId) return null;
+
+      this.attachTriadicShadow(interactionEventId, params.userId).catch(() => {});
 
       await eventQueueService.publish('interaction.captured', {
         interactionId: interactionEventId,

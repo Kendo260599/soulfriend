@@ -1,0 +1,62 @@
+[
+  {
+    "word": "work",
+    "ipa": "/wɜːrk/",
+    "meaning_vi": "lam viec",
+    "collocation": "work hard",
+    "example_sentence": "I work every day.",
+    "phrase": "go to work",
+    "phrase_meaning_vi": "di lam",
+    "difficulty": 1
+  },
+  {
+    "word": "study",
+    "ipa": "/ˈstʌdi/",
+    "meaning_vi": "hoc",
+    "collocation": "study English",
+    "example_sentence": "I study at night.",
+    "phrase": "study with friends",
+    "phrase_meaning_vi": "hoc cung ban",
+    "difficulty": 1
+  },
+  {
+    "word": "eat",
+    "ipa": "/iːt/",
+    "meaning_vi": "an",
+    "collocation": "eat lunch",
+    "example_sentence": "We eat lunch at noon.",
+    "phrase": "eat healthy food",
+    "phrase_meaning_vi": "an do an lanh manh",
+    "difficulty": 1
+  },
+  {
+    "word": "ready",
+    "ipa": "/ˈredi/",
+    "meaning_vi": "san sang",
+    "collocation": "be ready",
+    "example_sentence": "I am ready now.",
+    "phrase": "get ready",
+    "phrase_meaning_vi": "chuan bi san sang",
+    "difficulty": 2
+  },
+  {
+    "word": "help",
+    "ipa": "/help/",
+    "meaning_vi": "giup do",
+    "collocation": "help me",
+    "example_sentence": "Can you help me?",
+    "phrase": "ask for help",
+    "phrase_meaning_vi": "nho giup do",
+    "difficulty": 2
+  },
+  {
+    "word": "start",
+    "ipa": "/stɑːrt/",
+    "meaning_vi": "bat dau",
+    "collocation": "start today",
+    "example_sentence": "I start today.",
+    "phrase": "start again",
+    "phrase_meaning_vi": "bat dau lai",
+    "difficulty": 2
+  }
+]

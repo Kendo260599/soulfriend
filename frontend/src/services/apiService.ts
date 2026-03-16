@@ -94,6 +94,14 @@ class ApiService {
   public async adminLogin(credentials: any): Promise<AxiosResponse> {
     return this.post('/api/v2/admin/login', credentials);
   }
+
+  public async getFoundationLesson(learnerId = 1): Promise<AxiosResponse> {
+    return this.get(`/api/v2/foundation/lesson?learnerId=${encodeURIComponent(String(learnerId))}`);
+  }
+
+  public async getFoundationProgress(learnerId = 1): Promise<AxiosResponse> {
+    return this.get(`/api/v2/foundation/progress?learnerId=${encodeURIComponent(String(learnerId))}`);
+  }
 }
 
 // Export a singleton instance

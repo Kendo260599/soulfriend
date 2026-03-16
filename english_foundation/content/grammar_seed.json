@@ -1,0 +1,27 @@
+[
+  {
+    "pattern": "I work",
+    "example": "I work every day.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "He works",
+    "example": "He works in Hanoi.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "I am ready",
+    "example": "I am ready now.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "I can + V",
+    "example": "I can study tonight.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Can you + V?",
+    "example": "Can you help me?",
+    "difficulty": 2
+  }
+]

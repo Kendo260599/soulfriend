@@ -18,6 +18,7 @@ import ChatBot from './components/ChatBot';
 import CommunitySupport from './components/CommunitySupport';
 import ContentOverviewPage from './components/ContentOverviewPage';
 import ContentShowcaseLanding from './components/ContentShowcaseLanding';
+import EnglishFoundationModule from './components/EnglishFoundationModule';
 import ExpertDashboard from './components/ExpertDashboard';
 import ExpertLogin from './components/ExpertLogin';
 import FeaturesShowcase from './components/FeaturesShowcase';
@@ -193,6 +194,7 @@ const Navigation: React.FC = () => {
         <NavLinkBtn active={path === '/research'} onClick={() => navigate('/research')}>Nghiên cứu</NavLinkBtn>
         <NavLinkBtn active={path === '/community'} onClick={() => navigate('/community')}>Cộng đồng</NavLinkBtn>
         <NavLinkBtn active={path === '/life-stages'} onClick={() => navigate('/life-stages')}>Giai đoạn sống</NavLinkBtn>
+        <NavLinkBtn active={path === '/english-foundation'} onClick={() => navigate('/english-foundation')}>🌱 English Foundation</NavLinkBtn>
         <NavLinkBtn active={path === '/gamefi'} onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLinkBtn>
         <NavLinkBtn active={path === '/progress'} onClick={() => navigate('/progress')}>📊 Tiến trình</NavLinkBtn>
         <NavLinkBtn active={path === '/start'} onClick={() => navigate('/start')}>Làm test DASS-21</NavLinkBtn>
@@ -265,6 +267,9 @@ const RoutedApp: React.FC = () => {
 
         {/* Features showcase — public */}
         <Route path="/features" element={<FeaturesShowcase />} />
+
+        {/* English Foundation module — beginner-first flow */}
+        <Route path="/english-foundation" element={<EnglishFoundationModule />} />
 
         {/* Auth page */}
         <Route path="/login" element={<AuthPage />} />

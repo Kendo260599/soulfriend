@@ -1,0 +1,866 @@
+{
+  "generated_at_utc": "2026-03-16T02:57:33.903542+00:00",
+  "input_total_words": 381,
+  "unique_total_words": 374,
+  "duplicates_removed": 7,
+  "unit_size": 12,
+  "skills": [
+    {
+      "skill_name": "core",
+      "display_name": "Core",
+      "word_count": 42,
+      "prerequisites": []
+    },
+    {
+      "skill_name": "pronunciation",
+      "display_name": "Pronunciation",
+      "word_count": 38,
+      "prerequisites": [
+        "core"
+      ]
+    },
+    {
+      "skill_name": "emotional",
+      "display_name": "Emotional",
+      "word_count": 126,
+      "prerequisites": [
+        "core"
+      ]
+    },
+    {
+      "skill_name": "functional",
+      "display_name": "Functional",
+      "word_count": 115,
+      "prerequisites": [
+        "core"
+      ]
+    },
+    {
+      "skill_name": "relationship",
+      "display_name": "Relationship",
+      "word_count": 53,
+      "prerequisites": [
+        "emotional",
+        "functional"
+      ]
+    }
+  ],
+  "lesson_units": [
+    {
+      "unit_id": "core_u01",
+      "skill": "core",
+      "unit_order": 1,
+      "title": "Core Unit 1",
+      "word_count": 12,
+      "words": [
+        "always",
+        "begin",
+        "between",
+        "close",
+        "come",
+        "eat",
+        "find",
+        "finish",
+        "go",
+        "hear",
+        "hold",
+        "keep"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 1
+      }
+    },
+    {
+      "unit_id": "core_u02",
+      "skill": "core",
+      "unit_order": 2,
+      "title": "Core Unit 2",
+      "word_count": 12,
+      "words": [
+        "know",
+        "look",
+        "make",
+        "move",
+        "note",
+        "now",
+        "part",
+        "put",
+        "read",
+        "real",
+        "run",
+        "see"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 1
+      }
+    },
+    {
+      "unit_id": "core_u03",
+      "skill": "core",
+      "unit_order": 3,
+      "title": "Core Unit 3",
+      "word_count": 12,
+      "words": [
+        "sit",
+        "sleep",
+        "sometimes",
+        "stand",
+        "study",
+        "use",
+        "walk",
+        "write",
+        "already",
+        "past",
+        "public",
+        "still"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 2
+      }
+    },
+    {
+      "unit_id": "core_u04",
+      "skill": "core",
+      "unit_order": 4,
+      "title": "Core Unit 4",
+      "word_count": 6,
+      "words": [
+        "voice",
+        "whole",
+        "yet",
+        "rarely",
+        "habit",
+        "routine"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "pronunciation_u01",
+      "skill": "pronunciation",
+      "unit_order": 1,
+      "title": "Pronunciation Unit 1",
+      "word_count": 12,
+      "words": [
+        "again",
+        "drink",
+        "learn",
+        "never",
+        "often",
+        "open",
+        "teach",
+        "today",
+        "tomorrow",
+        "word",
+        "work",
+        "turn"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 1
+      }
+    },
+    {
+      "unit_id": "pronunciation_u02",
+      "skill": "pronunciation",
+      "unit_order": 2,
+      "title": "Pronunciation Unit 2",
+      "word_count": 12,
+      "words": [
+        "careful",
+        "forget",
+        "future",
+        "lesson",
+        "quiet",
+        "usually",
+        "breathe",
+        "danger",
+        "difficult",
+        "energy",
+        "important",
+        "language"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 2
+      }
+    },
+    {
+      "unit_id": "pronunciation_u03",
+      "skill": "pronunciation",
+      "unit_order": 3,
+      "title": "Pronunciation Unit 3",
+      "word_count": 12,
+      "words": [
+        "moment",
+        "problem",
+        "record",
+        "remember",
+        "success",
+        "conversation",
+        "failure",
+        "error",
+        "achieve",
+        "schedule",
+        "succeed",
+        "surface"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "pronunciation_u04",
+      "skill": "pronunciation",
+      "unit_order": 4,
+      "title": "Pronunciation Unit 4",
+      "word_count": 2,
+      "words": [
+        "destination",
+        "knowledge"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "emotional_u01",
+      "skill": "emotional",
+      "unit_order": 1,
+      "title": "Emotional Unit 1",
+      "word_count": 12,
+      "words": [
+        "dark",
+        "easy",
+        "feel",
+        "happy",
+        "light",
+        "play",
+        "rest",
+        "sad",
+        "smile",
+        "true",
+        "try",
+        "strong"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 1
+      }
+    },
+    {
+      "unit_id": "emotional_u02",
+      "skill": "emotional",
+      "unit_order": 2,
+      "title": "Emotional Unit 2",
+      "word_count": 12,
+      "words": [
+        "think",
+        "alone",
+        "angry",
+        "break",
+        "bright",
+        "build",
+        "deep",
+        "dream",
+        "face",
+        "fail",
+        "false",
+        "fear"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 2
+      }
+    },
+    {
+      "unit_id": "emotional_u03",
+      "skill": "emotional",
+      "unit_order": 3,
+      "title": "Emotional Unit 3",
+      "word_count": 12,
+      "words": [
+        "fight",
+        "grow",
+        "hope",
+        "joy",
+        "lose",
+        "noise",
+        "path",
+        "peace",
+        "proud",
+        "safe",
+        "weak",
+        "win"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 2
+      }
+    },
+    {
+      "unit_id": "emotional_u04",
+      "skill": "emotional",
+      "unit_order": 4,
+      "title": "Emotional Unit 4",
+      "word_count": 12,
+      "words": [
+        "wish",
+        "believe",
+        "calm",
+        "give up",
+        "lonely",
+        "mistake",
+        "personal",
+        "practice",
+        "private",
+        "relax",
+        "worry",
+        "brave"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "emotional_u05",
+      "skill": "emotional",
+      "unit_order": 5,
+      "title": "Emotional Unit 5",
+      "word_count": 12,
+      "words": [
+        "let go",
+        "ability",
+        "accept",
+        "avoid",
+        "aware",
+        "balance",
+        "breathe through",
+        "confident",
+        "cope",
+        "core",
+        "courage",
+        "creative"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "emotional_u06",
+      "skill": "emotional",
+      "unit_order": 6,
+      "title": "Emotional Unit 6",
+      "word_count": 12,
+      "words": [
+        "curious",
+        "discover",
+        "doubt",
+        "effort",
+        "expect",
+        "explore",
+        "freedom",
+        "grateful",
+        "guilt",
+        "heal",
+        "hold back",
+        "hold on"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "emotional_u07",
+      "skill": "emotional",
+      "unit_order": 7,
+      "title": "Emotional Unit 7",
+      "word_count": 12,
+      "words": [
+        "humble",
+        "imagine",
+        "journey",
+        "meaning",
+        "patience",
+        "pride",
+        "recover",
+        "relief",
+        "reward",
+        "root",
+        "shame",
+        "silence"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "emotional_u08",
+      "skill": "emotional",
+      "unit_order": 8,
+      "title": "Emotional Unit 8",
+      "word_count": 12,
+      "words": [
+        "skill",
+        "stress",
+        "suffer",
+        "talent",
+        "value",
+        "wonder",
+        "emotional",
+        "experience",
+        "inspire",
+        "motivation",
+        "purpose",
+        "sensitive"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "emotional_u09",
+      "skill": "emotional",
+      "unit_order": 9,
+      "title": "Emotional Unit 9",
+      "word_count": 12,
+      "words": [
+        "strength",
+        "unique",
+        "weakness",
+        "adapt",
+        "burnout",
+        "dedicate",
+        "insecure",
+        "meditate",
+        "persist",
+        "presence",
+        "reflect",
+        "release"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 4
+      }
+    },
+    {
+      "unit_id": "emotional_u10",
+      "skill": "emotional",
+      "unit_order": 10,
+      "title": "Emotional Unit 10",
+      "word_count": 12,
+      "words": [
+        "sit with",
+        "transform",
+        "wisdom",
+        "anxiety",
+        "awareness",
+        "evolve",
+        "identity",
+        "obstacle",
+        "overwhelm",
+        "potential",
+        "resilient",
+        "surrender"
+      ],
+      "meta": {
+        "cefr_min": 4,
+        "cefr_max": 4
+      }
+    },
+    {
+      "unit_id": "emotional_u11",
+      "skill": "emotional",
+      "unit_order": 11,
+      "title": "Emotional Unit 11",
+      "word_count": 6,
+      "words": [
+        "transition",
+        "vulnerable",
+        "authentic",
+        "intuition",
+        "mindfulness",
+        "perception"
+      ],
+      "meta": {
+        "cefr_min": 4,
+        "cefr_max": 5
+      }
+    },
+    {
+      "unit_id": "functional_u01",
+      "skill": "functional",
+      "unit_order": 1,
+      "title": "Functional Unit 1",
+      "word_count": 12,
+      "words": [
+        "answer",
+        "ask",
+        "because",
+        "give",
+        "help",
+        "need",
+        "say",
+        "show",
+        "speak",
+        "take",
+        "tell",
+        "want"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 1
+      }
+    },
+    {
+      "unit_id": "functional_u02",
+      "skill": "functional",
+      "unit_order": 2,
+      "title": "Functional Unit 2",
+      "word_count": 12,
+      "words": [
+        "listen",
+        "against",
+        "change",
+        "choose",
+        "follow",
+        "plan",
+        "share",
+        "agree",
+        "allow",
+        "goal",
+        "guide",
+        "impossible"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 2
+      }
+    },
+    {
+      "unit_id": "functional_u03",
+      "skill": "functional",
+      "unit_order": 3,
+      "title": "Functional Unit 3",
+      "word_count": 12,
+      "words": [
+        "lead",
+        "possible",
+        "power",
+        "question",
+        "repeat",
+        "result",
+        "review",
+        "understand",
+        "toward",
+        "accept",
+        "adjust",
+        "although"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "functional_u04",
+      "skill": "functional",
+      "unit_order": 4,
+      "title": "Functional Unit 4",
+      "word_count": 12,
+      "words": [
+        "attach",
+        "beyond",
+        "choice",
+        "compare",
+        "control",
+        "create",
+        "cycle",
+        "decide",
+        "define",
+        "demand",
+        "describe",
+        "develop"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "functional_u05",
+      "skill": "functional",
+      "unit_order": 5,
+      "title": "Functional Unit 5",
+      "word_count": 12,
+      "words": [
+        "direction",
+        "disagree",
+        "effect",
+        "explain",
+        "express",
+        "focus",
+        "however",
+        "improve",
+        "include",
+        "issue",
+        "layer",
+        "limit"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "functional_u06",
+      "skill": "functional",
+      "unit_order": 6,
+      "title": "Functional Unit 6",
+      "word_count": 12,
+      "words": [
+        "manage",
+        "measure",
+        "necessary",
+        "notice",
+        "observe",
+        "opinion",
+        "pattern",
+        "prevent",
+        "process",
+        "progress",
+        "protect",
+        "recognize"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "functional_u07",
+      "skill": "functional",
+      "unit_order": 7,
+      "title": "Functional Unit 7",
+      "word_count": 12,
+      "words": [
+        "reject",
+        "request",
+        "risk",
+        "solution",
+        "stage",
+        "suggest",
+        "therefore",
+        "within",
+        "challenge",
+        "communicate",
+        "concentrate",
+        "distract"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "functional_u08",
+      "skill": "functional",
+      "unit_order": 8,
+      "title": "Functional Unit 8",
+      "word_count": 12,
+      "words": [
+        "identify",
+        "opportunity",
+        "punish",
+        "recommend",
+        "structure",
+        "analyze",
+        "capacity",
+        "debate",
+        "despite",
+        "detach",
+        "essential",
+        "exclude"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 4
+      }
+    },
+    {
+      "unit_id": "functional_u09",
+      "skill": "functional",
+      "unit_order": 9,
+      "title": "Functional Unit 9",
+      "word_count": 12,
+      "words": [
+        "foundation",
+        "impact",
+        "intention",
+        "logical",
+        "meanwhile",
+        "outcome",
+        "phase",
+        "priority",
+        "significant",
+        "throughout",
+        "distinguish",
+        "furthermore"
+      ],
+      "meta": {
+        "cefr_min": 4,
+        "cefr_max": 4
+      }
+    },
+    {
+      "unit_id": "functional_u10",
+      "skill": "functional",
+      "unit_order": 10,
+      "title": "Functional Unit 10",
+      "word_count": 7,
+      "words": [
+        "judgement",
+        "rational",
+        "responsibility",
+        "universal",
+        "consequently",
+        "fundamental",
+        "nevertheless"
+      ],
+      "meta": {
+        "cefr_min": 4,
+        "cefr_max": 5
+      }
+    },
+    {
+      "unit_id": "relationship_u01",
+      "skill": "relationship",
+      "unit_order": 1,
+      "title": "Relationship Unit 1",
+      "word_count": 12,
+      "words": [
+        "cold",
+        "family",
+        "friend",
+        "love",
+        "meet",
+        "warm",
+        "care",
+        "hurt",
+        "kind",
+        "lie",
+        "miss",
+        "together"
+      ],
+      "meta": {
+        "cefr_min": 1,
+        "cefr_max": 2
+      }
+    },
+    {
+      "unit_id": "relationship_u02",
+      "skill": "relationship",
+      "unit_order": 2,
+      "title": "Relationship Unit 2",
+      "word_count": 12,
+      "words": [
+        "distance",
+        "secret",
+        "support",
+        "trust",
+        "belong",
+        "blame",
+        "bond",
+        "break up",
+        "comfort",
+        "connect",
+        "depend",
+        "encourage"
+      ],
+      "meta": {
+        "cefr_min": 2,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "relationship_u03",
+      "skill": "relationship",
+      "unit_order": 3,
+      "title": "Relationship Unit 3",
+      "word_count": 12,
+      "words": [
+        "forgive",
+        "gentle",
+        "harsh",
+        "honest",
+        "open up",
+        "praise",
+        "reach out",
+        "rely",
+        "respect",
+        "show up",
+        "truth",
+        "apologize"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 3
+      }
+    },
+    {
+      "unit_id": "relationship_u04",
+      "skill": "relationship",
+      "unit_order": 4,
+      "title": "Relationship Unit 4",
+      "word_count": 12,
+      "words": [
+        "appreciate",
+        "argument",
+        "generous",
+        "selfish",
+        "sincere",
+        "betray",
+        "boundary",
+        "confront",
+        "influence",
+        "compassion",
+        "confide",
+        "criticize"
+      ],
+      "meta": {
+        "cefr_min": 3,
+        "cefr_max": 4
+      }
+    },
+    {
+      "unit_id": "relationship_u05",
+      "skill": "relationship",
+      "unit_order": 5,
+      "title": "Relationship Unit 5",
+      "word_count": 5,
+      "words": [
+        "empathy",
+        "genuine",
+        "loyalty",
+        "reconcile",
+        "transparent"
+      ],
+      "meta": {
+        "cefr_min": 4,
+        "cefr_max": 4
+      }
+    }
+  ]
+}

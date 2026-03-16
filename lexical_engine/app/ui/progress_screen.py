@@ -13,7 +13,7 @@ from tkinter import ttk
 from tkinter import font as tkfont
 from typing import Callable
 
-from app.db import repository
+from app.api import lexical_service, progress_service
 
 
 class ProgressScreen(tk.Frame):
@@ -141,6 +141,27 @@ class ProgressScreen(tk.Frame):
         )
         self._lbl_hint.pack(fill="x", padx=20, pady=(0, 6))
 
+        skill_map_frame = tk.Frame(self, bg="#1A1A2E")
+        skill_map_frame.pack(fill="x", padx=20, pady=(0, 8))
+        tk.Label(
+            skill_map_frame,
+            text="Skill Map (Read-only)",
+            bg="#1A1A2E",
+            fg="#9FD0FF",
+            font=tkfont.Font(family="Segoe UI", size=10, weight="bold"),
+            anchor="w",
+        ).pack(fill="x")
+
+        self._list_skill_map = tk.Listbox(
+            skill_map_frame,
+            bg="#202036",
+            fg="#E8E8F0",
+            relief="flat",
+            height=5,
+            font=tkfont.Font(family="Consolas", size=9),
+        )
+        self._list_skill_map.pack(fill="x")
+
         recommend_frame = tk.Frame(self, bg="#1A1A2E")
         recommend_frame.pack(fill="x", padx=20, pady=(0, 8))
         tk.Label(
@@ -251,21 +272,26 @@ class ProgressScreen(tk.Frame):
         self._refresh_word_options()
         target_word = self._word_var.get().strip() or None
 
-        metrics = repository.get_pronunciation_progress_metrics(target_word=target_word)
-        history = repository.get_pronunciation_history(limit=120, target_word=target_word)
-        daily_points = repository.get_pronunciation_daily_averages(target_word=target_word, days=14)
-        word_trends = repository.get_pronunciation_word_trends(limit=5)
-        recommendations = repository.get_practice_recommendations(limit=3)
+        trend_payload = progress_service.get_pronunciation_trend_payload(target_word=target_word, days=14)
+        history_payload = progress_service.get_pronunciation_history_payload(target_word=target_word, limit=120)
+        skill_states_payload = lexical_service.get_skill_states_payload()
 
-        trend = metrics["trend_direction"]
+        metrics = trend_payload.get("metrics", {})
+        history = history_payload.get("history", [])
+        daily_points = trend_payload.get("dailyAverages", [])
+        word_trends = trend_payload.get("wordTrends", {})
+        recommendations = trend_payload.get("practiceRecommendations", [])
+        skill_states = skill_states_payload.get("skills", [])
+
+        trend = metrics.get("trend_direction", "flat")
         if trend == "up":
-            trend_text = f"Tang (+{metrics['trend_delta_7d']})"
+            trend_text = f"Tang (+{metrics.get('trend_delta_7d', 0)})"
             trend_color = "#76D275"
         elif trend == "down":
-            trend_text = f"Giam ({metrics['trend_delta_7d']})"
+            trend_text = f"Giam ({metrics.get('trend_delta_7d', 0)})"
             trend_color = "#FF8686"
         else:
-            trend_text = f"On dinh ({metrics['trend_delta_7d']})"
+            trend_text = f"On dinh ({metrics.get('trend_delta_7d', 0)})"
             trend_color = "#F2C46D"
 
         self._lbl_metrics.config(
@@ -289,6 +315,7 @@ class ProgressScreen(tk.Frame):
         self._draw_daily_chart(daily_points)
         self._fill_word_trends(word_trends)
         self._fill_recommendations(recommendations)
+        self._fill_skill_map(skill_states)
 
         self._listbox.delete(0, tk.END)
         if not history:
@@ -297,11 +324,11 @@ class ProgressScreen(tk.Frame):
             self._listbox.insert(tk.END, "Date                | Word         | Score | Recognized")
             self._listbox.insert(tk.END, "-" * 92)
             for row in history:
-                created = str(row["created_at"] or "")
+                created = str(row["createdAt"] or "")
                 created = created[:19]
-                word = str(row["target_word"] or "")[:12].ljust(12)
+                word = str(row["targetWord"] or "")[:12].ljust(12)
                 score = "--" if row["score"] is None else str(row["score"]).rjust(3)
-                recognized = str(row["recognized_text"] or "")
+                recognized = str(row["recognizedText"] or "")
                 if len(recognized) > 44:
                     recognized = recognized[:41] + "..."
                 line = f"{created.ljust(19)} | {word} | {score}  | {recognized}"
@@ -312,7 +339,7 @@ class ProgressScreen(tk.Frame):
             self._on_status(f"Progress refreshed for filter: {filter_label}")
 
     def _refresh_word_options(self) -> None:
-        words = repository.get_pronunciation_words()
+        words = progress_service.get_pronunciation_words_payload().get("words", [])
         values = [""] + words
         self._combo_word["values"] = values
 
@@ -459,5 +486,35 @@ class ProgressScreen(tk.Frame):
                 (
                     f"{item['word'][:12].ljust(12)} p={item['priority']:>5} "
                     f"last={item['last_score']:>3} avg7={item['avg_7d']:>5} | {item['reason']}"
+                ),
+            )
+
+    def _fill_skill_map(self, skill_states: list[dict]) -> None:
+        self._list_skill_map.delete(0, tk.END)
+
+        if not skill_states:
+            self._list_skill_map.insert(tk.END, "(khong co du lieu skill map)")
+            return
+
+        self._list_skill_map.insert(
+            tk.END,
+            "Skill         | State      | Mastery | Due | Words",
+        )
+        self._list_skill_map.insert(tk.END, "-" * 56)
+
+        for item in skill_states:
+            name = str(item.get("name", ""))
+            state = str(item.get("state", ""))
+            mastery = float(item.get("masteryScore", 0.0) or 0.0)
+            due_count = int(item.get("dueCount", 0) or 0)
+            word_count = int(item.get("wordCount", 0) or 0)
+            self._list_skill_map.insert(
+                tk.END,
+                (
+                    f"{name[:12].ljust(12)} | "
+                    f"{state[:9].ljust(9)} | "
+                    f"{mastery:>6.2f} | "
+                    f"{str(due_count).rjust(3)} | "
+                    f"{str(word_count).rjust(5)}"
                 ),
             )

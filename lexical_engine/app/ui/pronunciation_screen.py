@@ -12,8 +12,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 from typing import Callable
 
-from app.core.pronunciation_scoring import score_pronunciation
-from app.db import repository
+from app.api import progress_service
 from app.speech.recorder import LocalRecorder, RecorderResult, MicrophoneCheckResult
 from app.speech.whisper_engine import WhisperEngine
 
@@ -250,64 +249,32 @@ class PronunciationScreen(tk.Frame):
         if not transcription.ok:
             self._lbl_recognized.config(text=f"Whisper: {transcription.message}")
             self._lbl_score.config(text="Score: -- | Chua the cham diem.", fg="#FFB366")
-            self._save_pronunciation_history(
-                target_word=target_word,
-                recognized_text=None,
-                score=None,
-                feedback=transcription.message,
-                record_path=record_path,
-                rubric=None,
-            )
             return
 
-        scoring = score_pronunciation(target_word, transcription.text)
+        scored_payload = progress_service.score_and_record_pronunciation_payload(
+            target_word=target_word,
+            recognized_text=transcription.text,
+            audio_path=record_path,
+            transcription_model=f"whisper:{self._whisper_engine.model_size}",
+        )
+        result = scored_payload.get("result", {})
+        score = int(result.get("score", 0) or 0)
+        feedback = str(result.get("feedback", ""))
+        recognized = str(result.get("recognized", ""))
+
         self._lbl_recognized.config(text=f"Whisper nghe duoc: {transcription.text}")
 
-        if scoring.score >= 80:
+        if score >= 80:
             score_color = "#76D275"
-        elif scoring.score >= 60:
+        elif score >= 60:
             score_color = "#F2C46D"
         else:
             score_color = "#FF8686"
 
         self._lbl_score.config(
-            text=f"Score: {scoring.score}/100 | {scoring.feedback}",
+            text=f"Score: {score}/100 | {feedback}",
             fg=score_color,
         )
-        self._set_status(f"Cham diem phat am: {scoring.score}/100")
-
-        rubric = {
-            "char_score": scoring.char_score,
-            "ending_score": scoring.ending_score,
-            "stress_score": scoring.stress_score,
-            "phrase_score": scoring.phrase_score,
-        }
-        self._save_pronunciation_history(
-            target_word=target_word,
-            recognized_text=transcription.text,
-            score=scoring.score,
-            feedback=scoring.feedback,
-            record_path=record_path,
-            rubric=rubric,
-        )
-
-    def _save_pronunciation_history(
-        self,
-        target_word: str,
-        recognized_text: str | None,
-        score: int | None,
-        feedback: str,
-        record_path: str,
-        rubric: dict | None,
-    ) -> None:
-        word_id = repository.get_word_id_by_word(target_word)
-        repository.insert_pronunciation_history(
-            target_word=target_word,
-            recognized_text=recognized_text,
-            score=score,
-            feedback=feedback,
-            audio_path=record_path,
-            transcription_model=f"whisper:{self._whisper_engine.model_size}",
-            rubric=rubric,
-            word_id=word_id,
-        )
+        self._set_status(f"Cham diem phat am: {score}/100")
+        if recognized:
+            self._lbl_recognized.config(text=f"Whisper nghe duoc: {recognized}")

@@ -557,3 +557,162 @@ def get_practice_recommendations(limit: int = 3) -> list[dict]:
 
     recommendations.sort(key=lambda x: x["priority"], reverse=True)
     return recommendations[:limit]
+
+
+def has_v2_lesson_seed() -> bool:
+    """Return True when V2 lesson seed tables contain usable data."""
+    conn = get_connection()
+    row = conn.execute(
+        """
+        SELECT
+            (SELECT COUNT(*) FROM skills) AS skills_count,
+            (SELECT COUNT(*) FROM lesson_units) AS lesson_units_count
+        """
+    ).fetchone()
+    conn.close()
+
+    skills_count = int(row["skills_count"] or 0)
+    lesson_units_count = int(row["lesson_units_count"] or 0)
+    return skills_count > 0 and lesson_units_count > 0
+
+
+def get_lesson_words_by_skill(skill_name: str, limit: int = 60) -> list[sqlite3.Row]:
+    """
+    Return vocabulary rows for a skill from V2 lesson_units seed ordering.
+
+    Rows include `lesson_unit_order` to preserve curriculum sequence when available.
+    """
+    safe_limit = max(1, int(limit))
+    conn = get_connection()
+    rows = conn.execute(
+        """
+        SELECT
+            v.*,
+            lu.unit_order AS lesson_unit_order
+        FROM lesson_units lu
+        JOIN skills s ON s.id = lu.skill_id
+        JOIN vocabulary v ON v.id = lu.word_id
+        WHERE lower(s.name) = lower(?)
+        ORDER BY lu.unit_order ASC, v.difficulty_score ASC, v.word ASC
+        LIMIT ?
+        """,
+        (skill_name, safe_limit),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_words_by_tokens(tokens: list[str]) -> list[sqlite3.Row]:
+    """Return vocabulary rows for a list of word tokens (case-insensitive)."""
+    normalized = [str(token).strip().lower() for token in tokens if str(token).strip()]
+    if not normalized:
+        return []
+
+    placeholders = ",".join("?" for _ in normalized)
+    conn = get_connection()
+    rows = conn.execute(
+        f"""
+        SELECT *
+        FROM vocabulary
+        WHERE lower(word) IN ({placeholders})
+        """,
+        tuple(normalized),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_phrase_units_for_vocab_ids(vocab_ids: list[int], limit_per_vocab: int = 3) -> list[sqlite3.Row]:
+    """Return phrase units for vocabulary ids with stable ordering."""
+    safe_ids = sorted({int(vocab_id) for vocab_id in vocab_ids if int(vocab_id) > 0})
+    safe_limit = max(1, int(limit_per_vocab))
+    if not safe_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in safe_ids)
+    conn = get_connection()
+    rows = conn.execute(
+        f"""
+        SELECT
+            pu.*,
+            v.word AS source_word,
+            v.ipa AS source_ipa
+        FROM phrase_units pu
+        JOIN vocabulary v ON v.id = pu.vocab_id
+        WHERE pu.vocab_id IN ({placeholders})
+        ORDER BY pu.vocab_id ASC, pu.difficulty_score ASC, pu.id ASC
+        """,
+        tuple(safe_ids),
+    ).fetchall()
+    conn.close()
+
+    # Keep only first N items per vocab id while preserving SQL order.
+    per_vocab_count: dict[int, int] = {}
+    filtered: list[sqlite3.Row] = []
+    for row in rows:
+        vocab_id = int(row["vocab_id"])
+        used = per_vocab_count.get(vocab_id, 0)
+        if used >= safe_limit:
+            continue
+        filtered.append(row)
+        per_vocab_count[vocab_id] = used + 1
+    return filtered
+
+
+def get_grammar_micro_units(unlock_levels: list[str] | None = None, limit: int = 20) -> list[sqlite3.Row]:
+    """Return grammar micro units filtered by unlock levels when provided."""
+    safe_limit = max(1, int(limit))
+
+    if unlock_levels:
+        normalized_levels = sorted(
+            {
+                str(level).strip().lower()
+                for level in unlock_levels
+                if str(level).strip()
+            }
+        )
+    else:
+        normalized_levels = []
+
+    conn = get_connection()
+    if normalized_levels:
+        placeholders = ",".join("?" for _ in normalized_levels)
+        rows = conn.execute(
+            f"""
+            SELECT *
+            FROM grammar_micro_units
+            WHERE lower(coalesce(unlock_level, 'all')) IN ({placeholders})
+            ORDER BY difficulty_score ASC, id ASC
+            LIMIT ?
+            """,
+            tuple(normalized_levels + [safe_limit]),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM grammar_micro_units
+            ORDER BY difficulty_score ASC, id ASC
+            LIMIT ?
+            """,
+            (safe_limit,),
+        ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_learner_profile_history(limit: int = 30) -> list[sqlite3.Row]:
+    """Return latest learner profile snapshots for adaptive progression reads."""
+    safe_limit = max(1, int(limit))
+    conn = get_connection()
+    rows = conn.execute(
+        """
+        SELECT *
+        FROM learner_profile_history
+        ORDER BY datetime(created_at) DESC, id DESC
+        LIMIT ?
+        """,
+        (safe_limit,),
+    ).fetchall()
+    conn.close()
+    return rows

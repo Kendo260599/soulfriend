@@ -7,8 +7,7 @@ Forbidden: direct SQL queries, score algorithms, memory calculation.
 import tkinter as tk
 from tkinter import font as tkfont
 
-from app.core import difficulty_engine, quiz_engine
-from app.db import repository
+from app.api import lexical_service, progress_service, recommendation_service
 from app.db.schema import create_tables
 from app.db.seed_loader import load_seed
 from app.speech import audio_player
@@ -30,7 +29,7 @@ class AppWindow(tk.Tk):
         self.resizable(True, True)
         self.configure(bg="#1A1A2E")
 
-        self._quiz_batch: list[quiz_engine.QuizItem] = []
+        self._quiz_batch: list[dict] = []
         self._current_idx: int = 0
         self._session_correct: int = 0
         self._session_total: int = 0
@@ -86,6 +85,49 @@ class AppWindow(tk.Tk):
             font=small_font,
         )
         self._lbl_status.pack()
+
+        self._home_summary_card = tk.Frame(
+            self._frame_home,
+            bg="#20203A",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground="#34345A",
+        )
+        self._home_summary_card.pack(fill="x", padx=70, pady=(12, 8))
+
+        self._lbl_today_mission = tk.Label(
+            self._home_summary_card,
+            text="",
+            bg="#20203A",
+            fg="#DDE2FF",
+            font=tkfont.Font(family="Segoe UI", size=10, weight="bold"),
+            justify="left",
+            anchor="w",
+        )
+        self._lbl_today_mission.pack(fill="x", padx=12, pady=(10, 4))
+
+        self._lbl_next_lesson = tk.Label(
+            self._home_summary_card,
+            text="",
+            bg="#20203A",
+            fg="#BFC7ED",
+            font=tkfont.Font(family="Segoe UI", size=10),
+            justify="left",
+            anchor="w",
+            wraplength=540,
+        )
+        self._lbl_next_lesson.pack(fill="x", padx=12, pady=2)
+
+        self._lbl_review_due_hint = tk.Label(
+            self._home_summary_card,
+            text="",
+            bg="#20203A",
+            fg="#A8B2E0",
+            font=tkfont.Font(family="Segoe UI", size=9),
+            justify="left",
+            anchor="w",
+        )
+        self._lbl_review_due_hint.pack(fill="x", padx=12, pady=(2, 10))
 
         btn_grid = tk.Frame(self._frame_home, bg="#1A1A2E")
         btn_grid.pack(pady=16)
@@ -230,12 +272,40 @@ class AppWindow(tk.Tk):
 
     def _show_home(self) -> None:
         self._hide_all()
-        due_count = len(difficulty_engine.get_review_words(n=200))
+        self._refresh_home_summary()
+        self._frame_home.pack(fill="both", expand=True)
+
+    def _refresh_home_summary(self) -> None:
+        """Refresh calm, read-only home guidance for V2 lesson structure."""
+        plan = recommendation_service.recommend_next_payload(lesson_size=8)
+        recommendation = plan.get("nextLesson", {})
+        due_count = int(plan.get("dueCount", 0) or 0)
+
+        if due_count > 0:
+            mission = f"Today's mission: Complete 1 focused step and review {due_count} due words."
+            due_text = f"Review due count: {due_count}"
+        else:
+            mission = "Today's mission: Complete 1 focused step at a calm rhythm."
+            due_text = "Review due count: 0"
+
+        preview_words = list(recommendation.get("lessonWords", []))[:3]
+        if preview_words:
+            words_preview = ", ".join(preview_words)
+            next_lesson = (
+                f"Next best lesson: {recommendation.get('skill', 'core')} ({words_preview})\n"
+                f"{recommendation.get('reason', '')}"
+            )
+        else:
+            next_lesson = "Next best lesson: Preparing content for your next step."
+
+        self._lbl_today_mission.config(text=mission)
+        self._lbl_next_lesson.config(text=next_lesson)
+        self._lbl_review_due_hint.config(text=due_text)
+
         if due_count > 0:
             self._lbl_due.config(text=f"{due_count} từ đang chờ ôn tập")
         else:
             self._lbl_due.config(text="Không có từ nào cần ôn tập lúc này")
-        self._frame_home.pack(fill="both", expand=True)
 
     def _show_quiz(self) -> None:
         self._hide_all()
@@ -277,7 +347,8 @@ class AppWindow(tk.Tk):
     # ------------------------------------------------------------------ #
 
     def _start_quiz(self) -> None:
-        self._quiz_batch = quiz_engine.get_quiz_batch(batch_size=10)
+        payload = lexical_service.get_quiz_batch_payload(batch_size=10, mode="learn")
+        self._quiz_batch = list(payload.get("items", []))
         if not self._quiz_batch:
             self._lbl_status.config(text="Chưa có từ vựng. Kiểm tra dữ liệu seed.")
             return
@@ -289,7 +360,8 @@ class AppWindow(tk.Tk):
         self._show_current_item()
 
     def _start_review(self) -> None:
-        self._quiz_batch = quiz_engine.get_review_batch(batch_size=10)
+        payload = lexical_service.get_quiz_batch_payload(batch_size=10, mode="review")
+        self._quiz_batch = list(payload.get("items", []))
         if not self._quiz_batch:
             self._lbl_status.config(text="Không có từ nào cần ôn tập lúc này.")
             return
@@ -304,30 +376,30 @@ class AppWindow(tk.Tk):
         item = self._quiz_batch[self._current_idx]
         progress_text = f"{self._current_idx + 1} / {self._session_total}"
         self._quiz_widget.load_item(
-            word=item.word,
-            ipa=item.ipa,
-            choices=item.choices,
-            correct_answer=item.correct_answer,
+            word=str(item["word"]),
+            ipa=str(item["ipa"]),
+            choices=list(item["choices"]),
+            correct_answer=str(item["correctAnswer"]),
             progress_text=progress_text,
         )
 
     def _show_current_review_item(self) -> None:
         item = self._quiz_batch[self._current_idx]
-        progress = repository.get_progress(item.word_id)
-        interval_days = (progress["interval_days"] or 0) if progress else 0
+        progress = progress_service.get_word_progress_payload(int(item["wordId"]))
+        interval_days = int(progress.get("intervalDays", 0) or 0)
         progress_text = f"Ôn tập  {self._current_idx + 1} / {self._session_total}"
         self._review_widget.load_item(
-            word=item.word,
-            ipa=item.ipa,
-            choices=item.choices,
-            correct_answer=item.correct_answer,
+            word=str(item["word"]),
+            ipa=str(item["ipa"]),
+            choices=list(item["choices"]),
+            correct_answer=str(item["correctAnswer"]),
             progress_text=progress_text,
             interval_days=interval_days,
         )
 
     def _on_answered(self, is_correct: bool) -> None:
         item = self._quiz_batch[self._current_idx]
-        quiz_engine.submit_answer(item.word_id, is_correct)
+        lexical_service.submit_quiz_answer_payload(int(item["wordId"]), is_correct)
 
         if is_correct:
             self._session_correct += 1

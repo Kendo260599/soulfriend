@@ -14,3 +14,11 @@ assets/recordings/*.wav
 assets/whisper_benchmark/*.wav
 assets/whisper_benchmark/manifest.json
 assets/whisper_benchmark/reports/
+
+# Generated V2 pipeline artifacts
+data/reports/v2_seed_import/*.json
+data/reports/v2_seed_import_custom/*.json
+data/reports/v2_seed_import_smoke/*.json
+data/lexicon_seed/words_regroup_preview.json
+data/lexicon_seed/words_regroup_summary.json
+data/lexicon_seed/lesson_units_seed_summary.json

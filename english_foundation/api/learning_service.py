@@ -78,15 +78,45 @@ class LearningService:
         for key in ("vocab", "grammar"):
             lessons = tracks.get(key, [])
             if isinstance(lessons, list):
+                self._validate_track_lessons(key, lessons)
                 tracks[key] = sorted(
                     lessons,
                     key=lambda item: (
-                        int(item.get("order", 9999)) if str(item.get("order", "")).isdigit() else 9999,
+                        self._safe_int(item.get("order"), 9999),
                         str(item.get("id", "")),
                     ),
                 )
         payload["tracks"] = tracks
         return payload
+
+    def _validate_track_lessons(self, track: str, lessons: list[dict[str, Any]]) -> None:
+        required = {"id", "order", "level", "title", "focus", "objective"}
+        seen_orders: set[int] = set()
+
+        for idx, lesson in enumerate(lessons):
+            if not isinstance(lesson, dict):
+                raise ValueError(f"Invalid lesson format in track '{track}' at index {idx}.")
+
+            missing = [field for field in required if field not in lesson or str(lesson.get(field, "")).strip() == ""]
+            if missing:
+                raise ValueError(
+                    f"Lesson in track '{track}' is missing required fields: {', '.join(missing)}."
+                )
+
+            order_value = self._safe_int(lesson.get("order"), None)
+            if order_value is None or order_value <= 0:
+                raise ValueError(f"Lesson '{lesson.get('id', '?')}' in track '{track}' has invalid order value.")
+
+            if order_value in seen_orders:
+                raise ValueError(f"Duplicate order '{order_value}' found in track '{track}'.")
+            seen_orders.add(order_value)
+
+    @staticmethod
+    def _safe_int(value: Any, fallback: int | None) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return fallback
 
     def get_progress_payload(self) -> dict[str, Any]:
         learned_words = self.conn.execute(

@@ -99,6 +99,10 @@ class LearningService:
                 "focus_vi",
                 "objective_en",
                 "objective_vi",
+                "cefr_target",
+                "coca_frequency_band",
+                "source_standard",
+                "source_refs",
             })
         seen_orders: set[int] = set()
 
@@ -137,6 +141,26 @@ class LearningService:
         if not all([focus_en, focus_vi, objective_en, objective_vi]):
             raise ValueError(
                 f"Vocab lesson '{lesson_id}' must include focus_en, focus_vi, objective_en, objective_vi."
+            )
+
+        cefr_target = str(lesson.get("cefr_target", "")).strip().upper()
+        if cefr_target not in {"A1", "A2", "B1"}:
+            raise ValueError(f"Vocab lesson '{lesson_id}' must define cefr_target in A1/A2/B1.")
+
+        coca_band = str(lesson.get("coca_frequency_band", "")).strip()
+        if not coca_band:
+            raise ValueError(f"Vocab lesson '{lesson_id}' must define non-empty coca_frequency_band.")
+
+        source_standard = str(lesson.get("source_standard", "")).strip()
+        if source_standard != "open-triangulated":
+            raise ValueError(
+                f"Vocab lesson '{lesson_id}' must use source_standard='open-triangulated'."
+            )
+
+        source_refs = lesson.get("source_refs", [])
+        if not isinstance(source_refs, list) or len(source_refs) < 2:
+            raise ValueError(
+                f"Vocab lesson '{lesson_id}' must include at least 2 source_refs entries."
             )
 
         if not self._contains_vietnamese_diacritics(focus_vi):

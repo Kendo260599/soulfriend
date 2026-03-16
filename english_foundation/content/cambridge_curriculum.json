@@ -30,7 +30,15 @@
         "focus_en": "name, country, age, language",
         "focus_vi": "tên, quốc tịch, tuổi, ngôn ngữ",
         "objective_en": "Give basic personal information.",
-        "objective_vi": "Giới thiệu thông tin cá nhân cơ bản một cách tự nhiên."
+        "objective_vi": "Giới thiệu thông tin cá nhân cơ bản một cách tự nhiên.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-02",
@@ -43,7 +51,15 @@
         "focus_en": "family members, relationship words",
         "focus_vi": "thành viên gia đình, từ chỉ mối quan hệ",
         "objective_en": "Describe simple family and friend relations.",
-        "objective_vi": "Mô tả đơn giản về gia đình và bạn bè."
+        "objective_vi": "Mô tả đơn giản về gia đình và bạn bè.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-03",
@@ -56,7 +72,15 @@
         "focus_en": "wake up, work, study, eat",
         "focus_vi": "thức dậy, làm việc, học tập, ăn uống",
         "objective_en": "Talk about daily routine with time markers.",
-        "objective_vi": "Nói về thói quen hằng ngày với mốc thời gian cơ bản."
+        "objective_vi": "Nói về thói quen hằng ngày với mốc thời gian cơ bản.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-04",
@@ -69,7 +93,15 @@
         "focus_en": "house rooms and basic objects",
         "focus_vi": "các phòng trong nhà và đồ vật cơ bản",
         "objective_en": "Describe where things are at home.",
-        "objective_vi": "Mô tả vị trí đồ vật trong không gian sống."
+        "objective_vi": "Mô tả vị trí đồ vật trong không gian sống.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-05",
@@ -82,7 +114,15 @@
         "focus_en": "meal words, basic food items",
         "focus_vi": "món ăn cơ bản, bữa ăn, đồ uống",
         "objective_en": "Order and describe simple meals.",
-        "objective_vi": "Gọi món và mô tả bữa ăn ngắn gọn."
+        "objective_vi": "Gọi món và mô tả bữa ăn ngắn gọn.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-06",
@@ -95,7 +135,15 @@
         "focus_en": "school, market, park, station",
         "focus_vi": "trường học, chợ, công viên, nhà ga",
         "objective_en": "Name common places in town.",
-        "objective_vi": "Gọi tên các địa điểm quen thuộc trong thành phố."
+        "objective_vi": "Gọi tên các địa điểm quen thuộc trong thành phố.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-07",
@@ -108,7 +156,15 @@
         "focus_en": "days, months, clock time",
         "focus_vi": "ngày, tháng, giờ giấc",
         "objective_en": "Say simple time and date information.",
-        "objective_vi": "Nói được thời gian và lịch hẹn đơn giản."
+        "objective_vi": "Nói được thời gian và lịch hẹn đơn giản.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A1-08",
@@ -121,7 +177,15 @@
         "focus_en": "body words, common symptoms",
         "focus_vi": "bộ phận cơ thể, triệu chứng thường gặp",
         "objective_en": "Say simple health problems and needs.",
-        "objective_vi": "Mô tả vấn đề sức khỏe cơ bản và nhu cầu hỗ trợ."
+        "objective_vi": "Mô tả vấn đề sức khỏe cơ bản và nhu cầu hỗ trợ.",
+        "cefr_target": "A1",
+        "coca_frequency_band": "1-1000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-01",
@@ -134,7 +198,15 @@
         "focus_en": "tasks, schedules, simple collocations",
         "focus_vi": "nhiệm vụ, lịch trình, cụm từ thông dụng",
         "objective_en": "Describe study and work responsibilities.",
-        "objective_vi": "Mô tả trách nhiệm học tập và công việc hằng ngày."
+        "objective_vi": "Mô tả trách nhiệm học tập và công việc hằng ngày.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-02",
@@ -147,7 +219,15 @@
         "focus_en": "ticket, platform, route, delay",
         "focus_vi": "vé, tuyến đường, sân ga, trễ chuyến",
         "objective_en": "Handle simple travel situations.",
-        "objective_vi": "Xử lý tình huống di chuyển phổ biến."
+        "objective_vi": "Xử lý tình huống di chuyển phổ biến.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-03",
@@ -160,7 +240,15 @@
         "focus_en": "price, size, return, appointment",
         "focus_vi": "giá cả, kích cỡ, đổi trả, đặt lịch",
         "objective_en": "Ask for services and make simple requests.",
-        "objective_vi": "Đưa ra yêu cầu dịch vụ rõ ràng và lịch sự."
+        "objective_vi": "Đưa ra yêu cầu dịch vụ rõ ràng và lịch sự.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-04",
@@ -173,7 +261,15 @@
         "focus_en": "sports, arts, plans, invitations",
         "focus_vi": "thể thao, nghệ thuật, kế hoạch cuối tuần",
         "objective_en": "Talk about free time activities.",
-        "objective_vi": "Nói về hoạt động giải trí và lời mời đơn giản."
+        "objective_vi": "Nói về hoạt động giải trí và lời mời đơn giản.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-05",
@@ -186,7 +282,15 @@
         "focus_en": "phone, app, message, online actions",
         "focus_vi": "điện thoại, ứng dụng, nhắn tin, thao tác trực tuyến",
         "objective_en": "Use practical language for technology tasks.",
-        "objective_vi": "Dùng ngôn ngữ thực tế cho các tác vụ công nghệ."
+        "objective_vi": "Dùng ngôn ngữ thực tế cho các tác vụ công nghệ.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-06",
@@ -199,7 +303,15 @@
         "focus_en": "weather conditions and simple environment words",
         "focus_vi": "thời tiết, khí hậu, từ vựng môi trường cơ bản",
         "objective_en": "Describe weather and basic environment topics.",
-        "objective_vi": "Mô tả thời tiết và vấn đề môi trường quen thuộc."
+        "objective_vi": "Mô tả thời tiết và vấn đề môi trường quen thuộc.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-07",
@@ -212,7 +324,15 @@
         "focus_en": "agree, disagree, explain, ask again",
         "focus_vi": "đồng ý, phản biện nhẹ, giải thích, nhắc lại",
         "objective_en": "Manage short real-life conversations.",
-        "objective_vi": "Duy trì hội thoại ngắn trong bối cảnh đời thường."
+        "objective_vi": "Duy trì hội thoại ngắn trong bối cảnh đời thường.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-A2-08",
@@ -225,7 +345,15 @@
         "focus_en": "broken, late, fix, replace, support",
         "focus_vi": "hỏng hóc, trễ hạn, sửa chữa, hỗ trợ",
         "objective_en": "Describe common problems and ask for help.",
-        "objective_vi": "Trình bày vấn đề và yêu cầu trợ giúp rõ ràng."
+        "objective_vi": "Trình bày vấn đề và yêu cầu trợ giúp rõ ràng.",
+        "cefr_target": "A2",
+        "coca_frequency_band": "1001-2000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-01",
@@ -238,7 +366,15 @@
         "focus_en": "subjects, goals, application language",
         "focus_vi": "môn học, mục tiêu, hồ sơ ứng tuyển",
         "objective_en": "Describe goals and short future plans.",
-        "objective_vi": "Trình bày kế hoạch học tập và định hướng tương lai."
+        "objective_vi": "Trình bày kế hoạch học tập và định hướng tương lai.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-02",
@@ -251,7 +387,15 @@
         "focus_en": "project steps, deadlines, teamwork",
         "focus_vi": "tiến độ dự án, hạn chót, phối hợp nhóm",
         "objective_en": "Report basic project updates.",
-        "objective_vi": "Báo cáo cập nhật công việc theo ngữ cảnh IELTS."
+        "objective_vi": "Báo cáo cập nhật công việc theo ngữ cảnh IELTS.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-03",
@@ -264,7 +408,15 @@
         "focus_en": "opinion markers, media and news words",
         "focus_vi": "nêu quan điểm, tin tức, dẫn chứng cơ bản",
         "objective_en": "Give and support simple opinions.",
-        "objective_vi": "Đưa ý kiến có lý do ngắn gọn và mạch lạc."
+        "objective_vi": "Đưa ý kiến có lý do ngắn gọn và mạch lạc.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-04",
@@ -277,7 +429,15 @@
         "focus_en": "feelings, conflict, support phrases",
         "focus_vi": "cảm xúc, mâu thuẫn, hỗ trợ tinh thần",
         "objective_en": "Describe emotions and relationship situations.",
-        "objective_vi": "Mô tả tình huống quan hệ cá nhân một cách tự nhiên."
+        "objective_vi": "Mô tả tình huống quan hệ cá nhân một cách tự nhiên.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-05",
@@ -290,7 +450,15 @@
         "focus_en": "habits, balance, stress, routines",
         "focus_vi": "thói quen, cân bằng, căng thẳng, nghỉ ngơi",
         "objective_en": "Explain lifestyle choices and reasons.",
-        "objective_vi": "Giải thích lựa chọn lối sống và nguyên nhân."
+        "objective_vi": "Giải thích lựa chọn lối sống và nguyên nhân.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-06",
@@ -303,7 +471,15 @@
         "focus_en": "volunteer, local issues, simple solutions",
         "focus_vi": "tình nguyện, vấn đề địa phương, giải pháp đơn giản",
         "objective_en": "Discuss basic community topics with examples.",
-        "objective_vi": "Thảo luận chủ đề cộng đồng với ví dụ thực tế."
+        "objective_vi": "Thảo luận chủ đề cộng đồng với ví dụ thực tế.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-07",
@@ -316,7 +492,15 @@
         "focus_en": "trip stories, events, recommendations",
         "focus_vi": "kể trải nghiệm chuyến đi, sự cố, gợi ý",
         "objective_en": "Tell short travel experiences clearly.",
-        "objective_vi": "Kể lại trải nghiệm du lịch mạch lạc, dễ hiểu."
+        "objective_vi": "Kể lại trải nghiệm du lịch mạch lạc, dễ hiểu.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-08",
@@ -329,7 +513,15 @@
         "focus_en": "meetings, updates, polite negotiation",
         "focus_vi": "họp hành, cập nhật công việc, trao đổi lịch sự",
         "objective_en": "Handle common workplace communication tasks.",
-        "objective_vi": "Xử lý giao tiếp công sở ở mức B1."
+        "objective_vi": "Xử lý giao tiếp công sở ở mức B1.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-09",
@@ -342,7 +534,15 @@
         "objective_en": "Explain simple environmental problems and practical actions.",
         "objective_vi": "Giải thích vấn đề môi trường và nêu hành động thực tế.",
         "focus": "EN: pollution, recycling, energy use, public transport | VI: ô nhiễm, tái chế, tiêu thụ năng lượng, giao thông công cộng",
-        "objective": "EN: Explain simple environmental problems and practical actions. | VI: Giải thích vấn đề môi trường và nêu hành động thực tế."
+        "objective": "EN: Explain simple environmental problems and practical actions. | VI: Giải thích vấn đề môi trường và nêu hành động thực tế.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-10",
@@ -355,7 +555,15 @@
         "objective_en": "Discuss technology benefits and risks with balanced language.",
         "objective_vi": "Thảo luận lợi ích và rủi ro công nghệ bằng ngôn ngữ cân bằng.",
         "focus": "EN: digital tools, AI support, privacy, screen time | VI: công cụ số, hỗ trợ AI, quyền riêng tư, thời gian dùng màn hình",
-        "objective": "EN: Discuss technology benefits and risks with balanced language. | VI: Thảo luận lợi ích và rủi ro công nghệ bằng ngôn ngữ cân bằng."
+        "objective": "EN: Discuss technology benefits and risks with balanced language. | VI: Thảo luận lợi ích và rủi ro công nghệ bằng ngôn ngữ cân bằng.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-11",
@@ -368,7 +576,15 @@
         "objective_en": "Describe public services and suggest realistic improvements.",
         "objective_vi": "Mô tả dịch vụ công và đề xuất cải thiện phù hợp.",
         "focus": "EN: healthcare, transport system, education access, service quality | VI: y tế, hệ thống giao thông, tiếp cận giáo dục, chất lượng dịch vụ",
-        "objective": "EN: Describe public services and suggest realistic improvements. | VI: Mô tả dịch vụ công và đề xuất cải thiện phù hợp."
+        "objective": "EN: Describe public services and suggest realistic improvements. | VI: Mô tả dịch vụ công và đề xuất cải thiện phù hợp.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       },
       {
         "id": "VOC-B1-12",
@@ -381,7 +597,15 @@
         "objective_en": "Express opinions on culture and society with clear examples.",
         "objective_vi": "Nêu quan điểm về văn hóa xã hội kèm ví dụ rõ ràng.",
         "focus": "EN: traditions, social media influence, cultural identity, community values | VI: truyền thống, ảnh hưởng mạng xã hội, bản sắc văn hóa, giá trị cộng đồng",
-        "objective": "EN: Express opinions on culture and society with clear examples. | VI: Nêu quan điểm về văn hóa xã hội kèm ví dụ rõ ràng."
+        "objective": "EN: Express opinions on culture and society with clear examples. | VI: Nêu quan điểm về văn hóa xã hội kèm ví dụ rõ ràng.",
+        "cefr_target": "B1",
+        "coca_frequency_band": "2001-3000",
+        "source_standard": "open-triangulated",
+        "source_refs": [
+          "Oxford3000-aligned",
+          "COCA-frequency",
+          "EVP-style-mapping"
+        ]
       }
     ],
     "grammar": [
@@ -578,5 +802,15 @@
         "objective": "Build longer clear B1-level sentences."
       }
     ]
+  },
+  "lexical_standard": {
+    "method": "open-list triangulation",
+    "sources": [
+      "Oxford 3000 (open-aligned usage)",
+      "CEFR public descriptors",
+      "COCA frequency bands",
+      "EVP-style CEFR mapping (derived)"
+    ],
+    "note": "This curriculum is independently curated and aligned to open standards; it is not an official Cambridge data export."
   }
 }

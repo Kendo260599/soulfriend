@@ -99,6 +99,23 @@ class ApiService {
     return this.get(`/api/v2/foundation/lesson?learnerId=${encodeURIComponent(String(learnerId))}`);
   }
 
+  public async getFoundationTrackLesson(
+    track: 'grammar' | 'vocab',
+    lessonId: string,
+    learnerId = 1,
+  ): Promise<AxiosResponse> {
+    const query = [
+      `learnerId=${encodeURIComponent(String(learnerId))}`,
+      `track=${encodeURIComponent(track)}`,
+      `lessonId=${encodeURIComponent(lessonId)}`,
+    ].join('&');
+    return this.get(`/api/v2/foundation/lesson?${query}`);
+  }
+
+  public async getFoundationCurriculum(): Promise<AxiosResponse> {
+    return this.get('/api/v2/foundation/curriculum');
+  }
+
   public async getFoundationProgress(learnerId = 1): Promise<AxiosResponse> {
     return this.get(`/api/v2/foundation/progress?learnerId=${encodeURIComponent(String(learnerId))}`);
   }

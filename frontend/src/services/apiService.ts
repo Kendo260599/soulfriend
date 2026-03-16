@@ -123,6 +123,50 @@ class ApiService {
     return this.get(`/api/v2/english-lab/progress?userId=${encodeURIComponent(userId)}`);
   }
 
+  public async getEnglishLabPhase2Status(
+    userId: string,
+    options?: {
+      lessonSize?: number;
+      phraseLimitPerWord?: number;
+      grammarLimit?: number;
+    }
+  ): Promise<AxiosResponse> {
+    const lessonSize = Number(options?.lessonSize || 10);
+    const phraseLimitPerWord = Number(options?.phraseLimitPerWord || 2);
+    const grammarLimit = Number(options?.grammarLimit || 5);
+
+    const query = [
+      `userId=${encodeURIComponent(userId)}`,
+      `lessonSize=${encodeURIComponent(String(lessonSize))}`,
+      `phraseLimitPerWord=${encodeURIComponent(String(phraseLimitPerWord))}`,
+      `grammarLimit=${encodeURIComponent(String(grammarLimit))}`,
+    ].join('&');
+
+    return this.get(`/api/v2/english-lab/phase2/status?${query}`);
+  }
+
+  public async getEnglishLabPhase2Home(
+    userId: string,
+    options?: {
+      lessonSize?: number;
+      phraseLimitPerWord?: number;
+      grammarLimit?: number;
+    }
+  ): Promise<AxiosResponse> {
+    const lessonSize = Number(options?.lessonSize || 10);
+    const phraseLimitPerWord = Number(options?.phraseLimitPerWord || 2);
+    const grammarLimit = Number(options?.grammarLimit || 5);
+
+    const query = [
+      `userId=${encodeURIComponent(userId)}`,
+      `lessonSize=${encodeURIComponent(String(lessonSize))}`,
+      `phraseLimitPerWord=${encodeURIComponent(String(phraseLimitPerWord))}`,
+      `grammarLimit=${encodeURIComponent(String(grammarLimit))}`,
+    ].join('&');
+
+    return this.get(`/api/v2/english-lab/phase2/home?${query}`);
+  }
+
   public async transcribeAndScoreEnglishLab(payload: {
     userId: string;
     targetWord: string;

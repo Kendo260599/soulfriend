@@ -1,6 +1,17 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
+import {
+  getCanonicalHistory,
+  getCanonicalPhase2Home,
+  getCanonicalPhase2Status,
+  getCanonicalProgress,
+  getCanonicalQuizNext,
+  getCanonicalWords,
+  scoreCanonicalPronunciation,
+  submitCanonicalQuizAnswer,
+} from '../services/lexicalCanonicalBridgeService';
 import { transcribeAudioBuffer } from '../services/transcriptionBridgeService';
+import { normalizeHistory, normalizeProgress } from './englishLabPayload';
 
 const router = express.Router();
 const upload = multer({
@@ -13,44 +24,6 @@ type WordItem = {
   meaningVi: string;
 };
 
-type PronunciationHistoryItem = {
-  at: string;
-  word: string;
-  score: number;
-  recognized: string;
-  feedback: string;
-};
-
-type UserState = {
-  memory: Record<string, number>;
-  history: PronunciationHistoryItem[];
-};
-
-const WORD_BANK: WordItem[] = [
-  { word: 'trust', meaningVi: 'tin tưởng' },
-  { word: 'hope', meaningVi: 'hy vọng' },
-  { word: 'fear', meaningVi: 'sợ hãi' },
-  { word: 'care', meaningVi: 'quan tâm' },
-  { word: 'love', meaningVi: 'tình yêu' },
-  { word: 'friend', meaningVi: 'bạn bè' },
-  { word: 'family', meaningVi: 'gia đình' },
-  { word: 'support', meaningVi: 'hỗ trợ' },
-  { word: 'respect', meaningVi: 'tôn trọng' },
-  { word: 'listen', meaningVi: 'lắng nghe' },
-  { word: 'speak', meaningVi: 'nói' },
-  { word: 'understand', meaningVi: 'thấu hiểu' },
-  { word: 'practice', meaningVi: 'luyện tập' },
-  { word: 'review', meaningVi: 'ôn tập' },
-  { word: 'focus', meaningVi: 'tập trung' },
-  { word: 'balance', meaningVi: 'cân bằng' },
-  { word: 'growth', meaningVi: 'phát triển' },
-  { word: 'progress', meaningVi: 'tiến bộ' },
-  { word: 'healing', meaningVi: 'chữa lành' },
-  { word: 'calm', meaningVi: 'bình tĩnh' },
-];
-
-const userStore: Map<string, UserState> = new Map();
-
 function getUserId(req: Request): string {
   const bodyValue = typeof req.body?.userId === 'string' ? req.body.userId.trim() : '';
   const queryValue = typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
@@ -58,136 +31,67 @@ function getUserId(req: Request): string {
   return bodyValue || queryValue || headerValue || 'anonymous';
 }
 
-function getUserState(userId: string): UserState {
-  const existing = userStore.get(userId);
-  if (existing) return existing;
-
-  const initial: UserState = {
-    memory: {},
-    history: [],
-  };
-  userStore.set(userId, initial);
-  return initial;
-}
-
-function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function levenshteinSimilarity(a: string, b: string): number {
-  if (!a && !b) return 1;
-  if (!a || !b) return 0;
-
-  const matrix: number[][] = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-  for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i;
-  for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j;
-
-  for (let i = 1; i <= a.length; i += 1) {
-    for (let j = 1; j <= b.length; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
-    }
+router.get('/words', async (_req: Request, res: Response) => {
+  const bridge = await getCanonicalWords();
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể lấy danh sách từ từ canonical Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
   }
 
-  const distance = matrix[a.length][b.length];
-  return Math.max(0, 1 - distance / Math.max(a.length, b.length));
-}
-
-function scorePronunciation(targetWord: string, recognizedText: string): { score: number; feedback: string; recognized: string } {
-  const target = normalizeText(targetWord);
-  const recognized = normalizeText(recognizedText);
-
-  if (!recognized) {
-    return {
-      score: 0,
-      recognized,
-      feedback: 'Chưa nhận được gì. Hãy nói rõ hơn và thử lại.',
-    };
-  }
-
-  const charScore = Math.round(levenshteinSimilarity(target, recognized) * 100);
-  const endingScore = Math.round(levenshteinSimilarity(target.slice(-2), recognized.slice(-2)) * 100);
-  const score = Math.round(charScore * 0.7 + endingScore * 0.3);
-
-  let feedback = 'Cần luyện thêm âm cuối và độ rõ.';
-  if (score >= 90) feedback = 'Rất tốt. Phát âm gần như chính xác.';
-  else if (score >= 70) feedback = 'Gần đúng. Thử chậm và rõ âm cuối hơn.';
-  else if (score >= 50) feedback = 'Tạm ổn. Cần điều chỉnh độ rõ và nhịp.';
-
-  return { score, feedback, recognized };
-}
-
-function chooseQuizItem(memory: Record<string, number>): { item: WordItem; choices: string[] } {
-  const sorted = [...WORD_BANK].sort((a, b) => (memory[a.word] ?? 0) - (memory[b.word] ?? 0));
-  const candidatePool = sorted.slice(0, Math.min(8, sorted.length));
-  const target = candidatePool[Math.floor(Math.random() * candidatePool.length)] ?? WORD_BANK[0];
-
-  const distractors = WORD_BANK
-    .filter((item) => item.word !== target.word)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3)
-    .map((item) => item.meaningVi);
-
-  const choices = [...distractors, target.meaningVi].sort(() => Math.random() - 0.5);
-  return { item: target, choices };
-}
-
-function buildProgress(state: UserState): {
-  learned: number;
-  avgMemoryPercent: number;
-  attempts: number;
-  avgPronunciationScore: number;
-} {
-  const values = Object.values(state.memory);
-  const avgMemory = values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-  const learned = values.filter((value) => value >= 0.6).length;
-  const attempts = state.history.length;
-  const avgPronunciationScore = attempts > 0
-    ? Math.round(state.history.reduce((sum, row) => sum + row.score, 0) / attempts)
-    : 0;
-
-  return {
-    learned,
-    avgMemoryPercent: Math.round(avgMemory * 100),
-    attempts,
-    avgPronunciationScore,
-  };
-}
-
-router.get('/words', (_req: Request, res: Response) => {
+  const words = Array.isArray(bridge.data?.words) ? bridge.data.words as WordItem[] : [];
   res.json({
     success: true,
-    data: WORD_BANK,
+    data: words,
   });
 });
 
-router.get('/quiz/next', (req: Request, res: Response) => {
+router.get('/quiz/next', async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const state = getUserState(userId);
-  const quiz = chooseQuizItem(state.memory);
+  const mode = req.query.mode === 'review' ? 'review' : 'learn';
+  const bridge = await getCanonicalQuizNext(mode);
+
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể lấy quiz canonical từ Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
+  }
+
+  const quiz = bridge.data?.quiz;
+  if (!quiz?.item || !Array.isArray(quiz?.choices)) {
+    return res.json({
+      success: true,
+      data: {
+        userId,
+        item: null,
+        choices: [],
+        memoryStrength: 0,
+        progress: normalizeProgress(bridge.data?.progress),
+      },
+    });
+  }
 
   res.json({
     success: true,
     data: {
       userId,
-      ...quiz,
-      memoryStrength: state.memory[quiz.item.word] ?? 0,
-      progress: buildProgress(state),
+      item: {
+        word: String(quiz.item.word),
+        meaningVi: String(quiz.item.meaningVi),
+      },
+      choices: quiz.choices,
+      memoryStrength: Number(bridge.data?.memoryStrength || 0),
+      progress: normalizeProgress(bridge.data?.progress),
     },
   });
 });
 
-router.post('/quiz/answer', (req: Request, res: Response) => {
+router.post('/quiz/answer', async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const state = getUserState(userId);
 
   const word = typeof req.body?.word === 'string' ? req.body.word.trim() : '';
   const selectedMeaning = typeof req.body?.selectedMeaning === 'string' ? req.body.selectedMeaning.trim() : '';
@@ -199,34 +103,33 @@ router.post('/quiz/answer', (req: Request, res: Response) => {
     });
   }
 
-  const item = WORD_BANK.find((entry) => entry.word === word);
-  if (!item) {
-    return res.status(404).json({
+  const bridge = await submitCanonicalQuizAnswer({
+    word,
+    selectedMeaning,
+  });
+
+  if (!bridge.ok) {
+    return res.status(502).json({
       success: false,
-      message: 'Không tìm thấy từ cần chấm quiz.',
+      message: bridge.message || 'Không thể chấm quiz theo canonical Python.',
+      data: { mode: bridge.mode || 'error' },
     });
   }
-
-  const isCorrect = item.meaningVi === selectedMeaning;
-  const current = state.memory[word] ?? 0;
-  const next = Math.max(0, Math.min(1, current + (isCorrect ? 0.2 : -0.3)));
-  state.memory[word] = next;
 
   return res.json({
     success: true,
     data: {
       userId,
-      isCorrect,
-      memoryStrength: next,
-      message: isCorrect ? 'Đúng rồi. + memory strength' : 'Chưa đúng. - memory strength',
-      progress: buildProgress(state),
+      isCorrect: Boolean(bridge.data?.isCorrect),
+      memoryStrength: Number(bridge.data?.memoryStrength || 0),
+      message: String(bridge.data?.message || ''),
+      progress: normalizeProgress(bridge.data?.progress),
     },
   });
 });
 
-router.post('/pronunciation/score', (req: Request, res: Response) => {
+router.post('/pronunciation/score', async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const state = getUserState(userId);
 
   const targetWord = typeof req.body?.targetWord === 'string' ? req.body.targetWord.trim() : '';
   const recognizedText = typeof req.body?.recognizedText === 'string' ? req.body.recognizedText : '';
@@ -238,36 +141,33 @@ router.post('/pronunciation/score', (req: Request, res: Response) => {
     });
   }
 
-  const scored = scorePronunciation(targetWord, recognizedText);
-  const row: PronunciationHistoryItem = {
-    at: new Date().toISOString(),
-    word: targetWord,
-    score: scored.score,
-    recognized: scored.recognized,
-    feedback: scored.feedback,
-  };
+  const bridge = await scoreCanonicalPronunciation({
+    targetWord,
+    recognizedText,
+    transcriptionModel: 'manual',
+  });
 
-  state.history = [row, ...state.history].slice(0, 100);
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể chấm pronunciation theo canonical Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
+  }
 
   return res.json({
     success: true,
     data: {
       userId,
-      result: {
-        target: normalizeText(targetWord),
-        recognized: scored.recognized,
-        score: scored.score,
-        feedback: scored.feedback,
-      },
-      history: state.history.slice(0, 20),
-      progress: buildProgress(state),
+      result: bridge.data?.result,
+      history: normalizeHistory(bridge.data?.history),
+      progress: normalizeProgress(bridge.data?.progress),
     },
   });
 });
 
 router.post('/pronunciation/transcribe-score', upload.single('audio'), async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const state = getUserState(userId);
 
   const targetWord = typeof req.body?.targetWord === 'string' ? req.body.targetWord.trim() : '';
   if (!targetWord) {
@@ -301,15 +201,19 @@ router.post('/pronunciation/transcribe-score', upload.single('audio'), async (re
     });
   }
 
-  const scored = scorePronunciation(targetWord, bridge.text);
-  const row: PronunciationHistoryItem = {
-    at: new Date().toISOString(),
-    word: targetWord,
-    score: scored.score,
-    recognized: scored.recognized,
-    feedback: scored.feedback,
-  };
-  state.history = [row, ...state.history].slice(0, 100);
+  const scored = await scoreCanonicalPronunciation({
+    targetWord,
+    recognizedText: bridge.text,
+    transcriptionModel: `whisper:${typeof req.body?.model === 'string' ? req.body.model : 'base'}`,
+  });
+
+  if (!scored.ok) {
+    return res.status(502).json({
+      success: false,
+      message: scored.message || 'Không thể chấm điểm canonical sau khi transcribe.',
+      data: { mode: scored.mode || 'error' },
+    });
+  }
 
   return res.json({
     success: true,
@@ -319,43 +223,184 @@ router.post('/pronunciation/transcribe-score', upload.single('audio'), async (re
         text: bridge.text,
         mode: bridge.mode,
       },
-      result: {
-        target: normalizeText(targetWord),
-        recognized: scored.recognized,
-        score: scored.score,
-        feedback: scored.feedback,
-      },
-      history: state.history.slice(0, 20),
-      progress: buildProgress(state),
+      result: scored.data?.result,
+      history: normalizeHistory(scored.data?.history),
+      progress: normalizeProgress(scored.data?.progress),
     },
   });
 });
 
-router.get('/history', (req: Request, res: Response) => {
+router.get('/history', async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const state = getUserState(userId);
   const limitRaw = typeof req.query.limit === 'string' ? Number(req.query.limit) : 20;
   const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.floor(limitRaw))) : 20;
 
+  const bridge = await getCanonicalHistory(limit);
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể lấy history canonical từ Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
+  }
+
   res.json({
     success: true,
     data: {
       userId,
-      history: state.history.slice(0, limit),
+      history: normalizeHistory(bridge.data?.history),
     },
   });
 });
 
-router.get('/progress', (req: Request, res: Response) => {
+router.get('/progress', async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const state = getUserState(userId);
+  const bridge = await getCanonicalProgress();
+
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể lấy progress canonical từ Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
+  }
 
   res.json({
     success: true,
     data: {
       userId,
-      progress: buildProgress(state),
-      memory: state.memory,
+      progress: normalizeProgress(bridge.data?.progress),
+      memory: bridge.data?.memory || {},
+    },
+  });
+});
+
+router.get('/phase2/status', async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const lessonSizeRaw = typeof req.query.lessonSize === 'string' ? Number(req.query.lessonSize) : 10;
+  const phraseLimitRaw = typeof req.query.phraseLimitPerWord === 'string' ? Number(req.query.phraseLimitPerWord) : 2;
+  const grammarLimitRaw = typeof req.query.grammarLimit === 'string' ? Number(req.query.grammarLimit) : 5;
+
+  const lessonSize = Number.isFinite(lessonSizeRaw) ? Math.max(5, Math.min(15, Math.floor(lessonSizeRaw))) : 10;
+  const phraseLimitPerWord = Number.isFinite(phraseLimitRaw) ? Math.max(1, Math.min(3, Math.floor(phraseLimitRaw))) : 2;
+  const grammarLimit = Number.isFinite(grammarLimitRaw) ? Math.max(1, Math.min(8, Math.floor(grammarLimitRaw))) : 5;
+
+  const bridge = await getCanonicalPhase2Status({
+    lessonSize,
+    phraseLimitPerWord,
+    grammarLimit,
+  });
+
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể lấy phase2 status canonical từ Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
+  }
+
+  const phase2Flow = bridge.data?.phase2Flow || {
+    stage: 'foundation',
+    phraseUnlocked: false,
+    grammarUnlocked: false,
+    thresholds: { phraseUnlockMin: 0.45, grammarUnlockMin: 0.5 },
+    signals: { lexicalLevel: 0, grammarReadinessProxy: 0, unlockedSkills: 0 },
+  };
+
+  res.json({
+    success: true,
+    data: {
+      userId,
+      phase2Flow,
+      appliedLimits: bridge.data?.appliedLimits || {
+        phraseLimitPerWord,
+        grammarLimit,
+      },
+      homeSummary: bridge.data?.homeSummary || {},
+      telemetry: {
+        source: 'canonical-python',
+        endpoint: 'phase2-status',
+        fetchedAt: new Date().toISOString(),
+        requested: {
+          lessonSize,
+          phraseLimitPerWord,
+          grammarLimit,
+        },
+      },
+    },
+  });
+});
+
+router.get('/phase2/home', async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const lessonSizeRaw = typeof req.query.lessonSize === 'string' ? Number(req.query.lessonSize) : 10;
+  const phraseLimitRaw = typeof req.query.phraseLimitPerWord === 'string' ? Number(req.query.phraseLimitPerWord) : 2;
+  const grammarLimitRaw = typeof req.query.grammarLimit === 'string' ? Number(req.query.grammarLimit) : 5;
+
+  const lessonSize = Number.isFinite(lessonSizeRaw) ? Math.max(5, Math.min(15, Math.floor(lessonSizeRaw))) : 10;
+  const phraseLimitPerWord = Number.isFinite(phraseLimitRaw) ? Math.max(1, Math.min(3, Math.floor(phraseLimitRaw))) : 2;
+  const grammarLimit = Number.isFinite(grammarLimitRaw) ? Math.max(1, Math.min(8, Math.floor(grammarLimitRaw))) : 5;
+
+  const bridge = await getCanonicalPhase2Home({
+    lessonSize,
+    phraseLimitPerWord,
+    grammarLimit,
+  });
+
+  if (!bridge.ok) {
+    return res.status(502).json({
+      success: false,
+      message: bridge.message || 'Không thể lấy phase2 home canonical từ Python.',
+      data: { mode: bridge.mode || 'error' },
+    });
+  }
+
+  const fallbackPhase2Home = {
+    home: {
+      lesson: {},
+      skills: [],
+      summary: {},
+    },
+    phrasePack: {
+      items: [],
+      summary: {
+        requestedWords: 0,
+        coveredWords: 0,
+        seededItems: 0,
+        fallbackItems: 0,
+      },
+    },
+    grammarPack: {
+      unlockLevels: ['all', 'core'],
+      items: [],
+      summary: {
+        count: 0,
+        seededItems: 0,
+      },
+    },
+    adaptiveProfile: {
+      current: {},
+      previous: null,
+      delta: {},
+      meta: {},
+    },
+  };
+
+  res.json({
+    success: true,
+    data: {
+      userId,
+      phase2Home: bridge.data?.phase2Home || fallbackPhase2Home,
+      telemetry: {
+        source: 'canonical-python',
+        endpoint: 'phase2-home',
+        fetchedAt: new Date().toISOString(),
+        requested: {
+          lessonSize,
+          phraseLimitPerWord,
+          grammarLimit,
+        },
+      },
     },
   });
 });

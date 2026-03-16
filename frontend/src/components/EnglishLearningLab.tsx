@@ -1,59 +1,80 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { apiService } from '../services/apiService';
+import {
+  DEFAULT_PROGRESS,
+  normalizeHistory,
+  normalizeProgress,
+  normalizePronunciationResult,
+  type HistoryItem,
+  type ProgressState,
+  type PronunciationState,
+} from './englishLabPayload';
 
 type WordItem = {
   word: string;
   meaningVi: string;
 };
 
-type MemoryMap = Record<string, number>;
-
 type QuizState = {
   item: WordItem;
   choices: string[];
 };
 
-type ProgressState = {
-  learned: number;
-  avgMemoryPercent: number;
-  attempts: number;
-  avgPronunciationScore: number;
+type Phase2FlowState = {
+  stage: 'foundation' | 'phrase' | 'grammar';
+  phraseUnlocked: boolean;
+  grammarUnlocked: boolean;
+  thresholds: {
+    phraseUnlockMin: number;
+    grammarUnlockMin: number;
+  };
+  signals: {
+    lexicalLevel: number;
+    grammarReadinessProxy: number;
+    unlockedSkills: number;
+  };
 };
 
-type PronunciationState = {
-  target: string;
-  recognized: string;
-  score: number;
-  feedback: string;
+type Phase2HomePreviewState = {
+  phraseCount: number;
+  grammarCount: number;
+  phraseLocked: boolean;
+  grammarLocked: boolean;
+  topPhrases: Array<{ sourceWord: string; phrase: string }>;
+  topGrammar: Array<{ pattern: string; exampleSentence: string }>;
 };
 
-const WORD_BANK: WordItem[] = [
-  { word: 'trust', meaningVi: 'tin tưởng' },
-  { word: 'hope', meaningVi: 'hy vọng' },
-  { word: 'fear', meaningVi: 'sợ hãi' },
-  { word: 'care', meaningVi: 'quan tâm' },
-  { word: 'love', meaningVi: 'tình yêu' },
-  { word: 'friend', meaningVi: 'bạn bè' },
-  { word: 'family', meaningVi: 'gia đình' },
-  { word: 'support', meaningVi: 'hỗ trợ' },
-  { word: 'respect', meaningVi: 'tôn trọng' },
-  { word: 'listen', meaningVi: 'lắng nghe' },
-  { word: 'speak', meaningVi: 'nói' },
-  { word: 'understand', meaningVi: 'thấu hiểu' },
-  { word: 'practice', meaningVi: 'luyện tập' },
-  { word: 'review', meaningVi: 'ôn tập' },
-  { word: 'focus', meaningVi: 'tập trung' },
-  { word: 'balance', meaningVi: 'cân bằng' },
-  { word: 'growth', meaningVi: 'phát triển' },
-  { word: 'progress', meaningVi: 'tiến bộ' },
-  { word: 'healing', meaningVi: 'chữa lành' },
-  { word: 'calm', meaningVi: 'bình tĩnh' },
-];
-
-const STORAGE_MEMORY_KEY = 'lexical.frontend.memory';
 const STORAGE_HISTORY_KEY = 'lexical.frontend.pronunciationHistory';
 const STORAGE_USER_KEY = 'lexical.frontend.userId';
+const EMPTY_QUIZ: QuizState = {
+  item: { word: '', meaningVi: '' },
+  choices: [],
+};
+
+const DEFAULT_PHASE2_FLOW: Phase2FlowState = {
+  stage: 'foundation',
+  phraseUnlocked: false,
+  grammarUnlocked: false,
+  thresholds: {
+    phraseUnlockMin: 0.45,
+    grammarUnlockMin: 0.5,
+  },
+  signals: {
+    lexicalLevel: 0,
+    grammarReadinessProxy: 0,
+    unlockedSkills: 0,
+  },
+};
+
+const DEFAULT_PHASE2_HOME_PREVIEW: Phase2HomePreviewState = {
+  phraseCount: 0,
+  grammarCount: 0,
+  phraseLocked: true,
+  grammarLocked: true,
+  topPhrases: [],
+  topGrammar: [],
+};
 
 const Page = styled.div`
   min-height: 100vh;
@@ -155,10 +176,10 @@ const Button = styled.button`
   }
 `;
 
-const ChoiceButton = styled(Button)<{ isCorrect?: boolean; isWrong?: boolean }>`
-  background: ${props => (props.isCorrect ? '#2e8b57' : props.isWrong ? '#b33636' : '#e9f0f8')};
-  color: ${props => (props.isCorrect || props.isWrong ? '#ffffff' : '#22364f')};
-  border: 1px solid ${props => (props.isCorrect ? '#2e8b57' : props.isWrong ? '#b33636' : '#c8d6e6')};
+const ChoiceButton = styled(Button)<{ $isCorrect?: boolean; $isWrong?: boolean }>`
+  background: ${props => (props.$isCorrect ? '#2e8b57' : props.$isWrong ? '#b33636' : '#e9f0f8')};
+  color: ${props => (props.$isCorrect || props.$isWrong ? '#ffffff' : '#22364f')};
+  border: 1px solid ${props => (props.$isCorrect ? '#2e8b57' : props.$isWrong ? '#b33636' : '#c8d6e6')};
   text-align: left;
   width: calc(50% - 0.25rem);
 
@@ -176,10 +197,44 @@ const SmallTop = styled(Small)`
   margin-top: 0.5rem;
 `;
 
-const Score = styled.div<{ positive?: boolean }>`
+const Phase2Banner = styled.div`
+  margin: 0.7rem 0 1rem 0;
+  padding: 0.7rem 0.9rem;
+  background: #f1f7ff;
+  border: 1px solid #cfe0f5;
+  border-radius: 12px;
+`;
+
+const StageBadge = styled.span<{ $stage: 'foundation' | 'phrase' | 'grammar' }>`
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.22rem 0.56rem;
+  color: #fff;
+  background: ${props => (
+    props.$stage === 'grammar' ? '#226f43'
+    : props.$stage === 'phrase' ? '#1f5c8a'
+    : '#7a4e1f'
+  )};
+`;
+
+const MiniList = styled.ul`
+  margin: 0.35rem 0 0 1rem;
+  padding: 0;
+`;
+
+const MiniItem = styled.li`
+  color: #445a70;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  margin: 0.18rem 0;
+`;
+
+const Score = styled.div<{ $positive?: boolean }>`
   margin-top: 0.6rem;
   font-weight: 700;
-  color: ${props => (props.positive ? '#226f43' : '#8b2d2d')};
+  color: ${props => (props.$positive ? '#226f43' : '#8b2d2d')};
 `;
 
 const Input = styled.input`
@@ -219,121 +274,135 @@ const HistoryRow = styled.div`
   padding: 0.3rem 0;
 `;
 
-function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function similarityRatio(a: string, b: string): number {
-  if (!a && !b) return 1;
-  if (!a || !b) return 0;
-
-  const dp: number[][] = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-  for (let i = 0; i <= a.length; i += 1) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j += 1) dp[0][j] = j;
-
-  for (let i = 1; i <= a.length; i += 1) {
-    for (let j = 1; j <= b.length; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost,
-      );
-    }
-  }
-
-  const dist = dp[a.length][b.length];
-  return Math.max(0, 1 - dist / Math.max(a.length, b.length));
-}
-
-function pronunciationScore(targetWord: string, recognizedText: string): PronunciationState {
-  const target = normalizeText(targetWord);
-  const recognized = normalizeText(recognizedText);
-
-  if (!recognized) {
-    return {
-      target,
-      recognized,
-      score: 0,
-      feedback: 'Chưa nhận được gì. Hãy nói rõ hơn và thử lại.',
-    };
-  }
-
-  const charScore = Math.round(similarityRatio(target, recognized) * 100);
-  const targetEnding = target.slice(-2);
-  const recognizedEnding = recognized.slice(-2);
-  const endingScore = Math.round(similarityRatio(targetEnding, recognizedEnding) * 100);
-  const score = Math.round(charScore * 0.7 + endingScore * 0.3);
-
-  let feedback = 'Cần luyện thêm âm cuối và độ rõ.';
-  if (score >= 90) feedback = 'Rất tốt. Phát âm gần như chính xác.';
-  else if (score >= 70) feedback = 'Gần đúng. Thử chậm và rõ âm cuối hơn.';
-  else if (score >= 50) feedback = 'Tạm ổn. Cần điều chỉnh độ rõ và nhịp.';
-
-  return { target, recognized, score, feedback };
-}
-
-function chooseQuizItem(memory: MemoryMap): QuizState {
-  const sorted = [...WORD_BANK].sort((a, b) => (memory[a.word] ?? 0) - (memory[b.word] ?? 0));
-  const target = sorted[Math.floor(Math.random() * Math.min(8, sorted.length))] ?? WORD_BANK[0];
-  const distractors = WORD_BANK.filter(w => w.word !== target.word)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3)
-    .map(w => w.meaningVi);
-
-  const choices = [...distractors, target.meaningVi].sort(() => Math.random() - 0.5);
-  return { item: target, choices };
-}
-
 const EnglishLearningLab: React.FC = () => {
-  const [memoryMap, setMemoryMap] = useState<MemoryMap>({});
-  const [quiz, setQuiz] = useState<QuizState>(() => chooseQuizItem({}));
+  const [quiz, setQuiz] = useState<QuizState>(EMPTY_QUIZ);
   const [selected, setSelected] = useState<string>('');
   const [quizMessage, setQuizMessage] = useState<string>('');
   const [micReady, setMicReady] = useState<boolean>(false);
   const [manualText, setManualText] = useState<string>('');
   const [pronResult, setPronResult] = useState<PronunciationState | null>(null);
-  const [history, setHistory] = useState<Array<{ at: string; word: string; score: number; recognized: string }>>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isRecognizing, setIsRecognizing] = useState<boolean>(false);
   const [isBackendRecording, setIsBackendRecording] = useState<boolean>(false);
   const [bridgeStatus, setBridgeStatus] = useState<string>('');
   const [userId, setUserId] = useState<string>('anonymous');
-  const [apiMode, setApiMode] = useState<boolean>(true);
-  const [remoteProgress, setRemoteProgress] = useState<ProgressState>({
-    learned: 0,
-    avgMemoryPercent: 0,
-    attempts: 0,
-    avgPronunciationScore: 0,
-  });
+  const [practiceTarget, setPracticeTarget] = useState<string>('');
+  const [remoteProgress, setRemoteProgress] = useState<ProgressState>(DEFAULT_PROGRESS);
+  const [phase2Flow, setPhase2Flow] = useState<Phase2FlowState>(DEFAULT_PHASE2_FLOW);
+  const [phase2HomePreview, setPhase2HomePreview] = useState<Phase2HomePreviewState>(DEFAULT_PHASE2_HOME_PREVIEW);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+
+  const applyProgress = (prog: any) => {
+    setRemoteProgress(normalizeProgress(prog));
+  };
+
+  const applyHistory = (remoteHistory: any) => {
+    const normalized = normalizeHistory(remoteHistory);
+    setHistory(normalized);
+    localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
+  };
+
+  const applyPronunciationResult = (remoteResult: any) => {
+    const normalized = normalizePronunciationResult(remoteResult);
+    if (normalized) {
+      setPronResult(normalized);
+    }
+  };
+
+  const normalizePhase2Flow = (raw: any): Phase2FlowState => {
+    if (!raw || typeof raw !== 'object') {
+      return { ...DEFAULT_PHASE2_FLOW };
+    }
+
+    const stageRaw = String(raw.stage || '').toLowerCase();
+    const stage: 'foundation' | 'phrase' | 'grammar' =
+      stageRaw === 'grammar' ? 'grammar' : stageRaw === 'phrase' ? 'phrase' : 'foundation';
+
+    return {
+      stage,
+      phraseUnlocked: Boolean(raw.phraseUnlocked),
+      grammarUnlocked: Boolean(raw.grammarUnlocked),
+      thresholds: {
+        phraseUnlockMin: Number(raw?.thresholds?.phraseUnlockMin || 0.45),
+        grammarUnlockMin: Number(raw?.thresholds?.grammarUnlockMin || 0.5),
+      },
+      signals: {
+        lexicalLevel: Number(raw?.signals?.lexicalLevel || 0),
+        grammarReadinessProxy: Number(raw?.signals?.grammarReadinessProxy || 0),
+        unlockedSkills: Number(raw?.signals?.unlockedSkills || 0),
+      },
+    };
+  };
+
+  const stageLabel = (stage: 'foundation' | 'phrase' | 'grammar'): string => {
+    if (stage === 'grammar') return 'Grammar';
+    if (stage === 'phrase') return 'Phrase';
+    return 'Foundation';
+  };
+
+  const fetchPhase2Pair = async (targetUserId: string, retries = 1) => {
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        const [statusRes, homeRes] = await Promise.all([
+          apiService.getEnglishLabPhase2Status(targetUserId),
+          apiService.getEnglishLabPhase2Home(targetUserId),
+        ]);
+        return { statusRes, homeRes };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
+  };
+
+  const normalizePhase2HomePreview = (raw: any): Phase2HomePreviewState => {
+    if (!raw || typeof raw !== 'object') {
+      return { ...DEFAULT_PHASE2_HOME_PREVIEW };
+    }
+
+    const phraseItems = Array.isArray(raw?.phrasePack?.items) ? raw.phrasePack.items : [];
+    const grammarItems = Array.isArray(raw?.grammarPack?.items) ? raw.grammarPack.items : [];
+    const phraseLocked = Boolean(raw?.phrasePack?.summary?.locked);
+    const grammarLocked = Boolean(raw?.grammarPack?.summary?.locked);
+    const topPhrases = phraseItems.slice(0, 3).map((item: any) => ({
+      sourceWord: String(item?.sourceWord || ''),
+      phrase: String(item?.phrase || ''),
+    }));
+    const topGrammar = grammarItems.slice(0, 3).map((item: any) => ({
+      pattern: String(item?.pattern || ''),
+      exampleSentence: String(item?.exampleSentence || ''),
+    }));
+
+    return {
+      phraseCount: phraseItems.length,
+      grammarCount: grammarItems.length,
+      phraseLocked,
+      grammarLocked,
+      topPhrases,
+      topGrammar,
+    };
+  };
+
+  const refreshPhase2Status = async (targetUserId: string) => {
+    try {
+      const { statusRes, homeRes } = await fetchPhase2Pair(targetUserId, 1);
+      const flow = normalizePhase2Flow(statusRes.data?.data?.phase2Flow);
+      const preview = normalizePhase2HomePreview(homeRes.data?.data?.phase2Home);
+      setPhase2Flow(flow);
+      setPhase2HomePreview(preview);
+    } catch {
+      // Keep current UI state when phase2 status endpoint is temporarily unavailable.
+    }
+  };
 
   useEffect(() => {
     const existingUserId = localStorage.getItem(STORAGE_USER_KEY);
     const finalUserId = existingUserId || `user-${Math.random().toString(36).slice(2, 10)}`;
     localStorage.setItem(STORAGE_USER_KEY, finalUserId);
     setUserId(finalUserId);
-
-    try {
-      const saved = localStorage.getItem(STORAGE_MEMORY_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as MemoryMap;
-        setMemoryMap(parsed);
-        setQuiz(chooseQuizItem(parsed));
-      }
-      const savedHistory = localStorage.getItem(STORAGE_HISTORY_KEY);
-      if (savedHistory) {
-        const parsed = JSON.parse(savedHistory) as Array<{ at: string; word: string; score: number; recognized: string }>;
-        setHistory(parsed.slice(0, 50));
-      }
-    } catch {
-      // Keep default state if localStorage parse fails.
-    }
 
     const bootstrapRemote = async () => {
       try {
@@ -342,75 +411,31 @@ const EnglishLearningLab: React.FC = () => {
           apiService.getEnglishLabProgress(finalUserId),
           apiService.getEnglishLabHistory(finalUserId, 20),
         ]);
+        const { statusRes: phase2Res, homeRes: phase2HomeRes } = await fetchPhase2Pair(finalUserId, 1);
 
         const remoteQuiz = quizRes.data?.data;
         if (remoteQuiz?.item && Array.isArray(remoteQuiz?.choices)) {
           setQuiz({ item: remoteQuiz.item, choices: remoteQuiz.choices });
-          setMemoryMap(progressRes.data?.data?.memory || {});
-          localStorage.setItem(STORAGE_MEMORY_KEY, JSON.stringify(progressRes.data?.data?.memory || {}));
+          setPracticeTarget(String(remoteQuiz.item.word || ''));
         }
 
-        const remoteHist = historyRes.data?.data?.history;
-        if (Array.isArray(remoteHist)) {
-          const normalized = remoteHist.map((row: any) => ({
-            at: String(row.at || ''),
-            word: String(row.word || ''),
-            score: Number(row.score || 0),
-            recognized: String(row.recognized || ''),
-          }));
-          setHistory(normalized);
-          localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
-        }
-
-        const prog = progressRes.data?.data?.progress;
-        if (prog) {
-          setRemoteProgress({
-            learned: Number(prog.learned || 0),
-            avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
-            attempts: Number(prog.attempts || 0),
-            avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
-          });
-        }
-
-        setApiMode(true);
-      } catch {
-        setApiMode(false);
+        applyProgress(progressRes.data?.data?.progress);
+        applyHistory(historyRes.data?.data?.history);
+        setPhase2Flow(normalizePhase2Flow(phase2Res.data?.data?.phase2Flow));
+        setPhase2HomePreview(normalizePhase2HomePreview(phase2HomeRes.data?.data?.phase2Home));
+      } catch (error: any) {
+        setBridgeStatus(error?.response?.data?.message || 'Không thể tải dữ liệu canonical từ backend.');
       }
     };
 
     void bootstrapRemote();
   }, []);
 
-  const stats = useMemo(() => {
-    const values = Object.values(memoryMap);
-    const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    const learned = values.filter(v => v >= 0.6).length;
-    return {
-      learned,
-      avg: Math.round(avg * 100),
-      attempts: history.length,
-    };
-  }, [memoryMap, history]);
-
-  const persistMemory = (next: MemoryMap) => {
-    setMemoryMap(next);
-    localStorage.setItem(STORAGE_MEMORY_KEY, JSON.stringify(next));
-  };
-
   const handleAnswer = (choice: string) => {
-    if (selected) return;
+    if (selected || !quiz.item.word) return;
 
-    const isCorrect = choice === quiz.item.meaningVi;
     setSelected(choice);
-    setQuizMessage(isCorrect ? 'Đúng rồi. + memory strength' : 'Chưa đúng. - memory strength');
-
-    const current = memoryMap[quiz.item.word] ?? 0;
-    const updated = Math.max(0, Math.min(1, current + (isCorrect ? 0.2 : -0.3)));
-    const nextMap = { ...memoryMap, [quiz.item.word]: updated };
-    persistMemory(nextMap);
-
     const syncRemote = async () => {
-      if (!apiMode) return;
       try {
         const res = await apiService.submitEnglishLabQuizAnswer({
           userId,
@@ -420,18 +445,10 @@ const EnglishLearningLab: React.FC = () => {
 
         const message = String(res.data?.data?.message || '');
         if (message) setQuizMessage(message);
-
-        const prog = res.data?.data?.progress;
-        if (prog) {
-          setRemoteProgress({
-            learned: Number(prog.learned || 0),
-            avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
-            attempts: Number(prog.attempts || 0),
-            avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
-          });
-        }
-      } catch {
-        setApiMode(false);
+        applyProgress(res.data?.data?.progress);
+        await refreshPhase2Status(userId);
+      } catch (error: any) {
+        setBridgeStatus(error?.response?.data?.message || 'Không thể gửi câu trả lời canonical.');
       }
     };
 
@@ -442,19 +459,18 @@ const EnglishLearningLab: React.FC = () => {
     setSelected('');
     setQuizMessage('');
 
-    const localNext = chooseQuizItem(memoryMap);
-    setQuiz(localNext);
-
     const fetchRemoteNext = async () => {
-      if (!apiMode) return;
       try {
         const res = await apiService.getEnglishLabNextQuiz(userId);
         const payload = res.data?.data;
         if (payload?.item && Array.isArray(payload?.choices)) {
           setQuiz({ item: payload.item, choices: payload.choices });
+          setPracticeTarget(String(payload.item.word || ''));
         }
-      } catch {
-        setApiMode(false);
+        applyProgress(payload?.progress);
+        await refreshPhase2Status(userId);
+      } catch (error: any) {
+        setBridgeStatus(error?.response?.data?.message || 'Không thể tải quiz canonical tiếp theo.');
       }
     };
 
@@ -463,7 +479,8 @@ const EnglishLearningLab: React.FC = () => {
 
   const speakWord = (rate: number) => {
     if (!window.speechSynthesis) return;
-    const utter = new SpeechSynthesisUtterance(quiz.item.word);
+    const target = practiceTarget || quiz.item.word;
+    const utter = new SpeechSynthesisUtterance(target);
     utter.lang = 'en-US';
     utter.rate = rate;
     window.speechSynthesis.cancel();
@@ -486,60 +503,27 @@ const EnglishLearningLab: React.FC = () => {
   };
 
   const savePronunciationResult = (recognized: string) => {
-    const result = pronunciationScore(quiz.item.word, recognized);
-    setPronResult(result);
-    const row = {
-      at: new Date().toISOString(),
-      word: quiz.item.word,
-      score: result.score,
-      recognized: result.recognized,
-    };
-    const next = [row, ...history].slice(0, 50);
-    setHistory(next);
-    localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(next));
-
     const syncRemote = async () => {
-      if (!apiMode) return;
       try {
+        const targetWord = (practiceTarget || quiz.item.word || '').trim();
+        if (!targetWord) {
+          setBridgeStatus('Chưa có target để chấm pronunciation.');
+          return;
+        }
         const res = await apiService.scoreEnglishLabPronunciation({
           userId,
-          targetWord: quiz.item.word,
+          targetWord,
           recognizedText: recognized,
         });
 
         const remoteResult = res.data?.data?.result;
-        if (remoteResult) {
-          setPronResult({
-            target: String(remoteResult.target || ''),
-            recognized: String(remoteResult.recognized || ''),
-            score: Number(remoteResult.score || 0),
-            feedback: String(remoteResult.feedback || ''),
-          });
-        }
+        applyPronunciationResult(remoteResult);
 
-        const remoteHistory = res.data?.data?.history;
-        if (Array.isArray(remoteHistory)) {
-          const normalized = remoteHistory.map((item: any) => ({
-            at: String(item.at || ''),
-            word: String(item.word || ''),
-            score: Number(item.score || 0),
-            recognized: String(item.recognized || ''),
-          }));
-          setHistory(normalized);
-          localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
-        }
-
-        const prog = res.data?.data?.progress;
-        if (prog) {
-          setRemoteProgress({
-            learned: Number(prog.learned || 0),
-            avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
-            attempts: Number(prog.attempts || 0),
-            avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
-          });
-        }
-      } catch {
-        setApiMode(false);
+        applyHistory(res.data?.data?.history);
+        applyProgress(res.data?.data?.progress);
+        await refreshPhase2Status(userId);
+      } catch (error: any) {
+        setBridgeStatus(error?.response?.data?.message || 'Không thể chấm pronunciation canonical.');
       }
     };
 
@@ -588,17 +572,17 @@ const EnglishLearningLab: React.FC = () => {
   };
 
   const startBackendRecording = async () => {
-    if (!apiMode) {
-      setBridgeStatus('Bridge chỉ hoạt động khi backend API sẵn sàng.');
-      return;
-    }
-
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setBridgeStatus('Trình duyệt không hỗ trợ MediaRecorder/getUserMedia.');
       return;
     }
 
     try {
+      const targetWord = (practiceTarget || quiz.item.word || '').trim();
+      if (!targetWord) {
+        setBridgeStatus('Chưa có target để ghi âm/chấm điểm.');
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       chunksRef.current = [];
@@ -633,44 +617,23 @@ const EnglishLearningLab: React.FC = () => {
         try {
           const res = await apiService.transcribeAndScoreEnglishLab({
             userId,
-            targetWord: quiz.item.word,
+            targetWord,
             audioBlob,
             model: 'base',
             language: 'en',
           });
 
           const remoteResult = res.data?.data?.result;
-          if (remoteResult) {
-            setPronResult({
-              target: String(remoteResult.target || ''),
-              recognized: String(remoteResult.recognized || ''),
-              score: Number(remoteResult.score || 0),
-              feedback: String(remoteResult.feedback || ''),
-            });
+          const normalizedResult = normalizePronunciationResult(remoteResult);
+          if (normalizedResult) {
+            setPronResult(normalizedResult);
             setManualText(String(remoteResult.recognized || ''));
           }
 
           const remoteHistory = res.data?.data?.history;
-          if (Array.isArray(remoteHistory)) {
-            const normalized = remoteHistory.map((item: any) => ({
-              at: String(item.at || ''),
-              word: String(item.word || ''),
-              score: Number(item.score || 0),
-              recognized: String(item.recognized || ''),
-            }));
-            setHistory(normalized);
-            localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(normalized));
-          }
-
-          const prog = res.data?.data?.progress;
-          if (prog) {
-            setRemoteProgress({
-              learned: Number(prog.learned || 0),
-              avgMemoryPercent: Number(prog.avgMemoryPercent || 0),
-              attempts: Number(prog.attempts || 0),
-              avgPronunciationScore: Number(prog.avgPronunciationScore || 0),
-            });
-          }
+          applyHistory(remoteHistory);
+          applyProgress(res.data?.data?.progress);
+          await refreshPhase2Status(userId);
 
           const transcribed = String(res.data?.data?.transcription?.text || '');
           setBridgeStatus(`Bridge OK: ${transcribed || '(rỗng)'}`);
@@ -701,6 +664,74 @@ const EnglishLearningLab: React.FC = () => {
           Bạn có thể test trực tiếp trên frontend: Quiz + Memory + Audio + Mic + Speech-to-text + Score.
         </SubTitle>
 
+        <Phase2Banner>
+          <Small>
+            Phase-2 Canonical Stage: <StageBadge $stage={phase2Flow.stage}>{stageLabel(phase2Flow.stage)}</StageBadge>
+          </Small>
+          <Small>
+            Phrase: {phase2Flow.phraseUnlocked ? 'Unlocked' : 'Locked'} | Grammar: {phase2Flow.grammarUnlocked ? 'Unlocked' : 'Locked'}
+          </Small>
+          <Small>
+            Phrase pack: {phase2HomePreview.phraseCount} {phase2HomePreview.phraseLocked ? '(locked)' : '(ready)'}
+            {' | '}Grammar pack: {phase2HomePreview.grammarCount} {phase2HomePreview.grammarLocked ? '(locked)' : '(ready)'}
+          </Small>
+          {phase2HomePreview.topPhrases.length > 0 && (
+            <>
+              <Small>Top phrase drills:</Small>
+              <MiniList>
+                {phase2HomePreview.topPhrases.map(item => (
+                  <MiniItem key={`${item.sourceWord}:${item.phrase}`}>
+                    {item.sourceWord}: {item.phrase}
+                  </MiniItem>
+                ))}
+              </MiniList>
+              {phase2Flow.phraseUnlocked ? (
+                <RowTopXs>
+                  {phase2HomePreview.topPhrases.map(item => (
+                    <Button key={`practice-${item.sourceWord}-${item.phrase}`} onClick={() => setPracticeTarget(item.phrase)}>
+                      Luyện: {item.phrase}
+                    </Button>
+                  ))}
+                </RowTopXs>
+              ) : (
+                <Small>Phrase drills sẽ mở khi lexicalLevel đạt ngưỡng canonical.</Small>
+              )}
+            </>
+          )}
+          {phase2HomePreview.topGrammar.length > 0 && (
+            <>
+              <Small>Top grammar micro:</Small>
+              <MiniList>
+                {phase2HomePreview.topGrammar.map(item => (
+                  <MiniItem key={`${item.pattern}:${item.exampleSentence}`}>
+                    {item.pattern} {item.exampleSentence ? `- ${item.exampleSentence}` : ''}
+                  </MiniItem>
+                ))}
+              </MiniList>
+              {phase2Flow.grammarUnlocked ? (
+                <RowTopXs>
+                  {phase2HomePreview.topGrammar
+                    .filter(item => Boolean(item.exampleSentence))
+                    .map(item => (
+                      <Button
+                        key={`grammar-practice-${item.pattern}-${item.exampleSentence}`}
+                        onClick={() => setPracticeTarget(item.exampleSentence)}
+                      >
+                        Luyện grammar: {item.pattern}
+                      </Button>
+                    ))}
+                </RowTopXs>
+              ) : (
+                <Small>Grammar drills sẽ mở khi grammarReadiness đạt ngưỡng canonical.</Small>
+              )}
+            </>
+          )}
+          <Small>
+            lexicalLevel: {phase2Flow.signals.lexicalLevel.toFixed(2)} / {phase2Flow.thresholds.phraseUnlockMin.toFixed(2)}
+            {' | '}grammarReadiness: {phase2Flow.signals.grammarReadinessProxy.toFixed(2)} / {phase2Flow.thresholds.grammarUnlockMin.toFixed(2)}
+          </Small>
+        </Phase2Banner>
+
         <Grid>
           <Card>
             <CardTitle>Quiz + Memory</CardTitle>
@@ -712,15 +743,15 @@ const EnglishLearningLab: React.FC = () => {
                 <ChoiceButton
                   key={choice}
                   onClick={() => handleAnswer(choice)}
-                  isCorrect={selected === choice && choice === quiz.item.meaningVi}
-                  isWrong={selected === choice && choice !== quiz.item.meaningVi}
+                  $isCorrect={selected === choice && choice === quiz.item.meaningVi}
+                  $isWrong={selected === choice && choice !== quiz.item.meaningVi}
                 >
                   {choice}
                 </ChoiceButton>
               ))}
             </Row>
 
-            <Score positive={quizMessage.startsWith('Đúng')}>{quizMessage}</Score>
+            <Score $positive={quizMessage.startsWith('Đúng')}>{quizMessage}</Score>
 
             <RowTopMd>
               <Button onClick={nextQuiz}>Câu tiếp theo</Button>
@@ -729,25 +760,25 @@ const EnglishLearningLab: React.FC = () => {
             <StatBox>
               <Kpi>
                 <Small>Số từ đã vững</Small>
-                <strong>{apiMode ? remoteProgress.learned : stats.learned}</strong>
+                <strong>{remoteProgress.learned}</strong>
               </Kpi>
               <Kpi>
                 <Small>Memory trung bình</Small>
-                <strong>{apiMode ? remoteProgress.avgMemoryPercent : stats.avg}%</strong>
+                <strong>{remoteProgress.avgMemoryPercent}%</strong>
               </Kpi>
               <Kpi>
                 <Small>Lần phát âm</Small>
-                <strong>{apiMode ? remoteProgress.attempts : stats.attempts}</strong>
+                <strong>{remoteProgress.attempts}</strong>
               </Kpi>
             </StatBox>
             <SmallTop>
-              Chế độ dữ liệu: {apiMode ? 'Backend API' : 'Local fallback'} | User: {userId}
+              Chế độ dữ liệu: Backend API canonical | User: {userId}
             </SmallTop>
           </Card>
 
           <Card>
             <CardTitle>Audio + Mic + Speech + Score</CardTitle>
-            <Word>{quiz.item.word}</Word>
+            <Word>{practiceTarget || quiz.item.word}</Word>
             <Meta>Test phát âm trực tiếp trên browser.</Meta>
 
             <Row>
@@ -768,7 +799,7 @@ const EnglishLearningLab: React.FC = () => {
 
             <RowTopSm>
               {!isBackendRecording ? (
-                <Button onClick={startBackendRecording} disabled={!apiMode}>
+                <Button onClick={startBackendRecording}>
                   Ghi âm và chấm bằng Backend Whisper
                 </Button>
               ) : (
@@ -791,7 +822,7 @@ const EnglishLearningLab: React.FC = () => {
 
             {pronResult && (
               <>
-                <Score positive={pronResult.score >= 70}>Score: {pronResult.score}/100</Score>
+                <Score $positive={pronResult.score >= 70}>Score: {pronResult.score}/100</Score>
                 <Small>Recognized: {pronResult.recognized || '(rong)'}</Small>
                 <Small>Feedback: {pronResult.feedback}</Small>
                 <Small>Avg score (API): {remoteProgress.avgPronunciationScore}</Small>

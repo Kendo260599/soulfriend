@@ -57,85 +57,6 @@ type CurriculumPayload = {
   };
 };
 
-const FALLBACK_CURRICULUM: CurriculumPayload = {
-  framework: 'IELTS-aligned Grammar and Vocabulary path for Vietnamese learners',
-  tracks: {
-    vocab: [
-      {
-        id: 'V-A1-01',
-        order: 1,
-        level: 'A1',
-        title: 'Daily routines and basic actions',
-        focus: 'High-frequency words and short phrases',
-        objective: 'Use simple words to describe common daily activities.',
-      },
-      {
-        id: 'V-A1-02',
-        order: 2,
-        level: 'A1',
-        title: 'Home, food, and shopping basics',
-        focus: 'Topic vocabulary for practical contexts',
-        objective: 'Recognize and use core words in familiar real-life topics.',
-      },
-      {
-        id: 'V-A2-01',
-        order: 3,
-        level: 'A2',
-        title: 'Travel and city life words',
-        focus: 'Useful topic sets for short descriptions',
-        objective: 'Use topic words in short IELTS-style speaking answers.',
-      },
-      {
-        id: 'V-B1-01',
-        order: 4,
-        level: 'B1',
-        title: 'Study and work collocations',
-        focus: 'Collocations and phrase building',
-        objective: 'Apply collocations to produce clearer and more natural answers.',
-      },
-    ],
-    grammar: [
-      {
-        id: 'G-A1-01',
-        order: 1,
-        level: 'A1',
-        title: 'Be verb and simple statements',
-        focus: 'Sentence foundation and word order',
-        objective: 'Build accurate simple sentences for self-introduction topics.',
-      },
-      {
-        id: 'G-A1-02',
-        order: 2,
-        level: 'A1',
-        title: 'Present simple for routines',
-        focus: 'Affirmative, negative, and questions',
-        objective: 'Describe daily habits with correct present simple forms.',
-      },
-      {
-        id: 'G-A2-01',
-        order: 3,
-        level: 'A2',
-        title: 'Past simple for experiences',
-        focus: 'Regular and common irregular verbs',
-        objective: 'Talk about past events with clearer time references.',
-      },
-      {
-        id: 'G-B1-01',
-        order: 4,
-        level: 'B1',
-        title: 'Linking ideas with connectors',
-        focus: 'because, so, although, however',
-        objective: 'Connect ideas to improve IELTS speaking and writing clarity.',
-      },
-    ],
-  },
-};
-
-const isUnsupportedActionError = (error: unknown): boolean => {
-  const message = String((error as any)?.response?.data?.message || (error as any)?.message || '');
-  return /unsupported action/i.test(message);
-};
-
 type ProgressPayload = {
   learned_words: number;
   weak_words: number;
@@ -441,33 +362,16 @@ const EnglishFoundationModule: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const [lessonResult, progressResult, curriculumResult] = await Promise.allSettled([
+      const [lessonRes, progressRes, curriculumRes] = await Promise.all([
         apiService.getFoundationLesson(),
         apiService.getFoundationProgress(),
         apiService.getFoundationCurriculum(),
       ]);
+      setLesson(lessonRes.data);
+      setProgress(progressRes.data);
+      setCurriculum(curriculumRes.data);
 
-      if (lessonResult.status !== 'fulfilled') {
-        throw lessonResult.reason;
-      }
-      if (progressResult.status !== 'fulfilled') {
-        throw progressResult.reason;
-      }
-
-      setLesson(lessonResult.value.data);
-      setProgress(progressResult.value.data);
-
-      if (curriculumResult.status === 'fulfilled') {
-        setCurriculum(curriculumResult.value.data);
-      } else {
-        setCurriculum(FALLBACK_CURRICULUM);
-      }
-
-      const firstVocab = (
-        curriculumResult.status === 'fulfilled'
-          ? curriculumResult.value.data?.tracks?.vocab?.[0]?.id
-          : FALLBACK_CURRICULUM.tracks.vocab[0]?.id
-      );
+      const firstVocab = curriculumRes.data?.tracks?.vocab?.[0]?.id;
       if (firstVocab) {
         setSelectedLessonId(firstVocab);
       }
@@ -528,21 +432,6 @@ const EnglishFoundationModule: React.FC = () => {
       setCardIndex(0);
       setView('lesson');
     } catch (e: any) {
-      if (isUnsupportedActionError(e)) {
-        try {
-          const fallbackLesson = await apiService.getFoundationLesson();
-          setLesson(fallbackLesson.data);
-          setSelectedTrack(track);
-          setSelectedLessonId(lessonId);
-          setCardIndex(0);
-          setView('lesson');
-          return;
-        } catch (fallbackError: any) {
-          setError(fallbackError?.response?.data?.message || fallbackError?.message || 'Cannot load this lesson now.');
-          return;
-        }
-      }
-
       setError(e?.response?.data?.message || e?.message || 'Cannot load this lesson now.');
     } finally {
       setLoading(false);

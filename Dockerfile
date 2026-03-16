@@ -23,6 +23,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install Python runtime for lexical canonical worker
+RUN apk add --no-cache python3
+
 # Copy package files
 COPY backend/package*.json ./
 
@@ -31,6 +34,13 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy built files from builder (includes dist/backend/src, dist/gamefi, dist/integration)
 COPY --from=builder /app/backend/dist ./dist
+
+# Copy lexical engine runtime used by English Lab bridge
+COPY lexical_engine/ ./lexical_engine/
+
+# Stable runtime path for Python bridge
+ENV LEXICAL_ENGINE_DIR=/app/lexical_engine
+ENV PYTHON_BRIDGE_BIN=python3
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001

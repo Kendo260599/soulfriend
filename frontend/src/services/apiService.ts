@@ -96,7 +96,9 @@ class ApiService {
   }
 
   public async getFoundationLesson(learnerId = 1): Promise<AxiosResponse> {
-    return this.get(`/api/v2/foundation/lesson?learnerId=${encodeURIComponent(String(learnerId))}`);
+    return this.get(`/api/v2/foundation/lesson?learnerId=${encodeURIComponent(String(learnerId))}`, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
   }
 
   public async getFoundationTrackLesson(
@@ -109,15 +111,21 @@ class ApiService {
       `track=${encodeURIComponent(track)}`,
       `lessonId=${encodeURIComponent(lessonId)}`,
     ].join('&');
-    return this.get(`/api/v2/foundation/lesson?${query}`);
+    return this.get(`/api/v2/foundation/lesson?${query}`, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
   }
 
   public async getFoundationCurriculum(): Promise<AxiosResponse> {
-    return this.get('/api/v2/foundation/curriculum');
+    return this.get('/api/v2/foundation/curriculum', {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
   }
 
   public async getFoundationProgress(learnerId = 1): Promise<AxiosResponse> {
-    return this.get(`/api/v2/foundation/progress?learnerId=${encodeURIComponent(String(learnerId))}`);
+    return this.get(`/api/v2/foundation/progress?learnerId=${encodeURIComponent(String(learnerId))}`, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
   }
 }
 

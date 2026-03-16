@@ -1,0 +1,402 @@
+{
+  "framework": "IELTS-aligned Grammar and Vocabulary path for Vietnamese learners",
+  "exam_alignment": {
+    "primary": "IELTS Academic and IELTS General Training",
+    "band_focus": "Grammar and Vocabulary foundation for IELTS band 4.0 to 6.0",
+    "design_note": "Beginner-safe progression using CEFR order (A1-A2-B1) mapped to IELTS language needs."
+  },
+  "scope": {
+    "enabled_tracks": ["grammar", "vocab"],
+    "disabled": ["listening", "reading", "writing", "speaking"]
+  },
+  "tracks": {
+    "vocab": [
+      {
+        "id": "VOC-A1-01",
+        "order": 1,
+        "level": "A1",
+        "title": "Personal Basics",
+        "focus": "name, country, age, language",
+        "objective": "Give basic personal information."
+      },
+      {
+        "id": "VOC-A1-02",
+        "order": 2,
+        "level": "A1",
+        "title": "Family and Friends",
+        "focus": "family members, relationship words",
+        "objective": "Describe simple family and friend relations."
+      },
+      {
+        "id": "VOC-A1-03",
+        "order": 3,
+        "level": "A1",
+        "title": "Daily Routines",
+        "focus": "wake up, work, study, eat",
+        "objective": "Talk about daily routine with time markers."
+      },
+      {
+        "id": "VOC-A1-04",
+        "order": 4,
+        "level": "A1",
+        "title": "Home and Rooms",
+        "focus": "house rooms and basic objects",
+        "objective": "Describe where things are at home."
+      },
+      {
+        "id": "VOC-A1-05",
+        "order": 5,
+        "level": "A1",
+        "title": "Food and Drink",
+        "focus": "meal words, basic food items",
+        "objective": "Order and describe simple meals."
+      },
+      {
+        "id": "VOC-A1-06",
+        "order": 6,
+        "level": "A1",
+        "title": "Town and Places",
+        "focus": "school, market, park, station",
+        "objective": "Name common places in town."
+      },
+      {
+        "id": "VOC-A1-07",
+        "order": 7,
+        "level": "A1",
+        "title": "Time and Date",
+        "focus": "days, months, clock time",
+        "objective": "Say simple time and date information."
+      },
+      {
+        "id": "VOC-A1-08",
+        "order": 8,
+        "level": "A1",
+        "title": "Health Basics",
+        "focus": "body words, common symptoms",
+        "objective": "Say simple health problems and needs."
+      },
+      {
+        "id": "VOC-A2-01",
+        "order": 9,
+        "level": "A2",
+        "title": "Work and Study Life",
+        "focus": "tasks, schedules, simple collocations",
+        "objective": "Describe study and work responsibilities."
+      },
+      {
+        "id": "VOC-A2-02",
+        "order": 10,
+        "level": "A2",
+        "title": "Travel and Transport",
+        "focus": "ticket, platform, route, delay",
+        "objective": "Handle simple travel situations."
+      },
+      {
+        "id": "VOC-A2-03",
+        "order": 11,
+        "level": "A2",
+        "title": "Shopping and Services",
+        "focus": "price, size, return, appointment",
+        "objective": "Ask for services and make simple requests."
+      },
+      {
+        "id": "VOC-A2-04",
+        "order": 12,
+        "level": "A2",
+        "title": "Free Time and Hobbies",
+        "focus": "sports, arts, plans, invitations",
+        "objective": "Talk about free time activities."
+      },
+      {
+        "id": "VOC-A2-05",
+        "order": 13,
+        "level": "A2",
+        "title": "Technology in Daily Life",
+        "focus": "phone, app, message, online actions",
+        "objective": "Use practical language for technology tasks."
+      },
+      {
+        "id": "VOC-A2-06",
+        "order": 14,
+        "level": "A2",
+        "title": "Weather and Environment",
+        "focus": "weather conditions and simple environment words",
+        "objective": "Describe weather and basic environment topics."
+      },
+      {
+        "id": "VOC-A2-07",
+        "order": 15,
+        "level": "A2",
+        "title": "Communication Skills",
+        "focus": "agree, disagree, explain, ask again",
+        "objective": "Manage short real-life conversations."
+      },
+      {
+        "id": "VOC-A2-08",
+        "order": 16,
+        "level": "A2",
+        "title": "Problems and Solutions",
+        "focus": "broken, late, fix, replace, support",
+        "objective": "Describe common problems and ask for help."
+      },
+      {
+        "id": "VOC-B1-01",
+        "order": 17,
+        "level": "B1",
+        "title": "Education and Future Plans",
+        "focus": "subjects, goals, application language",
+        "objective": "Describe goals and short future plans."
+      },
+      {
+        "id": "VOC-B1-02",
+        "order": 18,
+        "level": "B1",
+        "title": "Work Projects and Team Tasks",
+        "focus": "project steps, deadlines, teamwork",
+        "objective": "Report basic project updates."
+      },
+      {
+        "id": "VOC-B1-03",
+        "order": 19,
+        "level": "B1",
+        "title": "Opinions and Media",
+        "focus": "opinion markers, media and news words",
+        "objective": "Give and support simple opinions."
+      },
+      {
+        "id": "VOC-B1-04",
+        "order": 20,
+        "level": "B1",
+        "title": "Relationships and Emotions",
+        "focus": "feelings, conflict, support phrases",
+        "objective": "Describe emotions and relationship situations."
+      },
+      {
+        "id": "VOC-B1-05",
+        "order": 21,
+        "level": "B1",
+        "title": "Health and Lifestyle Choices",
+        "focus": "habits, balance, stress, routines",
+        "objective": "Explain lifestyle choices and reasons."
+      },
+      {
+        "id": "VOC-B1-06",
+        "order": 22,
+        "level": "B1",
+        "title": "Community and Social Issues",
+        "focus": "volunteer, local issues, simple solutions",
+        "objective": "Discuss basic community topics with examples."
+      },
+      {
+        "id": "VOC-B1-07",
+        "order": 23,
+        "level": "B1",
+        "title": "Travel Experiences",
+        "focus": "trip stories, events, recommendations",
+        "objective": "Tell short travel experiences clearly."
+      },
+      {
+        "id": "VOC-B1-08",
+        "order": 24,
+        "level": "B1",
+        "title": "Workplace Communication",
+        "focus": "meetings, updates, polite negotiation",
+        "objective": "Handle common workplace communication tasks."
+      }
+    ],
+    "grammar": [
+      {
+        "id": "GR-A1-01",
+        "order": 1,
+        "level": "A1",
+        "title": "Be Verb and Subject",
+        "focus": "I am / You are / He is",
+        "objective": "Build basic identity statements."
+      },
+      {
+        "id": "GR-A1-02",
+        "order": 2,
+        "level": "A1",
+        "title": "Present Simple Statements",
+        "focus": "I work / He works",
+        "objective": "Make basic present simple sentences."
+      },
+      {
+        "id": "GR-A1-03",
+        "order": 3,
+        "level": "A1",
+        "title": "Present Simple Questions",
+        "focus": "Do you work? / Does he work?",
+        "objective": "Ask and answer basic routine questions."
+      },
+      {
+        "id": "GR-A1-04",
+        "order": 4,
+        "level": "A1",
+        "title": "There is / There are",
+        "focus": "There is a table.",
+        "objective": "Describe simple place and objects."
+      },
+      {
+        "id": "GR-A1-05",
+        "order": 5,
+        "level": "A1",
+        "title": "Can / Cannot",
+        "focus": "I can swim. / I cannot drive.",
+        "objective": "Talk about ability in short sentences."
+      },
+      {
+        "id": "GR-A1-06",
+        "order": 6,
+        "level": "A1",
+        "title": "Present Continuous Basics",
+        "focus": "I am working now.",
+        "objective": "Describe action happening now."
+      },
+      {
+        "id": "GR-A1-07",
+        "order": 7,
+        "level": "A1",
+        "title": "Countable and Uncountable",
+        "focus": "some / any",
+        "objective": "Talk about quantity in daily contexts."
+      },
+      {
+        "id": "GR-A1-08",
+        "order": 8,
+        "level": "A1",
+        "title": "Past Simple Intro",
+        "focus": "I worked yesterday.",
+        "objective": "Describe one simple past event."
+      },
+      {
+        "id": "GR-A2-01",
+        "order": 9,
+        "level": "A2",
+        "title": "Past Simple Irregular",
+        "focus": "go-went, have-had, get-got",
+        "objective": "Use common irregular verbs in past simple."
+      },
+      {
+        "id": "GR-A2-02",
+        "order": 10,
+        "level": "A2",
+        "title": "Future Plan with Going to",
+        "focus": "I am going to study tonight.",
+        "objective": "Talk about short-term plans."
+      },
+      {
+        "id": "GR-A2-03",
+        "order": 11,
+        "level": "A2",
+        "title": "Will for Offer and Prediction",
+        "focus": "I will help you.",
+        "objective": "Use will in simple practical contexts."
+      },
+      {
+        "id": "GR-A2-04",
+        "order": 12,
+        "level": "A2",
+        "title": "Comparative and Superlative",
+        "focus": "bigger, the biggest",
+        "objective": "Compare people and things simply."
+      },
+      {
+        "id": "GR-A2-05",
+        "order": 13,
+        "level": "A2",
+        "title": "Present Perfect Intro",
+        "focus": "I have finished.",
+        "objective": "Connect past action to present result."
+      },
+      {
+        "id": "GR-A2-06",
+        "order": 14,
+        "level": "A2",
+        "title": "Must, Have to, Should",
+        "focus": "You should rest.",
+        "objective": "Give basic advice and obligation."
+      },
+      {
+        "id": "GR-A2-07",
+        "order": 15,
+        "level": "A2",
+        "title": "First Conditional",
+        "focus": "If it rains, I will stay home.",
+        "objective": "Talk about possible future results."
+      },
+      {
+        "id": "GR-A2-08",
+        "order": 16,
+        "level": "A2",
+        "title": "Gerund and Infinitive Basics",
+        "focus": "like reading / want to learn",
+        "objective": "Use common verb patterns correctly."
+      },
+      {
+        "id": "GR-B1-01",
+        "order": 17,
+        "level": "B1",
+        "title": "Present Perfect vs Past Simple",
+        "focus": "I have lived / I lived",
+        "objective": "Choose tense by time meaning."
+      },
+      {
+        "id": "GR-B1-02",
+        "order": 18,
+        "level": "B1",
+        "title": "Present Perfect with For/Since",
+        "focus": "for two years / since 2022",
+        "objective": "Describe duration clearly."
+      },
+      {
+        "id": "GR-B1-03",
+        "order": 19,
+        "level": "B1",
+        "title": "Second Conditional",
+        "focus": "If I had time, I would study more.",
+        "objective": "Talk about unreal present situations."
+      },
+      {
+        "id": "GR-B1-04",
+        "order": 20,
+        "level": "B1",
+        "title": "Passive Voice Basics",
+        "focus": "The task was finished.",
+        "objective": "Use passive in common reports."
+      },
+      {
+        "id": "GR-B1-05",
+        "order": 21,
+        "level": "B1",
+        "title": "Relative Clauses",
+        "focus": "who, which, that",
+        "objective": "Add clear extra information to nouns."
+      },
+      {
+        "id": "GR-B1-06",
+        "order": 22,
+        "level": "B1",
+        "title": "Reported Speech",
+        "focus": "He said that he was tired.",
+        "objective": "Report statements and simple questions."
+      },
+      {
+        "id": "GR-B1-07",
+        "order": 23,
+        "level": "B1",
+        "title": "Modals of Deduction",
+        "focus": "must, might, cannot",
+        "objective": "Express certainty and possibility."
+      },
+      {
+        "id": "GR-B1-08",
+        "order": 24,
+        "level": "B1",
+        "title": "Linking and Clause Building",
+        "focus": "although, because, so, however",
+        "objective": "Build longer clear B1-level sentences."
+      }
+    ]
+  }
+}

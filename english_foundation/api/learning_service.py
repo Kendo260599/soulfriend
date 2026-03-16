@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sqlite3
+from pathlib import Path
 from typing import Any
 
 from ..core.lesson_engine import LessonEngine
@@ -23,6 +25,68 @@ class LearningService:
             "phrases": lesson["phrases"],
             "grammar": lesson["grammar"],
         }
+
+    def get_track_lesson_payload(
+        self,
+        track: str,
+        lesson_id: str | None,
+        learner_id: int = 1,
+    ) -> dict[str, Any]:
+        profile = self._get_learner_profile(learner_id)
+        curriculum = self.get_curriculum_payload()
+        raw_track = str(track).strip().lower()
+        if raw_track not in {"grammar", "vocab"}:
+            raise ValueError("Track must be 'grammar' or 'vocab'.")
+        track_key = raw_track
+        lessons = curriculum.get("tracks", {}).get(track_key, [])
+
+        lesson_index = 0
+        selected_lesson = lessons[0] if lessons else None
+        if lesson_id and lessons:
+            for idx, item in enumerate(lessons):
+                if str(item.get("id")) == lesson_id:
+                    lesson_index = idx
+                    selected_lesson = item
+                    break
+
+        lesson = self.lesson_engine.compose_track_lesson(
+            track=track_key,
+            lesson_index=lesson_index,
+            lexical_level=profile["lexical_level"],
+            grammar_level=profile["grammar_level"],
+        )
+
+        return {
+            "track": track_key,
+            "lesson_meta": selected_lesson or {},
+            "words": lesson["words"],
+            "phrases": lesson["phrases"],
+            "grammar": lesson["grammar"],
+            "sequence": lesson.get("sequence", []),
+        }
+
+    def get_curriculum_payload(self) -> dict[str, Any]:
+        root = Path(__file__).resolve().parents[1]
+        path = root / "content" / "cambridge_curriculum.json"
+        if not path.exists():
+            return {
+                "framework": "IELTS-aligned Grammar and Vocabulary path for Vietnamese learners",
+                "tracks": {"vocab": [], "grammar": []},
+            }
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+        tracks = payload.get("tracks", {})
+        for key in ("vocab", "grammar"):
+            lessons = tracks.get(key, [])
+            if isinstance(lessons, list):
+                tracks[key] = sorted(
+                    lessons,
+                    key=lambda item: (
+                        int(item.get("order", 9999)) if str(item.get("order", "")).isdigit() else 9999,
+                        str(item.get("id", "")),
+                    ),
+                )
+        payload["tracks"] = tracks
+        return payload
 
     def get_progress_payload(self) -> dict[str, Any]:
         learned_words = self.conn.execute(

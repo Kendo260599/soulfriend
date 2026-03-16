@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import styled, { keyframes } from 'styled-components';
 import { apiService } from '../services/apiService';
 import {
   DEFAULT_PROGRESS,
@@ -76,26 +76,105 @@ const DEFAULT_PHASE2_HOME_PREVIEW: Phase2HomePreviewState = {
   topGrammar: [],
 };
 
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const shimmer = keyframes`
+  0% { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+`;
+
 const Page = styled.div`
   min-height: 100vh;
-  background: linear-gradient(140deg, #f6ebe6 0%, #fef7ef 50%, #eef8f8 100%);
-  padding: 1.5rem;
+  background:
+    radial-gradient(circle at 10% 8%, #f7d8be 0%, transparent 28%),
+    radial-gradient(circle at 92% 12%, #bee9df 0%, transparent 24%),
+    radial-gradient(circle at 80% 88%, #f9d0cf 0%, transparent 30%),
+    linear-gradient(140deg, #fff4ec 0%, #fdf9f2 52%, #eef7f6 100%);
+  padding: 1.8rem;
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
 `;
 
 const Wrap = styled.div`
-  max-width: 1100px;
+  max-width: 1180px;
   margin: 0 auto;
 `;
 
+const Header = styled.header`
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1rem;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Hero = styled.div`
+  animation: ${fadeIn} 400ms ease;
+`;
+
 const Title = styled.h1`
-  font-size: 2rem;
-  color: #243042;
+  font-family: 'Sora', 'IBM Plex Sans', sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: -0.03em;
+  color: #1e2a37;
   margin: 0 0 0.4rem 0;
 `;
 
 const SubTitle = styled.p`
   color: #5a6878;
   margin: 0 0 1rem 0;
+`;
+
+const Ribbon = styled.div`
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+`;
+
+const Chip = styled.span<{ $tone?: 'info' | 'warn' | 'ok' }>`
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.36rem 0.7rem;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+  color: ${p => (p.$tone === 'warn' ? '#7a4e1f' : p.$tone === 'ok' ? '#184e36' : '#1d3d63')};
+  background: ${p => (p.$tone === 'warn' ? '#ffe7c9' : p.$tone === 'ok' ? '#d8f1e5' : '#dcecff')};
+  border: 1px solid ${p => (p.$tone === 'warn' ? '#f4cb95' : p.$tone === 'ok' ? '#b4dfcb' : '#c0d8f3')};
+`;
+
+const ActionPane = styled.div`
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(34, 53, 78, 0.1);
+  border-radius: 16px;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: ${fadeIn} 500ms ease;
+`;
+
+const ActionTitle = styled.div`
+  font-weight: 700;
+  font-size: 0.93rem;
+  color: #28425e;
+`;
+
+const ActionRow = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 `;
 
 const Grid = styled.div`
@@ -114,9 +193,11 @@ const Card = styled.section`
   border-radius: 18px;
   padding: 1rem;
   box-shadow: 0 8px 24px rgba(36, 48, 66, 0.07);
+  animation: ${fadeIn} 550ms ease;
 `;
 
 const CardTitle = styled.h2`
+  font-family: 'Sora', 'IBM Plex Sans', sans-serif;
   margin: 0 0 0.8rem 0;
   color: #243042;
   font-size: 1.2rem;
@@ -133,6 +214,49 @@ const Meta = styled.div`
   color: #627289;
   font-size: 0.95rem;
   margin-bottom: 0.8rem;
+`;
+
+const Phase2Panel = styled(Card)`
+  margin-bottom: 1rem;
+  background: linear-gradient(145deg, rgba(232, 242, 255, 0.95) 0%, rgba(241, 250, 251, 0.95) 100%);
+  border-color: #c8dbf2;
+`;
+
+const Phase2Top = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.45rem;
+`;
+
+const ProgressRail = styled.div`
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #dce7f4;
+  overflow: hidden;
+  border: 1px solid #bdd1e8;
+`;
+
+const ProgressValue = styled.div<{ $pct: number; $tone?: 'blue' | 'green' }>`
+  width: ${p => `${Math.max(0, Math.min(100, p.$pct))}%`};
+  height: 100%;
+  background: ${p => (p.$tone === 'green' ? 'linear-gradient(90deg, #3f945f 0%, #71b88c 100%)' : 'linear-gradient(90deg, #2a6ba1 0%, #66a6d8 100%)')};
+  transition: width 260ms ease;
+`;
+
+const RailRow = styled.div`
+  margin-top: 0.52rem;
+`;
+
+const RailLabel = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #4f6782;
+  font-size: 0.82rem;
+  margin-bottom: 0.25rem;
 `;
 
 const Row = styled.div`
@@ -161,7 +285,7 @@ const Button = styled.button`
   border: none;
   border-radius: 10px;
   padding: 0.6rem 0.9rem;
-  background: #265d8f;
+  background: linear-gradient(135deg, #2a6598 0%, #376f9e 100%);
   color: #ffffff;
   cursor: pointer;
   font-weight: 600;
@@ -186,6 +310,16 @@ const ChoiceButton = styled(Button)<{ $isCorrect?: boolean; $isWrong?: boolean }
   @media (max-width: 600px) {
     width: 100%;
   }
+`;
+
+const RetryButton = styled(Button)`
+  background: linear-gradient(135deg, #7c4b1a 0%, #946127 100%);
+`;
+
+const GhostButton = styled(Button)`
+  background: #eef4fb;
+  color: #244566;
+  border: 1px solid #cadaeb;
 `;
 
 const Small = styled.div`
@@ -237,6 +371,11 @@ const Score = styled.div<{ $positive?: boolean }>`
   color: ${props => (props.$positive ? '#226f43' : '#8b2d2d')};
 `;
 
+const SoftDivider = styled.div`
+  margin-top: 0.7rem;
+  border-top: 1px dashed #d0dce8;
+`;
+
 const Input = styled.input`
   width: 100%;
   border: 1px solid #c8d6e6;
@@ -251,6 +390,24 @@ const StatBox = styled.div`
   grid-template-columns: repeat(3, 1fr);
   gap: 0.6rem;
   margin-top: 0.8rem;
+`;
+
+const Loader = styled.div`
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #edf2f9 0%, #d5e3f4 50%, #edf2f9 100%);
+  background-size: 600px 100%;
+  animation: ${shimmer} 1.2s linear infinite;
+`;
+
+const AlertBox = styled.div`
+  margin-top: 0.8rem;
+  border-radius: 12px;
+  background: #fff1e8;
+  border: 1px solid #f0c5aa;
+  color: #7b3f1f;
+  padding: 0.65rem 0.75rem;
 `;
 
 const Kpi = styled.div`
@@ -274,6 +431,12 @@ const HistoryRow = styled.div`
   padding: 0.3rem 0;
 `;
 
+const Empty = styled.div`
+  margin-top: 0.65rem;
+  color: #6c7d91;
+  font-size: 0.9rem;
+`;
+
 const EnglishLearningLab: React.FC = () => {
   const [quiz, setQuiz] = useState<QuizState>(EMPTY_QUIZ);
   const [selected, setSelected] = useState<string>('');
@@ -290,6 +453,8 @@ const EnglishLearningLab: React.FC = () => {
   const [remoteProgress, setRemoteProgress] = useState<ProgressState>(DEFAULT_PROGRESS);
   const [phase2Flow, setPhase2Flow] = useState<Phase2FlowState>(DEFAULT_PHASE2_FLOW);
   const [phase2HomePreview, setPhase2HomePreview] = useState<Phase2HomePreviewState>(DEFAULT_PHASE2_HOME_PREVIEW);
+  const [isBootstrapping, setIsBootstrapping] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string>('');
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -358,6 +523,33 @@ const EnglishLearningLab: React.FC = () => {
     throw lastError;
   };
 
+  const refreshAll = async (targetUserId: string) => {
+    setLoadError('');
+    try {
+      const [quizRes, progressRes, historyRes] = await Promise.all([
+        apiService.getEnglishLabNextQuiz(targetUserId),
+        apiService.getEnglishLabProgress(targetUserId),
+        apiService.getEnglishLabHistory(targetUserId, 20),
+      ]);
+      const { statusRes: phase2Res, homeRes: phase2HomeRes } = await fetchPhase2Pair(targetUserId, 1);
+
+      const remoteQuiz = quizRes.data?.data;
+      if (remoteQuiz?.item && Array.isArray(remoteQuiz?.choices)) {
+        setQuiz({ item: remoteQuiz.item, choices: remoteQuiz.choices });
+        setPracticeTarget(String(remoteQuiz.item.word || ''));
+      }
+
+      applyProgress(progressRes.data?.data?.progress);
+      applyHistory(historyRes.data?.data?.history);
+      setPhase2Flow(normalizePhase2Flow(phase2Res.data?.data?.phase2Flow));
+      setPhase2HomePreview(normalizePhase2HomePreview(phase2HomeRes.data?.data?.phase2Home));
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Không thể tải dữ liệu canonical từ backend.';
+      setBridgeStatus(msg);
+      setLoadError(msg);
+    }
+  };
+
   const normalizePhase2HomePreview = (raw: any): Phase2HomePreviewState => {
     if (!raw || typeof raw !== 'object') {
       return { ...DEFAULT_PHASE2_HOME_PREVIEW };
@@ -405,27 +597,9 @@ const EnglishLearningLab: React.FC = () => {
     setUserId(finalUserId);
 
     const bootstrapRemote = async () => {
-      try {
-        const [quizRes, progressRes, historyRes] = await Promise.all([
-          apiService.getEnglishLabNextQuiz(finalUserId),
-          apiService.getEnglishLabProgress(finalUserId),
-          apiService.getEnglishLabHistory(finalUserId, 20),
-        ]);
-        const { statusRes: phase2Res, homeRes: phase2HomeRes } = await fetchPhase2Pair(finalUserId, 1);
-
-        const remoteQuiz = quizRes.data?.data;
-        if (remoteQuiz?.item && Array.isArray(remoteQuiz?.choices)) {
-          setQuiz({ item: remoteQuiz.item, choices: remoteQuiz.choices });
-          setPracticeTarget(String(remoteQuiz.item.word || ''));
-        }
-
-        applyProgress(progressRes.data?.data?.progress);
-        applyHistory(historyRes.data?.data?.history);
-        setPhase2Flow(normalizePhase2Flow(phase2Res.data?.data?.phase2Flow));
-        setPhase2HomePreview(normalizePhase2HomePreview(phase2HomeRes.data?.data?.phase2Home));
-      } catch (error: any) {
-        setBridgeStatus(error?.response?.data?.message || 'Không thể tải dữ liệu canonical từ backend.');
-      }
+      setIsBootstrapping(true);
+      await refreshAll(finalUserId);
+      setIsBootstrapping(false);
     };
 
     void bootstrapRemote();
@@ -656,25 +830,129 @@ const EnglishLearningLab: React.FC = () => {
     savePronunciationResult(manualText);
   };
 
+  const lexicalPct = useMemo(() => {
+    const raw = (phase2Flow.signals.lexicalLevel / Math.max(phase2Flow.thresholds.phraseUnlockMin, 0.01)) * 100;
+    return Math.max(0, Math.min(100, raw));
+  }, [phase2Flow]);
+
+  const grammarPct = useMemo(() => {
+    const raw = (phase2Flow.signals.grammarReadinessProxy / Math.max(phase2Flow.thresholds.grammarUnlockMin, 0.01)) * 100;
+    return Math.max(0, Math.min(100, raw));
+  }, [phase2Flow]);
+
+  const handleRetryBootstrap = () => {
+    if (!userId) return;
+    setIsBootstrapping(true);
+    void refreshAll(userId).finally(() => setIsBootstrapping(false));
+  };
+
+  const hasQuiz = Boolean(quiz.item.word && quiz.choices.length > 0);
+
+  const renderQuizBody = () => {
+    if (isBootstrapping) {
+      return (
+        <>
+          <Loader />
+          <SmallTop>Đang tải quiz canonical...</SmallTop>
+        </>
+      );
+    }
+
+    if (!hasQuiz) {
+      return (
+        <>
+          <Empty>Hiện chưa có câu hỏi khả dụng. Bạn bấm tải lại để đồng bộ dữ liệu mới nhất.</Empty>
+          <RowTopSm>
+            <RetryButton onClick={handleRetryBootstrap}>Tải lại dữ liệu học</RetryButton>
+          </RowTopSm>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Word>{quiz.item.word}</Word>
+        <Meta>Chọn nghĩa tiếng Việt đúng nhất.</Meta>
+
+        <Row>
+          {quiz.choices.map(choice => (
+            <ChoiceButton
+              key={choice}
+              onClick={() => handleAnswer(choice)}
+              $isCorrect={selected === choice && choice === quiz.item.meaningVi}
+              $isWrong={selected === choice && choice !== quiz.item.meaningVi}
+            >
+              {choice}
+            </ChoiceButton>
+          ))}
+        </Row>
+
+        <Score $positive={quizMessage.startsWith('Đúng')}>{quizMessage}</Score>
+      </>
+    );
+  };
+
   return (
     <Page>
       <Wrap>
-        <Title>English Learning Lab</Title>
-        <SubTitle>
-          Bạn có thể test trực tiếp trên frontend: Quiz + Memory + Audio + Mic + Speech-to-text + Score.
-        </SubTitle>
+        <Header>
+          <Hero>
+            <Title>English Learning Lab</Title>
+            <SubTitle>
+              Học theo nhịp cá nhân với quiz, phát âm, và phase-based progression. Mọi trạng thái đều đồng bộ từ canonical backend.
+            </SubTitle>
+            <Ribbon>
+              <Chip $tone="info">User: {userId}</Chip>
+              <Chip $tone={phase2Flow.phraseUnlocked ? 'ok' : 'warn'}>
+                Phrase {phase2Flow.phraseUnlocked ? 'Unlocked' : 'Locked'}
+              </Chip>
+              <Chip $tone={phase2Flow.grammarUnlocked ? 'ok' : 'warn'}>
+                Grammar {phase2Flow.grammarUnlocked ? 'Unlocked' : 'Locked'}
+              </Chip>
+            </Ribbon>
+          </Hero>
 
-        <Phase2Banner>
-          <Small>
-            Phase-2 Canonical Stage: <StageBadge $stage={phase2Flow.stage}>{stageLabel(phase2Flow.stage)}</StageBadge>
-          </Small>
-          <Small>
-            Phrase: {phase2Flow.phraseUnlocked ? 'Unlocked' : 'Locked'} | Grammar: {phase2Flow.grammarUnlocked ? 'Unlocked' : 'Locked'}
-          </Small>
-          <Small>
-            Phrase pack: {phase2HomePreview.phraseCount} {phase2HomePreview.phraseLocked ? '(locked)' : '(ready)'}
-            {' | '}Grammar pack: {phase2HomePreview.grammarCount} {phase2HomePreview.grammarLocked ? '(locked)' : '(ready)'}
-          </Small>
+          <ActionPane>
+            <ActionTitle>Điều khiển nhanh</ActionTitle>
+            <ActionRow>
+              <Button onClick={handleRetryBootstrap}>Đồng bộ toàn bộ</Button>
+              <GhostButton onClick={() => void refreshPhase2Status(userId)}>Sync Phase 2</GhostButton>
+            </ActionRow>
+            <Small>Bridge status: {bridgeStatus || 'ổn định'}</Small>
+          </ActionPane>
+        </Header>
+
+        <Phase2Panel>
+          <Phase2Top>
+            <Small>
+              Phase-2 Canonical Stage: <StageBadge $stage={phase2Flow.stage}>{stageLabel(phase2Flow.stage)}</StageBadge>
+            </Small>
+            <Small>
+              Phrase pack: {phase2HomePreview.phraseCount} {phase2HomePreview.phraseLocked ? '(locked)' : '(ready)'}
+              {' | '}Grammar pack: {phase2HomePreview.grammarCount} {phase2HomePreview.grammarLocked ? '(locked)' : '(ready)'}
+            </Small>
+          </Phase2Top>
+
+          <RailRow>
+            <RailLabel>
+              <span>lexicalLevel</span>
+              <span>{phase2Flow.signals.lexicalLevel.toFixed(2)} / {phase2Flow.thresholds.phraseUnlockMin.toFixed(2)}</span>
+            </RailLabel>
+            <ProgressRail>
+              <ProgressValue $pct={lexicalPct} />
+            </ProgressRail>
+          </RailRow>
+
+          <RailRow>
+            <RailLabel>
+              <span>grammarReadiness</span>
+              <span>{phase2Flow.signals.grammarReadinessProxy.toFixed(2)} / {phase2Flow.thresholds.grammarUnlockMin.toFixed(2)}</span>
+            </RailLabel>
+            <ProgressRail>
+              <ProgressValue $pct={grammarPct} $tone="green" />
+            </ProgressRail>
+          </RailRow>
+
           {phase2HomePreview.topPhrases.length > 0 && (
             <>
               <Small>Top phrase drills:</Small>
@@ -698,6 +976,7 @@ const EnglishLearningLab: React.FC = () => {
               )}
             </>
           )}
+
           {phase2HomePreview.topGrammar.length > 0 && (
             <>
               <Small>Top grammar micro:</Small>
@@ -726,35 +1005,16 @@ const EnglishLearningLab: React.FC = () => {
               )}
             </>
           )}
-          <Small>
-            lexicalLevel: {phase2Flow.signals.lexicalLevel.toFixed(2)} / {phase2Flow.thresholds.phraseUnlockMin.toFixed(2)}
-            {' | '}grammarReadiness: {phase2Flow.signals.grammarReadinessProxy.toFixed(2)} / {phase2Flow.thresholds.grammarUnlockMin.toFixed(2)}
-          </Small>
-        </Phase2Banner>
+        </Phase2Panel>
 
         <Grid>
           <Card>
             <CardTitle>Quiz + Memory</CardTitle>
-            <Word>{quiz.item.word}</Word>
-            <Meta>Chọn nghĩa tiếng Việt đúng nhất.</Meta>
-
-            <Row>
-              {quiz.choices.map(choice => (
-                <ChoiceButton
-                  key={choice}
-                  onClick={() => handleAnswer(choice)}
-                  $isCorrect={selected === choice && choice === quiz.item.meaningVi}
-                  $isWrong={selected === choice && choice !== quiz.item.meaningVi}
-                >
-                  {choice}
-                </ChoiceButton>
-              ))}
-            </Row>
-
-            <Score $positive={quizMessage.startsWith('Đúng')}>{quizMessage}</Score>
+            {renderQuizBody()}
 
             <RowTopMd>
               <Button onClick={nextQuiz}>Câu tiếp theo</Button>
+              <GhostButton onClick={() => void refreshPhase2Status(userId)}>Làm mới Phase 2</GhostButton>
             </RowTopMd>
 
             <StatBox>
@@ -771,9 +1031,17 @@ const EnglishLearningLab: React.FC = () => {
                 <strong>{remoteProgress.attempts}</strong>
               </Kpi>
             </StatBox>
+
+            <SoftDivider />
             <SmallTop>
               Chế độ dữ liệu: Backend API canonical | User: {userId}
             </SmallTop>
+
+            {loadError && (
+              <AlertBox>
+                {loadError}
+              </AlertBox>
+            )}
           </Card>
 
           <Card>
@@ -836,6 +1104,7 @@ const EnglishLearningLab: React.FC = () => {
                   {row.at.slice(0, 19).replace('T', ' ')} | {row.word} | {row.score} | {row.recognized || '(rong)'}
                 </HistoryRow>
               ))}
+              {history.length === 0 && <Empty>Chưa có dữ liệu phát âm gần đây.</Empty>}
             </HistoryList>
           </Card>
         </Grid>

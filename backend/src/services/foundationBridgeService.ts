@@ -1,7 +1,14 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
-type BridgeAction = 'lesson' | 'progress';
+type BridgeAction = 'lesson' | 'progress' | 'curriculum' | 'track_lesson';
+
+type BridgePayload = {
+  action: BridgeAction;
+  learnerId?: number;
+  track?: string;
+  lessonId?: string;
+};
 
 const resolveEngineRoot = (): string => {
   const envRoot = process.env.FOUNDATION_ENGINE_DIR;
@@ -18,12 +25,12 @@ const resolvePythonCommand = (): { command: string; args: string[] } => {
   return { command, args };
 };
 
-const runBridge = async (action: BridgeAction, learnerId = 1): Promise<any> => {
+const runBridge = async (payload: BridgePayload): Promise<any> => {
   const engineRoot = resolveEngineRoot();
   const workerPath = path.resolve(engineRoot, 'api', 'bridge_worker.py');
   const { command, args } = resolvePythonCommand();
 
-  const payload = JSON.stringify({ action, learnerId });
+  const input = JSON.stringify(payload);
 
   return new Promise((resolve, reject) => {
     const child = spawn(command, [...args, workerPath], {
@@ -78,15 +85,27 @@ const runBridge = async (action: BridgeAction, learnerId = 1): Promise<any> => {
       }
     });
 
-    child.stdin.write(payload + '\n');
+    child.stdin.write(input + '\n');
     child.stdin.end();
   });
 };
 
 export const getFoundationLesson = async (learnerId = 1): Promise<any> => {
-  return runBridge('lesson', learnerId);
+  return runBridge({ action: 'lesson', learnerId });
 };
 
 export const getFoundationProgress = async (learnerId = 1): Promise<any> => {
-  return runBridge('progress', learnerId);
+  return runBridge({ action: 'progress', learnerId });
+};
+
+export const getFoundationCurriculum = async (): Promise<any> => {
+  return runBridge({ action: 'curriculum' });
+};
+
+export const getFoundationTrackLesson = async (
+  track: string,
+  lessonId: string,
+  learnerId = 1,
+): Promise<any> => {
+  return runBridge({ action: 'track_lesson', track, lessonId, learnerId });
 };

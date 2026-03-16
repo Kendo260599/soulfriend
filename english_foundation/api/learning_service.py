@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -91,6 +92,14 @@ class LearningService:
 
     def _validate_track_lessons(self, track: str, lessons: list[dict[str, Any]]) -> None:
         required = {"id", "order", "level", "title", "focus", "objective"}
+        if track == "vocab":
+            required = required.union({
+                "topic_ielts",
+                "focus_en",
+                "focus_vi",
+                "objective_en",
+                "objective_vi",
+            })
         seen_orders: set[int] = set()
 
         for idx, lesson in enumerate(lessons):
@@ -103,6 +112,9 @@ class LearningService:
                     f"Lesson in track '{track}' is missing required fields: {', '.join(missing)}."
                 )
 
+            if track == "vocab":
+                self._validate_vocab_bilingual_fields(lesson)
+
             order_value = self._safe_int(lesson.get("order"), None)
             if order_value is None or order_value <= 0:
                 raise ValueError(f"Lesson '{lesson.get('id', '?')}' in track '{track}' has invalid order value.")
@@ -110,6 +122,31 @@ class LearningService:
             if order_value in seen_orders:
                 raise ValueError(f"Duplicate order '{order_value}' found in track '{track}'.")
             seen_orders.add(order_value)
+
+    def _validate_vocab_bilingual_fields(self, lesson: dict[str, Any]) -> None:
+        lesson_id = str(lesson.get("id", "?"))
+        topic = str(lesson.get("topic_ielts", "")).strip()
+        if not topic:
+            raise ValueError(f"Vocab lesson '{lesson_id}' must define non-empty topic_ielts.")
+
+        focus_en = str(lesson.get("focus_en", "")).strip()
+        focus_vi = str(lesson.get("focus_vi", "")).strip()
+        objective_en = str(lesson.get("objective_en", "")).strip()
+        objective_vi = str(lesson.get("objective_vi", "")).strip()
+
+        if not all([focus_en, focus_vi, objective_en, objective_vi]):
+            raise ValueError(
+                f"Vocab lesson '{lesson_id}' must include focus_en, focus_vi, objective_en, objective_vi."
+            )
+
+        if not self._contains_vietnamese_diacritics(focus_vi):
+            raise ValueError(f"Vocab lesson '{lesson_id}' has focus_vi without Vietnamese diacritics.")
+        if not self._contains_vietnamese_diacritics(objective_vi):
+            raise ValueError(f"Vocab lesson '{lesson_id}' has objective_vi without Vietnamese diacritics.")
+
+    @staticmethod
+    def _contains_vietnamese_diacritics(text: str) -> bool:
+        return bool(re.search(r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]", text.lower()))
 
     @staticmethod
     def _safe_int(value: Any, fallback: int | None) -> int | None:

@@ -6,8 +6,16 @@
     "design_note": "Beginner-safe progression using CEFR order (A1-A2-B1) mapped to IELTS language needs."
   },
   "scope": {
-    "enabled_tracks": ["grammar", "vocab"],
-    "disabled": ["listening", "reading", "writing", "speaking"]
+    "enabled_tracks": [
+      "grammar",
+      "vocab"
+    ],
+    "disabled": [
+      "listening",
+      "reading",
+      "writing",
+      "speaking"
+    ]
   },
   "tracks": {
     "vocab": [
@@ -16,192 +24,364 @@
         "order": 1,
         "level": "A1",
         "title": "Personal Basics",
-        "focus": "name, country, age, language",
-        "objective": "Give basic personal information."
+        "focus": "EN: name, country, age, language | VI: tên, quốc tịch, tuổi, ngôn ngữ",
+        "objective": "EN: Give basic personal information. | VI: Giới thiệu thông tin cá nhân cơ bản một cách tự nhiên.",
+        "topic_ielts": "Personal Information",
+        "focus_en": "name, country, age, language",
+        "focus_vi": "tên, quốc tịch, tuổi, ngôn ngữ",
+        "objective_en": "Give basic personal information.",
+        "objective_vi": "Giới thiệu thông tin cá nhân cơ bản một cách tự nhiên."
       },
       {
         "id": "VOC-A1-02",
         "order": 2,
         "level": "A1",
         "title": "Family and Friends",
-        "focus": "family members, relationship words",
-        "objective": "Describe simple family and friend relations."
+        "focus": "EN: family members, relationship words | VI: thành viên gia đình, từ chỉ mối quan hệ",
+        "objective": "EN: Describe simple family and friend relations. | VI: Mô tả đơn giản về gia đình và bạn bè.",
+        "topic_ielts": "People and Relationships",
+        "focus_en": "family members, relationship words",
+        "focus_vi": "thành viên gia đình, từ chỉ mối quan hệ",
+        "objective_en": "Describe simple family and friend relations.",
+        "objective_vi": "Mô tả đơn giản về gia đình và bạn bè."
       },
       {
         "id": "VOC-A1-03",
         "order": 3,
         "level": "A1",
         "title": "Daily Routines",
-        "focus": "wake up, work, study, eat",
-        "objective": "Talk about daily routine with time markers."
+        "focus": "EN: wake up, work, study, eat | VI: thức dậy, làm việc, học tập, ăn uống",
+        "objective": "EN: Talk about daily routine with time markers. | VI: Nói về thói quen hằng ngày với mốc thời gian cơ bản.",
+        "topic_ielts": "Daily Routine",
+        "focus_en": "wake up, work, study, eat",
+        "focus_vi": "thức dậy, làm việc, học tập, ăn uống",
+        "objective_en": "Talk about daily routine with time markers.",
+        "objective_vi": "Nói về thói quen hằng ngày với mốc thời gian cơ bản."
       },
       {
         "id": "VOC-A1-04",
         "order": 4,
         "level": "A1",
         "title": "Home and Rooms",
-        "focus": "house rooms and basic objects",
-        "objective": "Describe where things are at home."
+        "focus": "EN: house rooms and basic objects | VI: các phòng trong nhà và đồ vật cơ bản",
+        "objective": "EN: Describe where things are at home. | VI: Mô tả vị trí đồ vật trong không gian sống.",
+        "topic_ielts": "Home and Accommodation",
+        "focus_en": "house rooms and basic objects",
+        "focus_vi": "các phòng trong nhà và đồ vật cơ bản",
+        "objective_en": "Describe where things are at home.",
+        "objective_vi": "Mô tả vị trí đồ vật trong không gian sống."
       },
       {
         "id": "VOC-A1-05",
         "order": 5,
         "level": "A1",
         "title": "Food and Drink",
-        "focus": "meal words, basic food items",
-        "objective": "Order and describe simple meals."
+        "focus": "EN: meal words, basic food items | VI: món ăn cơ bản, bữa ăn, đồ uống",
+        "objective": "EN: Order and describe simple meals. | VI: Gọi món và mô tả bữa ăn ngắn gọn.",
+        "topic_ielts": "Food and Meals",
+        "focus_en": "meal words, basic food items",
+        "focus_vi": "món ăn cơ bản, bữa ăn, đồ uống",
+        "objective_en": "Order and describe simple meals.",
+        "objective_vi": "Gọi món và mô tả bữa ăn ngắn gọn."
       },
       {
         "id": "VOC-A1-06",
         "order": 6,
         "level": "A1",
         "title": "Town and Places",
-        "focus": "school, market, park, station",
-        "objective": "Name common places in town."
+        "focus": "EN: school, market, park, station | VI: trường học, chợ, công viên, nhà ga",
+        "objective": "EN: Name common places in town. | VI: Gọi tên các địa điểm quen thuộc trong thành phố.",
+        "topic_ielts": "Places in Town",
+        "focus_en": "school, market, park, station",
+        "focus_vi": "trường học, chợ, công viên, nhà ga",
+        "objective_en": "Name common places in town.",
+        "objective_vi": "Gọi tên các địa điểm quen thuộc trong thành phố."
       },
       {
         "id": "VOC-A1-07",
         "order": 7,
         "level": "A1",
         "title": "Time and Date",
-        "focus": "days, months, clock time",
-        "objective": "Say simple time and date information."
+        "focus": "EN: days, months, clock time | VI: ngày, tháng, giờ giấc",
+        "objective": "EN: Say simple time and date information. | VI: Nói được thời gian và lịch hẹn đơn giản.",
+        "topic_ielts": "Time and Schedule",
+        "focus_en": "days, months, clock time",
+        "focus_vi": "ngày, tháng, giờ giấc",
+        "objective_en": "Say simple time and date information.",
+        "objective_vi": "Nói được thời gian và lịch hẹn đơn giản."
       },
       {
         "id": "VOC-A1-08",
         "order": 8,
         "level": "A1",
         "title": "Health Basics",
-        "focus": "body words, common symptoms",
-        "objective": "Say simple health problems and needs."
+        "focus": "EN: body words, common symptoms | VI: bộ phận cơ thể, triệu chứng thường gặp",
+        "objective": "EN: Say simple health problems and needs. | VI: Mô tả vấn đề sức khỏe cơ bản và nhu cầu hỗ trợ.",
+        "topic_ielts": "Health and Body",
+        "focus_en": "body words, common symptoms",
+        "focus_vi": "bộ phận cơ thể, triệu chứng thường gặp",
+        "objective_en": "Say simple health problems and needs.",
+        "objective_vi": "Mô tả vấn đề sức khỏe cơ bản và nhu cầu hỗ trợ."
       },
       {
         "id": "VOC-A2-01",
         "order": 9,
         "level": "A2",
         "title": "Work and Study Life",
-        "focus": "tasks, schedules, simple collocations",
-        "objective": "Describe study and work responsibilities."
+        "focus": "EN: tasks, schedules, simple collocations | VI: nhiệm vụ, lịch trình, cụm từ thông dụng",
+        "objective": "EN: Describe study and work responsibilities. | VI: Mô tả trách nhiệm học tập và công việc hằng ngày.",
+        "topic_ielts": "Education and Work",
+        "focus_en": "tasks, schedules, simple collocations",
+        "focus_vi": "nhiệm vụ, lịch trình, cụm từ thông dụng",
+        "objective_en": "Describe study and work responsibilities.",
+        "objective_vi": "Mô tả trách nhiệm học tập và công việc hằng ngày."
       },
       {
         "id": "VOC-A2-02",
         "order": 10,
         "level": "A2",
         "title": "Travel and Transport",
-        "focus": "ticket, platform, route, delay",
-        "objective": "Handle simple travel situations."
+        "focus": "EN: ticket, platform, route, delay | VI: vé, tuyến đường, sân ga, trễ chuyến",
+        "objective": "EN: Handle simple travel situations. | VI: Xử lý tình huống di chuyển phổ biến.",
+        "topic_ielts": "Travel and Transport",
+        "focus_en": "ticket, platform, route, delay",
+        "focus_vi": "vé, tuyến đường, sân ga, trễ chuyến",
+        "objective_en": "Handle simple travel situations.",
+        "objective_vi": "Xử lý tình huống di chuyển phổ biến."
       },
       {
         "id": "VOC-A2-03",
         "order": 11,
         "level": "A2",
         "title": "Shopping and Services",
-        "focus": "price, size, return, appointment",
-        "objective": "Ask for services and make simple requests."
+        "focus": "EN: price, size, return, appointment | VI: giá cả, kích cỡ, đổi trả, đặt lịch",
+        "objective": "EN: Ask for services and make simple requests. | VI: Đưa ra yêu cầu dịch vụ rõ ràng và lịch sự.",
+        "topic_ielts": "Shopping and Services",
+        "focus_en": "price, size, return, appointment",
+        "focus_vi": "giá cả, kích cỡ, đổi trả, đặt lịch",
+        "objective_en": "Ask for services and make simple requests.",
+        "objective_vi": "Đưa ra yêu cầu dịch vụ rõ ràng và lịch sự."
       },
       {
         "id": "VOC-A2-04",
         "order": 12,
         "level": "A2",
         "title": "Free Time and Hobbies",
-        "focus": "sports, arts, plans, invitations",
-        "objective": "Talk about free time activities."
+        "focus": "EN: sports, arts, plans, invitations | VI: thể thao, nghệ thuật, kế hoạch cuối tuần",
+        "objective": "EN: Talk about free time activities. | VI: Nói về hoạt động giải trí và lời mời đơn giản.",
+        "topic_ielts": "Hobbies and Leisure",
+        "focus_en": "sports, arts, plans, invitations",
+        "focus_vi": "thể thao, nghệ thuật, kế hoạch cuối tuần",
+        "objective_en": "Talk about free time activities.",
+        "objective_vi": "Nói về hoạt động giải trí và lời mời đơn giản."
       },
       {
         "id": "VOC-A2-05",
         "order": 13,
         "level": "A2",
         "title": "Technology in Daily Life",
-        "focus": "phone, app, message, online actions",
-        "objective": "Use practical language for technology tasks."
+        "focus": "EN: phone, app, message, online actions | VI: điện thoại, ứng dụng, nhắn tin, thao tác trực tuyến",
+        "objective": "EN: Use practical language for technology tasks. | VI: Dùng ngôn ngữ thực tế cho các tác vụ công nghệ.",
+        "topic_ielts": "Technology and Internet",
+        "focus_en": "phone, app, message, online actions",
+        "focus_vi": "điện thoại, ứng dụng, nhắn tin, thao tác trực tuyến",
+        "objective_en": "Use practical language for technology tasks.",
+        "objective_vi": "Dùng ngôn ngữ thực tế cho các tác vụ công nghệ."
       },
       {
         "id": "VOC-A2-06",
         "order": 14,
         "level": "A2",
         "title": "Weather and Environment",
-        "focus": "weather conditions and simple environment words",
-        "objective": "Describe weather and basic environment topics."
+        "focus": "EN: weather conditions and simple environment words | VI: thời tiết, khí hậu, từ vựng môi trường cơ bản",
+        "objective": "EN: Describe weather and basic environment topics. | VI: Mô tả thời tiết và vấn đề môi trường quen thuộc.",
+        "topic_ielts": "Weather and Environment",
+        "focus_en": "weather conditions and simple environment words",
+        "focus_vi": "thời tiết, khí hậu, từ vựng môi trường cơ bản",
+        "objective_en": "Describe weather and basic environment topics.",
+        "objective_vi": "Mô tả thời tiết và vấn đề môi trường quen thuộc."
       },
       {
         "id": "VOC-A2-07",
         "order": 15,
         "level": "A2",
         "title": "Communication Skills",
-        "focus": "agree, disagree, explain, ask again",
-        "objective": "Manage short real-life conversations."
+        "focus": "EN: agree, disagree, explain, ask again | VI: đồng ý, phản biện nhẹ, giải thích, nhắc lại",
+        "objective": "EN: Manage short real-life conversations. | VI: Duy trì hội thoại ngắn trong bối cảnh đời thường.",
+        "topic_ielts": "Communication Skills",
+        "focus_en": "agree, disagree, explain, ask again",
+        "focus_vi": "đồng ý, phản biện nhẹ, giải thích, nhắc lại",
+        "objective_en": "Manage short real-life conversations.",
+        "objective_vi": "Duy trì hội thoại ngắn trong bối cảnh đời thường."
       },
       {
         "id": "VOC-A2-08",
         "order": 16,
         "level": "A2",
         "title": "Problems and Solutions",
-        "focus": "broken, late, fix, replace, support",
-        "objective": "Describe common problems and ask for help."
+        "focus": "EN: broken, late, fix, replace, support | VI: hỏng hóc, trễ hạn, sửa chữa, hỗ trợ",
+        "objective": "EN: Describe common problems and ask for help. | VI: Trình bày vấn đề và yêu cầu trợ giúp rõ ràng.",
+        "topic_ielts": "Problems and Solutions",
+        "focus_en": "broken, late, fix, replace, support",
+        "focus_vi": "hỏng hóc, trễ hạn, sửa chữa, hỗ trợ",
+        "objective_en": "Describe common problems and ask for help.",
+        "objective_vi": "Trình bày vấn đề và yêu cầu trợ giúp rõ ràng."
       },
       {
         "id": "VOC-B1-01",
         "order": 17,
         "level": "B1",
         "title": "Education and Future Plans",
-        "focus": "subjects, goals, application language",
-        "objective": "Describe goals and short future plans."
+        "focus": "EN: subjects, goals, application language | VI: môn học, mục tiêu, hồ sơ ứng tuyển",
+        "objective": "EN: Describe goals and short future plans. | VI: Trình bày kế hoạch học tập và định hướng tương lai.",
+        "topic_ielts": "Education Plans",
+        "focus_en": "subjects, goals, application language",
+        "focus_vi": "môn học, mục tiêu, hồ sơ ứng tuyển",
+        "objective_en": "Describe goals and short future plans.",
+        "objective_vi": "Trình bày kế hoạch học tập và định hướng tương lai."
       },
       {
         "id": "VOC-B1-02",
         "order": 18,
         "level": "B1",
         "title": "Work Projects and Team Tasks",
-        "focus": "project steps, deadlines, teamwork",
-        "objective": "Report basic project updates."
+        "focus": "EN: project steps, deadlines, teamwork | VI: tiến độ dự án, hạn chót, phối hợp nhóm",
+        "objective": "EN: Report basic project updates. | VI: Báo cáo cập nhật công việc theo ngữ cảnh IELTS.",
+        "topic_ielts": "Work Projects",
+        "focus_en": "project steps, deadlines, teamwork",
+        "focus_vi": "tiến độ dự án, hạn chót, phối hợp nhóm",
+        "objective_en": "Report basic project updates.",
+        "objective_vi": "Báo cáo cập nhật công việc theo ngữ cảnh IELTS."
       },
       {
         "id": "VOC-B1-03",
         "order": 19,
         "level": "B1",
         "title": "Opinions and Media",
-        "focus": "opinion markers, media and news words",
-        "objective": "Give and support simple opinions."
+        "focus": "EN: opinion markers, media and news words | VI: nêu quan điểm, tin tức, dẫn chứng cơ bản",
+        "objective": "EN: Give and support simple opinions. | VI: Đưa ý kiến có lý do ngắn gọn và mạch lạc.",
+        "topic_ielts": "Media and Opinion",
+        "focus_en": "opinion markers, media and news words",
+        "focus_vi": "nêu quan điểm, tin tức, dẫn chứng cơ bản",
+        "objective_en": "Give and support simple opinions.",
+        "objective_vi": "Đưa ý kiến có lý do ngắn gọn và mạch lạc."
       },
       {
         "id": "VOC-B1-04",
         "order": 20,
         "level": "B1",
         "title": "Relationships and Emotions",
-        "focus": "feelings, conflict, support phrases",
-        "objective": "Describe emotions and relationship situations."
+        "focus": "EN: feelings, conflict, support phrases | VI: cảm xúc, mâu thuẫn, hỗ trợ tinh thần",
+        "objective": "EN: Describe emotions and relationship situations. | VI: Mô tả tình huống quan hệ cá nhân một cách tự nhiên.",
+        "topic_ielts": "Emotions and Relationships",
+        "focus_en": "feelings, conflict, support phrases",
+        "focus_vi": "cảm xúc, mâu thuẫn, hỗ trợ tinh thần",
+        "objective_en": "Describe emotions and relationship situations.",
+        "objective_vi": "Mô tả tình huống quan hệ cá nhân một cách tự nhiên."
       },
       {
         "id": "VOC-B1-05",
         "order": 21,
         "level": "B1",
         "title": "Health and Lifestyle Choices",
-        "focus": "habits, balance, stress, routines",
-        "objective": "Explain lifestyle choices and reasons."
+        "focus": "EN: habits, balance, stress, routines | VI: thói quen, cân bằng, căng thẳng, nghỉ ngơi",
+        "objective": "EN: Explain lifestyle choices and reasons. | VI: Giải thích lựa chọn lối sống và nguyên nhân.",
+        "topic_ielts": "Health and Lifestyle",
+        "focus_en": "habits, balance, stress, routines",
+        "focus_vi": "thói quen, cân bằng, căng thẳng, nghỉ ngơi",
+        "objective_en": "Explain lifestyle choices and reasons.",
+        "objective_vi": "Giải thích lựa chọn lối sống và nguyên nhân."
       },
       {
         "id": "VOC-B1-06",
         "order": 22,
         "level": "B1",
         "title": "Community and Social Issues",
-        "focus": "volunteer, local issues, simple solutions",
-        "objective": "Discuss basic community topics with examples."
+        "focus": "EN: volunteer, local issues, simple solutions | VI: tình nguyện, vấn đề địa phương, giải pháp đơn giản",
+        "objective": "EN: Discuss basic community topics with examples. | VI: Thảo luận chủ đề cộng đồng với ví dụ thực tế.",
+        "topic_ielts": "Society and Community",
+        "focus_en": "volunteer, local issues, simple solutions",
+        "focus_vi": "tình nguyện, vấn đề địa phương, giải pháp đơn giản",
+        "objective_en": "Discuss basic community topics with examples.",
+        "objective_vi": "Thảo luận chủ đề cộng đồng với ví dụ thực tế."
       },
       {
         "id": "VOC-B1-07",
         "order": 23,
         "level": "B1",
         "title": "Travel Experiences",
-        "focus": "trip stories, events, recommendations",
-        "objective": "Tell short travel experiences clearly."
+        "focus": "EN: trip stories, events, recommendations | VI: kể trải nghiệm chuyến đi, sự cố, gợi ý",
+        "objective": "EN: Tell short travel experiences clearly. | VI: Kể lại trải nghiệm du lịch mạch lạc, dễ hiểu.",
+        "topic_ielts": "Travel Experiences",
+        "focus_en": "trip stories, events, recommendations",
+        "focus_vi": "kể trải nghiệm chuyến đi, sự cố, gợi ý",
+        "objective_en": "Tell short travel experiences clearly.",
+        "objective_vi": "Kể lại trải nghiệm du lịch mạch lạc, dễ hiểu."
       },
       {
         "id": "VOC-B1-08",
         "order": 24,
         "level": "B1",
         "title": "Workplace Communication",
-        "focus": "meetings, updates, polite negotiation",
-        "objective": "Handle common workplace communication tasks."
+        "focus": "EN: meetings, updates, polite negotiation | VI: họp hành, cập nhật công việc, trao đổi lịch sự",
+        "objective": "EN: Handle common workplace communication tasks. | VI: Xử lý giao tiếp công sở ở mức B1.",
+        "topic_ielts": "Workplace Communication",
+        "focus_en": "meetings, updates, polite negotiation",
+        "focus_vi": "họp hành, cập nhật công việc, trao đổi lịch sự",
+        "objective_en": "Handle common workplace communication tasks.",
+        "objective_vi": "Xử lý giao tiếp công sở ở mức B1."
+      },
+      {
+        "id": "VOC-B1-09",
+        "order": 25,
+        "level": "B1",
+        "title": "Environment and Climate",
+        "topic_ielts": "Environment",
+        "focus_en": "pollution, recycling, energy use, public transport",
+        "focus_vi": "ô nhiễm, tái chế, tiêu thụ năng lượng, giao thông công cộng",
+        "objective_en": "Explain simple environmental problems and practical actions.",
+        "objective_vi": "Giải thích vấn đề môi trường và nêu hành động thực tế.",
+        "focus": "EN: pollution, recycling, energy use, public transport | VI: ô nhiễm, tái chế, tiêu thụ năng lượng, giao thông công cộng",
+        "objective": "EN: Explain simple environmental problems and practical actions. | VI: Giải thích vấn đề môi trường và nêu hành động thực tế."
+      },
+      {
+        "id": "VOC-B1-10",
+        "order": 26,
+        "level": "B1",
+        "title": "Technology and AI in Life",
+        "topic_ielts": "Technology",
+        "focus_en": "digital tools, AI support, privacy, screen time",
+        "focus_vi": "công cụ số, hỗ trợ AI, quyền riêng tư, thời gian dùng màn hình",
+        "objective_en": "Discuss technology benefits and risks with balanced language.",
+        "objective_vi": "Thảo luận lợi ích và rủi ro công nghệ bằng ngôn ngữ cân bằng.",
+        "focus": "EN: digital tools, AI support, privacy, screen time | VI: công cụ số, hỗ trợ AI, quyền riêng tư, thời gian dùng màn hình",
+        "objective": "EN: Discuss technology benefits and risks with balanced language. | VI: Thảo luận lợi ích và rủi ro công nghệ bằng ngôn ngữ cân bằng."
+      },
+      {
+        "id": "VOC-B1-11",
+        "order": 27,
+        "level": "B1",
+        "title": "Public Services and Infrastructure",
+        "topic_ielts": "Public Services",
+        "focus_en": "healthcare, transport system, education access, service quality",
+        "focus_vi": "y tế, hệ thống giao thông, tiếp cận giáo dục, chất lượng dịch vụ",
+        "objective_en": "Describe public services and suggest realistic improvements.",
+        "objective_vi": "Mô tả dịch vụ công và đề xuất cải thiện phù hợp.",
+        "focus": "EN: healthcare, transport system, education access, service quality | VI: y tế, hệ thống giao thông, tiếp cận giáo dục, chất lượng dịch vụ",
+        "objective": "EN: Describe public services and suggest realistic improvements. | VI: Mô tả dịch vụ công và đề xuất cải thiện phù hợp."
+      },
+      {
+        "id": "VOC-B1-12",
+        "order": 28,
+        "level": "B1",
+        "title": "Culture, Media, and Society",
+        "topic_ielts": "Culture and Society",
+        "focus_en": "traditions, social media influence, cultural identity, community values",
+        "focus_vi": "truyền thống, ảnh hưởng mạng xã hội, bản sắc văn hóa, giá trị cộng đồng",
+        "objective_en": "Express opinions on culture and society with clear examples.",
+        "objective_vi": "Nêu quan điểm về văn hóa xã hội kèm ví dụ rõ ràng.",
+        "focus": "EN: traditions, social media influence, cultural identity, community values | VI: truyền thống, ảnh hưởng mạng xã hội, bản sắc văn hóa, giá trị cộng đồng",
+        "objective": "EN: Express opinions on culture and society with clear examples. | VI: Nêu quan điểm về văn hóa xã hội kèm ví dụ rõ ràng."
       }
     ],
     "grammar": [

@@ -20,7 +20,6 @@ import ContentOverviewPage from './components/ContentOverviewPage';
 import ContentShowcaseLanding from './components/ContentShowcaseLanding';
 import ExpertDashboard from './components/ExpertDashboard';
 import ExpertLogin from './components/ExpertLogin';
-import EnglishLearningLab from './components/EnglishLearningLab';
 import FeaturesShowcase from './components/FeaturesShowcase';
 import GameFi from './components/GameFi';
 import LifeStageNavigation from './components/LifeStageNavigation';
@@ -196,7 +195,6 @@ const Navigation: React.FC = () => {
         <NavLinkBtn active={path === '/life-stages'} onClick={() => navigate('/life-stages')}>Giai đoạn sống</NavLinkBtn>
         <NavLinkBtn active={path === '/gamefi'} onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLinkBtn>
         <NavLinkBtn active={path === '/progress'} onClick={() => navigate('/progress')}>📊 Tiến trình</NavLinkBtn>
-        <NavLinkBtn active={path === '/english-lab'} onClick={() => navigate('/english-lab')}>🇬🇧 Học tiếng Anh</NavLinkBtn>
         <NavLinkBtn active={path === '/start'} onClick={() => navigate('/start')}>Làm test DASS-21</NavLinkBtn>
         {isAuthenticated ? (
           editingName ? (
@@ -267,9 +265,6 @@ const RoutedApp: React.FC = () => {
 
         {/* Features showcase — public */}
         <Route path="/features" element={<FeaturesShowcase />} />
-
-        {/* English learning lab — direct frontend testing */}
-        <Route path="/english-lab" element={<EnglishLearningLab />} />
 
         {/* Auth page */}
         <Route path="/login" element={<AuthPage />} />

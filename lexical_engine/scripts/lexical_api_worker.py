@@ -18,6 +18,7 @@ if ROOT not in sys.path:
 from app.api import lexical_service, progress_service, recommendation_service  # noqa: E402
 from app.core import pronunciation_scoring, quiz_engine  # noqa: E402
 from app.db import repository, schema  # noqa: E402
+from app.db.seed_loader import load_seed  # noqa: E402
 
 
 def _success(data: Dict[str, Any]) -> int:
@@ -225,6 +226,12 @@ def action_phase2_home(lesson_size: int, phrase_limit_per_word: int, grammar_lim
     return _success({"phase2Home": payload})
 
 
+def ensure_seed_ready() -> None:
+    """Ensure vocabulary exists for API routes when DB is fresh."""
+    if len(repository.get_all_words()) == 0:
+        load_seed()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Canonical lexical API worker")
     parser.add_argument("action", choices=[
@@ -253,6 +260,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     schema.create_tables()
+    ensure_seed_ready()
     args = parse_args()
 
     if args.action == "words":

@@ -1,27 +1,122 @@
 [
   {
-    "pattern": "I work",
-    "example": "I work every day.",
+    "pattern": "I am / You are / He is",
+    "example": "She is a university student.",
     "difficulty": 1
   },
   {
-    "pattern": "He works",
-    "example": "He works in Hanoi.",
+    "pattern": "Present Simple: I/You/We/They + V",
+    "example": "We study English every evening.",
     "difficulty": 1
   },
   {
-    "pattern": "I am ready",
-    "example": "I am ready now.",
+    "pattern": "Present Simple: He/She/It + Vs",
+    "example": "He works in a small office.",
     "difficulty": 1
   },
   {
-    "pattern": "I can + V",
-    "example": "I can study tonight.",
+    "pattern": "Do/Does + Subject + V?",
+    "example": "Does she live near here?",
+    "difficulty": 1
+  },
+  {
+    "pattern": "There is / There are",
+    "example": "There are two cafes near my house.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "Can / Cannot + V",
+    "example": "I can finish this task tonight.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "Present Continuous: am/is/are + V-ing",
+    "example": "They are preparing for the exam.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "some / any with countable and uncountable nouns",
+    "example": "Do you have any free time this afternoon?",
+    "difficulty": 1
+  },
+  {
+    "pattern": "Past Simple regular verbs (-ed)",
+    "example": "I watched a documentary last night.",
     "difficulty": 2
   },
   {
-    "pattern": "Can you + V?",
-    "example": "Can you help me?",
+    "pattern": "Past Simple irregular verbs",
+    "example": "She went to Da Nang last weekend.",
     "difficulty": 2
+  },
+  {
+    "pattern": "be going to + V",
+    "example": "I am going to apply for that course.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "will + V (prediction / offer)",
+    "example": "I think it will rain this evening.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Comparative and Superlative adjectives",
+    "example": "This route is faster than the old one.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Present Perfect: have/has + V3",
+    "example": "I have completed three practice tests.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "must / have to / should",
+    "example": "You should review your notes every day.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "First Conditional: If + present, will + V",
+    "example": "If I finish early, I will join the meeting.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Present Perfect vs Past Simple",
+    "example": "I have visited Hue, but I went there years ago.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "for / since with Present Perfect",
+    "example": "She has worked here for five years.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Second Conditional: If + past, would + V",
+    "example": "If I had more time, I would learn Spanish.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Passive Voice (present and past)",
+    "example": "The report was submitted on Monday.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Relative Clauses: who / which / that",
+    "example": "The book that I bought is very useful.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Reported Speech",
+    "example": "He said that he needed more details.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Modals of deduction: must / might / can't",
+    "example": "She must be busy because she did not reply.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Linking clauses: although / because / however",
+    "example": "Although it was late, we still finished the task.",
+    "difficulty": 3
   }
 ]

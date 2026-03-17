@@ -138,6 +138,17 @@ class ApiService {
     });
   }
 
+  public async submitFoundationGrammarCheck(payload: {
+    learnerId: number;
+    lessonId: string;
+    grammarId: number;
+    correct: boolean;
+  }): Promise<AxiosResponse> {
+    return this.post('/api/v2/foundation/grammar-check', payload, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
+
   public async getFoundationReview(learnerId = 1, limit = 20): Promise<AxiosResponse> {
     const query = [
       `learnerId=${encodeURIComponent(String(learnerId))}`,

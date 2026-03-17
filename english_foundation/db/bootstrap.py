@@ -55,8 +55,6 @@ def _load_json(path: Path) -> list[dict[str, Any]]:
 
 
 def seed_if_empty(conn: sqlite3.Connection) -> None:
-    grammar_count = conn.execute("SELECT COUNT(*) FROM grammar_units").fetchone()[0]
-
     vocab_rows = _load_json(VOCAB_SEED_PATH)
     for row in vocab_rows:
         conn.execute(
@@ -131,9 +129,22 @@ def seed_if_empty(conn: sqlite3.Connection) -> None:
                 ),
             )
 
-    if grammar_count == 0:
-        grammar_rows = _load_json(GRAMMAR_SEED_PATH)
-        for row in grammar_rows:
+    grammar_rows = _load_json(GRAMMAR_SEED_PATH)
+    for row in grammar_rows:
+        existing_grammar = conn.execute(
+            "SELECT id FROM grammar_units WHERE pattern = ? LIMIT 1",
+            (row["pattern"],),
+        ).fetchone()
+        if existing_grammar:
+            conn.execute(
+                """
+                UPDATE grammar_units
+                SET example = ?, difficulty = ?
+                WHERE id = ?
+                """,
+                (row["example"], row["difficulty"], int(existing_grammar[0])),
+            )
+        else:
             conn.execute(
                 """
                 INSERT INTO grammar_units (pattern, example, difficulty)

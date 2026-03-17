@@ -79,6 +79,15 @@ type VocabCheckResult = {
   recommended_next?: string;
 };
 
+type GrammarCheckResult = {
+  grammar_id: number;
+  correct: boolean;
+  grammar_level_before: number;
+  grammar_level_after: number;
+  grammar_level_percent: number;
+  recommended_next: string;
+};
+
 type ReviewItem = {
   id: number;
   word: string;
@@ -95,7 +104,7 @@ type ReviewPayload = {
   items: ReviewItem[];
 };
 
-type View = 'home' | 'track' | 'lesson' | 'vocab_check' | 'review' | 'progress';
+type View = 'home' | 'track' | 'lesson' | 'vocab_check' | 'grammar_check' | 'review' | 'progress';
 
 type LessonCard = {
   key: string;
@@ -416,6 +425,8 @@ const EnglishFoundationModule: React.FC = () => {
   const [cardIndex, setCardIndex] = useState<number>(0);
   const [checkAnswers, setCheckAnswers] = useState<Record<number, boolean>>({});
   const [checkResult, setCheckResult] = useState<VocabCheckResult | null>(null);
+  const [grammarAnswer, setGrammarAnswer] = useState<boolean | null>(null);
+  const [grammarResult, setGrammarResult] = useState<GrammarCheckResult | null>(null);
   const [reviewMode, setReviewMode] = useState<'due' | 'weak' | 'fresh'>('due');
   const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
   const [reviewAnswers, setReviewAnswers] = useState<Record<number, boolean>>({});
@@ -439,6 +450,8 @@ const EnglishFoundationModule: React.FC = () => {
         setSelectedLessonId(firstVocab);
       }
       setCardIndex(0);
+      setGrammarAnswer(null);
+      setGrammarResult(null);
       setReviewAnswers({});
       setReviewResult(null);
     } catch (e: any) {
@@ -497,6 +510,8 @@ const EnglishFoundationModule: React.FC = () => {
       setCardIndex(0);
       setCheckAnswers({});
       setCheckResult(null);
+      setGrammarAnswer(null);
+      setGrammarResult(null);
       setView('lesson');
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Cannot load this lesson now.');
@@ -536,6 +551,38 @@ const EnglishFoundationModule: React.FC = () => {
       setView('progress');
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Cannot submit vocab check now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitGrammarCheck = async () => {
+    const grammarId = Number(lesson?.grammar?.id || 0);
+    if (!selectedLessonId || !Number.isFinite(grammarId) || grammarId <= 0) {
+      setError('Grammar item is missing in this lesson. Please reload and try again.');
+      return;
+    }
+
+    if (grammarAnswer === null) {
+      setError('Please choose your grammar self-check result before submitting.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiService.submitFoundationGrammarCheck({
+        learnerId: 1,
+        lessonId: selectedLessonId,
+        grammarId,
+        correct: grammarAnswer,
+      });
+      setGrammarResult(res.data as GrammarCheckResult);
+      const progressRes = await apiService.getFoundationProgress();
+      setProgress(progressRes.data);
+      setView('progress');
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Cannot submit grammar check now.');
     } finally {
       setLoading(false);
     }
@@ -734,6 +781,14 @@ const EnglishFoundationModule: React.FC = () => {
               </Grid>
             ) : null}
 
+            {grammarResult ? (
+              <Grid>
+                <StatItem>Latest grammar check: <strong>{grammarResult.correct ? 'Understood' : 'Need more practice'}</strong></StatItem>
+                <StatItem>Grammar level: <strong>{Math.round(grammarResult.grammar_level_before * 100)}% {'->'} {grammarResult.grammar_level_percent}%</strong></StatItem>
+                <StatItem>Next action: <strong>{grammarResult.recommended_next}</strong></StatItem>
+              </Grid>
+            ) : null}
+
             <HomeButtons>
               <Button onClick={() => void openReview()}>Start daily review</Button>
               <Button $ghost onClick={() => setView('home')}>Back home</Button>
@@ -857,6 +912,57 @@ const EnglishFoundationModule: React.FC = () => {
     );
   }
 
+  if (view === 'grammar_check') {
+    return (
+      <Page>
+        <Shell>
+          <Card>
+            <HeaderRow>
+              <SectionTitle>Quick Grammar Check</SectionTitle>
+              <Pill>{grammarAnswer === null ? '0/1 answered' : '1/1 answered'}</Pill>
+            </HeaderRow>
+            <Muted>Can you use this grammar pattern correctly in your own sentence?</Muted>
+
+            <LessonMain>
+              <Badge>Grammar</Badge>
+              <Title style={{ fontSize: '28px', marginBottom: 8 }}>{lesson?.grammar?.pattern || 'No pattern'}</Title>
+              <Muted>{lesson?.grammar?.example || ''}</Muted>
+            </LessonMain>
+
+            <Grid>
+              <CheckRow>
+                <div>
+                  <strong>Your self-check</strong>
+                  <Muted>Be honest. This helps the system adapt your next grammar lesson.</Muted>
+                </div>
+                <SmallButton
+                  $active={grammarAnswer === true}
+                  onClick={() => setGrammarAnswer(true)}
+                >
+                  I can use it
+                </SmallButton>
+                <SmallButton
+                  $danger
+                  $active={grammarAnswer === false}
+                  onClick={() => setGrammarAnswer(false)}
+                >
+                  Need more practice
+                </SmallButton>
+              </CheckRow>
+            </Grid>
+
+            <HomeButtons>
+              <Button $ghost onClick={() => setView('lesson')}>Back to lesson</Button>
+              <Button onClick={() => void submitGrammarCheck()}>Submit grammar check</Button>
+            </HomeButtons>
+
+            {error ? <ErrorNote>{error}</ErrorNote> : null}
+          </Card>
+        </Shell>
+      </Page>
+    );
+  }
+
   const card = cards[cardIndex];
   const total = cards.length || 1;
   const progressPct = Math.round(((cardIndex + 1) / total) * 100);
@@ -904,7 +1010,7 @@ const EnglishFoundationModule: React.FC = () => {
                     setView('vocab_check');
                     return;
                   }
-                  setView('progress');
+                  setView('grammar_check');
                   return;
                 }
                 setCardIndex(prev => prev + 1);

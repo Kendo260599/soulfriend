@@ -2,13 +2,15 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-type BridgeAction = 'lesson' | 'progress' | 'curriculum' | 'track_lesson' | 'vocab_check' | 'review' | 'review_submit';
+type BridgeAction = 'lesson' | 'progress' | 'curriculum' | 'track_lesson' | 'vocab_check' | 'grammar_check' | 'review' | 'review_submit';
 
 type BridgePayload = {
   action: BridgeAction;
   learnerId?: number;
   track?: string;
   lessonId?: string;
+  grammarId?: number;
+  correct?: boolean;
   limit?: number;
   answers?: Array<{ wordId: number; correct: boolean }>;
 };
@@ -234,6 +236,21 @@ export const submitFoundationVocabCheck = async (
     learnerId,
     lessonId,
     answers,
+  });
+};
+
+export const submitFoundationGrammarCheck = async (
+  learnerId: number,
+  lessonId: string,
+  grammarId: number,
+  correct: boolean,
+): Promise<any> => {
+  return runBridge({
+    action: 'grammar_check',
+    learnerId,
+    lessonId,
+    grammarId,
+    correct,
   });
 };
 

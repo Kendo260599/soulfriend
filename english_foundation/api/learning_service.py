@@ -54,6 +54,7 @@ class LearningService:
         lesson = self.lesson_engine.compose_track_lesson(
             track=track_key,
             lesson_index=lesson_index,
+            lesson_id=str((selected_lesson or {}).get("id", "")) or None,
             lexical_level=profile["lexical_level"],
             grammar_level=profile["grammar_level"],
             topic_hint=str((selected_lesson or {}).get("topic_ielts", "")).strip() or None,
@@ -257,6 +258,44 @@ class LearningService:
             "score": int(score),
             "weak_items": weak_items,
             "recommended_review": "review_weak_words" if weak_items else "next_vocab_lesson",
+        }
+
+    def submit_grammar_check(
+        self,
+        learner_id: int,
+        lesson_id: str | None,
+        grammar_id: int,
+        correct: bool,
+    ) -> dict[str, Any]:
+        if grammar_id <= 0:
+            raise ValueError("grammarId must be a positive integer.")
+
+        grammar_exists = self.conn.execute(
+            "SELECT id FROM grammar_units WHERE id = ? LIMIT 1",
+            (grammar_id,),
+        ).fetchone()
+        if not grammar_exists:
+            raise ValueError(f"Grammar item '{grammar_id}' not found.")
+
+        profile = self._get_learner_profile(learner_id)
+        previous_level = float(profile["grammar_level"])
+        updated_level = self._next_grammar_level(previous_level, correct)
+
+        self.conn.execute(
+            "UPDATE learner_profile SET grammar_level = ? WHERE id = ?",
+            (updated_level, learner_id),
+        )
+        self.conn.commit()
+
+        return {
+            "learner_id": learner_id,
+            "lesson_id": lesson_id,
+            "grammar_id": grammar_id,
+            "correct": bool(correct),
+            "grammar_level_before": round(previous_level, 3),
+            "grammar_level_after": round(updated_level, 3),
+            "grammar_level_percent": int(round(updated_level * 100)),
+            "recommended_next": "next_grammar_lesson" if correct else "repeat_grammar_lesson",
         }
 
     def get_review_payload(self, learner_id: int = 1, limit: int = 20) -> dict[str, Any]:
@@ -496,6 +535,12 @@ class LearningService:
         else:
             delta = timedelta(hours=12)
         return (now_dt + delta).isoformat()
+
+    @staticmethod
+    def _next_grammar_level(current_level: float, correct: bool) -> float:
+        if correct:
+            return min(0.98, round(current_level + 0.06, 3))
+        return max(0.05, round(current_level - 0.03, 3))
 
     def _get_learner_profile(self, learner_id: int) -> dict[str, float]:
         row = self.conn.execute(

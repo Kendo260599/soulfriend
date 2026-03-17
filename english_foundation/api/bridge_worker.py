@@ -23,6 +23,8 @@ def main() -> None:
             learner_id = int(payload.get("learnerId") or payload.get("learner_id") or 1)
             track = str(payload.get("track", "vocab") or "vocab")
             lesson_id = payload.get("lessonId")
+            grammar_id = payload.get("grammarId")
+            correct = payload.get("correct")
             answers = payload.get("answers", [])
 
             if action == "lesson":
@@ -42,6 +44,13 @@ def main() -> None:
                     learner_id=learner_id,
                     lesson_id=str(lesson_id) if lesson_id else None,
                     answers=answers,
+                )
+            elif action == "grammar_check":
+                data = service.submit_grammar_check(
+                    learner_id=learner_id,
+                    lesson_id=str(lesson_id) if lesson_id else None,
+                    grammar_id=int(grammar_id),
+                    correct=bool(correct),
                 )
             elif action == "review":
                 limit = int(payload.get("limit") or 20)

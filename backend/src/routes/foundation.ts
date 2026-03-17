@@ -5,6 +5,7 @@ import {
   getFoundationProgress,
   getFoundationReview,
   getFoundationTrackLesson,
+  submitFoundationGrammarCheck,
   submitFoundationReview,
   submitFoundationVocabCheck,
 } from '../services/foundationBridgeService';
@@ -97,6 +98,43 @@ router.post('/vocab-check', async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({
       message: error?.message || 'Failed to submit vocab check',
+    });
+  }
+});
+
+router.post('/grammar-check', async (req: Request, res: Response) => {
+  try {
+    const learnerIdRaw = Number(req.body?.learnerId || 1);
+    const lessonId = String(req.body?.lessonId || '').trim();
+    const grammarIdRaw = Number(req.body?.grammarId);
+    const learnerId = Number.isFinite(learnerIdRaw) ? learnerIdRaw : 1;
+
+    if (!lessonId) {
+      res.status(400).json({
+        message: 'lessonId is required.',
+      });
+      return;
+    }
+
+    if (!Number.isFinite(grammarIdRaw) || grammarIdRaw <= 0) {
+      res.status(400).json({
+        message: 'grammarId must be a positive number.',
+      });
+      return;
+    }
+
+    if (typeof req.body?.correct !== 'boolean') {
+      res.status(400).json({
+        message: 'correct must be a boolean.',
+      });
+      return;
+    }
+
+    const data = await submitFoundationGrammarCheck(learnerId, lessonId, grammarIdRaw, req.body.correct);
+    res.status(200).json(data);
+  } catch (error: any) {
+    res.status(500).json({
+      message: error?.message || 'Failed to submit grammar check',
     });
   }
 });

@@ -33,6 +33,7 @@ type LessonPayload = {
     title?: string;
     focus?: string;
     objective?: string;
+    topic_ielts?: string;
   };
   sequence?: string[];
   words: WordItem[];
@@ -61,9 +62,40 @@ type ProgressPayload = {
   learned_words: number;
   weak_words: number;
   grammar_completed: number;
+  due_today?: number;
 };
 
-type View = 'home' | 'track' | 'lesson' | 'progress';
+type VocabCheckAnswer = {
+  wordId: number;
+  correct: boolean;
+};
+
+type VocabCheckResult = {
+  score: number;
+  correct: number;
+  total: number;
+  weak_items: number[];
+  recommended_review: string;
+  recommended_next?: string;
+};
+
+type ReviewItem = {
+  id: number;
+  word: string;
+  ipa?: string;
+  meaning_vi: string;
+  collocation?: string;
+  example_sentence?: string;
+  topic_ielts?: string;
+};
+
+type ReviewPayload = {
+  learner_id: number;
+  mode: 'due' | 'weak' | 'fresh';
+  items: ReviewItem[];
+};
+
+type View = 'home' | 'track' | 'lesson' | 'vocab_check' | 'review' | 'progress';
 
 type LessonCard = {
   key: string;
@@ -347,6 +379,31 @@ const ErrorNote = styled.div`
   margin-top: 12px;
 `;
 
+const CheckRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #d7e4d9;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const SmallButton = styled.button<{ $active?: boolean; $danger?: boolean }>`
+  border: 1px solid ${p => (p.$active ? (p.$danger ? '#e48a8a' : '#7fcd95') : '#d6e3d8')};
+  background: ${p => (p.$active ? (p.$danger ? '#fff0f0' : '#effbf3') : '#fff')};
+  color: ${p => (p.$active ? (p.$danger ? '#963535' : '#1e6a3b') : '#355045')};
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: pointer;
+`;
+
 const EnglishFoundationModule: React.FC = () => {
   const [view, setView] = useState<View>('home');
   const [lesson, setLesson] = useState<LessonPayload | null>(null);
@@ -357,6 +414,12 @@ const EnglishFoundationModule: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [cardIndex, setCardIndex] = useState<number>(0);
+  const [checkAnswers, setCheckAnswers] = useState<Record<number, boolean>>({});
+  const [checkResult, setCheckResult] = useState<VocabCheckResult | null>(null);
+  const [reviewMode, setReviewMode] = useState<'due' | 'weak' | 'fresh'>('due');
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
+  const [reviewAnswers, setReviewAnswers] = useState<Record<number, boolean>>({});
+  const [reviewResult, setReviewResult] = useState<VocabCheckResult | null>(null);
 
   const loadAll = async () => {
     setLoading(true);
@@ -376,6 +439,8 @@ const EnglishFoundationModule: React.FC = () => {
         setSelectedLessonId(firstVocab);
       }
       setCardIndex(0);
+      setReviewAnswers({});
+      setReviewResult(null);
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Cannot load foundation lesson now.');
     } finally {
@@ -430,9 +495,100 @@ const EnglishFoundationModule: React.FC = () => {
       setSelectedTrack(track);
       setSelectedLessonId(lessonId);
       setCardIndex(0);
+      setCheckAnswers({});
+      setCheckResult(null);
       setView('lesson');
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Cannot load this lesson now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitVocabCheck = async () => {
+    if (!lesson?.words?.length || !selectedLessonId) {
+      setView('progress');
+      return;
+    }
+
+    const unanswered = lesson.words.filter(item => !Object.prototype.hasOwnProperty.call(checkAnswers, item.id));
+    if (unanswered.length > 0) {
+      setError(`Please answer all words before submitting (${unanswered.length} left).`);
+      return;
+    }
+
+    const answers: VocabCheckAnswer[] = lesson.words.map(item => ({
+      wordId: item.id,
+      correct: Boolean(checkAnswers[item.id]),
+    }));
+
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiService.submitFoundationVocabCheck({
+        learnerId: 1,
+        lessonId: selectedLessonId,
+        answers,
+      });
+      setCheckResult(res.data);
+      const progressRes = await apiService.getFoundationProgress();
+      setProgress(progressRes.data);
+      setView('progress');
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Cannot submit vocab check now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openReview = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiService.getFoundationReview(1, 12);
+      const payload = res.data as ReviewPayload;
+      setReviewItems(Array.isArray(payload?.items) ? payload.items : []);
+      setReviewMode(payload?.mode || 'due');
+      setReviewAnswers({});
+      setReviewResult(null);
+      setView('review');
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Cannot load review queue now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitReview = async () => {
+    if (!reviewItems.length) {
+      setView('progress');
+      return;
+    }
+
+    const unanswered = reviewItems.filter(item => !Object.prototype.hasOwnProperty.call(reviewAnswers, item.id));
+    if (unanswered.length > 0) {
+      setError(`Please answer all review items before submitting (${unanswered.length} left).`);
+      return;
+    }
+
+    const answers: VocabCheckAnswer[] = reviewItems.map(item => ({
+      wordId: item.id,
+      correct: Boolean(reviewAnswers[item.id]),
+    }));
+
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiService.submitFoundationReview({
+        learnerId: 1,
+        answers,
+      });
+      setReviewResult(res.data);
+      const progressRes = await apiService.getFoundationProgress();
+      setProgress(progressRes.data);
+      setView('progress');
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Cannot submit review now.');
     } finally {
       setLoading(false);
     }
@@ -464,6 +620,7 @@ const EnglishFoundationModule: React.FC = () => {
               <Pill>Current level: {Math.round(lexicalLevel * 100)}%</Pill>
               <Pill>Goal: 1 focused lesson today</Pill>
               <Pill>Path: A1 to B1</Pill>
+              <Pill>Due today: {progress?.due_today || 0}</Pill>
             </HeroMeta>
           </Hero>
 
@@ -482,6 +639,7 @@ const EnglishFoundationModule: React.FC = () => {
 
             <HomeButtons>
               <Button onClick={() => setView('track')}>Start lesson now</Button>
+              <Button $ghost onClick={() => void openReview()}>Daily review ({progress?.due_today || 0})</Button>
               <Button $ghost onClick={() => setView('progress')}>View learning progress</Button>
             </HomeButtons>
 
@@ -557,9 +715,142 @@ const EnglishFoundationModule: React.FC = () => {
               <StatItem>Learned words: <strong>{progress?.learned_words || 0}</strong></StatItem>
               <StatItem>Words to review: <strong>{progress?.weak_words || 0}</strong></StatItem>
               <StatItem>Grammar completion: <strong>{progress?.grammar_completed || 0}%</strong></StatItem>
+              <StatItem>Due today: <strong>{progress?.due_today || 0}</strong></StatItem>
             </Grid>
 
-            <Button onClick={() => setView('home')}>Back home</Button>
+            {checkResult ? (
+              <Grid>
+                <StatItem>Latest vocab check score: <strong>{checkResult.score}%</strong></StatItem>
+                <StatItem>Correct answers: <strong>{checkResult.correct}/{checkResult.total}</strong></StatItem>
+                <StatItem>Recommendation: <strong>{checkResult.recommended_review}</strong></StatItem>
+              </Grid>
+            ) : null}
+
+            {reviewResult ? (
+              <Grid>
+                <StatItem>Latest review score: <strong>{reviewResult.score}%</strong></StatItem>
+                <StatItem>Review answers: <strong>{reviewResult.correct}/{reviewResult.total}</strong></StatItem>
+                <StatItem>Next action: <strong>{reviewResult.recommended_next || 'new_lesson'}</strong></StatItem>
+              </Grid>
+            ) : null}
+
+            <HomeButtons>
+              <Button onClick={() => void openReview()}>Start daily review</Button>
+              <Button $ghost onClick={() => setView('home')}>Back home</Button>
+            </HomeButtons>
+          </Card>
+        </Shell>
+      </Page>
+    );
+  }
+
+  if (view === 'review') {
+    const answered = reviewItems.filter(item => Object.prototype.hasOwnProperty.call(reviewAnswers, item.id)).length;
+    const modeLabel = reviewMode === 'due'
+      ? 'Due items'
+      : reviewMode === 'weak'
+        ? 'Weak memory items'
+        : 'Fresh vocabulary';
+
+    return (
+      <Page>
+        <Shell>
+          <Card>
+            <HeaderRow>
+              <SectionTitle>Daily Review Queue</SectionTitle>
+              <Pill>{answered}/{reviewItems.length} answered</Pill>
+            </HeaderRow>
+            <Muted>Mode: {modeLabel}. Mark quickly and let the schedule adapt to your memory.</Muted>
+
+            <Grid>
+              {reviewItems.map(item => (
+                <CheckRow key={`review-${item.id}`}>
+                  <div>
+                    <strong>{item.word}</strong> {item.ipa || ''}
+                    <Muted>{item.meaning_vi}</Muted>
+                    {!!item.topic_ielts && <Muted>Topic: {item.topic_ielts}</Muted>}
+                  </div>
+                  <SmallButton
+                    $active={reviewAnswers[item.id] === true}
+                    onClick={() => setReviewAnswers(prev => ({ ...prev, [item.id]: true }))}
+                  >
+                    Remembered
+                  </SmallButton>
+                  <SmallButton
+                    $danger
+                    $active={reviewAnswers[item.id] === false}
+                    onClick={() => setReviewAnswers(prev => ({ ...prev, [item.id]: false }))}
+                  >
+                    Not yet
+                  </SmallButton>
+                </CheckRow>
+              ))}
+            </Grid>
+
+            {!reviewItems.length ? (
+              <Muted>No review items right now. Great job - continue with a new vocab lesson.</Muted>
+            ) : null}
+
+            <HomeButtons>
+              <Button $ghost onClick={() => setView('progress')}>Back to progress</Button>
+              <Button onClick={() => void submitReview()}>Submit daily review</Button>
+            </HomeButtons>
+
+            {error ? <ErrorNote>{error}</ErrorNote> : null}
+          </Card>
+        </Shell>
+      </Page>
+    );
+  }
+
+  if (view === 'vocab_check') {
+    const words = lesson?.words || [];
+    const answered = words.filter(item => Object.prototype.hasOwnProperty.call(checkAnswers, item.id)).length;
+
+    return (
+      <Page>
+        <Shell>
+          <Card>
+            <HeaderRow>
+              <SectionTitle>Quick Vocab Check</SectionTitle>
+              <Pill>{answered}/{words.length} answered</Pill>
+            </HeaderRow>
+            <Muted>Mark each word as remembered or not yet. We will adjust your progress.</Muted>
+
+            <Grid>
+              {words.map(item => (
+                <CheckRow key={`check-${item.id}`}>
+                  <div>
+                    <strong>{item.word}</strong> {item.ipa}
+                    <Muted>{item.meaning_vi}</Muted>
+                  </div>
+                  <SmallButton
+                    $active={checkAnswers[item.id] === true}
+                    onClick={() => setCheckAnswers(prev => ({ ...prev, [item.id]: true }))}
+                  >
+                    Remembered
+                  </SmallButton>
+                  <SmallButton
+                    $danger
+                    $active={checkAnswers[item.id] === false}
+                    onClick={() => setCheckAnswers(prev => ({ ...prev, [item.id]: false }))}
+                  >
+                    Not yet
+                  </SmallButton>
+                </CheckRow>
+              ))}
+            </Grid>
+
+            <HomeButtons>
+              <Button $ghost onClick={() => setView('lesson')}>Back to lesson</Button>
+              <Button onClick={() => void submitVocabCheck()}>Submit vocab check</Button>
+            </HomeButtons>
+
+            {!words.length ? (
+              <Muted>No vocabulary items found for this lesson yet. Please pick another vocab lesson.</Muted>
+            ) : null}
+
+            {error ? <ErrorNote>{error}</ErrorNote> : null}
           </Card>
         </Shell>
       </Page>
@@ -593,6 +884,10 @@ const EnglishFoundationModule: React.FC = () => {
             </Muted>
           )}
 
+          {!!lesson?.lesson_meta?.topic_ielts && (
+            <Pill>Topic: {lesson.lesson_meta.topic_ielts}</Pill>
+          )}
+
           <LessonMain>
             <Badge>{card?.title || 'Lesson item'}</Badge>
             <Title style={{ fontSize: '30px', marginBottom: 8 }}>{card?.main || 'No item'}</Title>
@@ -605,6 +900,10 @@ const EnglishFoundationModule: React.FC = () => {
             <Button
               onClick={() => {
                 if (isLast) {
+                  if (selectedTrack === 'vocab') {
+                    setView('vocab_check');
+                    return;
+                  }
                   setView('progress');
                   return;
                 }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,7 @@ class LearningService:
             lesson_index=lesson_index,
             lexical_level=profile["lexical_level"],
             grammar_level=profile["grammar_level"],
+            topic_hint=str((selected_lesson or {}).get("topic_ielts", "")).strip() or None,
         )
 
         return {
@@ -179,24 +181,321 @@ class LearningService:
         except (TypeError, ValueError):
             return fallback
 
-    def get_progress_payload(self) -> dict[str, Any]:
+    def get_progress_payload(self, learner_id: int = 1) -> dict[str, Any]:
+        now_iso = self._now_iso()
         learned_words = self.conn.execute(
-            "SELECT COUNT(*) FROM progress WHERE memory_strength >= 0.7"
+            "SELECT COUNT(*) FROM progress WHERE learner_id = ? AND memory_strength >= 0.7",
+            (learner_id,),
         ).fetchone()[0]
 
         weak_words = self.conn.execute(
-            "SELECT COUNT(*) FROM progress WHERE memory_strength < 0.4"
+            "SELECT COUNT(*) FROM progress WHERE learner_id = ? AND memory_strength < 0.4",
+            (learner_id,),
+        ).fetchone()[0]
+
+        due_today = self.conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM progress
+            WHERE learner_id = ?
+              AND review_due_at IS NOT NULL
+              AND review_due_at <= ?
+            """,
+            (learner_id, now_iso),
         ).fetchone()[0]
 
         grammar_completed = self.conn.execute(
-            "SELECT ROUND(grammar_level * 100, 0) FROM learner_profile WHERE id = 1"
+            "SELECT ROUND(grammar_level * 100, 0) FROM learner_profile WHERE id = ?",
+            (learner_id,),
         ).fetchone()
 
         return {
             "learned_words": int(learned_words),
             "weak_words": int(weak_words),
             "grammar_completed": int(grammar_completed[0]) if grammar_completed else 0,
+            "due_today": int(due_today),
         }
+
+    def submit_vocab_check(
+        self,
+        learner_id: int,
+        lesson_id: str | None,
+        answers: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        if not isinstance(answers, list) or len(answers) == 0:
+            raise ValueError("Answers must be a non-empty list.")
+
+        total = 0
+        correct_count = 0
+        weak_items: list[int] = []
+
+        for idx, item in enumerate(answers):
+            if not isinstance(item, dict):
+                raise ValueError(f"Invalid answer format at index {idx}.")
+
+            word_id = self._safe_int(item.get("wordId"), None)
+            if word_id is None or word_id <= 0:
+                raise ValueError(f"Answer at index {idx} has invalid wordId.")
+
+            is_correct = bool(item.get("correct", False))
+            self._apply_answer_update(learner_id=learner_id, word_id=word_id, is_correct=is_correct)
+
+            total += 1
+            if is_correct:
+                correct_count += 1
+            else:
+                weak_items.append(word_id)
+
+        self.conn.commit()
+
+        score = round((correct_count / max(1, total)) * 100)
+        return {
+            "learner_id": learner_id,
+            "lesson_id": lesson_id,
+            "total": total,
+            "correct": correct_count,
+            "score": int(score),
+            "weak_items": weak_items,
+            "recommended_review": "review_weak_words" if weak_items else "next_vocab_lesson",
+        }
+
+    def get_review_payload(self, learner_id: int = 1, limit: int = 20) -> dict[str, Any]:
+        safe_limit = max(1, min(50, int(limit)))
+        now_iso = self._now_iso()
+
+        due_rows = self.conn.execute(
+            """
+            SELECT
+                v.id,
+                v.word,
+                v.ipa,
+                v.meaning_vi,
+                v.collocation,
+                v.example_sentence,
+                COALESCE(v.topic_ielts, '') AS topic_ielts,
+                COALESCE(p.memory_strength, 0) AS memory_strength,
+                p.review_due_at
+            FROM progress p
+            JOIN vocabulary v ON v.id = p.item_id
+            WHERE p.learner_id = ?
+              AND p.review_due_at IS NOT NULL
+              AND p.review_due_at <= ?
+              AND COALESCE(v.source_standard, '') = 'open-triangulated'
+            ORDER BY p.review_due_at ASC, p.memory_strength ASC, v.id ASC
+            LIMIT ?
+            """,
+            (learner_id, now_iso, safe_limit),
+        ).fetchall()
+
+        if due_rows:
+            return {
+                "learner_id": learner_id,
+                "mode": "due",
+                "items": [dict(row) for row in due_rows],
+            }
+
+        weak_rows = self.conn.execute(
+            """
+            SELECT
+                v.id,
+                v.word,
+                v.ipa,
+                v.meaning_vi,
+                v.collocation,
+                v.example_sentence,
+                COALESCE(v.topic_ielts, '') AS topic_ielts,
+                COALESCE(p.memory_strength, 0) AS memory_strength,
+                p.review_due_at
+            FROM progress p
+            JOIN vocabulary v ON v.id = p.item_id
+            WHERE p.learner_id = ?
+              AND COALESCE(p.memory_strength, 0) < 0.6
+              AND COALESCE(v.source_standard, '') = 'open-triangulated'
+            ORDER BY p.memory_strength ASC, v.id ASC
+            LIMIT ?
+            """,
+            (learner_id, safe_limit),
+        ).fetchall()
+
+        if weak_rows:
+            return {
+                "learner_id": learner_id,
+                "mode": "weak",
+                "items": [dict(row) for row in weak_rows],
+            }
+
+        fresh_rows = self.conn.execute(
+            """
+            SELECT
+                v.id,
+                v.word,
+                v.ipa,
+                v.meaning_vi,
+                v.collocation,
+                v.example_sentence,
+                COALESCE(v.topic_ielts, '') AS topic_ielts,
+                0 AS memory_strength,
+                NULL AS review_due_at
+            FROM vocabulary v
+            WHERE COALESCE(v.source_standard, '') = 'open-triangulated'
+              AND NOT EXISTS (
+                SELECT 1 FROM progress p
+                WHERE p.item_id = v.id AND p.learner_id = ?
+              )
+            ORDER BY v.difficulty ASC, v.id ASC
+            LIMIT ?
+            """,
+            (learner_id, safe_limit),
+        ).fetchall()
+
+        return {
+            "learner_id": learner_id,
+            "mode": "fresh",
+            "items": [dict(row) for row in fresh_rows],
+        }
+
+    def submit_review_payload(self, learner_id: int, answers: list[dict[str, Any]]) -> dict[str, Any]:
+        if not isinstance(answers, list) or len(answers) == 0:
+            raise ValueError("Answers must be a non-empty list.")
+
+        total = 0
+        correct_count = 0
+        weak_items: list[int] = []
+
+        for idx, item in enumerate(answers):
+            if not isinstance(item, dict):
+                raise ValueError(f"Invalid answer format at index {idx}.")
+
+            word_id = self._safe_int(item.get("wordId"), None)
+            if word_id is None or word_id <= 0:
+                raise ValueError(f"Answer at index {idx} has invalid wordId.")
+
+            is_correct = bool(item.get("correct", False))
+            self._apply_answer_update(learner_id=learner_id, word_id=word_id, is_correct=is_correct)
+
+            total += 1
+            if is_correct:
+                correct_count += 1
+            else:
+                weak_items.append(word_id)
+
+        self.conn.commit()
+        score = round((correct_count / max(1, total)) * 100)
+        return {
+            "learner_id": learner_id,
+            "total": total,
+            "correct": correct_count,
+            "score": int(score),
+            "weak_items": weak_items,
+            "recommended_next": "continue_review" if weak_items else "new_lesson",
+        }
+
+    def _apply_answer_update(self, learner_id: int, word_id: int, is_correct: bool) -> None:
+        row = self.conn.execute(
+            """
+            SELECT id, correct_count, wrong_count, memory_strength, streak_correct
+            FROM progress
+            WHERE learner_id = ? AND item_id = ?
+            ORDER BY id ASC
+            LIMIT 1
+            """,
+            (learner_id, word_id),
+        ).fetchone()
+
+        now_iso = self._now_iso()
+
+        if row:
+            next_correct = int(row["correct_count"]) + (1 if is_correct else 0)
+            next_wrong = int(row["wrong_count"]) + (0 if is_correct else 1)
+            prev_strength = float(row["memory_strength"])
+            prev_streak = int(row["streak_correct"])
+
+            if is_correct:
+                next_streak = prev_streak + 1
+                memory_strength = min(0.98, round(prev_strength + 0.12, 3))
+            else:
+                next_streak = 0
+                memory_strength = max(0.05, round(prev_strength * 0.6, 3))
+
+            due_iso = self._calc_review_due(now_iso=now_iso, is_correct=is_correct, streak=next_streak)
+
+            self.conn.execute(
+                """
+                UPDATE progress
+                SET correct_count = ?,
+                    wrong_count = ?,
+                    memory_strength = ?,
+                    streak_correct = ?,
+                    last_result = ?,
+                    last_reviewed_at = ?,
+                    review_due_at = ?
+                WHERE id = ?
+                """,
+                (
+                    next_correct,
+                    next_wrong,
+                    memory_strength,
+                    next_streak,
+                    1 if is_correct else 0,
+                    now_iso,
+                    due_iso,
+                    int(row["id"]),
+                ),
+            )
+            return
+
+        next_correct = 1 if is_correct else 0
+        next_wrong = 0 if is_correct else 1
+        next_streak = 1 if is_correct else 0
+        memory_strength = 0.72 if is_correct else 0.25
+        due_iso = self._calc_review_due(now_iso=now_iso, is_correct=is_correct, streak=next_streak)
+        self.conn.execute(
+            """
+            INSERT INTO progress (
+                learner_id,
+                item_id,
+                correct_count,
+                wrong_count,
+                memory_strength,
+                streak_correct,
+                last_result,
+                last_reviewed_at,
+                review_due_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                learner_id,
+                word_id,
+                next_correct,
+                next_wrong,
+                memory_strength,
+                next_streak,
+                1 if is_correct else 0,
+                now_iso,
+                due_iso,
+            ),
+        )
+
+    @staticmethod
+    def _now_iso() -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    @staticmethod
+    def _calc_review_due(now_iso: str, is_correct: bool, streak: int) -> str:
+        now_dt = datetime.fromisoformat(now_iso)
+        if is_correct:
+            if streak <= 1:
+                delta = timedelta(days=1)
+            elif streak == 2:
+                delta = timedelta(days=3)
+            elif streak == 3:
+                delta = timedelta(days=7)
+            else:
+                delta = timedelta(days=14)
+        else:
+            delta = timedelta(hours=12)
+        return (now_dt + delta).isoformat()
 
     def _get_learner_profile(self, learner_id: int) -> dict[str, float]:
         row = self.conn.execute(

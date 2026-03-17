@@ -127,6 +127,36 @@ class ApiService {
       timeout: API_CONFIG.FOUNDATION_TIMEOUT,
     });
   }
+
+  public async submitFoundationVocabCheck(payload: {
+    learnerId: number;
+    lessonId: string;
+    answers: Array<{ wordId: number; correct: boolean }>;
+  }): Promise<AxiosResponse> {
+    return this.post('/api/v2/foundation/vocab-check', payload, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
+
+  public async getFoundationReview(learnerId = 1, limit = 20): Promise<AxiosResponse> {
+    const query = [
+      `learnerId=${encodeURIComponent(String(learnerId))}`,
+      `limit=${encodeURIComponent(String(limit))}`,
+    ].join('&');
+
+    return this.get(`/api/v2/foundation/review?${query}`, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
+
+  public async submitFoundationReview(payload: {
+    learnerId: number;
+    answers: Array<{ wordId: number; correct: boolean }>;
+  }): Promise<AxiosResponse> {
+    return this.post('/api/v2/foundation/review-submit', payload, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
 }
 
 // Export a singleton instance

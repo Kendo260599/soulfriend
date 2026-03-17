@@ -7,7 +7,11 @@ CREATE TABLE IF NOT EXISTS vocabulary (
   meaning_vi TEXT NOT NULL,
   difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5),
   example_sentence TEXT NOT NULL,
-  collocation TEXT NOT NULL
+  collocation TEXT NOT NULL,
+  topic_ielts TEXT,
+  cefr_target TEXT,
+  coca_frequency_band TEXT,
+  source_standard TEXT
 );
 
 CREATE TABLE IF NOT EXISTS phrase_units (
@@ -28,10 +32,15 @@ CREATE TABLE IF NOT EXISTS grammar_units (
 
 CREATE TABLE IF NOT EXISTS progress (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  learner_id INTEGER NOT NULL DEFAULT 1,
   item_id INTEGER NOT NULL,
   correct_count INTEGER NOT NULL DEFAULT 0,
   wrong_count INTEGER NOT NULL DEFAULT 0,
-  memory_strength REAL NOT NULL DEFAULT 0.0
+  memory_strength REAL NOT NULL DEFAULT 0.0,
+  streak_correct INTEGER NOT NULL DEFAULT 0,
+  last_result INTEGER,
+  last_reviewed_at TEXT,
+  review_due_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS learner_profile (

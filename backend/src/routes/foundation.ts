@@ -3,7 +3,10 @@ import {
   getFoundationCurriculum,
   getFoundationLesson,
   getFoundationProgress,
+  getFoundationReview,
   getFoundationTrackLesson,
+  submitFoundationReview,
+  submitFoundationVocabCheck,
 } from '../services/foundationBridgeService';
 
 const router = Router();
@@ -52,6 +55,98 @@ router.get('/progress', async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({
       message: error?.message || 'Failed to load foundation progress',
+    });
+  }
+});
+
+router.post('/vocab-check', async (req: Request, res: Response) => {
+  try {
+    const learnerIdRaw = Number(req.body?.learnerId || 1);
+    const lessonId = String(req.body?.lessonId || '').trim();
+    const answers = Array.isArray(req.body?.answers) ? req.body.answers : [];
+    const learnerId = Number.isFinite(learnerIdRaw) ? learnerIdRaw : 1;
+
+    if (!lessonId) {
+      res.status(400).json({
+        message: 'lessonId is required.',
+      });
+      return;
+    }
+
+    if (!answers.length) {
+      res.status(400).json({
+        message: 'answers must be a non-empty array.',
+      });
+      return;
+    }
+
+    const normalizedAnswers: Array<{ wordId: number; correct: boolean }> = answers.map((item: any) => ({
+      wordId: Number(item?.wordId),
+      correct: Boolean(item?.correct),
+    }));
+
+    if (normalizedAnswers.some((item: { wordId: number; correct: boolean }) => !Number.isFinite(item.wordId) || item.wordId <= 0)) {
+      res.status(400).json({
+        message: 'Each answer must include a valid wordId.',
+      });
+      return;
+    }
+
+    const data = await submitFoundationVocabCheck(learnerId, lessonId, normalizedAnswers);
+    res.status(200).json(data);
+  } catch (error: any) {
+    res.status(500).json({
+      message: error?.message || 'Failed to submit vocab check',
+    });
+  }
+});
+
+router.get('/review', async (req: Request, res: Response) => {
+  try {
+    const learnerId = Number(req.query.learnerId || 1);
+    const limit = Number(req.query.limit || 20);
+    const finalLearnerId = Number.isFinite(learnerId) ? learnerId : 1;
+    const finalLimit = Number.isFinite(limit) ? limit : 20;
+
+    const data = await getFoundationReview(finalLearnerId, finalLimit);
+    res.status(200).json(data);
+  } catch (error: any) {
+    res.status(500).json({
+      message: error?.message || 'Failed to load foundation review queue',
+    });
+  }
+});
+
+router.post('/review-submit', async (req: Request, res: Response) => {
+  try {
+    const learnerIdRaw = Number(req.body?.learnerId || 1);
+    const answers = Array.isArray(req.body?.answers) ? req.body.answers : [];
+    const learnerId = Number.isFinite(learnerIdRaw) ? learnerIdRaw : 1;
+
+    if (!answers.length) {
+      res.status(400).json({
+        message: 'answers must be a non-empty array.',
+      });
+      return;
+    }
+
+    const normalizedAnswers: Array<{ wordId: number; correct: boolean }> = answers.map((item: any) => ({
+      wordId: Number(item?.wordId),
+      correct: Boolean(item?.correct),
+    }));
+
+    if (normalizedAnswers.some((item: { wordId: number; correct: boolean }) => !Number.isFinite(item.wordId) || item.wordId <= 0)) {
+      res.status(400).json({
+        message: 'Each answer must include a valid wordId.',
+      });
+      return;
+    }
+
+    const data = await submitFoundationReview(learnerId, normalizedAnswers);
+    res.status(200).json(data);
+  } catch (error: any) {
+    res.status(500).json({
+      message: error?.message || 'Failed to submit foundation review',
     });
   }
 });

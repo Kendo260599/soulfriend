@@ -42,8 +42,12 @@ def conn():
     # Seed grammar
     for row in json.loads(GRAMMAR_SEED.read_text(encoding="utf-8-sig")):
         c.execute(
-            "INSERT OR IGNORE INTO grammar_units (pattern, example, difficulty) VALUES (?,?,?)",
-            (row["pattern"], row["example"], row["difficulty"]),
+            """INSERT OR IGNORE INTO grammar_units
+            (pattern, example, explanation_vi, usage_note, difficulty)
+            VALUES (?,?,?,?,?)""",
+            (row["pattern"], row["example"],
+             row.get("explanation_vi", ""), row.get("usage_note", ""),
+             row["difficulty"]),
         )
 
     # Default learner profile

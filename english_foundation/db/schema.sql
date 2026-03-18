@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS grammar_units (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   pattern TEXT NOT NULL,
   example TEXT NOT NULL,
+  explanation_vi TEXT DEFAULT '',
+  usage_note TEXT DEFAULT '',
   difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5)
 );
 

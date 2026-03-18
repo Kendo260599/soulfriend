@@ -4,10 +4,12 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from .. import config
+
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT_DIR / "db" / "english_foundation.db"
+DB_PATH = config.DB_PATH
 SCHEMA_PATH = ROOT_DIR / "db" / "schema.sql"
 VOCAB_SEED_PATH = ROOT_DIR / "content" / "vocabulary_seed.json"
 GRAMMAR_SEED_PATH = ROOT_DIR / "content" / "grammar_seed.json"
@@ -42,6 +44,8 @@ def migrate_schema(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "vocabulary", "cefr_target", "TEXT")
     _ensure_column(conn, "vocabulary", "coca_frequency_band", "TEXT")
     _ensure_column(conn, "vocabulary", "source_standard", "TEXT")
+    _ensure_column(conn, "grammar_units", "explanation_vi", "TEXT")
+    _ensure_column(conn, "grammar_units", "usage_note", "TEXT")
 
     _ensure_column(conn, "progress", "learner_id", "INTEGER NOT NULL DEFAULT 1")
     _ensure_column(conn, "progress", "streak_correct", "INTEGER NOT NULL DEFAULT 0")
@@ -146,18 +150,22 @@ def upsert_seed_data(conn: sqlite3.Connection) -> None:
             conn.execute(
                 """
                 UPDATE grammar_units
-                SET example = ?, difficulty = ?
+                SET example = ?, explanation_vi = ?, usage_note = ?, difficulty = ?
                 WHERE id = ?
                 """,
-                (row["example"], row["difficulty"], int(existing_grammar[0])),
+                (row["example"], row.get("explanation_vi", ""),
+                 row.get("usage_note", ""), row["difficulty"],
+                 int(existing_grammar[0])),
             )
         else:
             conn.execute(
                 """
-                INSERT INTO grammar_units (pattern, example, difficulty)
-                VALUES (?, ?, ?)
+                INSERT INTO grammar_units (pattern, example, explanation_vi, usage_note, difficulty)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (row["pattern"], row["example"], row["difficulty"]),
+                (row["pattern"], row["example"],
+                 row.get("explanation_vi", ""), row.get("usage_note", ""),
+                 row["difficulty"]),
             )
 
     profile_count = conn.execute("SELECT COUNT(*) FROM learner_profile").fetchone()[0]

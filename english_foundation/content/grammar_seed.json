@@ -2,121 +2,239 @@
   {
     "pattern": "I am / You are / He is",
     "example": "She is a university student.",
+    "explanation_vi": "Động từ 'to be' chia theo chủ ngữ: I → am, you/we/they → are, he/she/it → is.",
+    "usage_note": "Lỗi phổ biến: 'She is have' — không dùng 'be' + 'have' cùng lúc.",
     "difficulty": 1
   },
   {
     "pattern": "Present Simple: I/You/We/They + V",
     "example": "We study English every evening.",
+    "explanation_vi": "Thì hiện tại đơn diễn tả thói quen, sự thật. Chủ ngữ số nhiều + động từ nguyên thể.",
+    "usage_note": "Không thêm 's' khi chủ ngữ là I/you/we/they.",
     "difficulty": 1
   },
   {
     "pattern": "Present Simple: He/She/It + Vs",
     "example": "He works in a small office.",
+    "explanation_vi": "Chủ ngữ ngôi 3 số ít (he/she/it) → thêm -s hoặc -es vào động từ.",
+    "usage_note": "Lỗi phổ biến: quên thêm 's' — 'He work' thay vì 'He works'.",
     "difficulty": 1
   },
   {
     "pattern": "Do/Does + Subject + V?",
     "example": "Does she live near here?",
+    "explanation_vi": "Câu hỏi yes/no ở thì hiện tại đơn: Do (I/you/we/they) / Does (he/she/it) + V nguyên thể.",
+    "usage_note": "Khi dùng 'Does', động từ trở về nguyên thể: 'Does she lives' ❌ → 'Does she live' ✅.",
     "difficulty": 1
   },
   {
     "pattern": "There is / There are",
     "example": "There are two cafes near my house.",
+    "explanation_vi": "'There is' + danh từ số ít, 'There are' + danh từ số nhiều — dùng để giới thiệu sự tồn tại.",
+    "usage_note": "Người Việt hay dịch thẳng 'Có...' mà quên dùng 'There is/are'.",
     "difficulty": 1
   },
   {
     "pattern": "Can / Cannot + V",
     "example": "I can finish this task tonight.",
+    "explanation_vi": "'Can' diễn tả khả năng hoặc xin phép. Phủ định: cannot (can't). Động từ sau 'can' ở dạng nguyên thể.",
+    "usage_note": "Không chia 'can': 'He cans' ❌ → 'He can' ✅.",
     "difficulty": 1
   },
   {
     "pattern": "Present Continuous: am/is/are + V-ing",
     "example": "They are preparing for the exam.",
+    "explanation_vi": "Thì hiện tại tiếp diễn diễn tả hành động đang xảy ra ngay lúc nói hoặc kế hoạch tương lai gần.",
+    "usage_note": "Không dùng với stative verbs: 'I am knowing' ❌ → 'I know' ✅.",
     "difficulty": 1
   },
   {
     "pattern": "some / any with countable and uncountable nouns",
     "example": "Do you have any free time this afternoon?",
+    "explanation_vi": "'Some' dùng trong câu khẳng định và lời mời; 'any' dùng trong câu phủ định và câu hỏi.",
+    "usage_note": "Ngoại lệ: 'Would you like some coffee?' — dùng 'some' trong câu hỏi mời.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "Prepositions of time: at / in / on",
+    "example": "The class starts at 8 o'clock on Monday.",
+    "explanation_vi": "'At' cho giờ cụ thể, 'on' cho ngày/thứ, 'in' cho tháng/năm/mùa.",
+    "usage_note": "Lỗi phổ biến: 'in Monday' ❌ → 'on Monday' ✅; 'at morning' ❌ → 'in the morning' ✅.",
+    "difficulty": 1
+  },
+  {
+    "pattern": "Possessive adjectives: my / your / his / her",
+    "example": "This is my notebook and that is her pen.",
+    "explanation_vi": "Tính từ sở hữu đứng trước danh từ: my (của tôi), your (của bạn), his (của anh ấy), her (của cô ấy).",
+    "usage_note": "Phân biệt: 'her' (tính từ sở hữu) vs 'hers' (đại từ sở hữu).",
     "difficulty": 1
   },
   {
     "pattern": "Past Simple regular verbs (-ed)",
     "example": "I watched a documentary last night.",
+    "explanation_vi": "Thì quá khứ đơn diễn tả hành động đã xảy ra và kết thúc. Thêm '-ed' vào động từ có quy tắc.",
+    "usage_note": "Phát âm '-ed': /t/ sau /p,k,f,s/, /d/ sau nguyên âm và phụ âm hữu thanh, /ɪd/ sau /t,d/.",
     "difficulty": 2
   },
   {
     "pattern": "Past Simple irregular verbs",
     "example": "She went to Da Nang last weekend.",
+    "explanation_vi": "Động từ bất quy tắc thay đổi hình thức ở quá khứ (go→went, see→saw, eat→ate).",
+    "usage_note": "Chỉ cần học thuộc, không có quy tắc chung. Câu phủ định/hỏi dùng 'did' + V nguyên thể.",
     "difficulty": 2
   },
   {
     "pattern": "be going to + V",
     "example": "I am going to apply for that course.",
+    "explanation_vi": "Diễn tả dự định, kế hoạch đã quyết định từ trước hoặc dự đoán dựa trên bằng chứng hiện tại.",
+    "usage_note": "Phân biệt: 'be going to' (có kế hoạch) vs 'will' (quyết định tại chỗ).",
     "difficulty": 2
   },
   {
     "pattern": "will + V (prediction / offer)",
     "example": "I think it will rain this evening.",
+    "explanation_vi": "'Will' diễn tả dự đoán (không dựa trên bằng chứng), lời hứa, đề nghị, quyết định tức thời.",
+    "usage_note": "Dạng phủ định: won't (will not). Không chia 'will': 'He wills' ❌.",
     "difficulty": 2
   },
   {
     "pattern": "Comparative and Superlative adjectives",
     "example": "This route is faster than the old one.",
+    "explanation_vi": "So sánh hơn: adj ngắn + -er / more + adj dài. So sánh nhất: the + adj ngắn + -est / the most + adj dài.",
+    "usage_note": "Lỗi phổ biến: 'more faster' ❌ → chỉ dùng một dạng: 'faster' HOẶC 'more quickly'.",
     "difficulty": 2
   },
   {
     "pattern": "Present Perfect: have/has + V3",
     "example": "I have completed three practice tests.",
+    "explanation_vi": "Diễn tả hành động đã xảy ra, liên quan đến hiện tại (kết quả, kinh nghiệm, hành động chưa kết thúc).",
+    "usage_note": "Không dùng với thời gian cụ thể trong quá khứ: 'I have gone yesterday' ❌.",
     "difficulty": 2
   },
   {
     "pattern": "must / have to / should",
     "example": "You should review your notes every day.",
+    "explanation_vi": "'Must' = bắt buộc (từ bản thân), 'have to' = bắt buộc (từ bên ngoài), 'should' = lời khuyên.",
+    "usage_note": "'Must not' = cấm; 'don't have to' = không cần thiết — hai nghĩa rất khác nhau!",
     "difficulty": 2
   },
   {
     "pattern": "First Conditional: If + present, will + V",
     "example": "If I finish early, I will join the meeting.",
+    "explanation_vi": "Câu điều kiện loại 1: diễn tả tình huống có thể xảy ra ở hiện tại/tương lai và kết quả của nó.",
+    "usage_note": "Mệnh đề 'if' dùng thì hiện tại, KHÔNG dùng 'will': 'If I will go' ❌.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Countable vs Uncountable nouns",
+    "example": "I need some information about the course.",
+    "explanation_vi": "Danh từ đếm được có dạng số nhiều (books, chairs). Danh từ không đếm được không có (information, advice, furniture).",
+    "usage_note": "'Informations' ❌, 'furnitures' ❌, 'advices' ❌ — những từ này không có số nhiều.",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Adverbs of frequency: always, usually, often, sometimes, never",
+    "example": "She always arrives early for class.",
+    "explanation_vi": "Trạng từ tần suất đứng trước động từ thường, sau 'be/have/can/will'.",
+    "usage_note": "Vị trí: 'She always is late' ❌ → 'She is always late' ✅ (sau 'be').",
+    "difficulty": 2
+  },
+  {
+    "pattern": "Used to + V (past habits)",
+    "example": "I used to walk to school when I was young.",
+    "explanation_vi": "'Used to' diễn tả thói quen hoặc trạng thái trong quá khứ, nay không còn nữa.",
+    "usage_note": "Phân biệt: 'used to + V' (thói quen cũ) vs 'be used to + V-ing' (quen với việc gì).",
     "difficulty": 2
   },
   {
     "pattern": "Present Perfect vs Past Simple",
     "example": "I have visited Hue, but I went there years ago.",
+    "explanation_vi": "Present Perfect: kinh nghiệm/kết quả (không nêu thời gian cụ thể). Past Simple: sự kiện cụ thể trong quá khứ.",
+    "usage_note": "Test: nếu có 'yesterday, last week, in 2020' → dùng Past Simple; 'ever, never, already' → Present Perfect.",
     "difficulty": 3
   },
   {
     "pattern": "for / since with Present Perfect",
     "example": "She has worked here for five years.",
+    "explanation_vi": "'For' + khoảng thời gian (for 3 hours). 'Since' + mốc thời gian (since 2020, since Monday).",
+    "usage_note": "Lỗi phổ biến: 'since 5 years' ❌ → 'for 5 years' ✅ hoặc 'since 2019' ✅.",
     "difficulty": 3
   },
   {
     "pattern": "Second Conditional: If + past, would + V",
     "example": "If I had more time, I would learn Spanish.",
+    "explanation_vi": "Câu điều kiện loại 2: tình huống giả định, không có thật ở hiện tại. Mệnh đề 'if' dùng thì quá khứ.",
+    "usage_note": "Dùng 'were' cho tất cả ngôi: 'If I were you' (không dùng 'was' trong văn viết trang trọng).",
     "difficulty": 3
   },
   {
     "pattern": "Passive Voice (present and past)",
     "example": "The report was submitted on Monday.",
+    "explanation_vi": "Câu bị động: be + V3. Dùng khi muốn nhấn mạnh hành động/đối tượng chịu tác động, không phải người thực hiện.",
+    "usage_note": "Không phải lúc nào cũng cần dùng bị động. Quá nhiều bị động khiến văn bản nặng nề.",
     "difficulty": 3
   },
   {
     "pattern": "Relative Clauses: who / which / that",
     "example": "The book that I bought is very useful.",
+    "explanation_vi": "'Who' cho người, 'which' cho vật, 'that' cho cả hai. Mệnh đề quan hệ bổ sung thông tin cho danh từ.",
+    "usage_note": "Mệnh đề xác định (defining): không dùng dấu phẩy. Mệnh đề không xác định (non-defining): có dấu phẩy.",
     "difficulty": 3
   },
   {
     "pattern": "Reported Speech",
     "example": "He said that he needed more details.",
+    "explanation_vi": "Lời nói gián tiếp: lùi thì (present→past, will→would). 'Said that' + mệnh đề.",
+    "usage_note": "Đổi đại từ, trạng từ thời gian: 'today'→'that day', 'here'→'there', 'this'→'that'.",
     "difficulty": 3
   },
   {
     "pattern": "Modals of deduction: must / might / can't",
     "example": "She must be busy because she did not reply.",
+    "explanation_vi": "'Must' = chắc chắn (suy luận), 'might/may' = có thể, 'can't' = không thể nào (phủ định chắc chắn).",
+    "usage_note": "Quá khứ: 'must have + V3' (chắc hẳn đã...), 'might have + V3' (có lẽ đã...).",
     "difficulty": 3
   },
   {
     "pattern": "Linking clauses: although / because / however",
     "example": "Although it was late, we still finished the task.",
+    "explanation_vi": "'Although/Even though' = mặc dù (liên từ). 'However' = tuy nhiên (trạng từ liên kết, cần dấu chấm/phẩy).",
+    "usage_note": "'Although' + mệnh đề; 'Despite/In spite of' + danh từ/V-ing. Không kết hợp 'Although...but'.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Gerund vs Infinitive: V-ing / to V",
+    "example": "I enjoy reading, but I want to improve my writing.",
+    "explanation_vi": "Một số động từ đi với V-ing (enjoy, avoid, mind), một số đi với to V (want, decide, hope).",
+    "usage_note": "Một số động từ đổi nghĩa: 'stop to do' (dừng lại để làm) vs 'stop doing' (ngừng làm).",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Tag Questions",
+    "example": "You are a student, aren't you?",
+    "explanation_vi": "Câu hỏi đuôi: khẳng định + đuôi phủ định, hoặc ngược lại. Dùng để xác nhận thông tin.",
+    "usage_note": "Chủ ngữ ở đuôi luôn là đại từ. 'Everyone is here, aren't they?' (dùng 'they' cho 'everyone').",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Third Conditional: If + had V3, would have V3",
+    "example": "If I had studied harder, I would have passed the test.",
+    "explanation_vi": "Câu điều kiện loại 3: giả định về quá khứ, điều không xảy ra. Kết quả cũng không có thật.",
+    "usage_note": "Dùng để diễn tả sự tiếc nuối. 'Would of' ❌ → 'would have' ✅.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Wish + Past Simple / Past Perfect",
+    "example": "I wish I knew the answer to that question.",
+    "explanation_vi": "'Wish + past simple': ước điều trái với hiện tại. 'Wish + past perfect': tiếc nuối về quá khứ.",
+    "usage_note": "'I wish I was/were richer' — cả hai đều chấp nhận, 'were' trang trọng hơn.",
+    "difficulty": 3
+  },
+  {
+    "pattern": "Articles: a / an / the / zero article",
+    "example": "She is a teacher at the university near my house.",
+    "explanation_vi": "'A/an' cho danh từ chưa xác định, 'the' cho danh từ xác định. Không dùng mạo từ trước tên riêng, bữa ăn.",
+    "usage_note": "Lỗi phổ biến tại Việt Nam: thiếu mạo từ ('I am student' ❌) hoặc thừa ('I like the music' ❌ khi nói chung).",
     "difficulty": 3
   }
 ]

@@ -57,14 +57,14 @@ class VocabEngine:
     def __init__(self, conn: sqlite3.Connection) -> None:
         self.conn = conn
 
-    def load_vocabulary(self, lexical_level: float, topic_hint: str | None = None) -> list[VocabItem]:
+    def load_vocabulary(self, lexical_level: float, topic_hint: str | None = None, unit_id: int = 1) -> list[VocabItem]:
         max_difficulty = difficulty_from_level(lexical_level)
         if topic_hint:
-            rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=topic_hint)
+            rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=topic_hint, unit_id=unit_id)
             widened = max_difficulty
             while len(rows) < 3 and widened < 5:
                 widened += 1
-                rows = self._query_vocabulary(max_difficulty=widened, topic_hint=topic_hint)
+                rows = self._query_vocabulary(max_difficulty=widened, topic_hint=topic_hint, unit_id=unit_id)
 
             # Keep topic integrity if we have any topic rows at all.
             if rows:
@@ -84,13 +84,13 @@ class VocabEngine:
                     for row in rows
                 ]
 
-        rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=None)
+        rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=None, unit_id=unit_id)
 
         # Avoid early-stage stagnation by widening difficulty if pool is too small.
         widened = max_difficulty
         while len(rows) < 6 and widened < 5:
             widened += 1
-            rows = self._query_vocabulary(max_difficulty=widened, topic_hint=None)
+            rows = self._query_vocabulary(max_difficulty=widened, topic_hint=None, unit_id=unit_id)
 
         return [
             VocabItem(
@@ -108,7 +108,7 @@ class VocabEngine:
             for row in rows
         ]
 
-    def _query_vocabulary(self, max_difficulty: int, topic_hint: str | None) -> list[sqlite3.Row]:
+    def _query_vocabulary(self, max_difficulty: int, topic_hint: str | None, unit_id: int) -> list[sqlite3.Row]:
         if topic_hint:
             for topic in self._topic_candidates(topic_hint):
                 rows = self.conn.execute(
@@ -116,11 +116,12 @@ class VocabEngine:
                     SELECT id, word, part_of_speech, ipa, meaning_vi, collocation, example_sentence, difficulty, synonyms, collocations_json
                     FROM vocabulary
                     WHERE difficulty <= ?
+                      AND unit_id = ?
                       AND LOWER(COALESCE(topic_ielts, '')) = LOWER(?)
                       AND COALESCE(source_standard, '') = 'open-triangulated'
                     ORDER BY difficulty ASC, id ASC
                     """,
-                    (max_difficulty, topic),
+                    (max_difficulty, unit_id, topic),
                 ).fetchall()
                 if rows:
                     return rows
@@ -131,10 +132,11 @@ class VocabEngine:
             SELECT id, word, part_of_speech, ipa, meaning_vi, collocation, example_sentence, difficulty, synonyms, collocations_json
             FROM vocabulary
             WHERE difficulty <= ?
+              AND unit_id = ?
               AND COALESCE(source_standard, '') = 'open-triangulated'
             ORDER BY difficulty ASC, id ASC
             """,
-            (max_difficulty,),
+            (max_difficulty, unit_id),
         ).fetchall()
 
     @staticmethod

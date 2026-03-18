@@ -29,22 +29,26 @@ import {
 
 const Page = styled.div`
   min-height: 100vh;
-  padding: 24px 16px 56px;
-  font-family: 'Sora', 'Segoe UI', sans-serif;
+  padding: 30px 16px 60px;
+  font-family: 'Sora', 'Segoe UI', system-ui, sans-serif;
   background:
-    radial-gradient(circle at 16% 12%, rgba(255, 187, 106, 0.2), transparent 32%),
-    radial-gradient(circle at 86% 4%, rgba(83, 202, 144, 0.2), transparent 30%),
-    linear-gradient(165deg, #f6f9f7 0%, #f2f7f3 40%, #eef4f1 100%);
+    radial-gradient(circle at 10% 20%, rgba(255, 187, 106, 0.15), transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(83, 202, 144, 0.15), transparent 35%),
+    radial-gradient(circle at 50% 80%, rgba(135, 206, 235, 0.15), transparent 40%),
+    linear-gradient(145deg, #f8fbf9 0%, #f1f7f4 40%, #eaeff1 100%);
 `;
 
 const Shell = styled.div`max-width: 880px; margin: 0 auto;`;
 
 const Hero = styled.div`
-  position: relative; overflow: hidden; border-radius: 26px;
-  padding: 28px; margin-bottom: 14px; border: 1px solid #d6e4da;
-  background: linear-gradient(125deg, #fdf8ee 0%, #f2fbf5 52%, #ebf4ff 100%);
-  box-shadow: 0 16px 34px rgba(45, 85, 56, 0.1);
-  @media (max-width: 720px) { padding: 22px; }
+  position: relative; overflow: hidden; border-radius: 28px;
+  padding: 32px; margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(242,251,245,0.6) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 16px 40px rgba(45, 85, 56, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  @media (max-width: 720px) { padding: 24px; }
 `;
 const HeroAccent = styled.div`
   position: absolute; width: 210px; height: 210px; border-radius: 999px;
@@ -53,10 +57,14 @@ const HeroAccent = styled.div`
   pointer-events: none;
 `;
 const Card = styled.section`
-  max-width: 880px; margin: 0 auto 14px; background: #fff;
-  border: 1px solid #d5e3d8; border-radius: 22px; padding: 24px;
-  box-shadow: 0 12px 28px rgba(42, 84, 55, 0.08);
-  @media (max-width: 720px) { padding: 18px; }
+  max-width: 880px; margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px; padding: 28px;
+  box-shadow: 0 12px 32px rgba(42, 84, 55, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+  @media (max-width: 720px) { padding: 20px; }
 `;
 const Title = styled.h1`margin: 0; color: #1f2f25; line-height: 1.2; letter-spacing: -0.02em;`;
 const HeroTitle = styled(Title)`
@@ -70,13 +78,20 @@ const Pill = styled.div`
   background: #f9fdf9; color: #2f4437;
 `;
 const Button = styled.button<{ $ghost?: boolean }>`
-  width: 100%; min-height: 52px; margin-top: 8px; border-radius: 13px;
+  width: 100%; min-height: 54px; margin-top: 10px; border-radius: 16px;
   cursor: pointer; font-size: 16px; font-weight: 700;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  border: ${p => (p.$ghost ? '1px solid #d7e4d9' : '1px solid transparent')};
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: ${p => (p.$ghost ? '1px solid rgba(46, 110, 69, 0.15)' : '1px solid transparent')};
   color: ${p => (p.$ghost ? '#26382d' : '#fff')};
-  background: ${p => (p.$ghost ? '#fff' : 'linear-gradient(92deg, #4fb675, #60c98a)')};
-  &:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(46,110,69,0.16); }
+  background: ${p => (p.$ghost ? 'rgba(255, 255, 255, 0.8)' : 'linear-gradient(135deg, #4fb675 0%, #2f9a56 100%)')};
+  box-shadow: ${p => (p.$ghost ? '0 4px 12px rgba(0,0,0,0.03)' : '0 8px 20px rgba(79, 182, 117, 0.25)')};
+  backdrop-filter: blur(8px);
+  
+  &:hover { 
+    transform: translateY(-2px) scale(1.02); 
+    box-shadow: ${p => (p.$ghost ? '0 6px 16px rgba(0,0,0,0.06)' : '0 12px 28px rgba(79, 182, 117, 0.35)')};
+  }
+  &:active { transform: translateY(1px) scale(0.98); }
 `;
 const HeaderRow = styled.div`
   display: flex; justify-content: space-between; gap: 10px;
@@ -96,9 +111,18 @@ const TwoCol = styled.div`
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 `;
 const TrackCard = styled.button`
-  border: 1px solid #d5e3d8; border-radius: 16px; padding: 18px; background: #f9fdf9;
+  border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 22px; 
+  background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(248,252,249,0.7));
   text-align: left; cursor: pointer;
-  &:hover { background: #f0faf4; }
+  box-shadow: 0 6px 16px rgba(42, 84, 55, 0.03);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  &:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 12px 24px rgba(42, 84, 55, 0.08); 
+    background: linear-gradient(145deg, rgba(255,255,255,1), rgba(240,250,244,0.9));
+  }
+  &:active { transform: translateY(0); }
 `;
 const TrackHeading = styled.div`
   display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;
@@ -142,11 +166,19 @@ const CheckRow = styled.div<{ $isCorrect?: boolean; $isWrong?: boolean }>`
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 `;
 const SmallButton = styled.button<{ $active?: boolean; $danger?: boolean }>`
-  border: 1px solid ${p => (p.$active ? (p.$danger ? '#e48a8a' : '#7fcd95') : '#d6e3d8')};
-  background: ${p => (p.$active ? (p.$danger ? '#fff0f0' : '#effbf3') : '#fff')};
+  border: 1px solid ${p => (p.$active ? (p.$danger ? 'rgba(228,138,138,0.5)' : 'rgba(127,205,149,0.6)') : 'rgba(214,227,216,0.6)')};
+  background: ${p => (p.$active ? (p.$danger ? 'linear-gradient(135deg, #fff0f0, #ffe5e5)' : 'linear-gradient(135deg, #effbf3, #e1f7e9)') : 'linear-gradient(135deg, #ffffff, #f9fcf9)')};
   color: ${p => (p.$active ? (p.$danger ? '#963535' : '#1e6a3b') : '#355045')};
-  border-radius: 10px; padding: 8px 10px; font-weight: 700; cursor: pointer;
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  border-radius: 12px; padding: 10px 14px; font-weight: 700; cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  
+  &:hover:not(:disabled) { 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05); 
+  }
+  &:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 `;
 const GrammarExplain = styled.div`
   background: #f0fdf4; border: 1px solid #c3e6cb; border-radius: 12px;
@@ -156,18 +188,43 @@ const GrammarExplain = styled.div`
 // ─── Quiz components ─────────────────────────────────────────────────────────
 
 const QuizBox = styled.div<{ $isCorrect?: boolean; $isWrong?: boolean }>`
-  border: 1px solid #d7e4d9; border-radius: 12px; padding: 16px; background: #fff; margin-bottom: 12px;
+  border: 1px solid rgba(215, 228, 217, 0.6); 
+  border-radius: 16px; padding: 20px; 
+  background: rgba(255, 255, 255, 0.85); 
+  backdrop-filter: blur(8px);
+  margin-bottom: 14px;
+  box-shadow: 0 4px 12px rgba(42, 84, 55, 0.03);
+  transition: all 0.3s ease;
   animation: ${p => p.$isCorrect ? bounce : p.$isWrong ? shake : 'none'} 0.5s ease-out;
+  
+  ${p => p.$isCorrect && `
+    border-color: #8ce3a6;
+    background: rgba(239, 251, 243, 0.9);
+    box-shadow: 0 8px 20px rgba(79, 182, 117, 0.15);
+  `}
+  ${p => p.$isWrong && `
+    border-color: #f1a9a9;
+    background: rgba(255, 240, 240, 0.9);
+  `}
 `;
 const MCQGrid = styled.div`
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 `;
 const MCQButton = styled.button<{ $selected?: boolean; $isCorrect?: boolean; $showCorrect?: boolean }>`
-  border: 1px solid ${p => p.$selected ? (p.$isCorrect ? '#7fcd95' : '#e48a8a') : (p.$showCorrect ? '#7fcd95' : '#d6e3d8')};
-  background: ${p => p.$selected ? (p.$isCorrect ? '#effbf3' : '#fff0f0') : (p.$showCorrect ? '#effbf3' : '#f8fcf9')};
+  border: 1px solid ${p => p.$selected ? (p.$isCorrect ? 'rgba(127,205,149,0.8)' : 'rgba(228,138,138,0.8)') : (p.$showCorrect ? 'rgba(127,205,149,0.8)' : 'rgba(214,227,216,0.6)')};
+  background: ${p => p.$selected ? (p.$isCorrect ? 'linear-gradient(135deg, #effbf3, #e1f7e9)' : 'linear-gradient(135deg, #fff0f0, #ffe5e5)') : (p.$showCorrect ? 'linear-gradient(135deg, #effbf3, #e1f7e9)' : 'linear-gradient(135deg, #ffffff, #f9fcf9)')};
   color: ${p => p.$selected ? (p.$isCorrect ? '#1e6a3b' : '#963535') : (p.$showCorrect ? '#1e6a3b' : '#355045')};
-  border-radius: 10px; padding: 10px; font-weight: 600; cursor: pointer; text-align: left;
+  border-radius: 14px; padding: 14px; font-weight: 600; cursor: pointer; text-align: left;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+  
+  &:hover:not(:disabled) { 
+    transform: translateY(-3px); 
+    box-shadow: 0 8px 16px rgba(0,0,0,0.06); 
+    border-color: rgba(79, 182, 117, 0.4);
+  }
+  &:active:not(:disabled) { transform: translateY(1px); }
   &:disabled { cursor: not-allowed; }
 `;
 const BlankInput = styled.input`
@@ -674,8 +731,10 @@ const EnglishFoundationModule: React.FC = () => {
           <HeroMeta>
             <Pill>Level: {Math.round(lexicalLevel * 100)}%</Pill>
             <Pill>Due today: {progress?.due_today || 0}</Pill>
-            {(progress?.curr_streak ?? 0) > 0 && (
+            {(progress?.curr_streak ?? 0) > 0 ? (
               <StreakBadge>🔥 {progress?.curr_streak} Day Streak!</StreakBadge>
+            ) : (
+              <Pill style={{ opacity: 0.7 }} title="Complete a lesson to start your streak!">🔥 Let's start a Streak!</Pill>
             )}
           </HeroMeta>
         </Hero>
@@ -692,8 +751,26 @@ const EnglishFoundationModule: React.FC = () => {
             </TrackCard>
           </TwoCol>
           <HomeButtons>
-            <Button aria-label="Start lesson" onClick={() => dispatch({ type: 'SET_VIEW', view: 'track' })}>Start lesson now</Button>
-            <Button $ghost aria-label="Open review" onClick={() => void openReview()}>Daily review ({progress?.due_today || 0})</Button>
+            <Button 
+              aria-label="Start lesson" 
+              onClick={() => dispatch({ type: 'SET_VIEW', view: 'track' })}
+              disabled={(progress?.due_today || 0) > 10}
+              style={{ opacity: (progress?.due_today || 0) > 10 ? 0.6 : 1, cursor: (progress?.due_today || 0) > 10 ? 'not-allowed' : 'pointer' }}
+            >
+              {(progress?.due_today || 0) > 10 ? 'Clear Reviews to Unlock' : 'Start lesson now'}
+            </Button>
+            <Button 
+              $ghost 
+              aria-label="Open review" 
+              onClick={() => void openReview()}
+              style={{
+                background: (progress?.due_today || 0) > 10 ? 'linear-gradient(135deg, #fff0f0, #ffe5e5)' : undefined,
+                borderColor: (progress?.due_today || 0) > 10 ? 'rgba(228,138,138,0.5)' : undefined,
+                color: (progress?.due_today || 0) > 10 ? '#963535' : undefined,
+              }}
+            >
+              Daily review ({progress?.due_today || 0}) {(progress?.due_today || 0) > 10 && '⚠️'}
+            </Button>
             <Button $ghost aria-label="View progress" onClick={() => dispatch({ type: 'SET_VIEW', view: 'progress' })}>View learning progress</Button>
           </HomeButtons>
           {error ? <ErrorNote role="alert">{error}</ErrorNote> : null}

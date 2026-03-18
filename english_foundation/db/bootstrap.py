@@ -16,7 +16,7 @@ GRAMMAR_SEED_PATH = ROOT_DIR / "content" / "grammar_seed.json"
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -49,9 +49,12 @@ def migrate_schema(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "vocabulary", "collocations_json", "TEXT")
     _ensure_column(conn, "grammar_units", "explanation_vi", "TEXT")
     _ensure_column(conn, "grammar_units", "usage_note", "TEXT")
+    
+    _ensure_column(conn, "vocabulary", "unit_id", "INTEGER DEFAULT 1")
     _ensure_column(conn, "learner_profile", "curr_streak", "INTEGER DEFAULT 0")
     _ensure_column(conn, "learner_profile", "last_active_date", "TEXT")
-
+    _ensure_column(conn, "learner_profile", "current_vocab_unit", "INTEGER DEFAULT 1")
+    
     _ensure_column(conn, "progress", "learner_id", "INTEGER NOT NULL DEFAULT 1")
     _ensure_column(conn, "progress", "streak_correct", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "progress", "last_result", "INTEGER")

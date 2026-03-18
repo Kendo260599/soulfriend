@@ -32,6 +32,7 @@ class LessonEngine:
         lesson_id: str | None,
         lexical_level: float,
         grammar_level: float,
+        vocab_unit: int = 1,
         topic_hint: str | None = None,
     ) -> dict:
         if track == "grammar":
@@ -41,6 +42,7 @@ class LessonEngine:
             lesson_id,
             lexical_level,
             grammar_level,
+            vocab_unit=vocab_unit,
             topic_hint=topic_hint,
         )
 
@@ -50,9 +52,10 @@ class LessonEngine:
         lesson_id: str | None,
         lexical_level: float,
         grammar_level: float,
+        vocab_unit: int = 1,
         topic_hint: str | None = None,
     ) -> dict:
-        vocab_pool = self.vocab_engine.load_vocabulary(lexical_level, topic_hint=topic_hint)
+        vocab_pool = self.vocab_engine.load_vocabulary(lexical_level, topic_hint=topic_hint, unit_id=vocab_unit)
         start_index = self._vocab_start_index(
             pool_size=len(vocab_pool),
             lesson_index=lesson_index,

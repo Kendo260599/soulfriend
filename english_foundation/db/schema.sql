@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS vocabulary (
   coca_frequency_band TEXT,
   source_standard TEXT,
   synonyms TEXT,
-  collocations_json TEXT
+  collocations_json TEXT, -- [{collocation, example, meaning}]
+  unit_id INTEGER DEFAULT 1 -- Groups vocabulary into progression stages
 );
 
 CREATE TABLE IF NOT EXISTS phrase_units (
@@ -53,7 +54,8 @@ CREATE TABLE IF NOT EXISTS learner_profile (
   lexical_level REAL NOT NULL DEFAULT 0.0,
   grammar_level REAL NOT NULL DEFAULT 0.0,
   curr_streak INTEGER NOT NULL DEFAULT 0,
-  last_active_date TEXT
+  last_active_date TEXT,
+  current_vocab_unit INTEGER DEFAULT 1
 );
 
 -- Performance indexes

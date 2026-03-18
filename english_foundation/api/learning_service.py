@@ -62,6 +62,7 @@ class LearningService:
             lesson_id=str((selected_lesson or {}).get("id", "")) or None,
             lexical_level=profile["lexical_level"],
             grammar_level=profile["grammar_level"],
+            vocab_unit=profile.get("current_vocab_unit", 1),
             topic_hint=str((selected_lesson or {}).get("topic_ielts", "")).strip() or None,
         )
 
@@ -282,6 +283,9 @@ class LearningService:
 
         self.conn.commit()
 
+        # Check Unit Progression
+        self._check_and_upgrade_vocab_unit(learner_id)
+
         score = round((correct_count / max(1, total)) * 100)
         return {
             "learner_id": learner_id,
@@ -332,6 +336,31 @@ class LearningService:
             "grammar_level_percent": int(round(updated_level * 100)),
             "recommended_next": "next_grammar_lesson" if correct else "repeat_grammar_lesson",
         }
+
+    def _check_and_upgrade_vocab_unit(self, learner_id: int) -> None:
+        profile = self._get_learner_profile(learner_id)
+        current_unit = profile.get("current_vocab_unit", 1)
+
+        total_words = self.conn.execute("SELECT COUNT(*) FROM vocabulary WHERE unit_id = ?", (current_unit,)).fetchone()[0]
+        if total_words == 0:
+            return
+
+        mastered_words = self.conn.execute(
+            """
+            SELECT COUNT(*) FROM progress p
+            JOIN vocabulary v ON p.item_id = v.id
+            WHERE v.unit_id = ? AND p.learner_id = ? AND p.memory_strength > 0.5
+            """,
+            (current_unit, learner_id),
+        ).fetchone()[0]
+
+        if mastered_words / total_words >= 0.8:
+            logger.info("Learner %d mastered unit %d. Upgrading to unit %d.", learner_id, current_unit, current_unit + 1)
+            self.conn.execute(
+                "UPDATE learner_profile SET current_vocab_unit = ? WHERE id = ?",
+                (current_unit + 1, learner_id),
+            )
+            self.conn.commit()
 
     def get_review_payload(self, learner_id: int = 1, limit: int = 20) -> dict[str, Any]:
         logger.info("Loading review: learner=%d limit=%d", learner_id, limit)
@@ -529,7 +558,7 @@ class LearningService:
                 memory_strength = min(0.98, round(prev_strength + 0.12, 3))
             else:
                 next_streak = 0
-                memory_strength = max(0.05, round(prev_strength * 0.6, 3))
+                memory_strength = max(0.01, round(prev_strength * 0.1, 3))  # Harsh penalty for forgetting
 
             due_iso = self._calc_review_due(now_iso=now_iso, is_correct=is_correct, streak=next_streak)
 
@@ -622,13 +651,17 @@ class LearningService:
             if streak <= 1:
                 delta = timedelta(days=1)
             elif streak == 2:
-                delta = timedelta(days=3)
+                delta = timedelta(days=2)
             elif streak == 3:
-                delta = timedelta(days=7)
+                delta = timedelta(days=4)
+            elif streak == 4:
+                delta = timedelta(days=8)
+            elif streak == 5:
+                delta = timedelta(days=16)
             else:
-                delta = timedelta(days=14)
+                delta = timedelta(days=30)
         else:
-            delta = timedelta(hours=12)
+            delta = timedelta(hours=4)
         return (now_dt + delta).isoformat()
 
     @staticmethod
@@ -637,24 +670,25 @@ class LearningService:
             return min(0.98, round(current_level + 0.06, 3))
         return max(0.05, round(current_level - 0.03, 3))
 
-    def _get_learner_profile(self, learner_id: int) -> dict[str, float]:
+    def _get_learner_profile(self, learner_id: int) -> dict[str, Any]:
         row = self.conn.execute(
-            "SELECT lexical_level, grammar_level FROM learner_profile WHERE id = ?",
+            "SELECT lexical_level, grammar_level, current_vocab_unit FROM learner_profile WHERE id = ?",
             (learner_id,),
         ).fetchone()
         if row:
             return {
                 "lexical_level": float(row["lexical_level"]),
                 "grammar_level": float(row["grammar_level"]),
+                "current_vocab_unit": int(row["current_vocab_unit"]) if row["current_vocab_unit"] is not None else 1,
             }
 
         logger.info("Creating new learner profile: id=%d", learner_id)
         self.conn.execute(
-            "INSERT INTO learner_profile (id, lexical_level, grammar_level) VALUES (?, ?, ?)",
-            (learner_id, 0.1, 0.1),
+            "INSERT INTO learner_profile (id, lexical_level, grammar_level, current_vocab_unit) VALUES (?, ?, ?, ?)",
+            (learner_id, 0.1, 0.1, 1),
         )
         self.conn.commit()
-        return {"lexical_level": 0.1, "grammar_level": 0.1}
+        return {"lexical_level": 0.1, "grammar_level": 0.1, "current_vocab_unit": 1}
 
 
 def create_learning_service() -> LearningService:

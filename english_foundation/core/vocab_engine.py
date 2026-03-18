@@ -1,6 +1,27 @@
 from dataclasses import dataclass
 import sqlite3
 
+from .utils import difficulty_from_level, slice_wrap
+
+
+TOPIC_ALIAS_MAP: dict[str, list[str]] = {
+    "places in town": ["home and accommodation", "travel and transport"],
+    "time and schedule": ["daily routine"],
+    "health and body": ["health and lifestyle"],
+    "education and work": ["education plans", "work projects"],
+    "shopping and services": ["food and meals", "society and community"],
+    "hobbies and leisure": ["daily routine", "society and community"],
+    "communication skills": ["media and opinion", "people and relationships"],
+    "problems and solutions": ["society and community", "work projects"],
+    "emotions and relationships": ["people and relationships"],
+    "travel experiences": ["travel and transport"],
+    "workplace communication": ["work projects", "communication skills"],
+    "environment": ["weather and environment"],
+    "technology": ["technology and internet"],
+    "public services": ["society and community", "work projects"],
+    "culture and society": ["society and community", "media and opinion"],
+}
+
 
 @dataclass
 class VocabItem:
@@ -27,7 +48,7 @@ class VocabEngine:
         self.conn = conn
 
     def load_vocabulary(self, lexical_level: float, topic_hint: str | None = None) -> list[VocabItem]:
-        max_difficulty = self._difficulty_from_level(lexical_level)
+        max_difficulty = difficulty_from_level(lexical_level)
         if topic_hint:
             rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=topic_hint)
             widened = max_difficulty
@@ -73,34 +94,51 @@ class VocabEngine:
 
     def _query_vocabulary(self, max_difficulty: int, topic_hint: str | None) -> list[sqlite3.Row]:
         if topic_hint:
-            return self.conn.execute(
-                """
-                SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
-                FROM vocabulary
-                WHERE difficulty <= ?
-                  AND LOWER(COALESCE(topic_ielts, '')) = LOWER(?)
-                                    AND COALESCE(source_standard, '') = 'open-triangulated'
-                ORDER BY difficulty ASC, id ASC
-                """,
-                (max_difficulty, str(topic_hint).strip()),
-            ).fetchall()
+            for topic in self._topic_candidates(topic_hint):
+                rows = self.conn.execute(
+                    """
+                    SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
+                    FROM vocabulary
+                    WHERE difficulty <= ?
+                      AND LOWER(COALESCE(topic_ielts, '')) = LOWER(?)
+                      AND COALESCE(source_standard, '') = 'open-triangulated'
+                    ORDER BY difficulty ASC, id ASC
+                    """,
+                    (max_difficulty, topic),
+                ).fetchall()
+                if rows:
+                    return rows
+            return []
 
         return self.conn.execute(
             """
             SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
             FROM vocabulary
             WHERE difficulty <= ?
-                            AND COALESCE(source_standard, '') = 'open-triangulated'
+              AND COALESCE(source_standard, '') = 'open-triangulated'
             ORDER BY difficulty ASC, id ASC
             """,
             (max_difficulty,),
         ).fetchall()
 
+    @staticmethod
+    def _topic_candidates(topic_hint: str) -> list[str]:
+        normalized = str(topic_hint or "").strip().lower()
+        if not normalized:
+            return []
+
+        candidates: list[str] = [normalized]
+        for alias in TOPIC_ALIAS_MAP.get(normalized, []):
+            alias_normalized = str(alias).strip().lower()
+            if alias_normalized and alias_normalized not in candidates:
+                candidates.append(alias_normalized)
+        return candidates
+
     def load_phrase_for_vocab(self, vocab_ids: list[int], lexical_level: float) -> list[PhraseItem]:
         if not vocab_ids:
             return []
 
-        max_difficulty = self._difficulty_from_level(lexical_level)
+        max_difficulty = difficulty_from_level(lexical_level)
         placeholders = ",".join("?" for _ in vocab_ids)
         query = f"""
             SELECT id, vocab_id, phrase, meaning_vi, difficulty
@@ -127,7 +165,7 @@ class VocabEngine:
     def produce_lesson_items(self, lexical_level: float) -> tuple[list[VocabItem], list[PhraseItem]]:
         vocab_pool = self.load_vocabulary(lexical_level)
         offset = self._default_offset(vocab_pool)
-        words = self._slice_wrap(vocab_pool, offset, 3)
+        words = slice_wrap(vocab_pool, offset, 3)
         phrases = self.load_phrase_for_vocab([w.id for w in words], lexical_level)
         return words, phrases
 
@@ -140,21 +178,4 @@ class VocabEngine:
         learned = int(row[0]) if row else 0
         return learned % len(vocab_pool)
 
-    @staticmethod
-    def _slice_wrap(items: list[VocabItem], start: int, size: int) -> list[VocabItem]:
-        if not items or size <= 0:
-            return []
-        result: list[VocabItem] = []
-        idx = max(0, start)
-        for _ in range(size):
-            result.append(items[idx % len(items)])
-            idx += 1
-        return result
 
-    @staticmethod
-    def _difficulty_from_level(level: float) -> int:
-        if level < 0.35:
-            return 1
-        if level < 0.7:
-            return 2
-        return 3

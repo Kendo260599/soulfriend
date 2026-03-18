@@ -48,3 +48,10 @@ CREATE TABLE IF NOT EXISTS learner_profile (
   lexical_level REAL NOT NULL DEFAULT 0.0,
   grammar_level REAL NOT NULL DEFAULT 0.0
 );
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_vocab_difficulty ON vocabulary(difficulty);
+CREATE INDEX IF NOT EXISTS idx_vocab_source ON vocabulary(source_standard);
+CREATE INDEX IF NOT EXISTS idx_vocab_topic ON vocabulary(topic_ielts);
+CREATE INDEX IF NOT EXISTS idx_progress_review ON progress(learner_id, review_due_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_progress_learner_item ON progress(learner_id, item_id);

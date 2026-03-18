@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,8 @@ from typing import Any
 from ..core.lesson_engine import LessonEngine
 from ..db.bootstrap import bootstrap_database, get_connection
 
+logger = logging.getLogger(__name__)
+
 
 class LearningService:
     def __init__(self, conn: sqlite3.Connection) -> None:
@@ -17,6 +20,7 @@ class LearningService:
         self.lesson_engine = LessonEngine(conn)
 
     def get_lesson_payload(self, learner_id: int = 1) -> dict[str, Any]:
+        logger.info("Loading lesson for learner_id=%d", learner_id)
         profile = self._get_learner_profile(learner_id)
         lesson = self.lesson_engine.compose_lesson(
             lexical_level=profile["lexical_level"],
@@ -223,6 +227,7 @@ class LearningService:
         lesson_id: str | None,
         answers: list[dict[str, Any]],
     ) -> dict[str, Any]:
+        logger.info("Vocab check: learner=%d lesson=%s answers=%d", learner_id, lesson_id, len(answers) if isinstance(answers, list) else 0)
         if not isinstance(answers, list) or len(answers) == 0:
             raise ValueError("Answers must be a non-empty list.")
 
@@ -267,6 +272,7 @@ class LearningService:
         grammar_id: int,
         correct: bool,
     ) -> dict[str, Any]:
+        logger.info("Grammar check: learner=%d grammar=%d correct=%s", learner_id, grammar_id, correct)
         if grammar_id <= 0:
             raise ValueError("grammarId must be a positive integer.")
 
@@ -299,6 +305,7 @@ class LearningService:
         }
 
     def get_review_payload(self, learner_id: int = 1, limit: int = 20) -> dict[str, Any]:
+        logger.info("Loading review: learner=%d limit=%d", learner_id, limit)
         safe_limit = max(1, min(50, int(limit)))
         now_iso = self._now_iso()
 
@@ -553,6 +560,7 @@ class LearningService:
                 "grammar_level": float(row["grammar_level"]),
             }
 
+        logger.info("Creating new learner profile: id=%d", learner_id)
         self.conn.execute(
             "INSERT INTO learner_profile (id, lexical_level, grammar_level) VALUES (?, ?, ?)",
             (learner_id, 0.1, 0.1),

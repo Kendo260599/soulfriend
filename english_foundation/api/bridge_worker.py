@@ -1,6 +1,9 @@
 import json
+import logging
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -20,6 +23,7 @@ def main() -> None:
         try:
             payload = json.loads(line)
             action = str(payload.get("action", "")).strip().lower()
+            logger.debug("Bridge action=%s", action)
             learner_id = int(payload.get("learnerId") or payload.get("learner_id") or 1)
             track = str(payload.get("track", "vocab") or "vocab")
             lesson_id = payload.get("lessonId")
@@ -63,6 +67,7 @@ def main() -> None:
             sys.stdout.write(json.dumps({"ok": True, "data": data}, ensure_ascii=False) + "\n")
             sys.stdout.flush()
         except Exception as exc:  # pragma: no cover
+            logger.error("Bridge error for action=%s: %s", action if 'action' in dir() else '?', exc, exc_info=True)
             sys.stdout.write(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False) + "\n")
             sys.stdout.flush()
 

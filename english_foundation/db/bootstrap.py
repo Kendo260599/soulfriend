@@ -1,7 +1,10 @@
 import json
+import logging
 import sqlite3
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT_DIR / "db" / "english_foundation.db"
@@ -17,6 +20,7 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_schema(conn: sqlite3.Connection) -> None:
+    logger.info("Initialising database schema from %s", SCHEMA_PATH)
     schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
     conn.executescript(schema_sql)
     conn.commit()
@@ -33,6 +37,7 @@ def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition
 
 
 def migrate_schema(conn: sqlite3.Connection) -> None:
+    logger.info("Running schema migrations")
     _ensure_column(conn, "vocabulary", "topic_ielts", "TEXT")
     _ensure_column(conn, "vocabulary", "cefr_target", "TEXT")
     _ensure_column(conn, "vocabulary", "coca_frequency_band", "TEXT")
@@ -54,7 +59,9 @@ def _load_json(path: Path) -> list[dict[str, Any]]:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def seed_if_empty(conn: sqlite3.Connection) -> None:
+def upsert_seed_data(conn: sqlite3.Connection) -> None:
+    """Insert or update seed vocabulary, phrases, grammar, and learner profile."""
+    logger.info("Upserting seed data")
     vocab_rows = _load_json(VOCAB_SEED_PATH)
     for row in vocab_rows:
         conn.execute(
@@ -164,11 +171,12 @@ def seed_if_empty(conn: sqlite3.Connection) -> None:
 
 
 def bootstrap_database() -> None:
+    logger.info("Bootstrapping English Foundation database")
     conn = get_connection()
     try:
         init_schema(conn)
         migrate_schema(conn)
-        seed_if_empty(conn)
+        upsert_seed_data(conn)
     finally:
         conn.close()
 

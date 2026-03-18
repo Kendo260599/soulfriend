@@ -5,22 +5,29 @@ from .utils import difficulty_from_level, slice_wrap
 
 
 TOPIC_ALIAS_MAP: dict[str, list[str]] = {
-    "places in town": ["home and accommodation", "travel and transport"],
-    "time and schedule": ["daily routine"],
-    "health and body": ["health and lifestyle"],
-    "education and work": ["education plans", "work projects"],
-    "shopping and services": ["food and meals", "society and community"],
-    "hobbies and leisure": ["daily routine", "society and community"],
-    "communication skills": ["media and opinion", "people and relationships"],
-    "problems and solutions": ["society and community", "work projects"],
-    "emotions and relationships": ["people and relationships"],
-    "travel experiences": ["travel and transport"],
-    "workplace communication": ["work projects", "communication skills"],
-    "environment": ["weather and environment"],
-    "technology": ["technology and internet"],
-    "public services": ["society and community", "work projects"],
-    "culture and society": ["society and community", "media and opinion"],
+    "places in town": ["Home and Accommodation", "Travel and Transport"],
+    "time and schedule": ["Daily Routine", "Numbers and Time"],
+    "health and body": ["Health and Lifestyle"],
+    "education and work": ["Education Plans", "Work Projects"],
+    "shopping and services": ["Food and Meals", "Shopping and Money"],
+    "hobbies and leisure": ["Sports and Hobbies", "Arts and Entertainment"],
+    "communication skills": ["Communication", "Media and Opinion"],
+    "problems and solutions": ["Problems and Solutions", "Work Projects"],
+    "emotions and relationships": ["Emotions and Feelings", "People and Relationships"],
+    "travel experiences": ["Travel and Transport", "Nature and Geography"],
+    "workplace communication": ["Work Projects", "Communication"],
+    "environment": ["Weather and Environment", "Nature and Geography"],
+    "technology": ["Technology and Internet"],
+    "public services": ["Society and Community", "Law and Society"],
+    "culture and society": ["Society and Community", "Arts and Entertainment"],
+    "science": ["Science and Research"],
+    "money and finance": ["Shopping and Money", "Work Projects"],
+    "feelings": ["Emotions and Feelings", "Health and Lifestyle"],
+    "nature": ["Nature and Geography", "Weather and Environment"],
+    "law and rights": ["Law and Society"],
+    "describing things": ["Descriptive Adjectives", "Abstract Concepts"],
 }
+
 
 
 @dataclass

@@ -1,0 +1,20 @@
+{
+  "generated_at_utc": "2026-03-16T02:57:33.762947+00:00",
+  "input_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\words.json",
+  "preview_output_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\words_regroup_preview.json",
+  "total_words": 381,
+  "category_counts": {
+    "core": 381,
+    "pronunciation": 201,
+    "emotional": 228,
+    "functional": 120,
+    "relationship": 54
+  },
+  "primary_category_counts": {
+    "core": 42,
+    "pronunciation": 39,
+    "emotional": 126,
+    "functional": 120,
+    "relationship": 54
+  }
+}

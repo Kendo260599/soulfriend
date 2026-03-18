@@ -1,5 +1,20 @@
-import React, { useEffect, useMemo } from 'react';
-import styled from 'styled-components';
+import React, { useEffect, useMemo, useState } from 'react';
+import styled, { keyframes } from 'styled-components';
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+const bounce = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+`;
+const shake = keyframes`
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+`;
 import { apiService } from '../services/apiService';
 import { useFoundationReducer } from './english-foundation/useFoundationReducer';
 import {
@@ -119,10 +134,11 @@ const StatItem = styled.div`
   background: linear-gradient(170deg, #ffffff, #f8fcf9);
 `;
 const ErrorNote = styled.div`color: #9d2b2b; margin-top: 12px;`;
-const CheckRow = styled.div`
+const CheckRow = styled.div<{ $isCorrect?: boolean; $isWrong?: boolean }>`
   display: grid; grid-template-columns: 1fr auto auto; gap: 8px;
   align-items: center; border: 1px solid #d7e4d9; border-radius: 12px;
   padding: 10px 12px; background: #fff;
+  animation: ${p => p.$isCorrect ? bounce : p.$isWrong ? shake : 'none'} 0.5s ease-out;
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 `;
 const SmallButton = styled.button<{ $active?: boolean; $danger?: boolean }>`
@@ -130,11 +146,357 @@ const SmallButton = styled.button<{ $active?: boolean; $danger?: boolean }>`
   background: ${p => (p.$active ? (p.$danger ? '#fff0f0' : '#effbf3') : '#fff')};
   color: ${p => (p.$active ? (p.$danger ? '#963535' : '#1e6a3b') : '#355045')};
   border-radius: 10px; padding: 8px 10px; font-weight: 700; cursor: pointer;
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 `;
 const GrammarExplain = styled.div`
   background: #f0fdf4; border: 1px solid #c3e6cb; border-radius: 12px;
   padding: 14px; margin-top: 12px;
 `;
+
+// ─── Quiz components ─────────────────────────────────────────────────────────
+
+const QuizBox = styled.div<{ $isCorrect?: boolean; $isWrong?: boolean }>`
+  border: 1px solid #d7e4d9; border-radius: 12px; padding: 16px; background: #fff; margin-bottom: 12px;
+  animation: ${p => p.$isCorrect ? bounce : p.$isWrong ? shake : 'none'} 0.5s ease-out;
+`;
+const MCQGrid = styled.div`
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+`;
+const MCQButton = styled.button<{ $selected?: boolean; $isCorrect?: boolean; $showCorrect?: boolean }>`
+  border: 1px solid ${p => p.$selected ? (p.$isCorrect ? '#7fcd95' : '#e48a8a') : (p.$showCorrect ? '#7fcd95' : '#d6e3d8')};
+  background: ${p => p.$selected ? (p.$isCorrect ? '#effbf3' : '#fff0f0') : (p.$showCorrect ? '#effbf3' : '#f8fcf9')};
+  color: ${p => p.$selected ? (p.$isCorrect ? '#1e6a3b' : '#963535') : (p.$showCorrect ? '#1e6a3b' : '#355045')};
+  border-radius: 10px; padding: 10px; font-weight: 600; cursor: pointer; text-align: left;
+  &:disabled { cursor: not-allowed; }
+`;
+const BlankInput = styled.input`
+  border: 1px solid #d6e3d8; border-radius: 8px; padding: 8px 12px;
+  font-family: inherit; font-size: 16px; width: 100%; margin-top: 8px;
+  &:focus { outline: none; border-color: #4fb675; }
+  &:disabled { background: #f8fcf9; color: #5c6f61; }
+`;
+
+const BuilderWord = styled.button<{ $isUsed?: boolean }>`
+  background: ${p => p.$isUsed ? '#eef4f1' : '#fff'};
+  border: 1px solid ${p => p.$isUsed ? '#d5e3d8' : '#60c98a'};
+  color: ${p => p.$isUsed ? '#5c6f61' : '#1e6a3b'};
+  border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 16px;
+  cursor: ${p => p.$isUsed ? 'default' : 'pointer'};
+  box-shadow: ${p => p.$isUsed ? 'none' : '0 4px 6px rgba(46,110,69,0.08)'};
+  opacity: ${p => p.$isUsed ? 0.3 : 1};
+  transition: transform 0.1s;
+  &:active { transform: ${p => p.$isUsed ? 'none' : 'scale(0.95)'}; }
+`;
+
+const BuilderDropzone = styled.div<{ $isSuccess?: boolean; $isError?: boolean }>`
+  min-height: 60px; border: 2px dashed ${p => p.$isSuccess ? '#7fcd95' : p.$isError ? '#e48a8a' : '#b7d1c1'};
+  border-radius: 14px; padding: 12px; display: flex; flex-wrap: wrap; gap: 8px;
+  background: ${p => p.$isSuccess ? '#effbf3' : p.$isError ? '#fff0f0' : '#fcfdfc'};
+  margin-bottom: 20px; align-items: center; transition: all 0.2s;
+`;
+
+const AudioBtn = styled.button`
+  background: none; border: none; cursor: pointer; color: #4fb675;
+  padding: 6px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 6px; transition: background 0.2s, transform 0.1s;
+  &:hover { background: #effbf3; transform: scale(1.05); }
+  &:active { transform: scale(0.95); }
+  svg { width: 20px; height: 20px; fill: currentColor; }
+`;
+
+const AudioIcon = () => (
+  <svg viewBox="0 0 24 24">
+    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+  </svg>
+);
+
+const playAudio = (text: string, rate: number = 0.9) => {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = rate; // slightly slower for learners
+  window.speechSynthesis.speak(utterance);
+};
+
+const PosBadge = styled.span`
+  display: inline-block; background: #eef4ff; color: #4a6fa5;
+  border: 1px solid #c3d4e9; border-radius: 6px; padding: 2px 7px;
+  font-size: 11px; font-weight: 700; margin-left: 8px; letter-spacing: 0.02em;
+  vertical-align: middle; text-transform: lowercase;
+`;
+
+const StreakBadge = styled(Pill)`
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+  color: #c92a2a;
+  border-color: #ff9a9e;
+  font-weight: bold;
+  animation: ${pulse} 2s infinite ease-in-out;
+`;
+
+// Simple beep sounds using Web Audio API
+const playBeep = (type: 'correct' | 'incorrect') => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    if (type === 'correct') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // A5
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } else {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    }
+  } catch (e) {
+    // Ignore if audio context fails
+  }
+};
+
+const ReviewItemCard: React.FC<{ item: any; answer?: boolean; onAnswer: (correct: boolean) => void }> = ({ item, answer, onAnswer }) => {
+  const [blankValue, setBlankValue] = useState('');
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  
+  const isAnswered = answer !== undefined;
+
+  const handleAnswer = (correct: boolean) => {
+    playBeep(correct ? 'correct' : 'incorrect');
+    onAnswer(correct);
+  };
+
+  if (item.quiz_type === 'multiple_choice') {
+    return (
+      <QuizBox $isCorrect={isAnswered && answer} $isWrong={isAnswered && !answer}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <strong>{item.word}</strong> <span style={{ marginLeft: 6 }}>{item.ipa}</span>
+          {item.part_of_speech && <PosBadge>{item.part_of_speech}</PosBadge>}
+          <AudioBtn onClick={(e) => { e.stopPropagation(); playAudio(item.word); }} aria-label="Play pronunciation" title="Play audio">
+            <AudioIcon />
+          </AudioBtn>
+        </div>
+        <Muted>Choose the correct meaning:</Muted>
+        <MCQGrid>
+          {item.options?.map((opt: string) => {
+            const isThisSelected = selectedOption === opt;
+            const isThisCorrect = opt === item.meaning_vi;
+            return (
+              <MCQButton 
+                key={opt}
+                disabled={isAnswered}
+                $selected={isThisSelected}
+                $isCorrect={isThisCorrect}
+                $showCorrect={isAnswered && isThisCorrect}
+                onClick={() => {
+                  setSelectedOption(opt);
+                  handleAnswer(opt === item.meaning_vi);
+                }}
+              >
+                {opt}
+              </MCQButton>
+            );
+          })}
+        </MCQGrid>
+      </QuizBox>
+    );
+  }
+
+  if (item.quiz_type === 'fill_blank') {
+    const maskedObj = (item.example_sentence || '').replace(new RegExp(item.word, 'gi'), '_______');
+    return (
+      <QuizBox $isCorrect={isAnswered && answer} $isWrong={isAnswered && !answer}>
+        <div><strong>Fill in the blank:</strong></div>
+        <Muted>{maskedObj}</Muted>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <BlankInput 
+            disabled={isAnswered}
+            placeholder={`Type ${item.meaning_vi} in English...`} 
+            value={blankValue} 
+            onChange={(e) => setBlankValue(e.target.value)} 
+          />
+          <SmallButton 
+            disabled={isAnswered || !blankValue.trim()} 
+            onClick={() => handleAnswer(blankValue.trim().toLowerCase() === item.word.toLowerCase())}
+          >
+            Check
+          </SmallButton>
+        </div>
+        {isAnswered && answer && <Muted style={{color: '#1e6a3b', marginTop: 8}}>Correct! ({item.word})</Muted>}
+        {isAnswered && !answer && <Muted style={{color: '#963535', marginTop: 8}}>Incorrect. The right word is: {item.word}</Muted>}
+      </QuizBox>
+    );
+  }
+
+  if (item.quiz_type === 'sentence_write') {
+    return (
+      <QuizBox $isCorrect={isAnswered && answer} $isWrong={isAnswered && !answer}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <strong>Write a sentence using: {item.word}</strong> <span style={{ marginLeft: 6 }}>{item.ipa}</span>
+          {item.part_of_speech && <PosBadge>{item.part_of_speech}</PosBadge>}
+        </div>
+        <Muted>Meaning: {item.meaning_vi}</Muted>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexDirection: 'column' }}>
+          <textarea 
+            disabled={isAnswered}
+            placeholder={`E.g., ${item.example_sentence}`}
+            value={blankValue} 
+            onChange={(e) => setBlankValue(e.target.value)}
+            style={{ padding: '10px', borderRadius: '8px', border: '1px solid #d0d7e5', minHeight: '60px', fontFamily: 'inherit', resize: 'vertical' }}
+          />
+          <SmallButton 
+            disabled={isAnswered || !blankValue.trim()} 
+            onClick={() => {
+              const userSentence = blankValue.trim().toLowerCase();
+              const targetWord = item.word.toLowerCase();
+              // Rudimentary check: does the sentence contain the target word?
+              const isCorrect = userSentence.includes(targetWord) && userSentence.length > targetWord.length + 5;
+              handleAnswer(isCorrect);
+            }}
+            style={{ alignSelf: 'flex-start' }}
+          >
+            Submit Sentence
+          </SmallButton>
+        </div>
+        {isAnswered && answer && <Muted style={{color: '#1e6a3b', marginTop: 8}}>Great job using the word in context!</Muted>}
+        {isAnswered && !answer && <Muted style={{color: '#963535', marginTop: 8}}>Make sure to use the exact word "{item.word}" and write a full sentence.</Muted>}
+      </QuizBox>
+    );
+  }
+
+  // Fallback to flashcard checkrow
+  return (
+    <CheckRow $isCorrect={isAnswered && answer} $isWrong={isAnswered && !answer} role="group" aria-label={item.word}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <strong>{item.word}</strong> <span style={{ marginLeft: 6 }}>{item.ipa || ''}</span>
+          {item.part_of_speech && <PosBadge>{item.part_of_speech}</PosBadge>}
+          <AudioBtn onClick={(e) => { e.stopPropagation(); playAudio(item.word); }} aria-label="Play pronunciation" title="Play audio">
+            <AudioIcon />
+          </AudioBtn>
+        </div>
+        <Muted>{item.meaning_vi}</Muted>
+        {!!item.topic_ielts && <Muted>Topic: {item.topic_ielts}</Muted>}
+      </div>
+      <SmallButton aria-label="Remembered" $active={answer === true} onClick={() => handleAnswer(true)}>Remembered</SmallButton>
+      <SmallButton aria-label="Not yet" $danger $active={answer === false} onClick={() => handleAnswer(false)}>Not yet</SmallButton>
+    </CheckRow>
+  );
+};
+
+const GrammarSentenceBuilder: React.FC<{ sentence: string; onComplete: (correct: boolean) => void }> = ({ sentence, onComplete }) => {
+  const [pool, setPool] = useState<{id: string, word: string}[]>([]);
+  const [constructed, setConstructed] = useState<{id: string, word: string}[]>([]);
+  const [hasChecked, setHasChecked] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+
+  useEffect(() => {
+    // Strip punctuation at the end and split
+    const cleanSentence = sentence.trim();
+    const words = cleanSentence.split(/\s+/).filter(Boolean);
+    const initialPool = words.map((w, i) => ({ id: `w-${i}-${Math.random()}`, word: w }));
+    // Shuffle pool
+    for (let i = initialPool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [initialPool[i], initialPool[j]] = [initialPool[j], initialPool[i]];
+    }
+    setPool(initialPool);
+    setConstructed([]);
+    setHasChecked(false);
+    setIsCorrect(false);
+  }, [sentence]);
+
+  const handlePoolClick = (item: {id: string, word: string}) => {
+    if (hasChecked) return;
+    if (constructed.some(x => x.id === item.id)) return;
+    setConstructed(prev => [...prev, item]);
+  };
+
+  const handleConstructedClick = (item: {id: string, word: string}) => {
+    if (hasChecked) return;
+    setConstructed(prev => prev.filter(x => x.id !== item.id));
+  };
+
+  const handleCheck = () => {
+    const userSentence = constructed.map(x => x.word).join(' ');
+    // We compare ignoring trailing punctuation and case to be slightly forgiving, but for grammar, exact sequence is key.
+    const normalize = (s: string) => s.replace(/[.,!?]+$/, '').toLowerCase().trim();
+    const correct = normalize(userSentence) === normalize(sentence);
+    playBeep(correct ? 'correct' : 'incorrect');
+    setIsCorrect(correct);
+    setHasChecked(true);
+    onComplete(correct);
+  };
+
+  const handleReset = () => {
+    setConstructed([]);
+    setHasChecked(false);
+    setIsCorrect(false);
+    onComplete(false); // Reset answer
+  };
+
+  return (
+    <QuizBox $isCorrect={hasChecked && isCorrect} $isWrong={hasChecked && !isCorrect}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+        <strong>Form the correct sentence:</strong>
+        <AudioBtn style={{ marginLeft: 8 }} onClick={() => playAudio(sentence)} aria-label="Play pronunciation" title="Play audio">
+          <AudioIcon />
+        </AudioBtn>
+      </div>
+      <BuilderDropzone $isSuccess={hasChecked && isCorrect} $isError={hasChecked && !isCorrect}>
+        {constructed.length === 0 && <Muted style={{ opacity: 0.5 }}>Tap words below to build...</Muted>}
+        {constructed.map(item => (
+          <BuilderWord key={`c-${item.id}`} onClick={() => handleConstructedClick(item)}>
+            {item.word}
+          </BuilderWord>
+        ))}
+      </BuilderDropzone>
+      
+      {!hasChecked && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+          {pool.map(item => {
+            const isUsed = constructed.some(x => x.id === item.id);
+            return (
+              <BuilderWord key={`p-${item.id}`} $isUsed={isUsed} onClick={() => handlePoolClick(item)}>
+                {item.word}
+              </BuilderWord>
+            );
+          })}
+        </div>
+      )}
+
+      {hasChecked && isCorrect && <Muted style={{color: '#1e6a3b', fontWeight: 600}}>Perfect! That is structurally correct.</Muted>}
+      {hasChecked && !isCorrect && (
+        <div>
+          <Muted style={{color: '#963535', fontWeight: 600, marginBottom: 8}}>Incorrect structure.</Muted>
+          <Muted><strong>Correct answer:</strong> {sentence}</Muted>
+          <Button $ghost style={{marginTop: 12, padding: '8px 16px', minHeight: 'auto'}} onClick={handleReset}>Try Again</Button>
+        </div>
+      )}
+
+      {!hasChecked && (
+        <Button 
+          style={{ padding: '12px', minHeight: 'auto', marginTop: 8 }} 
+          disabled={constructed.length !== pool.length}
+          onClick={handleCheck}
+        >
+          Check Answer
+        </Button>
+      )}
+    </QuizBox>
+  );
+};
 
 // ─── Main orchestrator component ─────────────────────────────────────────────
 
@@ -179,7 +541,8 @@ const EnglishFoundationModule: React.FC = () => {
       title: 'Word',
       main: `${w.word} ${w.ipa}`,
       sub: w.meaning_vi,
-      helper: `${w.collocation} | ${w.example_sentence}`,
+      helper: `${w.collocation} | ${w.example_sentence}${w.synonyms ? ` | Synonyms: ${w.synonyms}` : ''}`,
+      audioText: w.word,
     }));
     const phraseCards = (lesson.phrases || []).map(p => ({
       key: `p-${p.id}`,
@@ -187,6 +550,7 @@ const EnglishFoundationModule: React.FC = () => {
       main: p.phrase,
       sub: p.meaning_vi,
       helper: 'Say one short sentence with this phrase.',
+      audioText: p.phrase,
     }));
     const grammarCard: LessonCard = {
       key: `g-${lesson.grammar?.id || 0}`,
@@ -308,10 +672,11 @@ const EnglishFoundationModule: React.FC = () => {
           <HeroTitle>English Foundation</HeroTitle>
           <Muted>Build IELTS-ready confidence with one calm Grammar or Vocabulary lesson each day.</Muted>
           <HeroMeta>
-            <Pill>Current level: {Math.round(lexicalLevel * 100)}%</Pill>
-            <Pill>Goal: 1 focused lesson today</Pill>
-            <Pill>Path: A1 to B1</Pill>
+            <Pill>Level: {Math.round(lexicalLevel * 100)}%</Pill>
             <Pill>Due today: {progress?.due_today || 0}</Pill>
+            {(progress?.curr_streak ?? 0) > 0 && (
+              <StreakBadge>🔥 {progress?.curr_streak} Day Streak!</StreakBadge>
+            )}
           </HeroMeta>
         </Hero>
         <Card>
@@ -428,25 +793,18 @@ const EnglishFoundationModule: React.FC = () => {
           <Pill aria-live="polite">{answered}/{reviewItems.length} answered</Pill>
         </HeaderRow>
         <Muted>Mode: {modeLabel}. Mark quickly and let the schedule adapt to your memory.</Muted>
-        <Grid>
+        
+        <div style={{ marginTop: 16 }}>
           {reviewItems.map(item => (
-            <CheckRow key={`review-${item.id}`} role="group" aria-label={item.word}>
-              <div>
-                <strong>{item.word}</strong> {item.ipa || ''}
-                <Muted>{item.meaning_vi}</Muted>
-                {!!item.topic_ielts && <Muted>Topic: {item.topic_ielts}</Muted>}
-              </div>
-              <SmallButton aria-label="Remembered" $active={reviewAnswers[item.id] === true}
-                onClick={() => dispatch({ type: 'SET_REVIEW_ANSWER', itemId: item.id, correct: true })}>
-                Remembered
-              </SmallButton>
-              <SmallButton aria-label="Not yet" $danger $active={reviewAnswers[item.id] === false}
-                onClick={() => dispatch({ type: 'SET_REVIEW_ANSWER', itemId: item.id, correct: false })}>
-                Not yet
-              </SmallButton>
-            </CheckRow>
+            <ReviewItemCard 
+              key={`review-${item.id}`} 
+              item={item} 
+              answer={reviewAnswers[item.id]} 
+              onAnswer={(correct) => dispatch({ type: 'SET_REVIEW_ANSWER', itemId: item.id, correct })} 
+            />
           ))}
-        </Grid>
+        </div>
+
         {!reviewItems.length && <Muted>No review items right now. Continue with a new lesson.</Muted>}
         <HomeButtons>
           <Button $ghost onClick={() => dispatch({ type: 'SET_VIEW', view: 'progress' })}>Back to progress</Button>
@@ -469,24 +827,18 @@ const EnglishFoundationModule: React.FC = () => {
           <Pill aria-live="polite">{answered}/{words.length} answered</Pill>
         </HeaderRow>
         <Muted>Mark each word as remembered or not yet. We will adjust your progress.</Muted>
-        <Grid>
+        
+        <div style={{ marginTop: 16 }}>
           {words.map(item => (
-            <CheckRow key={`check-${item.id}`} role="group" aria-label={item.word}>
-              <div>
-                <strong>{item.word}</strong> {item.ipa}
-                <Muted>{item.meaning_vi}</Muted>
-              </div>
-              <SmallButton aria-label="Remembered" $active={checkAnswers[item.id] === true}
-                onClick={() => dispatch({ type: 'SET_CHECK_ANSWER', wordId: item.id, correct: true })}>
-                Remembered
-              </SmallButton>
-              <SmallButton aria-label="Not yet" $danger $active={checkAnswers[item.id] === false}
-                onClick={() => dispatch({ type: 'SET_CHECK_ANSWER', wordId: item.id, correct: false })}>
-                Not yet
-              </SmallButton>
-            </CheckRow>
+            <ReviewItemCard 
+              key={`check-${item.id}`} 
+              item={{ ...item, quiz_type: 'flashcard' }} 
+              answer={checkAnswers[item.id]} 
+              onAnswer={(correct) => dispatch({ type: 'SET_CHECK_ANSWER', wordId: item.id, correct })} 
+            />
           ))}
-        </Grid>
+        </div>
+
         <HomeButtons>
           <Button $ghost onClick={() => dispatch({ type: 'SET_VIEW', view: 'lesson' })}>Back to lesson</Button>
           <Button onClick={() => void submitVocabCheck()}>Submit vocab check</Button>
@@ -507,41 +859,49 @@ const EnglishFoundationModule: React.FC = () => {
           <SectionTitle>Quick Grammar Check</SectionTitle>
           <Pill>{grammarAnswer === null ? '0/1 answered' : '1/1 answered'}</Pill>
         </HeaderRow>
-        <Muted>Can you use this grammar pattern correctly in your own sentence?</Muted>
+        <Muted>Reconstruct the example sentence using the target grammar pattern.</Muted>
         <LessonMain>
-          <Badge>Grammar</Badge>
-          <Title style={{ fontSize: '28px', marginBottom: 8 }}>{grammar?.pattern || 'No pattern'}</Title>
-          <Muted>{grammar?.example || ''}</Muted>
-          {grammar?.explanation_vi && (
-            <GrammarExplain>
+          <Badge>Grammar Pattern</Badge>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Title style={{ fontSize: '28px', margin: '0 0 8px' }}>{grammar?.pattern || 'No pattern'}</Title>
+          </div>
+          <Muted>{grammar?.explanation_vi && (
+            <GrammarExplain style={{ marginTop: 0 }}>
               <strong>📘 Giải thích:</strong> {grammar.explanation_vi}
             </GrammarExplain>
-          )}
+          )}</Muted>
           {grammar?.usage_note && (
             <GrammarExplain>
               <strong>⚠️ Lưu ý:</strong> {grammar.usage_note}
             </GrammarExplain>
           )}
         </LessonMain>
-        <Grid>
-          <CheckRow role="group" aria-label="Grammar self-check">
-            <div>
-              <strong>Your self-check</strong>
-              <Muted>Be honest. This helps the system adapt your next grammar lesson.</Muted>
-            </div>
-            <SmallButton aria-label="I can use it" $active={grammarAnswer === true}
-              onClick={() => dispatch({ type: 'SET_GRAMMAR_ANSWER', answer: true })}>
-              I can use it
-            </SmallButton>
-            <SmallButton aria-label="Need more practice" $danger $active={grammarAnswer === false}
-              onClick={() => dispatch({ type: 'SET_GRAMMAR_ANSWER', answer: false })}>
-              Need more practice
-            </SmallButton>
-          </CheckRow>
-        </Grid>
+        <div style={{ margin: '20px 0' }}>
+          {grammar?.example ? (
+             <GrammarSentenceBuilder 
+               sentence={grammar.example} 
+               onComplete={(correct) => dispatch({ type: 'SET_GRAMMAR_ANSWER', answer: correct })} 
+             />
+          ) : (
+            <CheckRow role="group" aria-label="Grammar self-check">
+              <div>
+                <strong>Your self-check</strong>
+                <Muted>Be honest. This helps the system adapt your next grammar lesson.</Muted>
+              </div>
+              <SmallButton aria-label="I can use it" $active={grammarAnswer === true}
+                onClick={() => dispatch({ type: 'SET_GRAMMAR_ANSWER', answer: true })}>
+                I can use it
+              </SmallButton>
+              <SmallButton aria-label="Need more practice" $danger $active={grammarAnswer === false}
+                onClick={() => dispatch({ type: 'SET_GRAMMAR_ANSWER', answer: false })}>
+                Need more practice
+              </SmallButton>
+            </CheckRow>
+          )}
+        </div>
         <HomeButtons>
           <Button $ghost onClick={() => dispatch({ type: 'SET_VIEW', view: 'lesson' })}>Back to lesson</Button>
-          <Button onClick={() => void submitGrammarCheck()}>Submit grammar check</Button>
+          <Button disabled={grammarAnswer === null} onClick={() => void submitGrammarCheck()}>Submit grammar check</Button>
         </HomeButtons>
         {error ? <ErrorNote role="alert">{error}</ErrorNote> : null}
       </Card></Shell></Page>
@@ -549,6 +909,29 @@ const EnglishFoundationModule: React.FC = () => {
   }
 
   // ── Lesson flow view (default) ────────────────────────────────────────────
+
+  if (lesson?.is_locked) {
+    return (
+      <Page><Shell><Card>
+        <HeaderRow>
+          <SectionTitle>Lesson Locked</SectionTitle>
+          <Pill>Too many weak words</Pill>
+        </HeaderRow>
+        <LessonMain style={{ background: '#fff0f0', borderColor: '#e48a8a' }}>
+          <Badge style={{ background: '#d64545' }}>Locked</Badge>
+          <Title style={{ fontSize: '28px', marginBottom: 8 }}>Review required!</Title>
+          <Muted>{lesson.lock_reason}</Muted>
+          <Muted style={{ marginTop: 8 }}>
+            Our adaptive system ensures you master your current vocabulary before moving on. This prevents memory overload and builds confidence.
+          </Muted>
+        </LessonMain>
+        <HomeButtons>
+          <Button onClick={() => void openReview()}>Start daily review now</Button>
+          <Button $ghost onClick={() => dispatch({ type: 'SET_VIEW', view: 'track' })}>Back to tracks</Button>
+        </HomeButtons>
+      </Card></Shell></Page>
+    );
+  }
 
   const card = cards[cardIndex];
   const total = cards.length || 1;
@@ -573,7 +956,14 @@ const EnglishFoundationModule: React.FC = () => {
       {!!lesson?.lesson_meta?.topic_ielts && <Pill>Topic: {lesson.lesson_meta.topic_ielts}</Pill>}
       <LessonMain aria-live="polite">
         <Badge>{card?.title || 'Lesson item'}</Badge>
-        <Title style={{ fontSize: '30px', marginBottom: 8 }}>{card?.main || 'No item'}</Title>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Title style={{ fontSize: '30px', margin: '0 0 8px' }}>{card?.main || 'No item'}</Title>
+          {card?.audioText && (
+            <AudioBtn style={{ marginBottom: 8 }} onClick={() => playAudio(card.audioText!)} aria-label="Play pronunciation" title="Play audio">
+              <AudioIcon />
+            </AudioBtn>
+          )}
+        </div>
         <Muted>{card?.sub || ''}</Muted>
         <Muted>{card?.helper || ''}</Muted>
       </LessonMain>

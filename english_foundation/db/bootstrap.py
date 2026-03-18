@@ -44,8 +44,13 @@ def migrate_schema(conn: sqlite3.Connection) -> None:
     _ensure_column(conn, "vocabulary", "cefr_target", "TEXT")
     _ensure_column(conn, "vocabulary", "coca_frequency_band", "TEXT")
     _ensure_column(conn, "vocabulary", "source_standard", "TEXT")
+    _ensure_column(conn, "vocabulary", "part_of_speech", "TEXT")
+    _ensure_column(conn, "vocabulary", "synonyms", "TEXT")
+    _ensure_column(conn, "vocabulary", "collocations_json", "TEXT")
     _ensure_column(conn, "grammar_units", "explanation_vi", "TEXT")
     _ensure_column(conn, "grammar_units", "usage_note", "TEXT")
+    _ensure_column(conn, "learner_profile", "curr_streak", "INTEGER DEFAULT 0")
+    _ensure_column(conn, "learner_profile", "last_active_date", "TEXT")
 
     _ensure_column(conn, "progress", "learner_id", "INTEGER NOT NULL DEFAULT 1")
     _ensure_column(conn, "progress", "streak_correct", "INTEGER NOT NULL DEFAULT 0")

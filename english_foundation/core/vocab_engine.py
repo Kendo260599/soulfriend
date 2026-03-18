@@ -34,11 +34,14 @@ TOPIC_ALIAS_MAP: dict[str, list[str]] = {
 class VocabItem:
     id: int
     word: str
+    part_of_speech: str
     ipa: str
     meaning_vi: str
     collocation: str
     example_sentence: str
     difficulty: int
+    synonyms: str
+    collocations_json: str
 
 
 @dataclass
@@ -69,11 +72,14 @@ class VocabEngine:
                     VocabItem(
                         id=row["id"],
                         word=row["word"],
+                        part_of_speech=row["part_of_speech"] or "",
                         ipa=row["ipa"],
                         meaning_vi=row["meaning_vi"],
                         collocation=row["collocation"],
                         example_sentence=row["example_sentence"],
                         difficulty=row["difficulty"],
+                        synonyms=row["synonyms"] or "",
+                        collocations_json=row["collocations_json"] or "[]",
                     )
                     for row in rows
                 ]
@@ -90,11 +96,14 @@ class VocabEngine:
             VocabItem(
                 id=row["id"],
                 word=row["word"],
+                part_of_speech=row["part_of_speech"] or "",
                 ipa=row["ipa"],
                 meaning_vi=row["meaning_vi"],
                 collocation=row["collocation"],
                 example_sentence=row["example_sentence"],
                 difficulty=row["difficulty"],
+                synonyms=row["synonyms"] or "",
+                collocations_json=row["collocations_json"] or "[]",
             )
             for row in rows
         ]
@@ -104,7 +113,7 @@ class VocabEngine:
             for topic in self._topic_candidates(topic_hint):
                 rows = self.conn.execute(
                     """
-                    SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
+                    SELECT id, word, part_of_speech, ipa, meaning_vi, collocation, example_sentence, difficulty, synonyms, collocations_json
                     FROM vocabulary
                     WHERE difficulty <= ?
                       AND LOWER(COALESCE(topic_ielts, '')) = LOWER(?)
@@ -119,7 +128,7 @@ class VocabEngine:
 
         return self.conn.execute(
             """
-            SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
+            SELECT id, word, part_of_speech, ipa, meaning_vi, collocation, example_sentence, difficulty, synonyms, collocations_json
             FROM vocabulary
             WHERE difficulty <= ?
               AND COALESCE(source_standard, '') = 'open-triangulated'

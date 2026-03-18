@@ -1,0 +1,82 @@
+[
+    {
+        "word":  "trust",
+        "audio":  "trust_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "hope",
+        "audio":  "hope_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "fear",
+        "audio":  "fear_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "care",
+        "audio":  "care_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "love",
+        "audio":  "love_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "friend",
+        "audio":  "friend_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "family",
+        "audio":  "family_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "support",
+        "audio":  "support_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "respect",
+        "audio":  "respect_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "listen",
+        "audio":  "listen_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "speak",
+        "audio":  "speak_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "understand",
+        "audio":  "understand_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "practice",
+        "audio":  "practice_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "review",
+        "audio":  "review_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "focus",
+        "audio":  "focus_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "balance",
+        "audio":  "balance_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "growth",
+        "audio":  "growth_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "progress",
+        "audio":  "progress_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "healing",
+        "audio":  "healing_voice_20260315_221147.wav"
+    },
+    {
+        "word":  "calm",
+        "audio":  "calm_voice_20260315_221147.wav"
+    }
+]

@@ -1,0 +1,179 @@
+{
+  "generated_at_utc": "2026-03-15T15:40:09.449663+00:00",
+  "config": {
+    "model": "base",
+    "pass_score": 70,
+    "min_avg_score": 60.0,
+    "min_pass_rate": 0.6
+  },
+  "summary": {
+    "items": 20,
+    "transcribed_ok": 20,
+    "pass_count": 19,
+    "pass_rate": 0.95,
+    "avg_score": 95.9,
+    "passed": true
+  },
+  "results": [
+    {
+      "word": "trust",
+      "audio": "trust_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Trust.",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "hope",
+      "audio": "hope_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Hope.",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "fear",
+      "audio": "fear_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Fear",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "care",
+      "audio": "care_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Here.",
+      "score": 78,
+      "error": ""
+    },
+    {
+      "word": "love",
+      "audio": "love_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Love.",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "friend",
+      "audio": "friend_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Friend",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "family",
+      "audio": "family_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Family",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "support",
+      "audio": "support_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "support",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "respect",
+      "audio": "respect_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Respect",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "listen",
+      "audio": "listen_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Listen.",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "speak",
+      "audio": "speak_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Speak.",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "understand",
+      "audio": "understand_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Understand",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "practice",
+      "audio": "practice_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Practice",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "review",
+      "audio": "review_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "review",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "focus",
+      "audio": "focus_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Focus.",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "balance",
+      "audio": "balance_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Balance",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "growth",
+      "audio": "growth_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Growth",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "progress",
+      "audio": "progress_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Progress",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "healing",
+      "audio": "healing_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Healing",
+      "score": 100,
+      "error": ""
+    },
+    {
+      "word": "calm",
+      "audio": "calm_voice_20260315_221147.wav",
+      "ok": true,
+      "recognized": "Come.",
+      "score": 40,
+      "error": ""
+    }
+  ]
+}

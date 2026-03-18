@@ -1,0 +1,58 @@
+{
+  "generated_at_utc": "2026-03-16T02:57:33.903542+00:00",
+  "input_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\words_regroup_preview.json",
+  "seed_output_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+  "input_total_words": 381,
+  "unique_total_words": 374,
+  "duplicates_removed": 7,
+  "unit_size": 12,
+  "skills": [
+    {
+      "skill_name": "core",
+      "display_name": "Core",
+      "word_count": 42,
+      "prerequisites": []
+    },
+    {
+      "skill_name": "pronunciation",
+      "display_name": "Pronunciation",
+      "word_count": 38,
+      "prerequisites": [
+        "core"
+      ]
+    },
+    {
+      "skill_name": "emotional",
+      "display_name": "Emotional",
+      "word_count": 126,
+      "prerequisites": [
+        "core"
+      ]
+    },
+    {
+      "skill_name": "functional",
+      "display_name": "Functional",
+      "word_count": 115,
+      "prerequisites": [
+        "core"
+      ]
+    },
+    {
+      "skill_name": "relationship",
+      "display_name": "Relationship",
+      "word_count": 53,
+      "prerequisites": [
+        "emotional",
+        "functional"
+      ]
+    }
+  ],
+  "total_units": 34,
+  "units_per_skill": {
+    "core": 4,
+    "pronunciation": 4,
+    "emotional": 11,
+    "functional": 10,
+    "relationship": 5
+  }
+}

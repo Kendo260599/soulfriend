@@ -3,6 +3,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS vocabulary (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   word TEXT NOT NULL UNIQUE,
+  part_of_speech TEXT,
   ipa TEXT NOT NULL,
   meaning_vi TEXT NOT NULL,
   difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5),
@@ -11,7 +12,9 @@ CREATE TABLE IF NOT EXISTS vocabulary (
   topic_ielts TEXT,
   cefr_target TEXT,
   coca_frequency_band TEXT,
-  source_standard TEXT
+  source_standard TEXT,
+  synonyms TEXT,
+  collocations_json TEXT
 );
 
 CREATE TABLE IF NOT EXISTS phrase_units (
@@ -48,7 +51,9 @@ CREATE TABLE IF NOT EXISTS progress (
 CREATE TABLE IF NOT EXISTS learner_profile (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   lexical_level REAL NOT NULL DEFAULT 0.0,
-  grammar_level REAL NOT NULL DEFAULT 0.0
+  grammar_level REAL NOT NULL DEFAULT 0.0,
+  curr_streak INTEGER NOT NULL DEFAULT 0,
+  last_active_date TEXT
 );
 
 -- Performance indexes

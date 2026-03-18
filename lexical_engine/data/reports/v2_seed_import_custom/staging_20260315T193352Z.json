@@ -1,0 +1,36 @@
+{
+  "generated_at_utc": "2026-03-15T19:33:52.931461+00:00",
+  "mode": "DRY-RUN",
+  "seed_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+  "seed_metadata": {
+    "path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+    "sha256": "0abe4a30d6c3211b0f68a76d93da95ffd3b1ddf7c1ef520a55d48b18c197b06c",
+    "size_bytes": 17397,
+    "modified_at_utc": "2026-03-15T19:33:52.644851+00:00"
+  },
+  "db_path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexical_engine.db",
+  "flags": {
+    "ensure_seed": true,
+    "replace_v2": false,
+    "apply": false
+  },
+  "skills_resolved": 5,
+  "replace_report": {
+    "requested": false,
+    "lesson_units_deleted": 0,
+    "skill_prerequisites_deleted": 0,
+    "skills_deleted": 0
+  },
+  "prerequisites_report": {
+    "created": 0,
+    "duplicates": 5,
+    "ignored_invalid": 0
+  },
+  "lesson_units_report": {
+    "created": 0,
+    "duplicates": 381,
+    "ignored_invalid": 0,
+    "missing_words": 0,
+    "candidates": 381
+  }
+}

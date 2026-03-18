@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -64,14 +65,29 @@ class LearningService:
             topic_hint=str((selected_lesson or {}).get("topic_ielts", "")).strip() or None,
         )
 
-        return {
+        # Build base payload
+        payload = {
             "track": track_key,
             "lesson_meta": selected_lesson or {},
-            "words": lesson["words"],
-            "phrases": lesson["phrases"],
-            "grammar": lesson["grammar"],
+            "words": lesson.get("words", []),
+            "phrases": lesson.get("phrases", []),
+            "grammar": lesson.get("grammar", None),
             "sequence": lesson.get("sequence", []),
         }
+
+        # Check Progression Lock (only lock if it's a vocab track and has new words)
+        if track_key == "vocab" and payload["words"]:
+            progress_data = self.get_progress_payload(learner_id)
+            weak_count = progress_data.get("weak_words", 0)
+            if weak_count >= 15:
+                # User has too many weak words, lock the lesson
+                payload["is_locked"] = True
+                payload["lock_reason"] = f"You have {weak_count} words that need more practice. Please master them in Daily Review before unlocking new vocabulary."
+                payload["words"] = []
+                payload["phrases"] = []
+                payload["sequence"] = []
+
+        return payload
 
     def get_curriculum_payload(self) -> dict[str, Any]:
         root = Path(__file__).resolve().parents[1]
@@ -210,15 +226,27 @@ class LearningService:
         ).fetchone()[0]
 
         grammar_completed = self.conn.execute(
-            "SELECT ROUND(grammar_level * 100, 0) FROM learner_profile WHERE id = ?",
+            "SELECT ROUND(grammar_level * 100, 0), curr_streak, last_active_date FROM learner_profile WHERE id = ?",
             (learner_id,),
         ).fetchone()
+
+        curr_streak = 0
+        if grammar_completed:
+            curr_streak = int(grammar_completed[1])
+            # Check if streak is broken (last_active_date < yesterday)
+            last_active = grammar_completed[2]
+            if last_active:
+                today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+                yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
+                if last_active != today_str and last_active != yesterday_str:
+                    curr_streak = 0  # Broken streak, resets to 0 until they study today
 
         return {
             "learned_words": int(learned_words),
             "weak_words": int(weak_words),
             "grammar_completed": int(grammar_completed[0]) if grammar_completed else 0,
             "due_today": int(due_today),
+            "curr_streak": curr_streak,
         }
 
     def submit_vocab_check(
@@ -291,6 +319,7 @@ class LearningService:
             "UPDATE learner_profile SET grammar_level = ? WHERE id = ?",
             (updated_level, learner_id),
         )
+        self._update_streak(learner_id)
         self.conn.commit()
 
         return {
@@ -337,7 +366,7 @@ class LearningService:
             return {
                 "learner_id": learner_id,
                 "mode": "due",
-                "items": [dict(row) for row in due_rows],
+                "items": self._enhance_review_items([dict(row) for row in due_rows], "due"),
             }
 
         weak_rows = self.conn.execute(
@@ -367,7 +396,7 @@ class LearningService:
             return {
                 "learner_id": learner_id,
                 "mode": "weak",
-                "items": [dict(row) for row in weak_rows],
+                "items": self._enhance_review_items([dict(row) for row in weak_rows], "weak"),
             }
 
         fresh_rows = self.conn.execute(
@@ -397,8 +426,46 @@ class LearningService:
         return {
             "learner_id": learner_id,
             "mode": "fresh",
-            "items": [dict(row) for row in fresh_rows],
+            "items": self._enhance_review_items([dict(row) for row in fresh_rows], "fresh"),
         }
+
+    def _enhance_review_items(self, items: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
+        if not items:
+            return items
+
+        # Get all distinct meanings to use as distractors for multiple choice
+        all_meanings_query = self.conn.execute("SELECT DISTINCT meaning_vi FROM vocabulary").fetchall()
+        all_meanings = [r[0] for r in all_meanings_query if r[0]]
+
+        enhanced = []
+        for item in items:
+            quiz_type = "flashcard"
+            if mode in ("due", "weak"):
+                rand = random.random()
+                if rand < 0.4:
+                    quiz_type = "multiple_choice"
+                elif rand < 0.7 and item.get("example_sentence"):
+                    quiz_type = "fill_blank"
+                elif rand < 0.9:
+                    quiz_type = "sentence_write"
+
+            item_copy = dict(item)
+            item_copy["quiz_type"] = quiz_type
+
+            if quiz_type == "multiple_choice":
+                correct = item["meaning_vi"]
+                wrong_pool = [m for m in all_meanings if m != correct]
+                if len(wrong_pool) >= 3:
+                    distractors = random.sample(wrong_pool, 3)
+                    options = distractors + [correct]
+                    random.shuffle(options)
+                    item_copy["options"] = options
+                else:
+                    item_copy["quiz_type"] = "flashcard"
+
+            enhanced.append(item_copy)
+
+        return enhanced
 
     def submit_review_payload(self, learner_id: int, answers: list[dict[str, Any]]) -> dict[str, Any]:
         if not isinstance(answers, list) or len(answers) == 0:
@@ -425,6 +492,7 @@ class LearningService:
             else:
                 weak_items.append(word_id)
 
+        self._update_streak(learner_id)
         self.conn.commit()
         score = round((correct_count / max(1, total)) * 100)
         return {
@@ -522,6 +590,26 @@ class LearningService:
                 due_iso,
             ),
         )
+
+    def _update_streak(self, learner_id: int) -> None:
+        row = self.conn.execute("SELECT curr_streak, last_active_date FROM learner_profile WHERE id = ?", (learner_id,)).fetchone()
+        if not row:
+            return
+            
+        today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        curr_streak = int(row["curr_streak"])
+        last_active = row["last_active_date"]
+        
+        if last_active == today_str:
+            return  # Already updated today
+        elif last_active == yesterday_str:
+            curr_streak += 1
+        else:
+            curr_streak = 1
+            
+        self.conn.execute("UPDATE learner_profile SET curr_streak = ?, last_active_date = ? WHERE id = ?", (curr_streak, today_str, learner_id))
 
     @staticmethod
     def _now_iso() -> str:

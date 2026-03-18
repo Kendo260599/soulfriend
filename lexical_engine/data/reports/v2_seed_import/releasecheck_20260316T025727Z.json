@@ -1,0 +1,163 @@
+{
+  "run_id": "f85e40c0-f3e9-498f-bcb6-af99b55da5a6",
+  "previous_report": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\reports\\v2_seed_import\\releasecheck_20260316T025153Z.json",
+  "lineage_depth": 1,
+  "lineage_chain_head": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\reports\\v2_seed_import\\releasecheck_20260316T025153Z.json",
+  "generated_at_utc": "2026-03-16T02:57:27.355858+00:00",
+  "report_version": "2.0",
+  "pipeline_version": "v2-seed-pipeline-2026-03-16",
+  "command_args": [
+    "--runner-command-args",
+    "[\"--ensure-seed\", \"--report-prefix\", \"releasecheck_\"]",
+    "--ensure-seed",
+    "--report-prefix",
+    "releasecheck_"
+  ],
+  "runner_command_args": [
+    "--ensure-seed",
+    "--report-prefix",
+    "releasecheck_"
+  ],
+  "mode": "DRY-RUN",
+  "seed_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+  "seed_metadata": {
+    "path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+    "sha256": "14475cd90ce8351454867b9628e4dd45eed464c0be2426b7d2bcfdc417d303b1",
+    "size_bytes": 17322,
+    "modified_at_utc": "2026-03-16T02:57:27.066772+00:00"
+  },
+  "db_path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexical_engine.db",
+  "flags": {
+    "ensure_seed": true,
+    "replace_v2": false,
+    "apply": false
+  },
+  "skills_resolved": 5,
+  "replace_report": {
+    "requested": false,
+    "lesson_units_deleted": 0,
+    "skill_prerequisites_deleted": 0,
+    "skills_deleted": 0
+  },
+  "prerequisites_report": {
+    "created": 0,
+    "duplicates": 5,
+    "ignored_invalid": 0
+  },
+  "lesson_units_report": {
+    "created": 0,
+    "duplicates": 347,
+    "ignored_invalid": 0,
+    "missing_words": 0,
+    "candidates": 374,
+    "duplicate_by_skill": {
+      "core": 42,
+      "pronunciation": 35,
+      "emotional": 126,
+      "functional": 93,
+      "relationship": 51
+    },
+    "duplicate_samples": [
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "always"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "begin"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "between"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "close"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "come"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "eat"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "find"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "finish"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "go"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "hear"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "hold"
+      },
+      {
+        "skill": "core",
+        "unit_order": 1,
+        "word": "keep"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "know"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "look"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "make"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "move"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "note"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "now"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "part"
+      },
+      {
+        "skill": "core",
+        "unit_order": 2,
+        "word": "put"
+      }
+    ]
+  }
+}

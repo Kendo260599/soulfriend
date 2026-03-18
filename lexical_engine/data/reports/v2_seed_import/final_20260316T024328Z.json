@@ -1,0 +1,58 @@
+{
+  "run_id": "18780e18-b19f-4fa4-8d41-9af7afc26503",
+  "previous_report": null,
+  "lineage_depth": 0,
+  "lineage_chain_head": null,
+  "generated_at_utc": "2026-03-16T02:43:28.764689+00:00",
+  "report_version": "2.0",
+  "pipeline_version": "v2-seed-pipeline-2026-03-16",
+  "command_args": [
+    "--runner-command-args",
+    "[\"--ensure-seed\", \"--replace-v2\", \"--report-prefix\", \"final_\"]",
+    "--ensure-seed",
+    "--replace-v2",
+    "--report-prefix",
+    "final_"
+  ],
+  "runner_command_args": [
+    "--ensure-seed",
+    "--replace-v2",
+    "--report-prefix",
+    "final_"
+  ],
+  "mode": "DRY-RUN",
+  "seed_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+  "seed_metadata": {
+    "path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+    "sha256": "41ca843fff772621d258e865bd4c2576de3a5d987831118896c2bab56010e061",
+    "size_bytes": 17322,
+    "modified_at_utc": "2026-03-16T02:43:28.221701+00:00"
+  },
+  "db_path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexical_engine.db",
+  "flags": {
+    "ensure_seed": true,
+    "replace_v2": true,
+    "apply": false
+  },
+  "skills_resolved": 5,
+  "replace_report": {
+    "requested": true,
+    "lesson_units_deleted": 374,
+    "skill_prerequisites_deleted": 5,
+    "skills_deleted": 5
+  },
+  "prerequisites_report": {
+    "created": 5,
+    "duplicates": 0,
+    "ignored_invalid": 0
+  },
+  "lesson_units_report": {
+    "created": 374,
+    "duplicates": 0,
+    "ignored_invalid": 0,
+    "missing_words": 0,
+    "candidates": 374,
+    "duplicate_by_skill": {},
+    "duplicate_samples": []
+  }
+}

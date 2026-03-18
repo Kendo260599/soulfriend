@@ -5,10 +5,13 @@ export type Track = 'grammar' | 'vocab';
 export type WordItem = {
   id: number;
   word: string;
+  part_of_speech?: string;
   ipa: string;
   meaning_vi: string;
   collocation: string;
   example_sentence: string;
+  synonyms?: string;
+  collocations_json?: string;
 };
 
 export type PhraseItem = {
@@ -26,6 +29,8 @@ export type GrammarItem = {
 };
 
 export type LessonPayload = {
+  is_locked?: boolean;
+  lock_reason?: string;
   track?: Track;
   lesson_meta?: {
     id?: string;
@@ -63,6 +68,7 @@ export type ProgressPayload = {
   weak_words: number;
   grammar_completed: number;
   due_today?: number;
+  curr_streak?: number;
 };
 
 export type VocabCheckAnswer = {
@@ -91,11 +97,14 @@ export type GrammarCheckResult = {
 export type ReviewItem = {
   id: number;
   word: string;
+  part_of_speech?: string;
   ipa?: string;
   meaning_vi: string;
   collocation?: string;
   example_sentence?: string;
   topic_ielts?: string;
+  quiz_type?: 'flashcard' | 'multiple_choice' | 'fill_blank' | 'sentence_write';
+  options?: string[];
 };
 
 export type ReviewPayload = {
@@ -112,4 +121,5 @@ export type LessonCard = {
   main: string;
   sub: string;
   helper: string;
+  audioText?: string;
 };

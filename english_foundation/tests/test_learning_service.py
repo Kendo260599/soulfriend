@@ -97,3 +97,39 @@ class TestProgressPayload:
         payload = svc.get_progress_payload(learner_id=1)
         assert payload["learned_words"] == 0
         assert payload["grammar_completed"] >= 0
+
+
+class TestProgressionLock:
+    def test_locks_lesson_if_too_many_weak_words(self, conn):
+        svc = LearningService(conn)
+        # Mock the progress payload
+        original_get_progress = svc.get_progress_payload
+        try:
+            svc.get_progress_payload = lambda learner_id: {
+                "learned_words": 10,
+                "weak_words": 16, # > 15 triggers lock
+                "grammar_completed": 0,
+                "due_today": 0
+            }
+            lesson = svc.get_track_lesson_payload('vocab', None, learner_id=1)
+            assert lesson.get("is_locked") is True
+            assert "lock_reason" in lesson
+            assert len(lesson.get("words", [])) == 0
+        finally:
+            svc.get_progress_payload = original_get_progress
+
+    def test_does_not_lock_if_words_below_threshold(self, conn):
+        svc = LearningService(conn)
+        original_get_progress = svc.get_progress_payload
+        try:
+            svc.get_progress_payload = lambda learner_id: {
+                "learned_words": 10,
+                "weak_words": 5, # < 15, no lock
+                "grammar_completed": 0,
+                "due_today": 0
+            }
+            lesson = svc.get_track_lesson_payload('vocab', None, learner_id=1)
+            assert not lesson.get("is_locked", False)
+            assert len(lesson.get("words", [])) > 0
+        finally:
+            svc.get_progress_payload = original_get_progress

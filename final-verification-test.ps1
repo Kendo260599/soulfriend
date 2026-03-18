@@ -10,7 +10,7 @@ Write-Host ""
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 
-$BACKEND_URL = "https://soulfriend-production.up.railway.app"
+$BACKEND_URL = "https://soulfriend-api.onrender.com"
 
 # Test 1: Health Check
 Write-Host "📋 Test 1: Backend Health Check..." -ForegroundColor Yellow
@@ -41,6 +41,12 @@ try {
     
     if ($response.success) {
         Write-Host "✅ Normal Message: Working" -ForegroundColor Green
+        if ($response.PSObject.Properties.Name -contains 'interactionEventId') {
+            Write-Host "✅ interactionEventId: Present ($($response.interactionEventId))" -ForegroundColor Green
+        }
+        else {
+            Write-Host "⚠️ interactionEventId: Missing (deploy may not include latest learning-pipeline contract)" -ForegroundColor Yellow
+        }
         Write-Host "   Risk Level: $($response.data.riskLevel)" -ForegroundColor Green
         Write-Host "   Response: $($response.data.message.Substring(0, [Math]::Min(50, $response.data.message.Length)))..." -ForegroundColor Green
     }
@@ -67,11 +73,13 @@ try {
         $riskLevel = $response.data.riskLevel
         $crisisLevel = $response.data.crisisLevel
         $emergencyCount = $response.data.emergencyContacts.Count
+        $hasInteractionId = $response.PSObject.Properties.Name -contains 'interactionEventId'
         
         Write-Host "📤 Crisis Response:" -ForegroundColor Cyan
         Write-Host "   Risk Level: $riskLevel" -ForegroundColor $(if ($riskLevel -eq 'CRITICAL') { 'Green' } else { 'Red' })
         Write-Host "   Crisis Level: $crisisLevel" -ForegroundColor $(if ($crisisLevel -eq 'critical') { 'Green' } else { 'Red' })
         Write-Host "   Emergency Contacts: $emergencyCount" -ForegroundColor $(if ($emergencyCount -gt 0) { 'Green' } else { 'Red' })
+        Write-Host "   interactionEventId Present: $hasInteractionId" -ForegroundColor $(if ($hasInteractionId) { 'Green' } else { 'Yellow' })
         
         if ($riskLevel -eq 'CRITICAL' -and $crisisLevel -eq 'critical') {
             Write-Host ""
@@ -109,6 +117,7 @@ Write-Host "   ✅ UTF-8 Encoding: Fixed" -ForegroundColor Green
 Write-Host "   ✅ Crisis Detection: Working" -ForegroundColor Green
 Write-Host "   ✅ HITL System: Active" -ForegroundColor Green
 Write-Host "   ✅ CORS Origins: Configured" -ForegroundColor Green
+Write-Host "   ℹ️ interactionEventId should be present to confirm newest learning contract" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "🎯 NEXT: Test Frontend (Vercel)" -ForegroundColor Yellow

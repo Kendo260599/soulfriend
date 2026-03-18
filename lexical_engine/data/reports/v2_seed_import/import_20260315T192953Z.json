@@ -1,0 +1,30 @@
+{
+  "generated_at_utc": "2026-03-15T19:29:53.678546+00:00",
+  "mode": "DRY-RUN",
+  "seed_file": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexicon_seed\\lesson_units_seed_preview.json",
+  "db_path": "D:\\ung dung\\soulfriend\\lexical_engine\\data\\lexical_engine.db",
+  "flags": {
+    "ensure_seed": true,
+    "replace_v2": true,
+    "apply": false
+  },
+  "skills_resolved": 5,
+  "replace_report": {
+    "requested": true,
+    "lesson_units_deleted": 374,
+    "skill_prerequisites_deleted": 5,
+    "skills_deleted": 5
+  },
+  "prerequisites_report": {
+    "created": 5,
+    "duplicates": 0,
+    "ignored_invalid": 0
+  },
+  "lesson_units_report": {
+    "created": 374,
+    "duplicates": 7,
+    "ignored_invalid": 0,
+    "missing_words": 0,
+    "candidates": 381
+  }
+}

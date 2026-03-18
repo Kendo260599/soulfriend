@@ -11,6 +11,8 @@ frontend/node_modules/
 .env.development
 backend/.env
 frontend/.env
+frontend/.env.*
+!frontend/.env.production.template
 
 # Build outputs
 build/

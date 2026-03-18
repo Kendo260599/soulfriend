@@ -1,0 +1,6953 @@
+{
+  "generated_at_utc": "2026-03-16T02:57:33.762947+00:00",
+  "total_words": 381,
+  "category_counts": {
+    "core": 381,
+    "pronunciation": 201,
+    "emotional": 228,
+    "functional": 120,
+    "relationship": 54
+  },
+  "primary_category_counts": {
+    "core": 42,
+    "pronunciation": 39,
+    "emotional": 126,
+    "functional": 120,
+    "relationship": 54
+  },
+  "categories": {
+    "core": [
+      "ability",
+      "accept",
+      "accept",
+      "achieve",
+      "adapt",
+      "adjust",
+      "again",
+      "against",
+      "agree",
+      "allow",
+      "alone",
+      "already",
+      "although",
+      "always",
+      "analyze",
+      "angry",
+      "answer",
+      "answer",
+      "anxiety",
+      "apologize",
+      "appreciate",
+      "argument",
+      "ask",
+      "attach",
+      "authentic",
+      "avoid",
+      "aware",
+      "awareness",
+      "balance",
+      "because",
+      "begin",
+      "believe",
+      "belong",
+      "betray",
+      "between",
+      "beyond",
+      "blame",
+      "bond",
+      "boundary",
+      "brave",
+      "break",
+      "break up",
+      "breathe",
+      "breathe through",
+      "bright",
+      "build",
+      "burnout",
+      "calm",
+      "capacity",
+      "care",
+      "careful",
+      "challenge",
+      "change",
+      "choice",
+      "choose",
+      "close",
+      "cold",
+      "come",
+      "comfort",
+      "communicate",
+      "compare",
+      "compassion",
+      "concentrate",
+      "confide",
+      "confident",
+      "confront",
+      "connect",
+      "consequently",
+      "control",
+      "control",
+      "conversation",
+      "cope",
+      "core",
+      "courage",
+      "create",
+      "creative",
+      "criticize",
+      "curious",
+      "cycle",
+      "danger",
+      "dark",
+      "debate",
+      "decide",
+      "dedicate",
+      "deep",
+      "define",
+      "demand",
+      "depend",
+      "describe",
+      "despite",
+      "destination",
+      "detach",
+      "develop",
+      "difficult",
+      "direction",
+      "disagree",
+      "discover",
+      "distance",
+      "distinguish",
+      "distract",
+      "doubt",
+      "dream",
+      "drink",
+      "easy",
+      "eat",
+      "effect",
+      "effort",
+      "emotional",
+      "empathy",
+      "encourage",
+      "energy",
+      "error",
+      "essential",
+      "evolve",
+      "exclude",
+      "expect",
+      "experience",
+      "explain",
+      "explore",
+      "express",
+      "face",
+      "fail",
+      "failure",
+      "false",
+      "family",
+      "fear",
+      "feel",
+      "fight",
+      "find",
+      "finish",
+      "focus",
+      "follow",
+      "forget",
+      "forgive",
+      "foundation",
+      "freedom",
+      "friend",
+      "fundamental",
+      "furthermore",
+      "future",
+      "generous",
+      "gentle",
+      "genuine",
+      "give",
+      "give up",
+      "go",
+      "goal",
+      "grateful",
+      "grow",
+      "guide",
+      "guilt",
+      "habit",
+      "happy",
+      "harsh",
+      "heal",
+      "hear",
+      "help",
+      "hold",
+      "hold back",
+      "hold on",
+      "honest",
+      "honest",
+      "hope",
+      "however",
+      "humble",
+      "hurt",
+      "identify",
+      "identity",
+      "imagine",
+      "impact",
+      "important",
+      "impossible",
+      "improve",
+      "include",
+      "influence",
+      "insecure",
+      "inspire",
+      "intention",
+      "intuition",
+      "issue",
+      "journey",
+      "joy",
+      "judgement",
+      "keep",
+      "kind",
+      "know",
+      "knowledge",
+      "language",
+      "layer",
+      "lead",
+      "learn",
+      "lesson",
+      "let go",
+      "lie",
+      "light",
+      "limit",
+      "limit",
+      "listen",
+      "logical",
+      "lonely",
+      "look",
+      "lose",
+      "love",
+      "loyalty",
+      "make",
+      "manage",
+      "meaning",
+      "meanwhile",
+      "measure",
+      "meditate",
+      "meet",
+      "mindfulness",
+      "miss",
+      "mistake",
+      "moment",
+      "motivation",
+      "move",
+      "necessary",
+      "need",
+      "never",
+      "nevertheless",
+      "noise",
+      "note",
+      "notice",
+      "now",
+      "observe",
+      "obstacle",
+      "often",
+      "open",
+      "open up",
+      "opinion",
+      "opportunity",
+      "outcome",
+      "overwhelm",
+      "part",
+      "past",
+      "path",
+      "patience",
+      "pattern",
+      "peace",
+      "perception",
+      "persist",
+      "personal",
+      "phase",
+      "plan",
+      "play",
+      "possible",
+      "potential",
+      "power",
+      "practice",
+      "praise",
+      "presence",
+      "prevent",
+      "pride",
+      "priority",
+      "private",
+      "problem",
+      "process",
+      "progress",
+      "protect",
+      "proud",
+      "public",
+      "punish",
+      "purpose",
+      "put",
+      "question",
+      "quiet",
+      "rarely",
+      "rational",
+      "reach out",
+      "read",
+      "real",
+      "recognize",
+      "recommend",
+      "reconcile",
+      "record",
+      "recover",
+      "reflect",
+      "reject",
+      "relax",
+      "release",
+      "relief",
+      "rely",
+      "remember",
+      "repeat",
+      "request",
+      "resilient",
+      "respect",
+      "responsibility",
+      "rest",
+      "result",
+      "review",
+      "reward",
+      "risk",
+      "root",
+      "routine",
+      "run",
+      "sad",
+      "safe",
+      "say",
+      "schedule",
+      "secret",
+      "see",
+      "selfish",
+      "sensitive",
+      "shame",
+      "share",
+      "show",
+      "show up",
+      "significant",
+      "significant",
+      "silence",
+      "sincere",
+      "sit",
+      "sit with",
+      "skill",
+      "sleep",
+      "smile",
+      "solution",
+      "sometimes",
+      "speak",
+      "stage",
+      "stand",
+      "still",
+      "strength",
+      "stress",
+      "strong",
+      "structure",
+      "study",
+      "succeed",
+      "success",
+      "suffer",
+      "suggest",
+      "suggest",
+      "support",
+      "surface",
+      "surrender",
+      "take",
+      "talent",
+      "teach",
+      "teach",
+      "tell",
+      "therefore",
+      "think",
+      "throughout",
+      "today",
+      "together",
+      "tomorrow",
+      "toward",
+      "transform",
+      "transition",
+      "transparent",
+      "true",
+      "trust",
+      "truth",
+      "try",
+      "turn",
+      "understand",
+      "unique",
+      "universal",
+      "use",
+      "usually",
+      "value",
+      "voice",
+      "vulnerable",
+      "walk",
+      "want",
+      "warm",
+      "weak",
+      "weakness",
+      "whole",
+      "win",
+      "wisdom",
+      "wish",
+      "within",
+      "wonder",
+      "word",
+      "work",
+      "worry",
+      "write",
+      "yet"
+    ],
+    "pronunciation": [
+      "ability",
+      "accept",
+      "accept",
+      "achieve",
+      "adapt",
+      "adjust",
+      "again",
+      "against",
+      "agree",
+      "allow",
+      "alone",
+      "although",
+      "analyze",
+      "angry",
+      "answer",
+      "answer",
+      "anxiety",
+      "apologize",
+      "appreciate",
+      "argument",
+      "attach",
+      "authentic",
+      "avoid",
+      "aware",
+      "awareness",
+      "balance",
+      "belong",
+      "boundary",
+      "breathe",
+      "breathe through",
+      "burnout",
+      "capacity",
+      "careful",
+      "challenge",
+      "change",
+      "choice",
+      "choose",
+      "comfort",
+      "communicate",
+      "compare",
+      "compassion",
+      "concentrate",
+      "confide",
+      "confident",
+      "confront",
+      "connect",
+      "consequently",
+      "control",
+      "control",
+      "conversation",
+      "courage",
+      "criticize",
+      "curious",
+      "cycle",
+      "danger",
+      "destination",
+      "detach",
+      "develop",
+      "difficult",
+      "direction",
+      "disagree",
+      "discover",
+      "distance",
+      "distinguish",
+      "distract",
+      "doubt",
+      "drink",
+      "effort",
+      "emotional",
+      "empathy",
+      "encourage",
+      "energy",
+      "error",
+      "essential",
+      "evolve",
+      "experience",
+      "failure",
+      "family",
+      "focus",
+      "forget",
+      "forgive",
+      "foundation",
+      "freedom",
+      "fundamental",
+      "furthermore",
+      "future",
+      "generous",
+      "gentle",
+      "genuine",
+      "grateful",
+      "however",
+      "humble",
+      "hurt",
+      "identity",
+      "imagine",
+      "important",
+      "impossible",
+      "influence",
+      "insecure",
+      "inspire",
+      "intention",
+      "intuition",
+      "journey",
+      "joy",
+      "judgement",
+      "knowledge",
+      "language",
+      "layer",
+      "learn",
+      "lesson",
+      "listen",
+      "logical",
+      "loyalty",
+      "manage",
+      "meaning",
+      "measure",
+      "mindfulness",
+      "moment",
+      "motivation",
+      "necessary",
+      "never",
+      "nevertheless",
+      "observe",
+      "obstacle",
+      "often",
+      "open",
+      "open up",
+      "opinion",
+      "opportunity",
+      "overwhelm",
+      "path",
+      "patience",
+      "pattern",
+      "perception",
+      "persist",
+      "personal",
+      "possible",
+      "potential",
+      "power",
+      "presence",
+      "priority",
+      "problem",
+      "protect",
+      "purpose",
+      "question",
+      "quiet",
+      "rational",
+      "reach out",
+      "recognize",
+      "recommend",
+      "reconcile",
+      "record",
+      "recover",
+      "reject",
+      "remember",
+      "resilient",
+      "responsibility",
+      "schedule",
+      "significant",
+      "significant",
+      "silence",
+      "sincere",
+      "sit with",
+      "solution",
+      "stage",
+      "strength",
+      "strong",
+      "structure",
+      "succeed",
+      "success",
+      "suffer",
+      "suggest",
+      "suggest",
+      "support",
+      "surface",
+      "surrender",
+      "talent",
+      "teach",
+      "teach",
+      "therefore",
+      "think",
+      "throughout",
+      "today",
+      "together",
+      "tomorrow",
+      "toward",
+      "transform",
+      "transition",
+      "transparent",
+      "truth",
+      "turn",
+      "understand",
+      "universal",
+      "usually",
+      "vulnerable",
+      "wisdom",
+      "within",
+      "wonder",
+      "word",
+      "work",
+      "worry"
+    ],
+    "emotional": [
+      "ability",
+      "accept",
+      "accept",
+      "achieve",
+      "adapt",
+      "against",
+      "agree",
+      "allow",
+      "alone",
+      "angry",
+      "anxiety",
+      "apologize",
+      "appreciate",
+      "argument",
+      "authentic",
+      "avoid",
+      "aware",
+      "awareness",
+      "balance",
+      "believe",
+      "belong",
+      "betray",
+      "beyond",
+      "blame",
+      "bond",
+      "brave",
+      "break",
+      "break up",
+      "breathe",
+      "breathe through",
+      "bright",
+      "build",
+      "burnout",
+      "calm",
+      "care",
+      "careful",
+      "cold",
+      "comfort",
+      "compassion",
+      "confide",
+      "confident",
+      "confront",
+      "connect",
+      "conversation",
+      "cope",
+      "core",
+      "courage",
+      "create",
+      "creative",
+      "criticize",
+      "curious",
+      "danger",
+      "dark",
+      "dedicate",
+      "deep",
+      "destination",
+      "develop",
+      "difficult",
+      "disagree",
+      "discover",
+      "distract",
+      "doubt",
+      "dream",
+      "easy",
+      "effort",
+      "emotional",
+      "empathy",
+      "encourage",
+      "energy",
+      "error",
+      "evolve",
+      "exclude",
+      "expect",
+      "experience",
+      "explore",
+      "face",
+      "fail",
+      "failure",
+      "false",
+      "family",
+      "fear",
+      "feel",
+      "fight",
+      "forget",
+      "forgive",
+      "foundation",
+      "freedom",
+      "friend",
+      "generous",
+      "gentle",
+      "genuine",
+      "give",
+      "give up",
+      "goal",
+      "grateful",
+      "grow",
+      "guide",
+      "guilt",
+      "happy",
+      "harsh",
+      "heal",
+      "help",
+      "hold back",
+      "hold on",
+      "honest",
+      "honest",
+      "hope",
+      "humble",
+      "hurt",
+      "identity",
+      "imagine",
+      "impossible",
+      "improve",
+      "insecure",
+      "inspire",
+      "intuition",
+      "journey",
+      "joy",
+      "kind",
+      "knowledge",
+      "lead",
+      "learn",
+      "lesson",
+      "let go",
+      "lie",
+      "light",
+      "listen",
+      "lonely",
+      "lose",
+      "love",
+      "loyalty",
+      "meaning",
+      "meditate",
+      "meet",
+      "mindfulness",
+      "miss",
+      "mistake",
+      "motivation",
+      "never",
+      "noise",
+      "obstacle",
+      "open up",
+      "opportunity",
+      "overwhelm",
+      "path",
+      "patience",
+      "peace",
+      "perception",
+      "persist",
+      "personal",
+      "play",
+      "possible",
+      "potential",
+      "practice",
+      "praise",
+      "presence",
+      "pride",
+      "private",
+      "problem",
+      "progress",
+      "protect",
+      "proud",
+      "punish",
+      "purpose",
+      "quiet",
+      "reach out",
+      "recommend",
+      "reconcile",
+      "recover",
+      "reflect",
+      "reject",
+      "relax",
+      "release",
+      "relief",
+      "rely",
+      "remember",
+      "resilient",
+      "respect",
+      "rest",
+      "reward",
+      "risk",
+      "root",
+      "sad",
+      "safe",
+      "selfish",
+      "sensitive",
+      "shame",
+      "share",
+      "show up",
+      "silence",
+      "sincere",
+      "sit with",
+      "skill",
+      "smile",
+      "solution",
+      "strength",
+      "stress",
+      "strong",
+      "succeed",
+      "success",
+      "suffer",
+      "support",
+      "surrender",
+      "talent",
+      "teach",
+      "teach",
+      "think",
+      "together",
+      "tomorrow",
+      "toward",
+      "transform",
+      "transition",
+      "transparent",
+      "true",
+      "trust",
+      "truth",
+      "try",
+      "unique",
+      "value",
+      "vulnerable",
+      "warm",
+      "weak",
+      "weakness",
+      "win",
+      "wisdom",
+      "wish",
+      "wonder",
+      "worry"
+    ],
+    "functional": [
+      "accept",
+      "adjust",
+      "against",
+      "agree",
+      "allow",
+      "although",
+      "analyze",
+      "answer",
+      "answer",
+      "ask",
+      "attach",
+      "because",
+      "beyond",
+      "capacity",
+      "challenge",
+      "change",
+      "choice",
+      "choose",
+      "communicate",
+      "compare",
+      "concentrate",
+      "consequently",
+      "control",
+      "control",
+      "create",
+      "cycle",
+      "debate",
+      "decide",
+      "define",
+      "demand",
+      "describe",
+      "despite",
+      "detach",
+      "develop",
+      "direction",
+      "disagree",
+      "distinguish",
+      "distract",
+      "effect",
+      "essential",
+      "exclude",
+      "explain",
+      "express",
+      "focus",
+      "follow",
+      "foundation",
+      "fundamental",
+      "furthermore",
+      "give",
+      "goal",
+      "guide",
+      "help",
+      "however",
+      "identify",
+      "impact",
+      "impossible",
+      "improve",
+      "include",
+      "intention",
+      "issue",
+      "judgement",
+      "layer",
+      "lead",
+      "limit",
+      "limit",
+      "listen",
+      "logical",
+      "manage",
+      "meanwhile",
+      "measure",
+      "necessary",
+      "need",
+      "nevertheless",
+      "notice",
+      "observe",
+      "opinion",
+      "opportunity",
+      "outcome",
+      "pattern",
+      "phase",
+      "plan",
+      "possible",
+      "power",
+      "prevent",
+      "priority",
+      "process",
+      "progress",
+      "protect",
+      "punish",
+      "question",
+      "rational",
+      "recognize",
+      "recommend",
+      "reject",
+      "repeat",
+      "request",
+      "responsibility",
+      "result",
+      "review",
+      "risk",
+      "say",
+      "share",
+      "show",
+      "significant",
+      "significant",
+      "solution",
+      "speak",
+      "stage",
+      "structure",
+      "suggest",
+      "suggest",
+      "take",
+      "tell",
+      "therefore",
+      "throughout",
+      "toward",
+      "understand",
+      "universal",
+      "want",
+      "within"
+    ],
+    "relationship": [
+      "apologize",
+      "appreciate",
+      "argument",
+      "belong",
+      "betray",
+      "blame",
+      "bond",
+      "boundary",
+      "break up",
+      "care",
+      "cold",
+      "comfort",
+      "compassion",
+      "confide",
+      "confront",
+      "connect",
+      "criticize",
+      "depend",
+      "distance",
+      "empathy",
+      "encourage",
+      "family",
+      "forgive",
+      "friend",
+      "generous",
+      "gentle",
+      "genuine",
+      "harsh",
+      "honest",
+      "honest",
+      "hurt",
+      "influence",
+      "kind",
+      "lie",
+      "love",
+      "loyalty",
+      "meet",
+      "miss",
+      "open up",
+      "praise",
+      "reach out",
+      "reconcile",
+      "rely",
+      "respect",
+      "secret",
+      "selfish",
+      "show up",
+      "sincere",
+      "support",
+      "together",
+      "transparent",
+      "trust",
+      "truth",
+      "warm"
+    ]
+  },
+  "words": [
+    {
+      "word": "trust",
+      "ipa": "/trʌst/",
+      "meaning_vi": "tin tưởng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "hope",
+      "ipa": "/hoʊp/",
+      "meaning_vi": "hy vọng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "fear",
+      "ipa": "/fɪr/",
+      "meaning_vi": "sợ hãi",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "care",
+      "ipa": "/kɛr/",
+      "meaning_vi": "quan tâm",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "love",
+      "ipa": "/lʌv/",
+      "meaning_vi": "tình yêu",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "smile",
+      "ipa": "/smaɪl/",
+      "meaning_vi": "nụ cười",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "happy",
+      "ipa": "/ˈhæpi/",
+      "meaning_vi": "hạnh phúc",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "sad",
+      "ipa": "/sæd/",
+      "meaning_vi": "buồn",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "angry",
+      "ipa": "/ˈæŋɡri/",
+      "meaning_vi": "tức giận",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "calm",
+      "ipa": "/kɑːm/",
+      "meaning_vi": "bình tĩnh",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "kind",
+      "ipa": "/kaɪnd/",
+      "meaning_vi": "tử tế",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "brave",
+      "ipa": "/breɪv/",
+      "meaning_vi": "dũng cảm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "lonely",
+      "ipa": "/ˈloʊnli/",
+      "meaning_vi": "cô đơn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "grateful",
+      "ipa": "/ˈɡreɪtfəl/",
+      "meaning_vi": "biết ơn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "proud",
+      "ipa": "/praʊd/",
+      "meaning_vi": "tự hào",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "shame",
+      "ipa": "/ʃeɪm/",
+      "meaning_vi": "xấu hổ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "guilt",
+      "ipa": "/ɡɪlt/",
+      "meaning_vi": "cảm giác tội lỗi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "peace",
+      "ipa": "/piːs/",
+      "meaning_vi": "bình yên",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "joy",
+      "ipa": "/dʒɔɪ/",
+      "meaning_vi": "niềm vui",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "anxiety",
+      "ipa": "/æŋˈzaɪəti/",
+      "meaning_vi": "lo âu",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "stress",
+      "ipa": "/strɛs/",
+      "meaning_vi": "căng thẳng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "relief",
+      "ipa": "/rɪˈliːf/",
+      "meaning_vi": "nhẹ nhõm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "patience",
+      "ipa": "/ˈpeɪʃəns/",
+      "meaning_vi": "kiên nhẫn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "courage",
+      "ipa": "/ˈkɜːrɪdʒ/",
+      "meaning_vi": "can đảm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "wisdom",
+      "ipa": "/ˈwɪzdəm/",
+      "meaning_vi": "sự khôn ngoan",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "friend",
+      "ipa": "/frɛnd/",
+      "meaning_vi": "bạn bè",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "family",
+      "ipa": "/ˈfæməli/",
+      "meaning_vi": "gia đình",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "support",
+      "ipa": "/səˈpɔːrt/",
+      "meaning_vi": "hỗ trợ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "forgive",
+      "ipa": "/fərˈɡɪv/",
+      "meaning_vi": "tha thứ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "respect",
+      "ipa": "/rɪˈspɛkt/",
+      "meaning_vi": "tôn trọng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "understand",
+      "ipa": "/ˌʌndərˈstænd/",
+      "meaning_vi": "hiểu",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "communicate",
+      "ipa": "/kəˈmjuːnɪkeɪt/",
+      "meaning_vi": "giao tiếp",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "listen",
+      "ipa": "/ˈlɪsən/",
+      "meaning_vi": "lắng nghe",
+      "cefr_level": "A1",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "speak",
+      "ipa": "/spiːk/",
+      "meaning_vi": "nói",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "ask",
+      "ipa": "/æsk/",
+      "meaning_vi": "hỏi",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "answer",
+      "ipa": "/ˈænsər/",
+      "meaning_vi": "trả lời",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "share",
+      "ipa": "/ʃɛr/",
+      "meaning_vi": "chia sẻ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "help",
+      "ipa": "/hɛlp/",
+      "meaning_vi": "giúp đỡ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "accept",
+      "ipa": "/əkˈsɛpt/",
+      "meaning_vi": "chấp nhận",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "reject",
+      "ipa": "/rɪˈdʒɛkt/",
+      "meaning_vi": "từ chối",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "begin",
+      "ipa": "/bɪˈɡɪn/",
+      "meaning_vi": "bắt đầu",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "finish",
+      "ipa": "/ˈfɪnɪʃ/",
+      "meaning_vi": "hoàn thành",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "try",
+      "ipa": "/traɪ/",
+      "meaning_vi": "cố gắng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "learn",
+      "ipa": "/lɜːrn/",
+      "meaning_vi": "học",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "teach",
+      "ipa": "/tiːtʃ/",
+      "meaning_vi": "dạy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "study",
+      "ipa": "/ˈstʌdi/",
+      "meaning_vi": "nghiên cứu",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "work",
+      "ipa": "/wɜːrk/",
+      "meaning_vi": "làm việc",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "rest",
+      "ipa": "/rɛst/",
+      "meaning_vi": "nghỉ ngơi",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "sleep",
+      "ipa": "/sliːp/",
+      "meaning_vi": "ngủ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "eat",
+      "ipa": "/iːt/",
+      "meaning_vi": "ăn",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "drink",
+      "ipa": "/drɪŋk/",
+      "meaning_vi": "uống",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "walk",
+      "ipa": "/wɔːk/",
+      "meaning_vi": "đi bộ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "run",
+      "ipa": "/rʌn/",
+      "meaning_vi": "chạy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "sit",
+      "ipa": "/sɪt/",
+      "meaning_vi": "ngồi",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "stand",
+      "ipa": "/stænd/",
+      "meaning_vi": "đứng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "open",
+      "ipa": "/ˈoʊpən/",
+      "meaning_vi": "mở",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "close",
+      "ipa": "/kloʊz/",
+      "meaning_vi": "đóng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "read",
+      "ipa": "/riːd/",
+      "meaning_vi": "đọc",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "write",
+      "ipa": "/raɪt/",
+      "meaning_vi": "viết",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "know",
+      "ipa": "/noʊ/",
+      "meaning_vi": "biết",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "think",
+      "ipa": "/θɪŋk/",
+      "meaning_vi": "suy nghĩ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "feel",
+      "ipa": "/fiːl/",
+      "meaning_vi": "cảm thấy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "want",
+      "ipa": "/wɒnt/",
+      "meaning_vi": "muốn",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "need",
+      "ipa": "/niːd/",
+      "meaning_vi": "cần",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "give",
+      "ipa": "/ɡɪv/",
+      "meaning_vi": "cho",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "take",
+      "ipa": "/teɪk/",
+      "meaning_vi": "lấy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "show",
+      "ipa": "/ʃoʊ/",
+      "meaning_vi": "chỉ ra",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "tell",
+      "ipa": "/tɛl/",
+      "meaning_vi": "kể cho",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "say",
+      "ipa": "/seɪ/",
+      "meaning_vi": "nói rằng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "come",
+      "ipa": "/kʌm/",
+      "meaning_vi": "đến",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "go",
+      "ipa": "/ɡoʊ/",
+      "meaning_vi": "đi",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "see",
+      "ipa": "/siː/",
+      "meaning_vi": "nhìn thấy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "look",
+      "ipa": "/lʊk/",
+      "meaning_vi": "nhìn",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "hear",
+      "ipa": "/hɪr/",
+      "meaning_vi": "nghe thấy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "use",
+      "ipa": "/juːz/",
+      "meaning_vi": "dùng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "make",
+      "ipa": "/meɪk/",
+      "meaning_vi": "tạo ra",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "put",
+      "ipa": "/pʊt/",
+      "meaning_vi": "đặt",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "find",
+      "ipa": "/faɪnd/",
+      "meaning_vi": "tìm thấy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "keep",
+      "ipa": "/kiːp/",
+      "meaning_vi": "giữ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "hold",
+      "ipa": "/hoʊld/",
+      "meaning_vi": "cầm",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "turn",
+      "ipa": "/tɜːrn/",
+      "meaning_vi": "quay",
+      "cefr_level": "A1",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "move",
+      "ipa": "/muːv/",
+      "meaning_vi": "di chuyển",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "change",
+      "ipa": "/tʃeɪndʒ/",
+      "meaning_vi": "thay đổi",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "grow",
+      "ipa": "/ɡroʊ/",
+      "meaning_vi": "phát triển",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "build",
+      "ipa": "/bɪld/",
+      "meaning_vi": "xây dựng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "break",
+      "ipa": "/breɪk/",
+      "meaning_vi": "phá vỡ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "lose",
+      "ipa": "/luːz/",
+      "meaning_vi": "mất",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "win",
+      "ipa": "/wɪn/",
+      "meaning_vi": "chiến thắng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "fight",
+      "ipa": "/faɪt/",
+      "meaning_vi": "tranh đấu",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "play",
+      "ipa": "/pleɪ/",
+      "meaning_vi": "chơi",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "choose",
+      "ipa": "/tʃuːz/",
+      "meaning_vi": "chọn lựa",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "decide",
+      "ipa": "/dɪˈsaɪd/",
+      "meaning_vi": "quyết định",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "agree",
+      "ipa": "/əˈɡriː/",
+      "meaning_vi": "đồng ý",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "disagree",
+      "ipa": "/ˌdɪsəˈɡriː/",
+      "meaning_vi": "không đồng ý",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "believe",
+      "ipa": "/bɪˈliːv/",
+      "meaning_vi": "tin tưởng vào",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "doubt",
+      "ipa": "/daʊt/",
+      "meaning_vi": "nghi ngờ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "expect",
+      "ipa": "/ɪkˈspɛkt/",
+      "meaning_vi": "mong đợi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "forget",
+      "ipa": "/fərˈɡɛt/",
+      "meaning_vi": "quên",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "remember",
+      "ipa": "/rɪˈmɛmbər/",
+      "meaning_vi": "nhớ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "imagine",
+      "ipa": "/ɪˈmædʒɪn/",
+      "meaning_vi": "tưởng tượng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "dream",
+      "ipa": "/driːm/",
+      "meaning_vi": "giấc mơ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "wish",
+      "ipa": "/wɪʃ/",
+      "meaning_vi": "ước muốn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "worry",
+      "ipa": "/ˈwɜːri/",
+      "meaning_vi": "lo lắng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "suffer",
+      "ipa": "/ˈsʌfər/",
+      "meaning_vi": "chịu đựng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "heal",
+      "ipa": "/hiːl/",
+      "meaning_vi": "chữa lành",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "recover",
+      "ipa": "/rɪˈkʌvər/",
+      "meaning_vi": "hồi phục",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "strong",
+      "ipa": "/strɒŋ/",
+      "meaning_vi": "mạnh mẽ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "weak",
+      "ipa": "/wiːk/",
+      "meaning_vi": "yếu đuối",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "honest",
+      "ipa": "/ˈɒnɪst/",
+      "meaning_vi": "thành thật",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "sincere",
+      "ipa": "/sɪnˈsɪr/",
+      "meaning_vi": "chân thành",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "generous",
+      "ipa": "/ˈdʒɛnərəs/",
+      "meaning_vi": "寛ho寛lượng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "selfish",
+      "ipa": "/ˈsɛlfɪʃ/",
+      "meaning_vi": "ích kỷ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "empathy",
+      "ipa": "/ˈɛmpəθi/",
+      "meaning_vi": "đồng cảm",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "compassion",
+      "ipa": "/kəmˈpæʃən/",
+      "meaning_vi": "lòng trắc ẩn",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "loyalty",
+      "ipa": "/ˈlɔɪəlti/",
+      "meaning_vi": "lòng trung thành",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "betray",
+      "ipa": "/bɪˈtreɪ/",
+      "meaning_vi": "phản bội",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "bond",
+      "ipa": "/bɒnd/",
+      "meaning_vi": "sự gắn kết",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "connect",
+      "ipa": "/kəˈnɛkt/",
+      "meaning_vi": "kết nối",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "distance",
+      "ipa": "/ˈdɪstəns/",
+      "meaning_vi": "khoảng cách",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "miss",
+      "ipa": "/mɪs/",
+      "meaning_vi": "nhớ ai đó",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "meet",
+      "ipa": "/miːt/",
+      "meaning_vi": "gặp gỡ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "break up",
+      "ipa": "/breɪk ʌp/",
+      "meaning_vi": "chia tay",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "reconcile",
+      "ipa": "/ˈrɛkənsaɪl/",
+      "meaning_vi": "hòa giải",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "hurt",
+      "ipa": "/hɜːrt/",
+      "meaning_vi": "làm đau",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "comfort",
+      "ipa": "/ˈkʌmfərt/",
+      "meaning_vi": "an ủi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "encourage",
+      "ipa": "/ɪnˈkɜːrɪdʒ/",
+      "meaning_vi": "khuyến khích",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "criticize",
+      "ipa": "/ˈkrɪtɪsaɪz/",
+      "meaning_vi": "chỉ trích",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "appreciate",
+      "ipa": "/əˈpriːʃieɪt/",
+      "meaning_vi": "trân trọng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "apologize",
+      "ipa": "/əˈpɒlədʒaɪz/",
+      "meaning_vi": "xin lỗi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "pride",
+      "ipa": "/praɪd/",
+      "meaning_vi": "lòng tự trọng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "humble",
+      "ipa": "/ˈhʌmbəl/",
+      "meaning_vi": "khiêm tốn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "confident",
+      "ipa": "/ˈkɒnfɪdənt/",
+      "meaning_vi": "tự tin",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "insecure",
+      "ipa": "/ˌɪnsɪˈkjʊər/",
+      "meaning_vi": "thiếu tự tin",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "resilient",
+      "ipa": "/rɪˈzɪliənt/",
+      "meaning_vi": "kiên cường",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "vulnerable",
+      "ipa": "/ˈvʌlnərəbəl/",
+      "meaning_vi": "dễ bị tổn thương",
+      "cefr_level": "B2",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "sensitive",
+      "ipa": "/ˈsɛnsɪtɪv/",
+      "meaning_vi": "nhạy cảm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "overwhelm",
+      "ipa": "/ˌoʊvərˈwɛlm/",
+      "meaning_vi": "choáng ngợp",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "burnout",
+      "ipa": "/ˈbɜːrnaʊt/",
+      "meaning_vi": "kiệt sức",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "motivation",
+      "ipa": "/ˌmoʊtɪˈveɪʃən/",
+      "meaning_vi": "động lực",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "inspire",
+      "ipa": "/ɪnˈspaɪər/",
+      "meaning_vi": "truyền cảm hứng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "achieve",
+      "ipa": "/əˈtʃiːv/",
+      "meaning_vi": "đạt được",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "succeed",
+      "ipa": "/səkˈsiːd/",
+      "meaning_vi": "thành công",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "fail",
+      "ipa": "/feɪl/",
+      "meaning_vi": "thất bại",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "persist",
+      "ipa": "/pərˈsɪst/",
+      "meaning_vi": "kiên trì",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "give up",
+      "ipa": "/ɡɪv ʌp/",
+      "meaning_vi": "bỏ cuộc",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "dedicate",
+      "ipa": "/ˈdɛdɪkeɪt/",
+      "meaning_vi": "cống hiến",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "focus",
+      "ipa": "/ˈfoʊkəs/",
+      "meaning_vi": "tập trung",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "distract",
+      "ipa": "/dɪˈstrækt/",
+      "meaning_vi": "xao nhãng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "concentrate",
+      "ipa": "/ˈkɒnsəntreɪt/",
+      "meaning_vi": "chú tâm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "reflect",
+      "ipa": "/rɪˈflɛkt/",
+      "meaning_vi": "suy ngẫm",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "meditate",
+      "ipa": "/ˈmɛdɪteɪt/",
+      "meaning_vi": "thiền định",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "breathe",
+      "ipa": "/briːð/",
+      "meaning_vi": "hít thở",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "relax",
+      "ipa": "/rɪˈlæks/",
+      "meaning_vi": "thư giãn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "balance",
+      "ipa": "/ˈbæləns/",
+      "meaning_vi": "cân bằng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "priority",
+      "ipa": "/praɪˈɒrɪti/",
+      "meaning_vi": "ưu tiên",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "boundary",
+      "ipa": "/ˈbaʊndri/",
+      "meaning_vi": "ranh giới",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "limit",
+      "ipa": "/ˈlɪmɪt/",
+      "meaning_vi": "giới hạn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "obstacle",
+      "ipa": "/ˈɒbstəkəl/",
+      "meaning_vi": "trở ngại",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "opportunity",
+      "ipa": "/ˌɒpəˈtjuːnɪti/",
+      "meaning_vi": "cơ hội",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "challenge",
+      "ipa": "/ˈtʃælɪndʒ/",
+      "meaning_vi": "thách thức",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "risk",
+      "ipa": "/rɪsk/",
+      "meaning_vi": "rủi ro",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "safe",
+      "ipa": "/seɪf/",
+      "meaning_vi": "an toàn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "danger",
+      "ipa": "/ˈdeɪndʒər/",
+      "meaning_vi": "nguy hiểm",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "careful",
+      "ipa": "/ˈkɛrfəl/",
+      "meaning_vi": "cẩn thận",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "aware",
+      "ipa": "/əˈwɛr/",
+      "meaning_vi": "nhận thức",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "intention",
+      "ipa": "/ɪnˈtɛnʃən/",
+      "meaning_vi": "chủ ý",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "purpose",
+      "ipa": "/ˈpɜːrpəs/",
+      "meaning_vi": "mục đích",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "meaning",
+      "ipa": "/ˈmiːnɪŋ/",
+      "meaning_vi": "ý nghĩa",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "value",
+      "ipa": "/ˈvæljuː/",
+      "meaning_vi": "giá trị",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "identity",
+      "ipa": "/aɪˈdɛntɪti/",
+      "meaning_vi": "bản sắc",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "freedom",
+      "ipa": "/ˈfriːdəm/",
+      "meaning_vi": "tự do",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "responsibility",
+      "ipa": "/rɪˌspɒnsɪˈbɪlɪti/",
+      "meaning_vi": "trách nhiệm",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "choice",
+      "ipa": "/tʃɔɪs/",
+      "meaning_vi": "sự lựa chọn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "habit",
+      "ipa": "/ˈhæbɪt/",
+      "meaning_vi": "thói quen",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "routine",
+      "ipa": "/ruːˈtiːn/",
+      "meaning_vi": "thói quen hàng ngày",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "schedule",
+      "ipa": "/ˈʃɛdjuːl/",
+      "meaning_vi": "lịch trình",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "goal",
+      "ipa": "/ɡoʊl/",
+      "meaning_vi": "mục tiêu",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "plan",
+      "ipa": "/plæn/",
+      "meaning_vi": "kế hoạch",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "progress",
+      "ipa": "/ˈprɒɡrɛs/",
+      "meaning_vi": "tiến bộ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "improve",
+      "ipa": "/ɪmˈpruːv/",
+      "meaning_vi": "cải thiện",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "practice",
+      "ipa": "/ˈpræktɪs/",
+      "meaning_vi": "luyện tập",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "repeat",
+      "ipa": "/rɪˈpiːt/",
+      "meaning_vi": "lặp lại",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "review",
+      "ipa": "/rɪˈvjuː/",
+      "meaning_vi": "ôn lại",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "note",
+      "ipa": "/noʊt/",
+      "meaning_vi": "ghi chú",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "record",
+      "ipa": "/ˈrɛkərd/",
+      "meaning_vi": "ghi lại",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "measure",
+      "ipa": "/ˈmɛʒər/",
+      "meaning_vi": "đo lường",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "compare",
+      "ipa": "/kəmˈpɛr/",
+      "meaning_vi": "so sánh",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "analyze",
+      "ipa": "/ˈænəlaɪz/",
+      "meaning_vi": "phân tích",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "explain",
+      "ipa": "/ɪkˈspleɪn/",
+      "meaning_vi": "giải thích",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "describe",
+      "ipa": "/dɪˈskraɪb/",
+      "meaning_vi": "mô tả",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "define",
+      "ipa": "/dɪˈfaɪn/",
+      "meaning_vi": "định nghĩa",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "express",
+      "ipa": "/ɪkˈsprɛs/",
+      "meaning_vi": "thể hiện",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "opinion",
+      "ipa": "/əˈpɪnjən/",
+      "meaning_vi": "ý kiến",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "suggest",
+      "ipa": "/səˈdʒɛst/",
+      "meaning_vi": "đề nghị",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "recommend",
+      "ipa": "/ˌrɛkəˈmɛnd/",
+      "meaning_vi": "khuyến khích",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "request",
+      "ipa": "/rɪˈkwɛst/",
+      "meaning_vi": "yêu cầu",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "demand",
+      "ipa": "/dɪˈmænd/",
+      "meaning_vi": "đòi hỏi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "allow",
+      "ipa": "/əˈlaʊ/",
+      "meaning_vi": "cho phép",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "prevent",
+      "ipa": "/prɪˈvɛnt/",
+      "meaning_vi": "ngăn chặn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "protect",
+      "ipa": "/prəˈtɛkt/",
+      "meaning_vi": "bảo vệ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "manage",
+      "ipa": "/ˈmænɪdʒ/",
+      "meaning_vi": "quản lý",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "control",
+      "ipa": "/kənˈtroʊl/",
+      "meaning_vi": "kiểm soát",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "create",
+      "ipa": "/kriˈeɪt/",
+      "meaning_vi": "tạo ra",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "develop",
+      "ipa": "/dɪˈvɛləp/",
+      "meaning_vi": "phát triển",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "suggest",
+      "ipa": "/səˈdʒɛst/",
+      "meaning_vi": "đề nghị",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "difficult",
+      "ipa": "/ˈdɪfɪkəlt/",
+      "meaning_vi": "khó khăn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "easy",
+      "ipa": "/ˈiːzi/",
+      "meaning_vi": "dễ dàng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "possible",
+      "ipa": "/ˈpɒsɪbəl/",
+      "meaning_vi": "có thể",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "impossible",
+      "ipa": "/ɪmˈpɒsɪbəl/",
+      "meaning_vi": "không thể",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "necessary",
+      "ipa": "/ˈnɛsɪsəri/",
+      "meaning_vi": "cần thiết",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "important",
+      "ipa": "/ɪmˈpɔːrtənt/",
+      "meaning_vi": "quan trọng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "significant",
+      "ipa": "/sɪɡˈnɪfɪkənt/",
+      "meaning_vi": "đáng kể",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "real",
+      "ipa": "/riːl/",
+      "meaning_vi": "thực tế",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "true",
+      "ipa": "/truː/",
+      "meaning_vi": "sự thật",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "false",
+      "ipa": "/fɒls/",
+      "meaning_vi": "sai lầm",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "honest",
+      "ipa": "/ˈɒnɪst/",
+      "meaning_vi": "thành thật",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "lie",
+      "ipa": "/laɪ/",
+      "meaning_vi": "nói dối",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "truth",
+      "ipa": "/truːθ/",
+      "meaning_vi": "sự thật",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "transparent",
+      "ipa": "/trænsˈpærənt/",
+      "meaning_vi": "minh bạch",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "secret",
+      "ipa": "/ˈsiːkrɪt/",
+      "meaning_vi": "bí mật",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "confide",
+      "ipa": "/kənˈfaɪd/",
+      "meaning_vi": "tâm sự",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "silence",
+      "ipa": "/ˈsaɪləns/",
+      "meaning_vi": "sự im lặng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "noise",
+      "ipa": "/nɔɪz/",
+      "meaning_vi": "tiếng ồn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "voice",
+      "ipa": "/vɔɪs/",
+      "meaning_vi": "giọng nói",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "word",
+      "ipa": "/wɜːrd/",
+      "meaning_vi": "từ ngữ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "language",
+      "ipa": "/ˈlæŋɡwɪdʒ/",
+      "meaning_vi": "ngôn ngữ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "conversation",
+      "ipa": "/ˌkɒnvəˈseɪʃən/",
+      "meaning_vi": "cuộc trò chuyện",
+      "cefr_level": "A2",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "argument",
+      "ipa": "/ˈɑːrɡjumənt/",
+      "meaning_vi": "tranh luận",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "debate",
+      "ipa": "/dɪˈbeɪt/",
+      "meaning_vi": "cuộc tranh luận",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "problem",
+      "ipa": "/ˈprɒbləm/",
+      "meaning_vi": "vấn đề",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "solution",
+      "ipa": "/səˈluːʃən/",
+      "meaning_vi": "giải pháp",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "issue",
+      "ipa": "/ˈɪʃuː/",
+      "meaning_vi": "vấn đề",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "error",
+      "ipa": "/ˈɛrər/",
+      "meaning_vi": "lỗi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "mistake",
+      "ipa": "/mɪˈsteɪk/",
+      "meaning_vi": "sai lầm",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "lesson",
+      "ipa": "/ˈlɛsən/",
+      "meaning_vi": "bài học",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "experience",
+      "ipa": "/ɪkˈspɪəriəns/",
+      "meaning_vi": "kinh nghiệm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "knowledge",
+      "ipa": "/ˈnɒlɪdʒ/",
+      "meaning_vi": "kiến thức",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "skill",
+      "ipa": "/skɪl/",
+      "meaning_vi": "kỹ năng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "talent",
+      "ipa": "/ˈtælənt/",
+      "meaning_vi": "tài năng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "ability",
+      "ipa": "/əˈbɪlɪti/",
+      "meaning_vi": "khả năng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "potential",
+      "ipa": "/pəˈtɛnʃəl/",
+      "meaning_vi": "tiềm năng",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "limit",
+      "ipa": "/ˈlɪmɪt/",
+      "meaning_vi": "giới hạn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "capacity",
+      "ipa": "/kəˈpæsɪti/",
+      "meaning_vi": "năng lực",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "strength",
+      "ipa": "/strɛŋkθ/",
+      "meaning_vi": "sức mạnh",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "weakness",
+      "ipa": "/ˈwiːknɪs/",
+      "meaning_vi": "điểm yếu",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "energy",
+      "ipa": "/ˈɛnərdʒi/",
+      "meaning_vi": "năng lượng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "power",
+      "ipa": "/ˈpaʊər/",
+      "meaning_vi": "quyền lực",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "control",
+      "ipa": "/kənˈtroʊl/",
+      "meaning_vi": "kiểm soát",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "influence",
+      "ipa": "/ˈɪnfluəns/",
+      "meaning_vi": "ảnh hưởng",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "impact",
+      "ipa": "/ˈɪmpækt/",
+      "meaning_vi": "tác động",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "effect",
+      "ipa": "/ɪˈfɛkt/",
+      "meaning_vi": "hiệu ứng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "result",
+      "ipa": "/rɪˈzʌlt/",
+      "meaning_vi": "kết quả",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "outcome",
+      "ipa": "/ˈaʊtkʌm/",
+      "meaning_vi": "kết cục",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "success",
+      "ipa": "/səkˈsɛs/",
+      "meaning_vi": "thành công",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "failure",
+      "ipa": "/ˈfeɪljər/",
+      "meaning_vi": "thất bại",
+      "cefr_level": "A2",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "effort",
+      "ipa": "/ˈɛfərt/",
+      "meaning_vi": "nỗ lực",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "reward",
+      "ipa": "/rɪˈwɔːrd/",
+      "meaning_vi": "phần thưởng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "punish",
+      "ipa": "/ˈpʌnɪʃ/",
+      "meaning_vi": "trừng phạt",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "blame",
+      "ipa": "/bleɪm/",
+      "meaning_vi": "đổ lỗi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "praise",
+      "ipa": "/preɪz/",
+      "meaning_vi": "khen ngợi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "teach",
+      "ipa": "/tiːtʃ/",
+      "meaning_vi": "giảng dạy",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "guide",
+      "ipa": "/ɡaɪd/",
+      "meaning_vi": "hướng dẫn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "lead",
+      "ipa": "/liːd/",
+      "meaning_vi": "dẫn dắt",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "follow",
+      "ipa": "/ˈfɒloʊ/",
+      "meaning_vi": "theo dõi",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "observe",
+      "ipa": "/əbˈzɜːrv/",
+      "meaning_vi": "quan sát",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "notice",
+      "ipa": "/ˈnoʊtɪs/",
+      "meaning_vi": "nhận ra",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "recognize",
+      "ipa": "/ˈrɛkəɡnaɪz/",
+      "meaning_vi": "nhận ra",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "identify",
+      "ipa": "/aɪˈdɛntɪfaɪ/",
+      "meaning_vi": "xác định",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "distinguish",
+      "ipa": "/dɪˈstɪŋɡwɪʃ/",
+      "meaning_vi": "phân biệt",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "belong",
+      "ipa": "/bɪˈlɒŋ/",
+      "meaning_vi": "thuộc về",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "include",
+      "ipa": "/ɪnˈkluːd/",
+      "meaning_vi": "bao gồm",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "exclude",
+      "ipa": "/ɪkˈskluːd/",
+      "meaning_vi": "loại trừ",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "depend",
+      "ipa": "/dɪˈpɛnd/",
+      "meaning_vi": "phụ thuộc",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "rely",
+      "ipa": "/rɪˈlaɪ/",
+      "meaning_vi": "tin cậy vào",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "attach",
+      "ipa": "/əˈtætʃ/",
+      "meaning_vi": "thêm vào",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "detach",
+      "ipa": "/dɪˈtætʃ/",
+      "meaning_vi": "tách ra",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "surrender",
+      "ipa": "/səˈrɛndər/",
+      "meaning_vi": "buông bỏ",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "accept",
+      "ipa": "/əkˈsɛpt/",
+      "meaning_vi": "chấp nhận",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "release",
+      "ipa": "/rɪˈliːs/",
+      "meaning_vi": "giải phóng",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "hold on",
+      "ipa": "/hoʊld ɒn/",
+      "meaning_vi": "bám víu",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "let go",
+      "ipa": "/lɛt ɡoʊ/",
+      "meaning_vi": "buông bỏ",
+      "cefr_level": "B1",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "breathe through",
+      "ipa": "/briːð θruː/",
+      "meaning_vi": "hít thở qua",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "sit with",
+      "ipa": "/sɪt wɪθ/",
+      "meaning_vi": "chịu đựng",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "show up",
+      "ipa": "/ʃoʊ ʌp/",
+      "meaning_vi": "hiện diện",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "reach out",
+      "ipa": "/riːtʃ aʊt/",
+      "meaning_vi": "kết nối",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "open up",
+      "ipa": "/ˈoʊpən ʌp/",
+      "meaning_vi": "cởi mở",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "hold back",
+      "ipa": "/hoʊld bæk/",
+      "meaning_vi": "kìm nén",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "face",
+      "ipa": "/feɪs/",
+      "meaning_vi": "đối mặt",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "avoid",
+      "ipa": "/əˈvɔɪd/",
+      "meaning_vi": "né tránh",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "confront",
+      "ipa": "/kənˈfrʌnt/",
+      "meaning_vi": "đối đầu",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "cope",
+      "ipa": "/koʊp/",
+      "meaning_vi": "đối phó",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "adapt",
+      "ipa": "/əˈdæpt/",
+      "meaning_vi": "thích nghi",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "adjust",
+      "ipa": "/əˈdʒʌst/",
+      "meaning_vi": "điều chỉnh",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "transition",
+      "ipa": "/trænˈzɪʃən/",
+      "meaning_vi": "sự chuyển đổi",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "transform",
+      "ipa": "/trænsˈfɔːrm/",
+      "meaning_vi": "biến đổi",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "evolve",
+      "ipa": "/ɪˈvɒlv/",
+      "meaning_vi": "tiến hóa",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "discover",
+      "ipa": "/dɪˈskʌvər/",
+      "meaning_vi": "khám phá",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "explore",
+      "ipa": "/ɪkˈsplɔːr/",
+      "meaning_vi": "khám phá",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "question",
+      "ipa": "/ˈkwɛstʃən/",
+      "meaning_vi": "đặt câu hỏi",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "answer",
+      "ipa": "/ˈænsər/",
+      "meaning_vi": "câu trả lời",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "wonder",
+      "ipa": "/ˈwʌndər/",
+      "meaning_vi": "tự hỏi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "curious",
+      "ipa": "/ˈkjʊəriəs/",
+      "meaning_vi": "tò mò",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "creative",
+      "ipa": "/kriˈeɪtɪv/",
+      "meaning_vi": "sáng tạo",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "logical",
+      "ipa": "/ˈlɒdʒɪkəl/",
+      "meaning_vi": "hợp lý",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "rational",
+      "ipa": "/ˈræʃənəl/",
+      "meaning_vi": "lý trí",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "emotional",
+      "ipa": "/ɪˈmoʊʃənəl/",
+      "meaning_vi": "cảm xúc",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "intuition",
+      "ipa": "/ˌɪntjuˈɪʃən/",
+      "meaning_vi": "trực giác",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "judgement",
+      "ipa": "/ˈdʒʌdʒmənt/",
+      "meaning_vi": "phán xét",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "perception",
+      "ipa": "/pərˈsɛpʃən/",
+      "meaning_vi": "nhận thức",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "awareness",
+      "ipa": "/əˈwɛrnɪs/",
+      "meaning_vi": "sự nhận thức",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "mindfulness",
+      "ipa": "/ˈmaɪndfʊlnɪs/",
+      "meaning_vi": "chú tâm",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "presence",
+      "ipa": "/ˈprɛzəns/",
+      "meaning_vi": "hiện diện",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "moment",
+      "ipa": "/ˈmoʊmənt/",
+      "meaning_vi": "khoảnh khắc",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "now",
+      "ipa": "/naʊ/",
+      "meaning_vi": "bây giờ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "past",
+      "ipa": "/pɑːst/",
+      "meaning_vi": "quá khứ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "future",
+      "ipa": "/ˈfjuːtʃər/",
+      "meaning_vi": "tương lai",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "today",
+      "ipa": "/təˈdeɪ/",
+      "meaning_vi": "hôm nay",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "tomorrow",
+      "ipa": "/təˈmɒroʊ/",
+      "meaning_vi": "ngày mai",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "always",
+      "ipa": "/ˈɔːlweɪz/",
+      "meaning_vi": "luôn luôn",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "never",
+      "ipa": "/ˈnɛvər/",
+      "meaning_vi": "không bao giờ",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "sometimes",
+      "ipa": "/ˈsʌmtaɪmz/",
+      "meaning_vi": "đôi khi",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "often",
+      "ipa": "/ˈɒfən/",
+      "meaning_vi": "thường xuyên",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "usually",
+      "ipa": "/ˈjuːʒuəli/",
+      "meaning_vi": "thường thường",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "rarely",
+      "ipa": "/ˈrɛrli/",
+      "meaning_vi": "hiếm khi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "already",
+      "ipa": "/ɔːlˈrɛdi/",
+      "meaning_vi": "đã rồi",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "yet",
+      "ipa": "/jɛt/",
+      "meaning_vi": "vẫn chưa",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "still",
+      "ipa": "/stɪl/",
+      "meaning_vi": "vẫn",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "again",
+      "ipa": "/əˈɡɛn/",
+      "meaning_vi": "lại",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "together",
+      "ipa": "/təˈɡɛðər/",
+      "meaning_vi": "cùng nhau",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "alone",
+      "ipa": "/əˈloʊn/",
+      "meaning_vi": "một mình",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "whole",
+      "ipa": "/hoʊl/",
+      "meaning_vi": "toàn bộ",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "part",
+      "ipa": "/pɑːrt/",
+      "meaning_vi": "một phần",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "between",
+      "ipa": "/bɪˈtwiːn/",
+      "meaning_vi": "giữa",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "against",
+      "ipa": "/əˈɡɛnst/",
+      "meaning_vi": "chống lại",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "negative",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "toward",
+      "ipa": "/təˈwɔːrd/",
+      "meaning_vi": "hướng về",
+      "cefr_level": "B1",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "beyond",
+      "ipa": "/biˈɒnd/",
+      "meaning_vi": "vượt ra ngoài",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "within",
+      "ipa": "/wɪˈðɪn/",
+      "meaning_vi": "bên trong",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "throughout",
+      "ipa": "/θruːˈaʊt/",
+      "meaning_vi": "xuyên suốt",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "despite",
+      "ipa": "/dɪˈspaɪt/",
+      "meaning_vi": "mặc dù",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "although",
+      "ipa": "/ɔːlˈðoʊ/",
+      "meaning_vi": "mặc dù",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "because",
+      "ipa": "/bɪˈkɒz/",
+      "meaning_vi": "bởi vì",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "therefore",
+      "ipa": "/ˈðɛrfɔːr/",
+      "meaning_vi": "do đó",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "however",
+      "ipa": "/haʊˈɛvər/",
+      "meaning_vi": "tuy nhiên",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "meanwhile",
+      "ipa": "/ˈmiːnwaɪl/",
+      "meaning_vi": "trong khi đó",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "furthermore",
+      "ipa": "/ˈfɜːrðərmɔːr/",
+      "meaning_vi": "hơn nữa",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "consequently",
+      "ipa": "/ˈkɒnsɪkwəntli/",
+      "meaning_vi": "vì vậy",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "nevertheless",
+      "ipa": "/ˌnɛvəðəˈlɛs/",
+      "meaning_vi": "dẫu sao",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "significant",
+      "ipa": "/sɪɡˈnɪfɪkənt/",
+      "meaning_vi": "quan trọng",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "essential",
+      "ipa": "/ɪˈsɛnʃəl/",
+      "meaning_vi": "thiết yếu",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "fundamental",
+      "ipa": "/ˌfʌndəˈmɛntəl/",
+      "meaning_vi": "nền tảng",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "genuine",
+      "ipa": "/ˈdʒɛnjuɪn/",
+      "meaning_vi": "chân thật",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "authentic",
+      "ipa": "/ɔːˈθɛntɪk/",
+      "meaning_vi": "xác thực",
+      "cefr_level": "C1",
+      "difficulty_score": 0.7,
+      "pronunciation_difficulty": 0.6,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "unique",
+      "ipa": "/juˈniːk/",
+      "meaning_vi": "độc đáo",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "universal",
+      "ipa": "/ˌjuːnɪˈvɜːrsəl/",
+      "meaning_vi": "phổ quát",
+      "cefr_level": "B2",
+      "difficulty_score": 0.6,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "personal",
+      "ipa": "/ˈpɜːrsənəl/",
+      "meaning_vi": "cá nhân",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "private",
+      "ipa": "/ˈpraɪvɪt/",
+      "meaning_vi": "riêng tư",
+      "cefr_level": "A2",
+      "difficulty_score": 0.3,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "public",
+      "ipa": "/ˈpʌblɪk/",
+      "meaning_vi": "công cộng",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core"
+      ],
+      "v2_primary_category": "core"
+    },
+    {
+      "word": "quiet",
+      "ipa": "/ˈkwaɪət/",
+      "meaning_vi": "yên tĩnh",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "gentle",
+      "ipa": "/ˈdʒɛntəl/",
+      "meaning_vi": "nhẹ nhàng",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "harsh",
+      "ipa": "/hɑːrʃ/",
+      "meaning_vi": "khắc nghiệt",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "cold",
+      "ipa": "/koʊld/",
+      "meaning_vi": "lạnh lùng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "warm",
+      "ipa": "/wɔːrm/",
+      "meaning_vi": "ấm áp",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "relationship",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "relationship"
+      ],
+      "v2_primary_category": "relationship"
+    },
+    {
+      "word": "bright",
+      "ipa": "/braɪt/",
+      "meaning_vi": "sáng sủa",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "dark",
+      "ipa": "/dɑːrk/",
+      "meaning_vi": "tối tăm",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.2,
+      "emotion_tag": "negative",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "light",
+      "ipa": "/laɪt/",
+      "meaning_vi": "ánh sáng",
+      "cefr_level": "A1",
+      "difficulty_score": 0.1,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "deep",
+      "ipa": "/diːp/",
+      "meaning_vi": "sâu sắc",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.1,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "surface",
+      "ipa": "/ˈsɜːrfɪs/",
+      "meaning_vi": "bề mặt",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    },
+    {
+      "word": "layer",
+      "ipa": "/ˈleɪər/",
+      "meaning_vi": "tầng lớp",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "root",
+      "ipa": "/ruːt/",
+      "meaning_vi": "căn nguyên",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "core",
+      "ipa": "/kɔːr/",
+      "meaning_vi": "cốt lõi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "foundation",
+      "ipa": "/faʊnˈdeɪʃən/",
+      "meaning_vi": "nền móng",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "structure",
+      "ipa": "/ˈstrʌktʃər/",
+      "meaning_vi": "cấu trúc",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "pattern",
+      "ipa": "/ˈpætərn/",
+      "meaning_vi": "mô hình",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "cycle",
+      "ipa": "/ˈsaɪkəl/",
+      "meaning_vi": "vòng lặp",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "process",
+      "ipa": "/ˈprɒsɛs/",
+      "meaning_vi": "quá trình",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "stage",
+      "ipa": "/steɪdʒ/",
+      "meaning_vi": "giai đoạn",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "phase",
+      "ipa": "/feɪz/",
+      "meaning_vi": "pha",
+      "cefr_level": "B2",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "journey",
+      "ipa": "/ˈdʒɜːrni/",
+      "meaning_vi": "hành trình",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "path",
+      "ipa": "/pɑːθ/",
+      "meaning_vi": "con đường",
+      "cefr_level": "A2",
+      "difficulty_score": 0.2,
+      "pronunciation_difficulty": 0.3,
+      "emotion_tag": "positive",
+      "topic_tag": "inner_life",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "emotional"
+    },
+    {
+      "word": "direction",
+      "ipa": "/dɪˈrɛkʃən/",
+      "meaning_vi": "hướng đi",
+      "cefr_level": "B1",
+      "difficulty_score": 0.4,
+      "pronunciation_difficulty": 0.4,
+      "emotion_tag": "neutral",
+      "topic_tag": "functional",
+      "v2_categories": [
+        "core",
+        "functional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "functional"
+    },
+    {
+      "word": "destination",
+      "ipa": "/ˌdɛstɪˈneɪʃən/",
+      "meaning_vi": "điểm đến",
+      "cefr_level": "B1",
+      "difficulty_score": 0.5,
+      "pronunciation_difficulty": 0.5,
+      "emotion_tag": "positive",
+      "topic_tag": "daily",
+      "v2_categories": [
+        "core",
+        "emotional",
+        "pronunciation"
+      ],
+      "v2_primary_category": "pronunciation"
+    }
+  ]
+}

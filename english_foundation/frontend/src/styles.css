@@ -1,11 +1,17 @@
+/* ===== Import Modern Design System ===== */
+@import url('./styles/theme.css');
+@import url('./styles/skeleton.css');
+@import url('./styles/animations.css');
+
+/* ===== Backward Compatibility (Legacy Colors) ===== */
 :root {
-  --bg: #f6fbf7;
+  --bg: #f5f5f5;
   --card: #ffffff;
-  --text: #1f2b24;
-  --muted: #5b6f63;
-  --primary: #5fbf7b;
-  --primary-dark: #4ca969;
-  --border: #dceadf;
+  --text: #1a1a1a;
+  --muted: #999;
+  --primary: #1f85ff;
+  --primary-dark: #1570e6;
+  --border: #efefef;
 }
 
 * {
@@ -14,9 +20,9 @@
 
 body {
   margin: 0;
-  font-family: "Nunito", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top right, #eaf7ed 0%, var(--bg) 38%);
-  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-secondary, #f5f5f5);
+  color: var(--text-primary, #1a1a1a);
 }
 
 .page {
@@ -163,4 +169,71 @@ body {
   flex-direction: column;
   gap: 10px;
   padding: 20px;
+}
+
+/* ===== Gamification Layout ===== */
+.gamification-section {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gamification-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.gamification-widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.gamification-full-width {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.streak-widget-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xp-widget-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .page {
+    padding: 12px;
+  }
+
+  .gamification-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .gamification-widget,
+  .gamification-full-width {
+    padding: 12px;
+  }
+
+  .card {
+    max-width: 100%;
+    padding: 16px;
+  }
 }

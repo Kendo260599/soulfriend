@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
-import random
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -12,8 +10,6 @@ from typing import Any
 from ..core.lesson_engine import LessonEngine
 from ..db.bootstrap import bootstrap_database, get_connection
 
-logger = logging.getLogger(__name__)
-
 
 class LearningService:
     def __init__(self, conn: sqlite3.Connection) -> None:
@@ -21,7 +17,6 @@ class LearningService:
         self.lesson_engine = LessonEngine(conn)
 
     def get_lesson_payload(self, learner_id: int = 1) -> dict[str, Any]:
-        logger.info("Loading lesson for learner_id=%d", learner_id)
         profile = self._get_learner_profile(learner_id)
         lesson = self.lesson_engine.compose_lesson(
             lexical_level=profile["lexical_level"],
@@ -62,33 +57,17 @@ class LearningService:
             lesson_id=str((selected_lesson or {}).get("id", "")) or None,
             lexical_level=profile["lexical_level"],
             grammar_level=profile["grammar_level"],
-            vocab_unit=profile.get("current_vocab_unit", 1),
             topic_hint=str((selected_lesson or {}).get("topic_ielts", "")).strip() or None,
         )
 
-        # Build base payload
-        payload = {
+        return {
             "track": track_key,
             "lesson_meta": selected_lesson or {},
-            "words": lesson.get("words", []),
-            "phrases": lesson.get("phrases", []),
-            "grammar": lesson.get("grammar", None),
+            "words": lesson["words"],
+            "phrases": lesson["phrases"],
+            "grammar": lesson["grammar"],
             "sequence": lesson.get("sequence", []),
         }
-
-        # Check Progression Lock (only lock if it's a vocab track and has new words)
-        if track_key == "vocab" and payload["words"]:
-            progress_data = self.get_progress_payload(learner_id)
-            weak_count = progress_data.get("weak_words", 0)
-            if weak_count >= 15:
-                # User has too many weak words, lock the lesson
-                payload["is_locked"] = True
-                payload["lock_reason"] = f"You have {weak_count} words that need more practice. Please master them in Daily Review before unlocking new vocabulary."
-                payload["words"] = []
-                payload["phrases"] = []
-                payload["sequence"] = []
-
-        return payload
 
     def get_curriculum_payload(self) -> dict[str, Any]:
         root = Path(__file__).resolve().parents[1]
@@ -227,27 +206,15 @@ class LearningService:
         ).fetchone()[0]
 
         grammar_completed = self.conn.execute(
-            "SELECT ROUND(grammar_level * 100, 0), curr_streak, last_active_date FROM learner_profile WHERE id = ?",
+            "SELECT ROUND(grammar_level * 100, 0) FROM learner_profile WHERE id = ?",
             (learner_id,),
         ).fetchone()
-
-        curr_streak = 0
-        if grammar_completed:
-            curr_streak = int(grammar_completed[1])
-            # Check if streak is broken (last_active_date < yesterday)
-            last_active = grammar_completed[2]
-            if last_active:
-                today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-                yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
-                if last_active != today_str and last_active != yesterday_str:
-                    curr_streak = 0  # Broken streak, resets to 0 until they study today
 
         return {
             "learned_words": int(learned_words),
             "weak_words": int(weak_words),
             "grammar_completed": int(grammar_completed[0]) if grammar_completed else 0,
             "due_today": int(due_today),
-            "curr_streak": curr_streak,
         }
 
     def submit_vocab_check(
@@ -256,7 +223,6 @@ class LearningService:
         lesson_id: str | None,
         answers: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        logger.info("Vocab check: learner=%d lesson=%s answers=%d", learner_id, lesson_id, len(answers) if isinstance(answers, list) else 0)
         if not isinstance(answers, list) or len(answers) == 0:
             raise ValueError("Answers must be a non-empty list.")
 
@@ -283,9 +249,6 @@ class LearningService:
 
         self.conn.commit()
 
-        # Check Unit Progression
-        self._check_and_upgrade_vocab_unit(learner_id)
-
         score = round((correct_count / max(1, total)) * 100)
         return {
             "learner_id": learner_id,
@@ -304,7 +267,6 @@ class LearningService:
         grammar_id: int,
         correct: bool,
     ) -> dict[str, Any]:
-        logger.info("Grammar check: learner=%d grammar=%d correct=%s", learner_id, grammar_id, correct)
         if grammar_id <= 0:
             raise ValueError("grammarId must be a positive integer.")
 
@@ -323,7 +285,6 @@ class LearningService:
             "UPDATE learner_profile SET grammar_level = ? WHERE id = ?",
             (updated_level, learner_id),
         )
-        self._update_streak(learner_id)
         self.conn.commit()
 
         return {
@@ -337,33 +298,7 @@ class LearningService:
             "recommended_next": "next_grammar_lesson" if correct else "repeat_grammar_lesson",
         }
 
-    def _check_and_upgrade_vocab_unit(self, learner_id: int) -> None:
-        profile = self._get_learner_profile(learner_id)
-        current_unit = profile.get("current_vocab_unit", 1)
-
-        total_words = self.conn.execute("SELECT COUNT(*) FROM vocabulary WHERE unit_id = ?", (current_unit,)).fetchone()[0]
-        if total_words == 0:
-            return
-
-        mastered_words = self.conn.execute(
-            """
-            SELECT COUNT(*) FROM progress p
-            JOIN vocabulary v ON p.item_id = v.id
-            WHERE v.unit_id = ? AND p.learner_id = ? AND p.memory_strength > 0.5
-            """,
-            (current_unit, learner_id),
-        ).fetchone()[0]
-
-        if mastered_words / total_words >= 0.8:
-            logger.info("Learner %d mastered unit %d. Upgrading to unit %d.", learner_id, current_unit, current_unit + 1)
-            self.conn.execute(
-                "UPDATE learner_profile SET current_vocab_unit = ? WHERE id = ?",
-                (current_unit + 1, learner_id),
-            )
-            self.conn.commit()
-
     def get_review_payload(self, learner_id: int = 1, limit: int = 20) -> dict[str, Any]:
-        logger.info("Loading review: learner=%d limit=%d", learner_id, limit)
         safe_limit = max(1, min(50, int(limit)))
         now_iso = self._now_iso()
 
@@ -395,7 +330,7 @@ class LearningService:
             return {
                 "learner_id": learner_id,
                 "mode": "due",
-                "items": self._enhance_review_items([dict(row) for row in due_rows], "due"),
+                "items": [dict(row) for row in due_rows],
             }
 
         weak_rows = self.conn.execute(
@@ -425,7 +360,7 @@ class LearningService:
             return {
                 "learner_id": learner_id,
                 "mode": "weak",
-                "items": self._enhance_review_items([dict(row) for row in weak_rows], "weak"),
+                "items": [dict(row) for row in weak_rows],
             }
 
         fresh_rows = self.conn.execute(
@@ -455,46 +390,8 @@ class LearningService:
         return {
             "learner_id": learner_id,
             "mode": "fresh",
-            "items": self._enhance_review_items([dict(row) for row in fresh_rows], "fresh"),
+            "items": [dict(row) for row in fresh_rows],
         }
-
-    def _enhance_review_items(self, items: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
-        if not items:
-            return items
-
-        # Get all distinct meanings to use as distractors for multiple choice
-        all_meanings_query = self.conn.execute("SELECT DISTINCT meaning_vi FROM vocabulary").fetchall()
-        all_meanings = [r[0] for r in all_meanings_query if r[0]]
-
-        enhanced = []
-        for item in items:
-            quiz_type = "flashcard"
-            if mode in ("due", "weak"):
-                rand = random.random()
-                if rand < 0.4:
-                    quiz_type = "multiple_choice"
-                elif rand < 0.7 and item.get("example_sentence"):
-                    quiz_type = "fill_blank"
-                elif rand < 0.9:
-                    quiz_type = "sentence_write"
-
-            item_copy = dict(item)
-            item_copy["quiz_type"] = quiz_type
-
-            if quiz_type == "multiple_choice":
-                correct = item["meaning_vi"]
-                wrong_pool = [m for m in all_meanings if m != correct]
-                if len(wrong_pool) >= 3:
-                    distractors = random.sample(wrong_pool, 3)
-                    options = distractors + [correct]
-                    random.shuffle(options)
-                    item_copy["options"] = options
-                else:
-                    item_copy["quiz_type"] = "flashcard"
-
-            enhanced.append(item_copy)
-
-        return enhanced
 
     def submit_review_payload(self, learner_id: int, answers: list[dict[str, Any]]) -> dict[str, Any]:
         if not isinstance(answers, list) or len(answers) == 0:
@@ -521,7 +418,6 @@ class LearningService:
             else:
                 weak_items.append(word_id)
 
-        self._update_streak(learner_id)
         self.conn.commit()
         score = round((correct_count / max(1, total)) * 100)
         return {
@@ -558,7 +454,7 @@ class LearningService:
                 memory_strength = min(0.98, round(prev_strength + 0.12, 3))
             else:
                 next_streak = 0
-                memory_strength = max(0.01, round(prev_strength * 0.1, 3))  # Harsh penalty for forgetting
+                memory_strength = max(0.05, round(prev_strength * 0.6, 3))
 
             due_iso = self._calc_review_due(now_iso=now_iso, is_correct=is_correct, streak=next_streak)
 
@@ -620,26 +516,6 @@ class LearningService:
             ),
         )
 
-    def _update_streak(self, learner_id: int) -> None:
-        row = self.conn.execute("SELECT curr_streak, last_active_date FROM learner_profile WHERE id = ?", (learner_id,)).fetchone()
-        if not row:
-            return
-            
-        today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-        yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
-        
-        curr_streak = int(row["curr_streak"])
-        last_active = row["last_active_date"]
-        
-        if last_active == today_str:
-            return  # Already updated today
-        elif last_active == yesterday_str:
-            curr_streak += 1
-        else:
-            curr_streak = 1
-            
-        self.conn.execute("UPDATE learner_profile SET curr_streak = ?, last_active_date = ? WHERE id = ?", (curr_streak, today_str, learner_id))
-
     @staticmethod
     def _now_iso() -> str:
         return datetime.now(timezone.utc).isoformat()
@@ -651,17 +527,13 @@ class LearningService:
             if streak <= 1:
                 delta = timedelta(days=1)
             elif streak == 2:
-                delta = timedelta(days=2)
+                delta = timedelta(days=3)
             elif streak == 3:
-                delta = timedelta(days=4)
-            elif streak == 4:
-                delta = timedelta(days=8)
-            elif streak == 5:
-                delta = timedelta(days=16)
+                delta = timedelta(days=7)
             else:
-                delta = timedelta(days=30)
+                delta = timedelta(days=14)
         else:
-            delta = timedelta(hours=4)
+            delta = timedelta(hours=12)
         return (now_dt + delta).isoformat()
 
     @staticmethod
@@ -670,25 +542,23 @@ class LearningService:
             return min(0.98, round(current_level + 0.06, 3))
         return max(0.05, round(current_level - 0.03, 3))
 
-    def _get_learner_profile(self, learner_id: int) -> dict[str, Any]:
+    def _get_learner_profile(self, learner_id: int) -> dict[str, float]:
         row = self.conn.execute(
-            "SELECT lexical_level, grammar_level, current_vocab_unit FROM learner_profile WHERE id = ?",
+            "SELECT lexical_level, grammar_level FROM learner_profile WHERE id = ?",
             (learner_id,),
         ).fetchone()
         if row:
             return {
                 "lexical_level": float(row["lexical_level"]),
                 "grammar_level": float(row["grammar_level"]),
-                "current_vocab_unit": int(row["current_vocab_unit"]) if row["current_vocab_unit"] is not None else 1,
             }
 
-        logger.info("Creating new learner profile: id=%d", learner_id)
         self.conn.execute(
-            "INSERT INTO learner_profile (id, lexical_level, grammar_level, current_vocab_unit) VALUES (?, ?, ?, ?)",
-            (learner_id, 0.1, 0.1, 1),
+            "INSERT INTO learner_profile (id, lexical_level, grammar_level) VALUES (?, ?, ?)",
+            (learner_id, 0.1, 0.1),
         )
         self.conn.commit()
-        return {"lexical_level": 0.1, "grammar_level": 0.1, "current_vocab_unit": 1}
+        return {"lexical_level": 0.1, "grammar_level": 0.1}
 
 
 def create_learning_service() -> LearningService:

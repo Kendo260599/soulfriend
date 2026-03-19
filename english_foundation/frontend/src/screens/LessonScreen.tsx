@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { LessonPayload } from '../types';
+import ttsService from '../services/ttsService';
 
 type LessonScreenProps = {
   lesson: LessonPayload;
-  onFinish: () => void;
+  onFinish: (answers: Array<{ wordId: number; correct: boolean }>) => void;
   onBackHome: () => void;
 };
 
@@ -13,6 +14,12 @@ type LessonCard = {
   main: string;
   sub: string;
   helper: string;
+  itemId: number;
+};
+
+type Answer = {
+  wordId: number;
+  correct: boolean;
 };
 
 const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onFinish, onBackHome }) => {
@@ -23,6 +30,7 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onFinish, onBackHom
       main: `${w.word} ${w.ipa}`,
       sub: w.meaning_vi,
       helper: `${w.collocation} | ${w.example_sentence}`,
+      itemId: w.id,
     }));
 
     const phraseCards = lesson.phrases.map((p) => ({
@@ -31,6 +39,7 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onFinish, onBackHom
       main: p.phrase,
       sub: p.meaning_vi,
       helper: 'Use this phrase in one short sentence.',
+      itemId: p.vocab_id,
     }));
 
     const grammarCard: LessonCard = {
@@ -39,22 +48,61 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onFinish, onBackHom
       main: lesson.grammar?.pattern ?? 'No grammar item',
       sub: lesson.grammar?.example ?? '',
       helper: 'Keep it short. Say one clear sentence.',
+      itemId: lesson.grammar?.id ?? 0,
     };
 
     return [...wordCards, ...phraseCards, grammarCard];
   }, [lesson]);
 
   const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  
   const current = cards[index];
   const progressPct = Math.round(((index + 1) / cards.length) * 100);
   const isLast = index === cards.length - 1;
 
-  const handleNext = () => {
+  const recordAnswer = (correct: boolean) => {
+    const newAnswer: Answer = {
+      wordId: current.itemId,
+      correct,
+    };
+    setAnswers([...answers, newAnswer]);
+    
     if (isLast) {
-      onFinish();
+      handleFinish([...answers, newAnswer]);
+    } else {
+      setIndex((prev) => prev + 1);
+    }
+  };
+
+  const handleCorrect = () => recordAnswer(true);
+  const handleSkip = () => recordAnswer(false);
+  
+  const handleFinish = (finalAnswers: Answer[]) => {
+    setIsSubmitting(true);
+    onFinish(finalAnswers);
+  };
+
+  const handlePlayAudio = () => {
+    if (!ttsService.isSupported()) {
+      alert('Text-to-Speech is not supported in your browser');
       return;
     }
-    setIndex((prev) => prev + 1);
+
+    setIsPlayingAudio(true);
+
+    // Determine what to speak based on card type
+    let textToSpeak = current.main;
+    if (current.title === 'Word') {
+      // Extract just the word (without IPA)
+      textToSpeak = current.main.split(/\s+\//)[0];
+      ttsService.speakWord(textToSpeak, undefined, () => setIsPlayingAudio(false));
+    } else {
+      // For phrases and grammar, speak the main text
+      ttsService.speakPhrase(current.main, undefined, () => setIsPlayingAudio(false));
+    }
   };
 
   return (
@@ -73,14 +121,51 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onFinish, onBackHom
         <p className="meaning">{current.sub}</p>
         <p className="helper">{current.helper}</p>
 
-        <div className="button-row">
-          <button className="secondary-btn" onClick={onBackHome}>
-            Back home
-          </button>
-          <button className="primary-btn" onClick={handleNext}>
-            {isLast ? 'Finish lesson' : 'Next'}
+        <div className="button-row" style={{ marginTop: '16px', marginBottom: '12px' }}>
+          <button
+            className="secondary-btn"
+            onClick={handlePlayAudio}
+            disabled={isSubmitting || isPlayingAudio}
+            title="Click to hear pronunciation"
+          >
+            {isPlayingAudio ? '🔊 Playing...' : '🔉 Hear pronunciation'}
           </button>
         </div>
+
+        <div className="button-row">
+          <button 
+            className="secondary-btn" 
+            onClick={onBackHome}
+            disabled={isSubmitting}
+          >
+            Back home
+          </button>
+        </div>
+
+        <div className="button-row" style={{ marginTop: '12px', gap: '8px' }}>
+          <button 
+            className="secondary-btn" 
+            onClick={handleSkip}
+            disabled={isSubmitting}
+            style={{ flex: 1 }}
+          >
+            ❓ Not sure
+          </button>
+          <button 
+            className="primary-btn" 
+            onClick={handleCorrect}
+            disabled={isSubmitting}
+            style={{ flex: 1 }}
+          >
+            ✓ I know this
+          </button>
+        </div>
+
+        {isSubmitting && (
+          <div className="center-note" style={{ marginTop: '12px' }}>
+            <p>Submitting your answers...</p>
+          </div>
+        )}
       </section>
     </main>
   );

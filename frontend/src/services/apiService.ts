@@ -168,6 +168,28 @@ class ApiService {
       timeout: API_CONFIG.FOUNDATION_TIMEOUT,
     });
   }
+
+  // IELTS Listening Module (Stub methods for now)
+  public async getListeningSections(partNum: number): Promise<AxiosResponse> {
+    // TODO: Implement backend endpoint
+    return this.get(`/api/v2/ielts/listening/sections/${partNum}`, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
+
+  public async getListeningSectionDetails(sectionId: number): Promise<AxiosResponse> {
+    // TODO: Implement backend endpoint
+    return this.get(`/api/v2/ielts/listening/sections/${sectionId}`, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
+
+  public async verifyListeningAnswers(payload: any): Promise<AxiosResponse> {
+    // TODO: Implement backend endpoint
+    return this.post('/api/v2/ielts/listening/verify', payload, {
+      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
+    });
+  }
 }
 
 // Export a singleton instance

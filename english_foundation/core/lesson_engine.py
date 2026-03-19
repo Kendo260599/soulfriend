@@ -2,8 +2,6 @@ from dataclasses import asdict
 import hashlib
 import sqlite3
 
-from .utils import slice_wrap
-
 from .grammar_engine import GrammarEngine
 from .vocab_engine import VocabEngine
 
@@ -32,7 +30,6 @@ class LessonEngine:
         lesson_id: str | None,
         lexical_level: float,
         grammar_level: float,
-        vocab_unit: int = 1,
         topic_hint: str | None = None,
     ) -> dict:
         if track == "grammar":
@@ -42,7 +39,6 @@ class LessonEngine:
             lesson_id,
             lexical_level,
             grammar_level,
-            vocab_unit=vocab_unit,
             topic_hint=topic_hint,
         )
 
@@ -52,17 +48,16 @@ class LessonEngine:
         lesson_id: str | None,
         lexical_level: float,
         grammar_level: float,
-        vocab_unit: int = 1,
         topic_hint: str | None = None,
     ) -> dict:
-        vocab_pool = self.vocab_engine.load_vocabulary(lexical_level, topic_hint=topic_hint, unit_id=vocab_unit)
+        vocab_pool = self.vocab_engine.load_vocabulary(lexical_level, topic_hint=topic_hint)
         start_index = self._vocab_start_index(
             pool_size=len(vocab_pool),
             lesson_index=lesson_index,
             lesson_id=lesson_id,
             topic_hint=topic_hint,
         )
-        words = slice_wrap(vocab_pool, start_index, 3)
+        words = self._slice_wrap(vocab_pool, start_index, 3)
         phrases = self.vocab_engine.load_phrase_for_vocab([w.id for w in words], lexical_level)
         grammar = self.grammar_engine.pick_micro_pattern(grammar_level)
 
@@ -87,11 +82,11 @@ class LessonEngine:
             lesson_index=lesson_index,
             lesson_id=lesson_id,
         )
-        grammar_items = slice_wrap(pattern_pool, grammar_start, 1)
+        grammar_items = self._slice_wrap(pattern_pool, grammar_start, 1)
         grammar = grammar_items[0] if grammar_items else self.grammar_engine.pick_micro_pattern(grammar_level)
 
         vocab_pool = self.vocab_engine.load_vocabulary(lexical_level)
-        words = slice_wrap(vocab_pool, lesson_index * 2, 2)
+        words = self._slice_wrap(vocab_pool, lesson_index * 2, 2)
 
         return {
             "track": "grammar",
@@ -101,7 +96,16 @@ class LessonEngine:
             "grammar": asdict(grammar) if grammar else {},
         }
 
-
+    @staticmethod
+    def _slice_wrap(items: list, start: int, size: int) -> list:
+        if not items or size <= 0:
+            return []
+        result = []
+        idx = max(0, start)
+        for _ in range(size):
+            result.append(items[idx % len(items)])
+            idx += 1
+        return result
 
     @staticmethod
     def _vocab_start_index(

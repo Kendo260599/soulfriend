@@ -1,0 +1,42 @@
+<testsuites id="" name="" tests="19" failures="0" skipped="0" errors="0" time="18.493907">
+<testsuite name="learning-workflow.spec.ts" timestamp="2026-03-19T10:40:26.713Z" hostname="chromium" tests="19" failures="0" skipped="0" time="36.877" errors="0">
+<testcase name="English Foundation - Learning Workflow › TC-001: Home screen displays UI" classname="learning-workflow.spec.ts" time="3.873">
+</testcase>
+<testcase name="English Foundation - Learning Workflow › TC-002: Navigate from Home to Lesson" classname="learning-workflow.spec.ts" time="4.624">
+</testcase>
+<testcase name="English Foundation - Learning Workflow › TC-003: Lesson takes answers" classname="learning-workflow.spec.ts" time="3.823">
+</testcase>
+<testcase name="English Foundation - Learning Workflow › TC-004: Navigate to Progress screen" classname="learning-workflow.spec.ts" time="1.362">
+</testcase>
+<testcase name="English Foundation - Learning Workflow › TC-005: Progress screen shows content" classname="learning-workflow.spec.ts" time="1.812">
+</testcase>
+<testcase name="English Foundation - Learning Workflow › TC-006: Navigate back to Home" classname="learning-workflow.spec.ts" time="1.753">
+</testcase>
+<testcase name="English Foundation - Learning Workflow › TC-007: Review screen navigation" classname="learning-workflow.spec.ts" time="1.144">
+</testcase>
+<testcase name="English Foundation - API Integration › TC-008: Fetch lesson with API mock" classname="learning-workflow.spec.ts" time="1.606">
+</testcase>
+<testcase name="English Foundation - API Integration › TC-009: Submit answers with API mock" classname="learning-workflow.spec.ts" time="1.537">
+</testcase>
+<testcase name="English Foundation - API Integration › TC-010: Progress persists after lesson" classname="learning-workflow.spec.ts" time="2.074">
+</testcase>
+<testcase name="English Foundation - API Integration › TC-011: Error handling graceful" classname="learning-workflow.spec.ts" time="2.016">
+</testcase>
+<testcase name="English Foundation - Workflows › TC-012: Complete workflow Home→Lesson→Progress→Home" classname="learning-workflow.spec.ts" time="2.519">
+</testcase>
+<testcase name="English Foundation - Workflows › TC-013: UI responsive after loading" classname="learning-workflow.spec.ts" time="0.887">
+</testcase>
+<testcase name="English Foundation - Workflows › TC-014: State after interactions" classname="learning-workflow.spec.ts" time="1.662">
+</testcase>
+<testcase name="English Foundation - Workflows › TC-015: Vocabulary displays" classname="learning-workflow.spec.ts" time="1.444">
+</testcase>
+<testcase name="English Foundation - Accessibility › ACC-001: Tab navigation" classname="learning-workflow.spec.ts" time="1.301">
+</testcase>
+<testcase name="English Foundation - Accessibility › ACC-002: Keyboard navigation" classname="learning-workflow.spec.ts" time="1.472">
+</testcase>
+<testcase name="English Foundation - Performance › PERF-001: Home screen loads &lt; 2s" classname="learning-workflow.spec.ts" time="0.982">
+</testcase>
+<testcase name="English Foundation - Performance › PERF-002: Interactive within 3s" classname="learning-workflow.spec.ts" time="0.986">
+</testcase>
+</testsuite>
+</testsuites>

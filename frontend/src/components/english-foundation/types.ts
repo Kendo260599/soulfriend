@@ -113,7 +113,7 @@ export type ReviewPayload = {
   items: ReviewItem[];
 };
 
-export type View = 'home' | 'track' | 'lesson' | 'vocab_check' | 'grammar_check' | 'review' | 'progress';
+export type View = 'home' | 'track' | 'lesson' | 'vocab_check' | 'grammar_check' | 'review' | 'progress' | 'ielts_listening';
 
 export type LessonCard = {
   key: string;

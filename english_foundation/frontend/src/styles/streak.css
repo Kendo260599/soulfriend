@@ -1,0 +1,323 @@
+/* ============================================================================
+   STREAK WIDGET STYLES
+   Daily streak counter with fire + trophy icons
+   ============================================================================ */
+
+.streak-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(31, 133, 255, 0.08) 0%, rgba(47, 191, 135, 0.08) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(31, 133, 255, 0.15);
+  transition: all 0.3s var(--transition-standard);
+}
+
+.streak-widget:hover {
+  background: linear-gradient(135deg, rgba(31, 133, 255, 0.12) 0%, rgba(47, 191, 135, 0.12) 100%);
+  border-color: rgba(31, 133, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(31, 133, 255, 0.1);
+}
+
+/* Individual streak item */
+.streak-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(31, 133, 255, 0.1);
+  transition: all 0.3s var(--transition-standard);
+  min-width: 100px;
+}
+
+/* Current streak - highlight when active */
+.streak-item.active {
+  background: linear-gradient(135deg, rgba(31, 133, 255, 0.15) 0%, rgba(31, 133, 255, 0.05) 100%);
+  border-color: rgba(31, 133, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 165, 0, 0.2);
+  animation: streakPulse 2s ease-in-out infinite;
+}
+
+.streak-item.best {
+  background: linear-gradient(135deg, rgba(47, 191, 135, 0.1) 0%, rgba(47, 191, 135, 0.05) 100%);
+  border-color: rgba(47, 191, 135, 0.3);
+}
+
+.streak-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(31, 133, 255, 0.15);
+}
+
+/* Icon - large and centered */
+.streak-icon {
+  font-size: 2rem;
+  line-height: 1;
+  animation: streakBounce 0.6s ease-in-out infinite;
+}
+
+.streak-item.active .streak-icon {
+  animation: streakBounce 0.6s ease-in-out infinite, fireGlow 2s ease-in-out infinite;
+}
+
+.streak-item.best .streak-icon {
+  animation: trophySpin 3s ease-in-out infinite;
+}
+
+/* Text content - count and label */
+.streak-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.streak-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.streak-item.best .streak-count {
+  color: var(--success);
+}
+
+.streak-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+/* Divider - bullet point */
+.streak-divider {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  line-height: 1;
+  opacity: 0.4;
+}
+
+/* Motivation message */
+.streak-motivation {
+  position: absolute;
+  bottom: -2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--success);
+  animation: motivationSlideUp 0.4s ease-out;
+  padding: 0.5rem 1rem;
+  background: rgba(47, 191, 135, 0.1);
+  border-radius: 6px;
+  border: 1px solid var(--success);
+}
+
+/* Warning message for missed days */
+.streak-warning {
+  position: absolute;
+  bottom: -2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--warning);
+  animation: warningShake 0.5s ease-in-out;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 165, 0, 0.1);
+  border-radius: 6px;
+  border: 1px solid var(--warning);
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+/* Pulse animation for active streak */
+@keyframes streakPulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.2);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 8px 20px rgba(255, 165, 0, 0.4);
+  }
+}
+
+/* Bounce animation for icons */
+@keyframes streakBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Fire glow animation */
+@keyframes fireGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(255, 165, 0, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 165, 0, 0.8));
+  }
+}
+
+/* Trophy spin animation */
+@keyframes trophySpin {
+  0%, 100% {
+    transform: rotateZ(0deg) rotateY(0deg);
+  }
+  25% {
+    transform: rotateZ(5deg) rotateY(10deg);
+  }
+  50% {
+    transform: rotateZ(0deg) rotateY(360deg);
+  }
+  75% {
+    transform: rotateZ(-5deg) rotateY(10deg);
+  }
+}
+
+/* Motivation message slide up */
+@keyframes motivationSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Warning shake animation */
+@keyframes warningShake {
+  0%, 100% {
+    transform: translateX(-50%) translateX(0);
+  }
+  25% {
+    transform: translateX(-50%) translateX(-3px);
+  }
+  75% {
+    transform: translateX(-50%) translateX(3px);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 600px) {
+  .streak-widget {
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .streak-item {
+    min-width: 90px;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .streak-icon {
+    font-size: 1.75rem;
+  }
+
+  .streak-count {
+    font-size: 1.25rem;
+  }
+
+  .streak-label {
+    font-size: 0.7rem;
+  }
+
+  .streak-motivation,
+  .streak-warning {
+    bottom: -2.25rem;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .streak-widget {
+    gap: 0.5rem;
+    padding: 0.75rem;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .streak-item {
+    flex: 1;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .streak-divider {
+    display: none;
+  }
+
+  .streak-icon {
+    font-size: 1.5rem;
+  }
+
+  .streak-count {
+    font-size: 1rem;
+  }
+
+  .streak-label {
+    font-size: 0.65rem;
+  }
+}
+
+/* ============================================================================
+   DARK MODE SUPPORT
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  .streak-widget {
+    background: linear-gradient(135deg, rgba(31, 133, 255, 0.12) 0%, rgba(47, 191, 135, 0.12) 100%);
+    border-color: rgba(31, 133, 255, 0.2);
+  }
+
+  .streak-item {
+    background: rgba(30, 30, 35, 0.8);
+    border-color: rgba(31, 133, 255, 0.15);
+  }
+
+  .streak-item.active {
+    background: rgba(31, 133, 255, 0.2);
+    border-color: rgba(31, 133, 255, 0.4);
+  }
+
+  .streak-item.best {
+    background: rgba(47, 191, 135, 0.15);
+    border-color: rgba(47, 191, 135, 0.4);
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-widget,
+  .streak-item,
+  .streak-motivation,
+  .streak-warning {
+    transition: none;
+    animation: none !important;
+  }
+}

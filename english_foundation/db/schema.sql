@@ -3,7 +3,6 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS vocabulary (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   word TEXT NOT NULL UNIQUE,
-  part_of_speech TEXT,
   ipa TEXT NOT NULL,
   meaning_vi TEXT NOT NULL,
   difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5),
@@ -12,10 +11,7 @@ CREATE TABLE IF NOT EXISTS vocabulary (
   topic_ielts TEXT,
   cefr_target TEXT,
   coca_frequency_band TEXT,
-  source_standard TEXT,
-  synonyms TEXT,
-  collocations_json TEXT, -- [{collocation, example, meaning}]
-  unit_id INTEGER DEFAULT 1 -- Groups vocabulary into progression stages
+  source_standard TEXT
 );
 
 CREATE TABLE IF NOT EXISTS phrase_units (
@@ -31,9 +27,11 @@ CREATE TABLE IF NOT EXISTS grammar_units (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   pattern TEXT NOT NULL,
   example TEXT NOT NULL,
-  explanation_vi TEXT DEFAULT '',
-  usage_note TEXT DEFAULT '',
-  difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5)
+  difficulty INTEGER NOT NULL CHECK (difficulty BETWEEN 1 AND 5),
+  explanation_vi TEXT,
+  explanation_en TEXT,
+  usage_note TEXT,
+  native_example_vi TEXT
 );
 
 CREATE TABLE IF NOT EXISTS progress (
@@ -52,15 +50,5 @@ CREATE TABLE IF NOT EXISTS progress (
 CREATE TABLE IF NOT EXISTS learner_profile (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   lexical_level REAL NOT NULL DEFAULT 0.0,
-  grammar_level REAL NOT NULL DEFAULT 0.0,
-  curr_streak INTEGER NOT NULL DEFAULT 0,
-  last_active_date TEXT,
-  current_vocab_unit INTEGER DEFAULT 1
+  grammar_level REAL NOT NULL DEFAULT 0.0
 );
-
--- Performance indexes
-CREATE INDEX IF NOT EXISTS idx_vocab_difficulty ON vocabulary(difficulty);
-CREATE INDEX IF NOT EXISTS idx_vocab_source ON vocabulary(source_standard);
-CREATE INDEX IF NOT EXISTS idx_vocab_topic ON vocabulary(topic_ielts);
-CREATE INDEX IF NOT EXISTS idx_progress_review ON progress(learner_id, review_due_at);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_progress_learner_item ON progress(learner_id, item_id);

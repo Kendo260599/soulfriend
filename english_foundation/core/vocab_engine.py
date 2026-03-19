@@ -1,47 +1,35 @@
 from dataclasses import dataclass
 import sqlite3
 
-from .utils import difficulty_from_level, slice_wrap
-
 
 TOPIC_ALIAS_MAP: dict[str, list[str]] = {
-    "places in town": ["Home and Accommodation", "Travel and Transport"],
-    "time and schedule": ["Daily Routine", "Numbers and Time"],
-    "health and body": ["Health and Lifestyle"],
-    "education and work": ["Education Plans", "Work Projects"],
-    "shopping and services": ["Food and Meals", "Shopping and Money"],
-    "hobbies and leisure": ["Sports and Hobbies", "Arts and Entertainment"],
-    "communication skills": ["Communication", "Media and Opinion"],
-    "problems and solutions": ["Problems and Solutions", "Work Projects"],
-    "emotions and relationships": ["Emotions and Feelings", "People and Relationships"],
-    "travel experiences": ["Travel and Transport", "Nature and Geography"],
-    "workplace communication": ["Work Projects", "Communication"],
-    "environment": ["Weather and Environment", "Nature and Geography"],
-    "technology": ["Technology and Internet"],
-    "public services": ["Society and Community", "Law and Society"],
-    "culture and society": ["Society and Community", "Arts and Entertainment"],
-    "science": ["Science and Research"],
-    "money and finance": ["Shopping and Money", "Work Projects"],
-    "feelings": ["Emotions and Feelings", "Health and Lifestyle"],
-    "nature": ["Nature and Geography", "Weather and Environment"],
-    "law and rights": ["Law and Society"],
-    "describing things": ["Descriptive Adjectives", "Abstract Concepts"],
+    "places in town": ["home and accommodation", "travel and transport"],
+    "time and schedule": ["daily routine"],
+    "health and body": ["health and lifestyle"],
+    "education and work": ["education plans", "work projects"],
+    "shopping and services": ["food and meals", "society and community"],
+    "hobbies and leisure": ["daily routine", "society and community"],
+    "communication skills": ["media and opinion", "people and relationships"],
+    "problems and solutions": ["society and community", "work projects"],
+    "emotions and relationships": ["people and relationships"],
+    "travel experiences": ["travel and transport"],
+    "workplace communication": ["work projects", "communication skills"],
+    "environment": ["weather and environment"],
+    "technology": ["technology and internet"],
+    "public services": ["society and community", "work projects"],
+    "culture and society": ["society and community", "media and opinion"],
 }
-
 
 
 @dataclass
 class VocabItem:
     id: int
     word: str
-    part_of_speech: str
     ipa: str
     meaning_vi: str
     collocation: str
     example_sentence: str
     difficulty: int
-    synonyms: str
-    collocations_json: str
 
 
 @dataclass
@@ -57,14 +45,14 @@ class VocabEngine:
     def __init__(self, conn: sqlite3.Connection) -> None:
         self.conn = conn
 
-    def load_vocabulary(self, lexical_level: float, topic_hint: str | None = None, unit_id: int = 1) -> list[VocabItem]:
-        max_difficulty = difficulty_from_level(lexical_level)
+    def load_vocabulary(self, lexical_level: float, topic_hint: str | None = None) -> list[VocabItem]:
+        max_difficulty = self._difficulty_from_level(lexical_level)
         if topic_hint:
-            rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=topic_hint, unit_id=unit_id)
+            rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=topic_hint)
             widened = max_difficulty
             while len(rows) < 3 and widened < 5:
                 widened += 1
-                rows = self._query_vocabulary(max_difficulty=widened, topic_hint=topic_hint, unit_id=unit_id)
+                rows = self._query_vocabulary(max_difficulty=widened, topic_hint=topic_hint)
 
             # Keep topic integrity if we have any topic rows at all.
             if rows:
@@ -72,56 +60,49 @@ class VocabEngine:
                     VocabItem(
                         id=row["id"],
                         word=row["word"],
-                        part_of_speech=row["part_of_speech"] or "",
                         ipa=row["ipa"],
                         meaning_vi=row["meaning_vi"],
                         collocation=row["collocation"],
                         example_sentence=row["example_sentence"],
                         difficulty=row["difficulty"],
-                        synonyms=row["synonyms"] or "",
-                        collocations_json=row["collocations_json"] or "[]",
                     )
                     for row in rows
                 ]
 
-        rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=None, unit_id=unit_id)
+        rows = self._query_vocabulary(max_difficulty=max_difficulty, topic_hint=None)
 
         # Avoid early-stage stagnation by widening difficulty if pool is too small.
         widened = max_difficulty
         while len(rows) < 6 and widened < 5:
             widened += 1
-            rows = self._query_vocabulary(max_difficulty=widened, topic_hint=None, unit_id=unit_id)
+            rows = self._query_vocabulary(max_difficulty=widened, topic_hint=None)
 
         return [
             VocabItem(
                 id=row["id"],
                 word=row["word"],
-                part_of_speech=row["part_of_speech"] or "",
                 ipa=row["ipa"],
                 meaning_vi=row["meaning_vi"],
                 collocation=row["collocation"],
                 example_sentence=row["example_sentence"],
                 difficulty=row["difficulty"],
-                synonyms=row["synonyms"] or "",
-                collocations_json=row["collocations_json"] or "[]",
             )
             for row in rows
         ]
 
-    def _query_vocabulary(self, max_difficulty: int, topic_hint: str | None, unit_id: int) -> list[sqlite3.Row]:
+    def _query_vocabulary(self, max_difficulty: int, topic_hint: str | None) -> list[sqlite3.Row]:
         if topic_hint:
             for topic in self._topic_candidates(topic_hint):
                 rows = self.conn.execute(
                     """
-                    SELECT id, word, part_of_speech, ipa, meaning_vi, collocation, example_sentence, difficulty, synonyms, collocations_json
+                    SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
                     FROM vocabulary
                     WHERE difficulty <= ?
-                      AND unit_id = ?
                       AND LOWER(COALESCE(topic_ielts, '')) = LOWER(?)
                       AND COALESCE(source_standard, '') = 'open-triangulated'
                     ORDER BY difficulty ASC, id ASC
                     """,
-                    (max_difficulty, unit_id, topic),
+                    (max_difficulty, topic),
                 ).fetchall()
                 if rows:
                     return rows
@@ -129,14 +110,13 @@ class VocabEngine:
 
         return self.conn.execute(
             """
-            SELECT id, word, part_of_speech, ipa, meaning_vi, collocation, example_sentence, difficulty, synonyms, collocations_json
+            SELECT id, word, ipa, meaning_vi, collocation, example_sentence, difficulty
             FROM vocabulary
             WHERE difficulty <= ?
-              AND unit_id = ?
               AND COALESCE(source_standard, '') = 'open-triangulated'
             ORDER BY difficulty ASC, id ASC
             """,
-            (max_difficulty, unit_id),
+            (max_difficulty,),
         ).fetchall()
 
     @staticmethod
@@ -156,7 +136,7 @@ class VocabEngine:
         if not vocab_ids:
             return []
 
-        max_difficulty = difficulty_from_level(lexical_level)
+        max_difficulty = self._difficulty_from_level(lexical_level)
         placeholders = ",".join("?" for _ in vocab_ids)
         query = f"""
             SELECT id, vocab_id, phrase, meaning_vi, difficulty
@@ -183,7 +163,7 @@ class VocabEngine:
     def produce_lesson_items(self, lexical_level: float) -> tuple[list[VocabItem], list[PhraseItem]]:
         vocab_pool = self.load_vocabulary(lexical_level)
         offset = self._default_offset(vocab_pool)
-        words = slice_wrap(vocab_pool, offset, 3)
+        words = self._slice_wrap(vocab_pool, offset, 3)
         phrases = self.load_phrase_for_vocab([w.id for w in words], lexical_level)
         return words, phrases
 
@@ -196,4 +176,21 @@ class VocabEngine:
         learned = int(row[0]) if row else 0
         return learned % len(vocab_pool)
 
+    @staticmethod
+    def _slice_wrap(items: list[VocabItem], start: int, size: int) -> list[VocabItem]:
+        if not items or size <= 0:
+            return []
+        result: list[VocabItem] = []
+        idx = max(0, start)
+        for _ in range(size):
+            result.append(items[idx % len(items)])
+            idx += 1
+        return result
 
+    @staticmethod
+    def _difficulty_from_level(level: float) -> int:
+        if level < 0.35:
+            return 1
+        if level < 0.7:
+            return 2
+        return 3

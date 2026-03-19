@@ -1,28 +1,22 @@
 import json
-import logging
 import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .. import config
-
-logger = logging.getLogger(__name__)
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = config.DB_PATH
+DB_PATH = ROOT_DIR / "db" / "english_foundation.db"
 SCHEMA_PATH = ROOT_DIR / "db" / "schema.sql"
 VOCAB_SEED_PATH = ROOT_DIR / "content" / "vocabulary_seed.json"
 GRAMMAR_SEED_PATH = ROOT_DIR / "content" / "grammar_seed.json"
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_schema(conn: sqlite3.Connection) -> None:
-    logger.info("Initialising database schema from %s", SCHEMA_PATH)
     schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
     conn.executescript(schema_sql)
     conn.commit()
@@ -39,27 +33,21 @@ def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition
 
 
 def migrate_schema(conn: sqlite3.Connection) -> None:
-    logger.info("Running schema migrations")
     _ensure_column(conn, "vocabulary", "topic_ielts", "TEXT")
     _ensure_column(conn, "vocabulary", "cefr_target", "TEXT")
     _ensure_column(conn, "vocabulary", "coca_frequency_band", "TEXT")
     _ensure_column(conn, "vocabulary", "source_standard", "TEXT")
-    _ensure_column(conn, "vocabulary", "part_of_speech", "TEXT")
-    _ensure_column(conn, "vocabulary", "synonyms", "TEXT")
-    _ensure_column(conn, "vocabulary", "collocations_json", "TEXT")
-    _ensure_column(conn, "grammar_units", "explanation_vi", "TEXT")
-    _ensure_column(conn, "grammar_units", "usage_note", "TEXT")
-    
-    _ensure_column(conn, "vocabulary", "unit_id", "INTEGER DEFAULT 1")
-    _ensure_column(conn, "learner_profile", "curr_streak", "INTEGER DEFAULT 0")
-    _ensure_column(conn, "learner_profile", "last_active_date", "TEXT")
-    _ensure_column(conn, "learner_profile", "current_vocab_unit", "INTEGER DEFAULT 1")
-    
+
     _ensure_column(conn, "progress", "learner_id", "INTEGER NOT NULL DEFAULT 1")
     _ensure_column(conn, "progress", "streak_correct", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "progress", "last_result", "INTEGER")
     _ensure_column(conn, "progress", "last_reviewed_at", "TEXT")
     _ensure_column(conn, "progress", "review_due_at", "TEXT")
+
+    _ensure_column(conn, "grammar_units", "explanation_vi", "TEXT")
+    _ensure_column(conn, "grammar_units", "explanation_en", "TEXT")
+    _ensure_column(conn, "grammar_units", "usage_note", "TEXT")
+    _ensure_column(conn, "grammar_units", "native_example_vi", "TEXT")
 
     conn.execute("UPDATE progress SET learner_id = 1 WHERE learner_id IS NULL")
     conn.commit()
@@ -71,9 +59,7 @@ def _load_json(path: Path) -> list[dict[str, Any]]:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def upsert_seed_data(conn: sqlite3.Connection) -> None:
-    """Insert or update seed vocabulary, phrases, grammar, and learner profile."""
-    logger.info("Upserting seed data")
+def seed_if_empty(conn: sqlite3.Connection) -> None:
     vocab_rows = _load_json(VOCAB_SEED_PATH)
     for row in vocab_rows:
         conn.execute(
@@ -158,22 +144,39 @@ def upsert_seed_data(conn: sqlite3.Connection) -> None:
             conn.execute(
                 """
                 UPDATE grammar_units
-                SET example = ?, explanation_vi = ?, usage_note = ?, difficulty = ?
+                SET example = ?, difficulty = ?, 
+                    explanation_vi = ?, explanation_en = ?, 
+                    usage_note = ?, native_example_vi = ?
                 WHERE id = ?
                 """,
-                (row["example"], row.get("explanation_vi", ""),
-                 row.get("usage_note", ""), row["difficulty"],
-                 int(existing_grammar[0])),
+                (
+                    row["example"], 
+                    row["difficulty"],
+                    row.get("explanation_vi"),
+                    row.get("explanation_en"),
+                    row.get("usage_note"),
+                    row.get("native_example_vi"),
+                    int(existing_grammar[0])
+                ),
             )
         else:
             conn.execute(
                 """
-                INSERT INTO grammar_units (pattern, example, explanation_vi, usage_note, difficulty)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO grammar_units (
+                    pattern, example, difficulty,
+                    explanation_vi, explanation_en, usage_note, native_example_vi
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (row["pattern"], row["example"],
-                 row.get("explanation_vi", ""), row.get("usage_note", ""),
-                 row["difficulty"]),
+                (
+                    row["pattern"], 
+                    row["example"], 
+                    row["difficulty"],
+                    row.get("explanation_vi"),
+                    row.get("explanation_en"),
+                    row.get("usage_note"),
+                    row.get("native_example_vi")
+                ),
             )
 
     profile_count = conn.execute("SELECT COUNT(*) FROM learner_profile").fetchone()[0]
@@ -187,12 +190,11 @@ def upsert_seed_data(conn: sqlite3.Connection) -> None:
 
 
 def bootstrap_database() -> None:
-    logger.info("Bootstrapping English Foundation database")
     conn = get_connection()
     try:
         init_schema(conn)
         migrate_schema(conn)
-        upsert_seed_data(conn)
+        seed_if_empty(conn)
     finally:
         conn.close()
 

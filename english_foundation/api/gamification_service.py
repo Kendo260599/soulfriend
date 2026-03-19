@@ -2,12 +2,27 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, date, timezone
 from pathlib import Path
 from typing import Any
 
 import sqlite3
+
+# CRITICAL: Setup sys.path BEFORE any imports
+# This ensures imports work in both development and production (Render)
+_current_file = Path(__file__).resolve()
+_english_foundation_root = _current_file.parent.parent
+_repo_root = _english_foundation_root.parent
+
+paths_to_add = [str(_repo_root), str(_english_foundation_root)]
+for path in paths_to_add:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Import from english_foundation package (works in all environments)
+from english_foundation.db.bootstrap import bootstrap_database, get_connection
 
 
 @dataclass
@@ -853,26 +868,7 @@ class GamificationService:
 def create_gamification_service(conn: sqlite3.Connection | None = None) -> GamificationService:
     """Create and return a GamificationService instance."""
     if conn is None:
-        import sys
-        from pathlib import Path
-        
-        # Ensure imports work in production
-        _current_file = Path(__file__).resolve()
-        _english_foundation_root = _current_file.parent.parent
-        _repo_root = _english_foundation_root.parent
-        
-        try:
-            from ..db.bootstrap import bootstrap_database, get_connection
-        except (ImportError, ValueError):
-            paths_to_add = [str(_repo_root), str(_english_foundation_root)]
-            for path in paths_to_add:
-                if path not in sys.path:
-                    sys.path.insert(0, path)
-            try:
-                from english_foundation.db.bootstrap import bootstrap_database, get_connection
-            except ImportError:
-                from db.bootstrap import bootstrap_database, get_connection
-
+        # bootstrap_database and get_connection are imported at module level
         bootstrap_database()
         conn = get_connection()
 

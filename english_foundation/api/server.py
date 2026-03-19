@@ -4,28 +4,19 @@ from typing import Any
 import sys
 from pathlib import Path
 
-# Ensure imports work in production (Render) and development
+# CRITICAL: Setup sys.path BEFORE any imports
 _current_file = Path(__file__).resolve()
 _english_foundation_root = _current_file.parent.parent
 _repo_root = _english_foundation_root.parent
 
-# Add both paths to ensure imports work
 paths_to_add = [str(_repo_root), str(_english_foundation_root)]
 for path in paths_to_add:
     if path not in sys.path:
         sys.path.insert(0, path)
 
-# Try multiple import strategies
-try:
-    from .learning_service import create_learning_service
-    from .routes.gamification_routes import router as gamification_router
-except (ImportError, ValueError):
-    try:
-        from english_foundation.api.learning_service import create_learning_service
-        from english_foundation.api.routes.gamification_routes import router as gamification_router
-    except ImportError:
-        from api.learning_service import create_learning_service
-        from api.routes.gamification_routes import router as gamification_router
+# Import from english_foundation package (works in all environments)
+from english_foundation.api.learning_service import create_learning_service
+from english_foundation.api.routes.gamification_routes import router as gamification_router
 
 app = FastAPI(title="English Foundation API", version="0.1.0")
 service = create_learning_service()

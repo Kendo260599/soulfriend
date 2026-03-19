@@ -3,38 +3,26 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-import sys
-from pathlib import Path
-
-# Ensure imports work in both development and production
-# Add english_foundation root to path if not already there
+# CRITICAL: Setup sys.path BEFORE any imports
+# This ensures imports work in both development and production (Render)
 _current_file = Path(__file__).resolve()
 _english_foundation_root = _current_file.parent.parent
 _repo_root = _english_foundation_root.parent
 
-# Try relative import first (works when imported as package)
-try:
-    from ..core.lesson_engine import LessonEngine
-    from ..db.bootstrap import bootstrap_database, get_connection
-except (ImportError, ValueError):
-    # Fallback: add paths and use absolute imports
-    paths_to_add = [str(_repo_root), str(_english_foundation_root)]
-    for path in paths_to_add:
-        if path not in sys.path:
-            sys.path.insert(0, path)
-    
-    # Try english_foundation package import
-    try:
-        from english_foundation.core.lesson_engine import LessonEngine
-        from english_foundation.db.bootstrap import bootstrap_database, get_connection
-    except ImportError:
-        # Final fallback: direct import (when cwd is english_foundation/)
-        from core.lesson_engine import LessonEngine
-        from db.bootstrap import bootstrap_database, get_connection
+# Always add paths to sys.path first
+paths_to_add = [str(_repo_root), str(_english_foundation_root)]
+for path in paths_to_add:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Now import with full package path (english_foundation.*)
+from english_foundation.core.lesson_engine import LessonEngine
+from english_foundation.db.bootstrap import bootstrap_database, get_connection
 
 
 class LearningService:

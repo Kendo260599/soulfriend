@@ -400,12 +400,16 @@ app.use(errorHandler);
 // ====================
 
 const startServer = async () => {
-  try {
-    console.log('📊 Starting server...');
-    console.log(`📊 Environment: ${config.NODE_ENV}`);
-    console.log(`📊 Config PORT: ${PORT}`);
-    console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
+  // CRITICAL: Calculate port FIRST, before any async operations
+  // This ensures we always have a port to bind to
+  const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
+  console.log('📊 Starting server...');
+  console.log(`📊 Environment: ${config.NODE_ENV}`);
+  console.log(`📊 Config PORT: ${PORT}`);
+  console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
+  console.log(`📊 Actual port to bind: ${actualPort}`);
 
+  try {
     // Initialize Socket.io BEFORE starting server
     console.log('🔌 Initializing Socket.io for real-time communication...');
     const io = initializeSocketServer(httpServer);
@@ -415,13 +419,21 @@ const startServer = async () => {
     (global as any).io = io;
     
     console.log('✅ Socket.io initialized successfully');
+  } catch (socketError) {
+    console.error('⚠️  Socket.io initialization failed, continuing without Socket.io:', socketError);
+    // Continue without Socket.io - server can still function
+  }
 
-    // Start HTTP server FIRST - before database connection
-    // This ensures Railway health check can reach server immediately
-    const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
-    console.log(`📊 Starting server on port: ${actualPort}`);
+  // Start HTTP server FIRST - before database connection
+  // This ensures Render health check can reach server immediately
+  console.log(`📊 Starting server on port: ${actualPort}`);
+  console.log(`📊 About to call httpServer.listen()...`);
 
+  // CRITICAL: Always bind to port, even if there are errors later
+  // This ensures Render can detect the service is running
+  try {
     const server = httpServer.listen(actualPort, '0.0.0.0', () => {
+      console.log(`✅ Server successfully bound to port ${actualPort}`);
       console.log('╔════════════════════════════════════════════╗');
       console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
       console.log('╠════════════════════════════════════════════╣');
@@ -438,20 +450,20 @@ const startServer = async () => {
         console.warn('⚠️  Database connection failed, continuing without database:', err.message);
       });
 
-  // Test email service connection
-  if (emailService.isReady()) {
-    emailService.testConnection().then((success: boolean) => {
-      if (success) {
-        console.log('✅ Email service ready for HITL alerts');
+      // Test email service connection
+      if (emailService.isReady()) {
+        emailService.testConnection().then((success: boolean) => {
+          if (success) {
+            console.log('✅ Email service ready for HITL alerts');
+          } else {
+            console.warn('⚠️  Email service connection test failed');
+          }
+        }).catch((err: Error) => {
+          console.warn('⚠️  Email service connection test error:', err.message);
+        });
       } else {
-        console.warn('⚠️  Email service connection test failed');
+        console.warn('⚠️  Email service not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)');
       }
-    }).catch((err: Error) => {
-      console.warn('⚠️  Email service connection test error:', err.message);
-    });
-  } else {
-    console.warn('⚠️  Email service not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)');
-  }
     });
 
     // Handle server errors
@@ -505,11 +517,10 @@ const startServer = async () => {
       console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
       gracefulShutdown('unhandledRejection');
     });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    console.error('Error details:', error instanceof Error ? error.stack : error);
-
-    // Even if there's an error, try to start the server in fallback mode
+  } catch (listenError) {
+    console.error('❌ Failed to bind server to port:', listenError);
+    console.error('Error details:', listenError instanceof Error ? listenError.stack : listenError);
+    // If listen fails, try fallback mode
     console.log('🔄 Attempting to start server in FALLBACK mode...');
 
     try {

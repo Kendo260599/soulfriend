@@ -7,8 +7,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from ..core.lesson_engine import LessonEngine
-from ..db.bootstrap import bootstrap_database, get_connection
+from core.lesson_engine import LessonEngine
+from db.bootstrap import bootstrap_database, get_connection
 
 
 class LearningService:
@@ -51,6 +51,22 @@ class LearningService:
                     selected_lesson = item
                     break
 
+        # Check for progression lock
+        progress = self.get_progress_payload(learner_id)
+        weak_words = progress.get("weak_words", 0)
+        WEAK_WORD_LOCK_THRESHOLD = 15
+        if weak_words > WEAK_WORD_LOCK_THRESHOLD:
+            return {
+                "track": track_key,
+                "lesson_meta": selected_lesson or {},
+                "words": [],
+                "phrases": [],
+                "grammar": {},
+                "sequence": [],
+                "is_locked": True,
+                "lock_reason": f"Too many weak words ({weak_words}). Please review before continuing.",
+            }
+
         lesson = self.lesson_engine.compose_track_lesson(
             track=track_key,
             lesson_index=lesson_index,
@@ -67,6 +83,7 @@ class LearningService:
             "phrases": lesson["phrases"],
             "grammar": lesson["grammar"],
             "sequence": lesson.get("sequence", []),
+            "is_locked": False,
         }
 
     def get_curriculum_payload(self) -> dict[str, Any]:

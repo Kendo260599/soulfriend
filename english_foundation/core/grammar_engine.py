@@ -8,6 +8,10 @@ class GrammarItem:
     pattern: str
     example: str
     difficulty: int
+    explanation_vi: str = ""
+    explanation_en: str = ""
+    usage_note: str = ""
+    native_example_vi: str = ""
 
 
 class GrammarEngine:
@@ -18,7 +22,11 @@ class GrammarEngine:
         max_difficulty = self._difficulty_from_level(grammar_level)
         rows = self.conn.execute(
             """
-            SELECT id, pattern, example, difficulty
+            SELECT id, pattern, example, difficulty,
+                   COALESCE(explanation_vi, '') as explanation_vi,
+                   COALESCE(explanation_en, '') as explanation_en,
+                   COALESCE(usage_note, '') as usage_note,
+                   COALESCE(native_example_vi, '') as native_example_vi
             FROM grammar_units
             WHERE difficulty <= ?
             ORDER BY difficulty ASC, id ASC
@@ -32,6 +40,10 @@ class GrammarEngine:
                 pattern=row["pattern"],
                 example=row["example"],
                 difficulty=row["difficulty"],
+                explanation_vi=row["explanation_vi"],
+                explanation_en=row["explanation_en"],
+                usage_note=row["usage_note"],
+                native_example_vi=row["native_example_vi"],
             )
             for row in rows
         ]

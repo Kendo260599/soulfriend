@@ -59,7 +59,7 @@ export interface GamificationData {
   updatedAt: Date;
 }
 
-const API_BASE = '/api/v2/foundation';
+const API_BASE = '/api/v2/foundation/gamification';
 
 export const useGamification = (userId: string) => {
   const [data, setData] = useState<GamificationData | null>(null);

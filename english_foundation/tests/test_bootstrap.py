@@ -1,7 +1,7 @@
 """Tests for database bootstrap."""
 import sqlite3
 
-from english_foundation.db.bootstrap import init_schema, migrate_schema, upsert_seed_data
+from english_foundation.db.bootstrap import init_schema, migrate_schema, seed_if_empty
 
 
 class TestInitSchema:
@@ -37,7 +37,7 @@ class TestUpsertSeedData:
         conn.row_factory = sqlite3.Row
         init_schema(conn)
         migrate_schema(conn)
-        upsert_seed_data(conn)
+        seed_if_empty(conn)
         vocab_count = conn.execute("SELECT COUNT(*) FROM vocabulary").fetchone()[0]
         grammar_count = conn.execute("SELECT COUNT(*) FROM grammar_units").fetchone()[0]
         assert vocab_count > 0
@@ -49,9 +49,9 @@ class TestUpsertSeedData:
         conn.row_factory = sqlite3.Row
         init_schema(conn)
         migrate_schema(conn)
-        upsert_seed_data(conn)
+        seed_if_empty(conn)
         count1 = conn.execute("SELECT COUNT(*) FROM vocabulary").fetchone()[0]
-        upsert_seed_data(conn)
+        seed_if_empty(conn)
         count2 = conn.execute("SELECT COUNT(*) FROM vocabulary").fetchone()[0]
         assert count1 == count2
         conn.close()

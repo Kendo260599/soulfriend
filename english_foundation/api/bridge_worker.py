@@ -2,11 +2,28 @@ import json
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# Ensure imports work in production (Render) and development
+_current_file = Path(__file__).resolve()
+_english_foundation_root = _current_file.parent.parent
+_repo_root = _english_foundation_root.parent
 
-from english_foundation.api.learning_service import create_learning_service
+# Add both paths to ensure imports work
+paths_to_add = [str(_repo_root), str(_english_foundation_root)]
+for path in paths_to_add:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Try multiple import strategies
+try:
+    # Strategy 1: Package import (production)
+    from english_foundation.api.learning_service import create_learning_service
+except ImportError:
+    try:
+        # Strategy 2: Relative import (if running as module)
+        from .learning_service import create_learning_service
+    except (ImportError, ValueError):
+        # Strategy 3: Direct import (when cwd is english_foundation/)
+        from api.learning_service import create_learning_service
 
 
 def main() -> None:

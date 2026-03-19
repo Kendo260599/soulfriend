@@ -853,7 +853,25 @@ class GamificationService:
 def create_gamification_service(conn: sqlite3.Connection | None = None) -> GamificationService:
     """Create and return a GamificationService instance."""
     if conn is None:
-        from db.bootstrap import bootstrap_database, get_connection
+        import sys
+        from pathlib import Path
+        
+        # Ensure imports work in production
+        _current_file = Path(__file__).resolve()
+        _english_foundation_root = _current_file.parent.parent
+        _repo_root = _english_foundation_root.parent
+        
+        try:
+            from ..db.bootstrap import bootstrap_database, get_connection
+        except (ImportError, ValueError):
+            paths_to_add = [str(_repo_root), str(_english_foundation_root)]
+            for path in paths_to_add:
+                if path not in sys.path:
+                    sys.path.insert(0, path)
+            try:
+                from english_foundation.db.bootstrap import bootstrap_database, get_connection
+            except ImportError:
+                from db.bootstrap import bootstrap_database, get_connection
 
         bootstrap_database()
         conn = get_connection()

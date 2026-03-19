@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { LessonPayload } from '../types';
 import ttsService from '../services/ttsService';
+import { PronunciationButton } from '../components/PronunciationButton';
 
 type LessonScreenProps = {
   lesson: LessonPayload;
@@ -130,6 +131,15 @@ const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onFinish, onBackHom
           >
             {isPlayingAudio ? '🔊 Playing...' : '🔉 Hear pronunciation'}
           </button>
+          
+          {current.title === 'Word' && (
+            <PronunciationButton
+              word={current.main.split(/\s+\//)[0]}
+              variant="word"
+              disabled={isSubmitting || isPlayingAudio}
+              showLabel={true}
+            />
+          )}
         </div>
 
         <div className="button-row">

@@ -1,0 +1,123 @@
+---
+description: Prevent fixing one thing while breaking another - read, analyze, verify workflow
+alwaysApply: true
+---
+
+# Fix-Then-Break Prevention Rule
+
+**Core Principle: Read fully, analyze impact, verify before finishing.**
+
+## Before Any Edit
+
+### 1. Read the Entire File
+Before making ANY change, you MUST read the complete file content. Never edit based on partial context or line numbers alone.
+
+### 2. Identify Related Files
+Ask yourself:
+- What other files import or use this function/component?
+- What are the TypeScript/interface dependencies?
+- What API endpoints depend on this code?
+
+Search for usages:
+```
+grep -r "functionName" --include="*.ts" --include="*.tsx"
+grep -r "ComponentName" --include="*.ts" --include="*.tsx"
+```
+
+### 3. Check Existing Tests
+- Find and read related test files
+- Understand what behavior tests are verifying
+
+## During Editing
+
+### 4. Maintain Type Compatibility
+When changing interfaces or function signatures:
+- Update ALL call sites
+- Update TypeScript types consistently
+- Never leave "any" types as shortcuts
+
+### 5. Preserve API Contracts
+When modifying API endpoints or data structures:
+- Check frontend service calls
+- Update all related type definitions
+- Ensure backward compatibility or version appropriately
+
+## After Editing
+
+### 6. Verify TypeScript Compilation
+For frontend changes:
+```bash
+cd frontend && npx tsc --noEmit
+```
+
+For backend changes:
+```bash
+cd backend && npx tsc --noEmit
+```
+
+### 7. Cross-Reference Verification
+After any change, verify:
+- [ ] No TypeScript errors introduced
+- [ ] All imports still resolve
+- [ ] Related files compile without errors
+- [ ] API contracts are consistent
+
+### 8. Check Dependent Files
+Run a quick search to ensure no references are broken:
+```bash
+# Verify no orphaned exports or imports
+grep -r "from.*fileYouEdited" --include="*.ts" --include="*.tsx"
+```
+
+## Anti-Patterns to Avoid
+
+### ❌ BAD: Quick Fix Without Context
+```
+// Saw error in file A -> Fixed it -> Broke file B that depended on old behavior
+```
+
+### ❌ BAD: Type-Only Change Without Propagation
+```
+// Changed interface -> Forgot to update implementing classes
+```
+
+### ❌ BAD: Import Change Without Checking Usage
+```
+// Renamed export -> Didn't update all import sites
+```
+
+## ✅ GOOD: Systematic Fix
+```
+1. Read full file and all related files
+2. Understand the dependency graph
+3. Make targeted change
+4. Update all dependent code
+5. Run type check
+6. Verify no new errors
+7. Test affected functionality
+```
+
+## Project-Specific Rules
+
+### Frontend (frontend/**)
+- Always run `npx tsc --noEmit` after changing .ts/.tsx files
+- Check `frontend/src/services/apiService.ts` for API dependencies
+- Type definitions in `frontend/src/types/` must stay in sync
+
+### Backend (backend/**)
+- Check API routes match frontend service calls
+- Verify environment variable usage is consistent
+- Ensure database models match API responses
+
+### GameFi (gamefi/**)
+- Core types in `gamefi/core/types.ts` are foundation - changes cascade widely
+- Verify compiled .js files match source .ts files
+
+## Emergency Recovery
+
+If you accidentally break something:
+1. Run `git diff` to see exact changes
+2. Run `git stash` to temporarily revert
+3. Re-read files with fresh context
+4. Apply changes more carefully
+5. Always verify with type checking before considering task complete

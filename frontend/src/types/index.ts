@@ -402,3 +402,12 @@ export interface UseActionResult<T = void> {
   loading: boolean;
   error: AppError | null;
 }
+
+// ============================================
+// Export default for convenience
+// Note: Interfaces cannot be exported as values in TypeScript
+// Use named exports instead: import { ApiResponse, User } from '../types'
+// ============================================
+
+// Removed default export - interfaces are types, not values
+// Use named imports: import { ApiResponse, User, TestResult } from '../types'

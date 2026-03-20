@@ -615,17 +615,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
 
   const generateBotResponse = async (userMessage: string): Promise<{ text: string; crisisDetected: boolean; recommendations: string[]; nextActions: string[] }> => {
     // Tạo user profile từ test results
+    // Đảm bảo testResults có đầy đủ properties theo TestResult interface
+    const normalizedTestResults: TestResult[] = testResults.map(result => ({
+      ...result,
+      answers: result.answers || [], // Đảm bảo answers luôn có, mặc định là empty array
+    }));
+    
     const userProfile = {
       age: undefined, // Có thể lấy từ user data nếu có
       gender: undefined,
-      testHistory: testResults,
+      testHistory: normalizedTestResults,
       preferences: [],
       culturalContext: 'vietnamese' as const
     };
 
     try {
       // Thử sử dụng AI service trước
-      const response = await processMessage(userMessage, userProfile, testResults);
+      const response = await processMessage(userMessage, userProfile, normalizedTestResults);
       return {
         text: response.text,
         crisisDetected: response.crisisDetected || false,
@@ -638,7 +644,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {
       // Sử dụng offline service khi AI service lỗi
       try {
         const { offlineChatService } = await import('../services/offlineChatService');
-        const offlineResponse = await offlineChatService.processMessage(userMessage, testResults, userProfile);
+        const offlineResponse = await offlineChatService.processMessage(userMessage, normalizedTestResults, userProfile);
         
         return {
           text: offlineResponse.text,

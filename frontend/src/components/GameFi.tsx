@@ -105,7 +105,25 @@ const GameFiInner: React.FC = () => {
   };
 
   if (loading) return <Container><LoadingContainer><div style={{fontSize:'3rem',marginBottom:'1rem'}}>🎮</div>Đang tải Thế Giới Nội Tâm...</LoadingContainer></Container>;
-  if (error || !data || !data.profile?.character) return <Container><ErrorContainer><div style={{fontSize:'3rem',marginBottom:'1rem'}}>⚠️</div><p>{error || 'Không thể tải dữ liệu'}</p><RetryButton onClick={fetchAll}>Thử lại</RetryButton></ErrorContainer></Container>;
+  if (error || !data || !data.profile?.character) {
+    const errorMessage = error || 'Không thể tải dữ liệu';
+    const isBackendError = errorMessage.includes('404') || errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_NAME_NOT_RESOLVED');
+    
+    return (
+      <Container>
+        <ErrorContainer>
+          <div style={{fontSize:'3rem',marginBottom:'1rem'}}>⚠️</div>
+          <p>{errorMessage}</p>
+          {isBackendError && (
+            <div style={{marginTop: '1rem', padding: '1rem', background: '#FFF3CD', borderRadius: '8px', fontSize: '0.9rem', color: '#856404'}}>
+              <strong>💡 Lưu ý:</strong> Backend API đang không khả dụng. Vui lòng kiểm tra Render deployment hoặc thử lại sau.
+            </div>
+          )}
+          <RetryButton onClick={fetchAll}>Thử lại</RetryButton>
+        </ErrorContainer>
+      </Container>
+    );
+  }
 
   const { character } = data.profile;
   const topGrowthInsight = getTopGrowthInsight();

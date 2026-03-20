@@ -1,4 +1,4 @@
-﻿# 🩺 Expert Dashboard - Quick Start Guide
+# 🩺 Expert Dashboard - Quick Start Guide
 
 ## 🚀 Bắt Đầu Trong 5 Phút
 
@@ -12,7 +12,7 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/expert/register
   -d '{
     "email": "kendo2605@gmail.com",
     "password": "YourSecurePassword123!",
-    "name": "Chuyên Gia Tâm Lý ",
+    "name": "Chuyên Gia Tâm Lý CHUN",
     "role": "crisis_counselor",
     "phone": "0938021111",
     "specialty": ["crisis_intervention", "mental_health"]
@@ -131,7 +131,7 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/chatbot/message
 ┌─────────────────────────────────────────────────────────────┐
 │ 🩺 Expert Dashboard          🟢 Online                      │
 │                                                              │
-│   👨‍⚕️ Chuyên Gia       [✅ Sẵn sàng ▼]  [Đăng xuất]     │
+│   👨‍⚕️ Chuyên Gia CHUN      [✅ Sẵn sàng ▼]  [Đăng xuất]     │
 │   crisis_counselor                                           │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -149,7 +149,7 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/chatbot/message
 │ │ [tự tử, ...] │ │ └─────────────────────────────────────┘  │
 │ │ 10:29        │ │                                           │
 │ └──────────────┘ │ ┌─────────────────────────────────────┐  │
-│                  │ │        👨‍⚕️ Chuyên gia :          │  │
+│                  │ │        👨‍⚕️ Chuyên gia CHUN:          │  │
 │ ┌──────────────┐ │ │   Chào bạn, tôi ở đây để hỗ trợ    │  │
 │ │ ...          │ │ │                              10:31  │  │
 │ └──────────────┘ │ └─────────────────────────────────────┘  │
@@ -219,7 +219,7 @@ curl -X POST https://soulfriend-production.up.railway.app/api/v2/chatbot/message
   "expert": {
     "id": "67890...",
     "email": "kendo2605@gmail.com",
-    "name": "Chuyên Gia Tâm Lý ",
+    "name": "Chuyên Gia Tâm Lý CHUN",
     "role": "crisis_counselor",
     "specialty": ["crisis_intervention", "mental_health"],
     "availability": "available",
@@ -393,4 +393,6 @@ Nếu triệu chứng không giảm sau 10 phút, hãy gọi 115 hoặc
 ---
 
 *Chúc bạn sử dụng hệ thống hiệu quả để cứu sống!* 🩺💙
+
+
 

@@ -50,10 +50,12 @@ class AdminAuthService {
 
   /**
    * Đăng nhập admin
+   * ⚠️ SECURITY: This frontend service is for development only!
+   * Production should use backend /api/v2/admin/login endpoint
    */
   login(username: string, password: string): { success: boolean; token?: string; user?: AdminUser; error?: string } {
     const user = Array.from(this.adminUsers.values()).find(u => u.username === username);
-    
+
     if (!user) {
       return { success: false, error: 'User not found' };
     }
@@ -62,12 +64,15 @@ class AdminAuthService {
       return { success: false, error: 'Account is disabled' };
     }
 
-    // Verify password (simplified - in real app, use proper hashing)
-    const validPasswords: { [key: string]: string } = {
-      'admin': 'Kendo2605@'
-    };
+    // Verify password using environment variable (NOT hardcoded!)
+    // In production, ALWAYS use backend /api/v2/admin/login instead
+    const adminPassword = process.env.REACT_APP_ADMIN_PASSWORD;
+    if (!adminPassword) {
+      console.error('⚠️ SECURITY: REACT_APP_ADMIN_PASSWORD not set. Admin login disabled.');
+      return { success: false, error: 'Admin authentication not configured' };
+    }
 
-    if (validPasswords[user.id] !== password) {
+    if (password !== adminPassword) {
       return { success: false, error: 'Invalid password' };
     }
 

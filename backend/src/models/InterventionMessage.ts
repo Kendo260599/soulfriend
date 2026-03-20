@@ -87,3 +87,5 @@ export default mongoose.model<IInterventionMessage>(
   InterventionMessageSchema
 );
 
+
+

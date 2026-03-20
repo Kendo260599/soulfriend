@@ -18,27 +18,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/expert/login" replace />;
   }
 
-  // Check token expiration by decoding JWT payload (base64)
-  try {
-    const payloadBase64 = token.split('.')[1];
-    if (payloadBase64) {
-      const payload = JSON.parse(atob(payloadBase64));
-      if (payload.exp && payload.exp < Date.now() / 1000) {
-        // Token expired — clear and redirect
-        localStorage.removeItem('expertToken');
-        localStorage.removeItem('expertData');
-        return <Navigate to="/expert/login" replace />;
-      }
-    }
-  } catch {
-    // Malformed token — clear and redirect
-    localStorage.removeItem('expertToken');
-    localStorage.removeItem('expertData');
-    return <Navigate to="/expert/login" replace />;
-  }
+  // TODO: Add token expiration check
+  // const decoded = jwt_decode(token);
+  // if (decoded.exp < Date.now() / 1000) {
+  //   localStorage.removeItem('expertToken');
+  //   return <Navigate to="/expert/login" replace />;
+  // }
 
   return <>{children}</>;
 };
 
 export default ProtectedRoute;
+
+
 

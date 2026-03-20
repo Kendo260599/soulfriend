@@ -10,7 +10,6 @@
 
 import logger from '../utils/logger';
 import emailService from './emailService';
-import CriticalAlertModel from '../models/CriticalAlert';
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -22,7 +21,7 @@ export interface CriticalAlert {
   userId: string;
   sessionId: string;
   riskLevel: 'CRITICAL' | 'EXTREME';
-  riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence' | 'manipulation' | 'coercion';
+  riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence';
   userMessage: string;
   detectedKeywords: string[];
   userProfile?: any;
@@ -103,7 +102,7 @@ const DEFAULT_CONFIG: InterventionConfig = {
   clinicalTeam: [
     {
       id: 'crisis_team_1',
-      name: 'Chuyên Gia Tâm Lý 𝑺𝒆𝒄𝒓𝒆𝒕❤️',
+      name: 'Chuyên Gia Tâm Lý CHUN',
       role: 'crisis_counselor',
       email: 'kendo2605@gmail.com', // Chuyên gia tâm lý chính
       phone: '+84-938021111', // 0938021111
@@ -154,59 +153,12 @@ const DEFAULT_CONFIG: InterventionConfig = {
 
 export class CriticalInterventionService {
   private config: InterventionConfig;
+  private activeAlerts: Map<string, CriticalAlert> = new Map();
   private escalationTimers: Map<string, NodeJS.Timeout> = new Map();
-  // In-memory cache for active alerts (synced with MongoDB)
-  private alertCache: Map<string, CriticalAlert> = new Map();
 
   constructor(config?: Partial<InterventionConfig>) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     logger.info('🚨 CriticalInterventionService initialized with HITL enabled');
-    // Load active alerts from MongoDB on startup
-    this.loadActiveAlertsFromDB().catch(err => {
-      logger.warn('Failed to load alerts from DB on startup:', err);
-    });
-  }
-
-  /**
-   * Load active alerts from MongoDB into memory cache on startup
-   */
-  private async loadActiveAlertsFromDB(): Promise<void> {
-    try {
-      const activeAlerts = await CriticalAlertModel.find({
-        status: { $in: ['pending', 'acknowledged', 'escalated'] },
-      });
-      for (const doc of activeAlerts) {
-        const alert = this.docToAlert(doc);
-        this.alertCache.set(alert.id, alert);
-      }
-      logger.info(`📋 Loaded ${activeAlerts.length} active alerts from database`);
-    } catch (err) {
-      logger.error('Failed to load active alerts from DB:', err);
-    }
-  }
-
-  /** Convert Mongoose document to CriticalAlert interface */
-  private docToAlert(doc: any): CriticalAlert {
-    return {
-      id: doc.alertId,
-      timestamp: doc.timestamp,
-      userId: doc.userId,
-      sessionId: doc.sessionId,
-      riskLevel: doc.riskLevel,
-      riskType: doc.riskType,
-      userMessage: doc.userMessage,
-      detectedKeywords: doc.detectedKeywords || [],
-      userProfile: doc.userProfile,
-      testResults: doc.testResults,
-      locationData: doc.locationData,
-      status: doc.status,
-      acknowledgedBy: doc.acknowledgedBy,
-      acknowledgedAt: doc.acknowledgedAt,
-      interventionNotes: doc.interventionNotes,
-      escalatedAt: doc.escalatedAt,
-      escalationEmailSent: doc.escalationEmailSent || false,
-      metadata: doc.metadata,
-    };
   }
 
   /**
@@ -217,7 +169,7 @@ export class CriticalInterventionService {
     sessionId: string,
     riskData: {
       riskLevel: 'CRITICAL' | 'EXTREME';
-      riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence' | 'manipulation' | 'coercion';
+      riskType: 'suicidal' | 'psychosis' | 'self_harm' | 'violence';
       userMessage: string;
       detectedKeywords: string[];
       userProfile?: any;
@@ -248,41 +200,22 @@ export class CriticalInterventionService {
       status: 'pending',
     };
 
-    this.alertCache.set(alert.id, alert);
+    this.activeAlerts.set(alert.id, alert);
 
-    // Persist to MongoDB (non-blocking)
-    CriticalAlertModel.create({
-      alertId: alert.id,
-      timestamp: alert.timestamp,
-      userId: alert.userId,
-      sessionId: alert.sessionId,
-      riskLevel: alert.riskLevel,
-      riskType: alert.riskType,
-      userMessage: alert.userMessage,
-      detectedKeywords: alert.detectedKeywords,
-      userProfile: alert.userProfile,
-      testResults: alert.testResults,
-      locationData: alert.locationData,
-      status: alert.status,
-      metadata: alert.metadata,
-    }).catch(err => {
-      logger.error('Failed to persist alert to MongoDB:', err);
-    });
-
-    logger.warn(`🚨 CRITICAL ALERT CREATED: ${alert.id}`, {
+    logger.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`, {
       userId,
       riskType: alert.riskType,
       keywords: alert.detectedKeywords,
     });
 
-    // Force console output for Render visibility
-    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.warn(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
-    console.warn(`User: ${userId}`);
-    console.warn(`Risk Type: ${alert.riskType}`);
-    console.warn(`Keywords: ${alert.detectedKeywords.join(', ')}`);
-    console.warn(`Message: "${alert.userMessage}"`);
-    console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    // Force console output for Railway visibility
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error(`🚨 CRITICAL ALERT CREATED: ${alert.id}`);
+    console.error(`User: ${userId}`);
+    console.error(`Risk Type: ${alert.riskType}`);
+    console.error(`Keywords: ${alert.detectedKeywords.join(', ')}`);
+    console.error(`Message: "${alert.userMessage}"`);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // STEP 2: Immediate documentation (non-blocking)
     if (this.config.autoDocumentation) {
@@ -383,16 +316,16 @@ export class CriticalInterventionService {
 
     const timer = setTimeout(async () => {
       // Kiểm tra xem alert đã được xử lý chưa
+      const currentAlert = this.activeAlerts.get(alert.id);
 
       // FIX: Check if alert is still pending AND escalation email hasn't been sent
-      const currentAlert = this.alertCache.get(alert.id);
       if (currentAlert && currentAlert.status === 'pending' && !currentAlert.escalationEmailSent) {
-        logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        logger.warn(
+        logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logger.error(
           `⏰ ESCALATION TRIGGERED: No response for ${this.config.escalationDelayMinutes} minutes`
         );
-        logger.warn(`Alert ${alert.id} - Escalating to emergency services`);
-        logger.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logger.error(`Alert ${alert.id} - Escalating to emergency services`);
+        logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         await this.escalateToEmergencyServices(alert);
       } else if (currentAlert && currentAlert.escalationEmailSent) {
         logger.info(`⚠️  Alert ${alert.id} escalation email already sent. Skipping duplicate.`);
@@ -414,19 +347,13 @@ export class CriticalInterventionService {
       return;
     }
 
-    logger.warn(`🚑 ESCALATING TO EMERGENCY SERVICES: Alert ${alert.id}`);
+    logger.error(`🚑 ESCALATING TO EMERGENCY SERVICES: Alert ${alert.id}`);
 
     // Mark escalation email as sent BEFORE sending to prevent race conditions
     alert.escalationEmailSent = true;
     alert.escalatedAt = new Date();
     alert.status = 'escalated';
-    this.alertCache.set(alert.id, alert);
-
-    // Persist escalation to MongoDB
-    CriticalAlertModel.findOneAndUpdate(
-      { alertId: alert.id },
-      { status: 'escalated', escalatedAt: alert.escalatedAt, escalationEmailSent: true }
-    ).catch(err => logger.error('Failed to persist escalation:', err));
+    this.activeAlerts.set(alert.id, alert);
 
     // Notify emergency hotlines
     if (this.config.emergencyHotlineEnabled) {
@@ -547,7 +474,7 @@ export class CriticalInterventionService {
   private async notifyEmergencyHotline(alert: CriticalAlert): Promise<void> {
     const hotlines = this.config.hotlines.filter(h => h.available24h);
 
-    logger.warn(
+    logger.error(
       `☎️ Emergency hotlines notified for ${alert.id}:`,
       hotlines.map(h => h.name)
     );
@@ -608,7 +535,7 @@ This case requires IMMEDIATE attention.
         `.trim(),
       });
 
-      logger.warn(
+      logger.error(
         `🚨 Urgent email notifications sent to ${recipients.length} recipient(s) for escalated alert ${alert.id}`
       );
       console.log(`✅ Urgent email sent to: ${recipients.join(', ')}`);
@@ -640,13 +567,10 @@ This case requires IMMEDIATE attention.
    * STEP 6: Clinical team acknowledges alert (stops escalation)
    */
   async acknowledgeAlert(alertId: string, clinicalMemberId: string, notes?: string): Promise<void> {
-    let alert = this.alertCache.get(alertId);
+    const alert = this.activeAlerts.get(alertId);
 
-    // Fallback to DB if not in cache
     if (!alert) {
-      const doc = await CriticalAlertModel.findOne({ alertId });
-      if (!doc) throw new Error(`Alert ${alertId} not found`);
-      alert = this.docToAlert(doc);
+      throw new Error(`Alert ${alertId} not found`);
     }
 
     // Stop escalation timer
@@ -663,13 +587,7 @@ This case requires IMMEDIATE attention.
     alert.acknowledgedAt = new Date();
     alert.interventionNotes = notes;
 
-    this.alertCache.set(alertId, alert);
-
-    // Persist to MongoDB
-    CriticalAlertModel.findOneAndUpdate(
-      { alertId },
-      { status: 'acknowledged', acknowledgedBy: clinicalMemberId, acknowledgedAt: alert.acknowledgedAt, interventionNotes: notes }
-    ).catch(err => logger.error('Failed to persist acknowledgment:', err));
+    this.activeAlerts.set(alertId, alert);
 
     logger.info(`✅ Alert ${alertId} acknowledged by ${clinicalMemberId}`);
 
@@ -699,7 +617,7 @@ This case requires IMMEDIATE attention.
    * Get active alerts (pending, acknowledged, or escalated)
    */
   getActiveAlerts(): CriticalAlert[] {
-    return Array.from(this.alertCache.values()).filter(
+    return Array.from(this.activeAlerts.values()).filter(
       alert =>
         alert.status === 'pending' ||
         alert.status === 'acknowledged' ||
@@ -708,69 +626,10 @@ This case requires IMMEDIATE attention.
   }
 
   /**
-   * Get all alerts (including resolved) from MongoDB for analytics
-   */
-  async getAllAlerts(limit: number = 100): Promise<CriticalAlert[]> {
-    const docs = await CriticalAlertModel.find()
-      .sort({ timestamp: -1 })
-      .limit(limit);
-    return docs.map(d => this.docToAlert(d));
-  }
-
-  /**
-   * Get alert stats from entire database
-   */
-  async getAlertStats(): Promise<{
-    total: number;
-    pending: number;
-    acknowledged: number;
-    resolved: number;
-    escalated: number;
-    avgResponseTimeMs: number;
-  }> {
-    const [total, pending, acknowledged, resolved, escalated] = await Promise.all([
-      CriticalAlertModel.countDocuments(),
-      CriticalAlertModel.countDocuments({ status: 'pending' }),
-      CriticalAlertModel.countDocuments({ status: 'acknowledged' }),
-      CriticalAlertModel.countDocuments({ status: 'resolved' }),
-      CriticalAlertModel.countDocuments({ status: 'escalated' }),
-    ]);
-
-    // Avg response time for acknowledged alerts
-    const ackedAlerts = await CriticalAlertModel.find({
-      status: { $in: ['acknowledged', 'resolved'] },
-      acknowledgedAt: { $exists: true },
-    }).select('timestamp acknowledgedAt');
-
-    let avgResponseTimeMs = 0;
-    if (ackedAlerts.length > 0) {
-      const totalMs = ackedAlerts.reduce((sum, a) => {
-        return sum + (new Date(a.acknowledgedAt!).getTime() - new Date(a.timestamp).getTime());
-      }, 0);
-      avgResponseTimeMs = totalMs / ackedAlerts.length;
-    }
-
-    return { total, pending, acknowledged, resolved, escalated, avgResponseTimeMs };
-  }
-
-  /**
    * Get alert by ID
    */
   getAlert(alertId: string): CriticalAlert | undefined {
-    return this.alertCache.get(alertId);
-  }
-
-  /**
-   * Get alert by ID — async version with DB fallback
-   */
-  async getAlertAsync(alertId: string): Promise<CriticalAlert | null> {
-    const cached = this.alertCache.get(alertId);
-    if (cached) return cached;
-    const doc = await CriticalAlertModel.findOne({ alertId });
-    if (!doc) return null;
-    const alert = this.docToAlert(doc);
-    this.alertCache.set(alertId, alert);
-    return alert;
+    return this.activeAlerts.get(alertId);
   }
 
   /**
@@ -781,26 +640,17 @@ This case requires IMMEDIATE attention.
     resolution: string,
     clinicalMemberId?: string
   ): Promise<void> {
-    let alert = this.alertCache.get(alertId);
+    const alert = this.activeAlerts.get(alertId);
 
     if (!alert) {
-      const doc = await CriticalAlertModel.findOne({ alertId });
-      if (!doc) throw new Error(`Alert ${alertId} not found`);
-      alert = this.docToAlert(doc);
+      throw new Error(`Alert ${alertId} not found`);
     }
 
     alert.status = 'resolved';
     if (clinicalMemberId) {
       alert.acknowledgedBy = clinicalMemberId;
     }
-    // Remove resolved alert from cache (no longer active)
-    this.alertCache.delete(alertId);
-
-    // Persist to MongoDB
-    CriticalAlertModel.findOneAndUpdate(
-      { alertId },
-      { status: 'resolved', resolvedAt: new Date(), resolution, acknowledgedBy: clinicalMemberId || alert.acknowledgedBy }
-    ).catch(err => logger.error('Failed to persist resolution:', err));
+    this.activeAlerts.set(alertId, alert);
 
     logger.info(`✅ Alert ${alertId} resolved: ${resolution}`);
 
@@ -810,29 +660,6 @@ This case requires IMMEDIATE attention.
       clearTimeout(timer);
       this.escalationTimers.delete(alertId);
     }
-  }
-
-  /**
-   * Reset an acknowledged alert back to pending (e.g. when expert disconnects)
-   * Returns the alert if reset was successful, null otherwise.
-   */
-  async resetAlertToPending(alertId: string): Promise<CriticalAlert | null> {
-    const alert = this.alertCache.get(alertId);
-    if (!alert || alert.status !== 'acknowledged') return null;
-
-    alert.status = 'pending';
-    alert.acknowledgedBy = undefined;
-    alert.acknowledgedAt = undefined;
-    this.alertCache.set(alertId, alert);
-
-    // Persist to MongoDB
-    CriticalAlertModel.findOneAndUpdate(
-      { alertId },
-      { status: 'pending', acknowledgedBy: null, acknowledgedAt: null }
-    ).catch(err => logger.error('Failed to reset alert status:', err));
-
-    logger.warn(`🔄 Alert ${alertId} reset to pending`);
-    return alert;
   }
 }
 

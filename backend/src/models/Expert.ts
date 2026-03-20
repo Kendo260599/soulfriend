@@ -39,6 +39,7 @@ const ExpertSchema: Schema = new Schema(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Invalid email format'],
+      index: true,
     },
     password: {
       type: String,
@@ -125,7 +126,8 @@ ExpertSchema.methods.comparePassword = async function (
   }
 };
 
-// Indexes (email already indexed via unique: true)
+// Indexes
+ExpertSchema.index({ email: 1 });
 ExpertSchema.index({ role: 1, availability: 1 }); // Find available experts by role
 ExpertSchema.index({ active: 1, verified: 1 }); // Find active verified experts
 

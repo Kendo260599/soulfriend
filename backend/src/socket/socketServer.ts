@@ -5,12 +5,8 @@
 
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import jwt from 'jsonwebtoken';
 import logger from '../utils/logger';
 import { criticalInterventionService } from '../services/criticalInterventionService';
-import { expertMonitoringService } from '../services/pge/expertMonitoringService';
-import InterventionMessage from '../models/InterventionMessage';
-import ConversationLog from '../models/ConversationLog';
 
 // =============================================================================
 // TYPES & INTERFACES
@@ -44,39 +40,20 @@ interface HITLAlert {
 const getUserRoom = (userId: string, sessionId: string) => `user_${userId}_${sessionId}`;
 const getExpertRoom = () => 'expert_dashboard';
 const getInterventionRoom = (alertId: string) => `intervention_${alertId}`;
-const getDirectChatRoom = (userId: string, sessionId: string) => `direct_${userId}_${sessionId}`;
-
-// Track connected users for expert direct chat
-const connectedUsers = new Map<string, { userId: string; sessionId: string; connectedAt: Date }>();
-
-// Simple rate limiter: userId -> { count, resetAt }
-const rateLimiter = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 15;       // max messages
-const RATE_WINDOW_MS = 30000; // per 30 seconds
 
 // =============================================================================
 // SOCKET.IO SERVER INITIALIZATION
 // =============================================================================
 
 export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
-  const SOCKET_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://soulfriend.vercel.app',
-    'https://soulfriend-v4.vercel.app',
-    'https://soulfriend-api.onrender.com',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean) as string[];
-
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (SOCKET_ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')) {
-          return callback(null, true);
-        }
-        callback(new Error('Not allowed by CORS'));
-      },
+      origin: [
+        'http://localhost:3000',
+        'https://soulfriend-kendo260599s-projects.vercel.app',
+        'https://soulfriend-git-main-kendo260599s-projects.vercel.app',
+        'https://soulfriend-production.up.railway.app'
+      ],
       methods: ['GET', 'POST'],
       credentials: true
     },
@@ -88,38 +65,11 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
   logger.info('🔌 Socket.io server initializing...');
 
   // =============================================================================
-  // SOCKET AUTHENTICATION MIDDLEWARE
-  // =============================================================================
-
-  const authenticateSocket = (socket: Socket, next: (err?: Error) => void) => {
-    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
-    if (!token) {
-      logger.warn(`🔒 Socket connection rejected: No auth token provided`);
-      return next(new Error('Authentication required'));
-    }
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      logger.error('JWT_SECRET not configured');
-      return next(new Error('Server configuration error'));
-    }
-    try {
-      const decoded = jwt.verify(token as string, jwtSecret) as any;
-      (socket as any).user = decoded;
-      next();
-    } catch (err) {
-      logger.warn(`🔒 Socket connection rejected: Invalid token`);
-      return next(new Error('Invalid authentication token'));
-    }
-  };
-
-  // =============================================================================
   // USER NAMESPACE - For users in crisis
   // =============================================================================
 
   const userNamespace = io.of('/user');
 
-  // User namespace does NOT require JWT (users are anonymous session-based)
-  // But we validate userId/sessionId presence
   userNamespace.on('connection', (socket: Socket) => {
     const { userId, sessionId } = socket.handshake.query as { userId?: string; sessionId?: string };
 
@@ -135,30 +85,9 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     const userRoom = getUserRoom(userId, sessionId);
     socket.join(userRoom);
 
-    // Track connected user
-    connectedUsers.set(`${userId}_${sessionId}`, { userId, sessionId, connectedAt: new Date() });
-
-    // Notify expert dashboard about new user
-    io.of('/expert').to(getExpertRoom()).emit('user_connected', {
-      userId, sessionId, connectedAt: new Date()
-    });
-
     // Handle user messages
     socket.on('user_message', async (data: { message: string; timestamp: Date }) => {
       const { message, timestamp } = data;
-
-      // Rate limiting
-      const now = Date.now();
-      const entry = rateLimiter.get(userId);
-      if (entry && now < entry.resetAt) {
-        entry.count++;
-        if (entry.count > RATE_LIMIT) {
-          socket.emit('rate_limited', { message: 'Bạn đang gửi tin nhắn quá nhanh. Vui lòng chờ một chút.' });
-          return;
-        }
-      } else {
-        rateLimiter.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
-      }
 
       logger.info(`💬 User message: ${userId} | ${message.substring(0, 50)}...`);
 
@@ -174,16 +103,6 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         const activeAlert = await getActiveInterventionForSession(sessionId);
         
         if (activeAlert) {
-          // Persist user message to MongoDB
-          InterventionMessage.create({
-            alertId: activeAlert.id,
-            sessionId,
-            userId,
-            sender: 'user',
-            message,
-            timestamp: timestamp || new Date(),
-          }).catch(err => logger.warn('Failed to persist user intervention message:', err));
-
           // Forward message to expert
           const interventionRoom = getInterventionRoom(activeAlert.id);
           io.of('/expert').to(interventionRoom).emit('user_message', {
@@ -199,57 +118,11 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       } catch (error) {
         logger.error('Error checking active intervention:', error);
       }
-
-      // Also forward to direct chat room (if expert is chatting directly)
-      const directRoom = getDirectChatRoom(userId, sessionId);
-      const directRoomSockets = await io.of('/expert').in(directRoom).fetchSockets();
-      logger.info(`📡 Direct chat room ${directRoom}: ${directRoomSockets.length} expert socket(s)`);
-      if (directRoomSockets.length > 0) {
-        io.of('/expert').to(directRoom).emit('user_message', {
-          userId, sessionId, message, timestamp
-        });
-        logger.info(`📤 User message forwarded to expert in direct chat: ${directRoom}`);
-        // Persist user message for direct chat history
-        InterventionMessage.create({
-          sessionId,
-          sender: 'user',
-          senderName: userId,
-          message,
-          timestamp: timestamp || new Date(),
-          read: false,
-        }).catch(err => logger.warn('Failed to persist direct chat user message:', err));
-      }
-    });
-
-    // Typing indicator
-    socket.on('user_typing', (data: { isTyping: boolean }) => {
-      // Forward to intervention room
-      getActiveInterventionForSession(sessionId).then(activeAlert => {
-        if (activeAlert) {
-          const interventionRoom = getInterventionRoom(activeAlert.id);
-          io.of('/expert').to(interventionRoom).emit('user_typing', {
-            userId,
-            sessionId,
-            alertId: activeAlert.id,
-            isTyping: data.isTyping,
-          });
-        }
-      }).catch(() => {});
-
-      // Forward to direct chat room
-      const directRoom = getDirectChatRoom(userId, sessionId);
-      io.of('/expert').to(directRoom).emit('user_typing', {
-        userId,
-        sessionId,
-        isTyping: data.isTyping,
-      });
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
       logger.info(`👤 User disconnected: ${userId}`);
-      connectedUsers.delete(`${userId}_${sessionId}`);
-      io.of('/expert').to(getExpertRoom()).emit('user_disconnected', { userId, sessionId });
     });
 
     // Send welcome message
@@ -258,44 +131,6 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       userId,
       sessionId
     });
-
-    // Check if there's an active expert session (HITL intervention or direct chat)
-    // This handles the case where the user refreshes/reconnects while expert is active
-    (async () => {
-      try {
-        // Check 1: Active HITL intervention
-        const activeAlert = await getActiveInterventionForSession(sessionId);
-        if (activeAlert) {
-          logger.info(`🔄 Restoring HITL state for reconnected user ${userId}, alert: ${activeAlert.id}`);
-          socket.emit('hitl_state', {
-            active: true,
-            expertName: 'CHUN❤️',
-            alertId: activeAlert.id,
-            reason: 'intervention',
-          });
-          return;
-        }
-
-        // Check 2: Active direct chat (expert is in the direct chat room)
-        const directRoom = getDirectChatRoom(userId, sessionId);
-        const expertSockets = await io.of('/expert').in(directRoom).fetchSockets();
-        if (expertSockets.length > 0) {
-          logger.info(`🔄 Restoring direct chat state for reconnected user ${userId}`);
-          socket.emit('hitl_state', {
-            active: true,
-            expertName: 'CHUN❤️',
-            reason: 'direct_chat',
-          });
-          return;
-        }
-
-        // No active expert session
-        socket.emit('hitl_state', { active: false });
-      } catch (error) {
-        logger.error('Error checking active expert session on reconnect:', error);
-        socket.emit('hitl_state', { active: false });
-      }
-    })();
   });
 
   // =============================================================================
@@ -304,12 +139,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
   const expertNamespace = io.of('/expert');
 
-  // Apply authentication to expert namespace
-  expertNamespace.use(authenticateSocket);
-
   expertNamespace.on('connection', (socket: Socket) => {
-    const expertId = (socket.handshake.auth?.expertId || socket.handshake.query?.expertId) as string | undefined;
-    const expertName = (socket.handshake.auth?.expertName || socket.handshake.query?.expertName) as string | undefined;
+    const { expertId, expertName } = socket.handshake.query as { expertId?: string; expertName?: string };
 
     if (!expertId || !expertName) {
       logger.warn('Expert connected without credentials');
@@ -318,10 +149,6 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     }
 
     logger.info(`👨‍⚕️ Expert connected: ${expertName} (${expertId})`);
-
-    // Track expert's active session (for cleanup on disconnect)
-    let currentIntervention: { alertId: string; userId: string; sessionId: string } | null = null;
-    let currentDirectChat: { userId: string; sessionId: string } | null = null;
 
     // Join expert dashboard room (for broadcast alerts)
     socket.join(getExpertRoom());
@@ -340,10 +167,6 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const interventionRoom = getInterventionRoom(alertId);
       socket.join(interventionRoom);
 
-      // Track active intervention for disconnect cleanup
-      currentIntervention = { alertId, userId, sessionId };
-      currentDirectChat = null; // Can only be in one mode
-
       // Acknowledge alert in the system
       try {
         await criticalInterventionService.acknowledgeAlert(alertId, expertId);
@@ -355,8 +178,8 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       // Notify user that expert has joined
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('expert_joined', {
-        expertName: 'CHUN❤️',
-        message: `❤️ CHUN❤️ đã tham gia cuộc trò chuyện. Xin chào bạn!`,
+        expertName,
+        message: `👨‍⚕️ Chuyên gia tâm lý ${expertName} đã tham gia cuộc trò chuyện. Xin chào bạn!`,
         timestamp: new Date()
       });
 
@@ -390,23 +213,14 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
 
       logger.info(`👨‍⚕️ Expert message to ${userId}: ${message.substring(0, 50)}...`);
 
-      // Persist message to MongoDB
-      InterventionMessage.create({
-        alertId,
-        sessionId,
-        userId,
-        sender: 'expert',
-        senderName: expertName,
-        senderId: expertId,
-        message,
-        timestamp: timestamp || new Date(),
-      }).catch(err => logger.warn('Failed to persist expert intervention message:', err));
+      // Save message to database (implement later)
+      // await saveInterventionMessage(alertId, sessionId, message, 'expert', expertId);
 
       // Send to user
       const userRoom = getUserRoom(userId, sessionId);
       userNamespace.to(userRoom).emit('expert_message', {
         from: 'expert',
-        expertName: 'CHUN❤️',
+        expertName,
         message,
         timestamp
       });
@@ -415,38 +229,12 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       const interventionRoom = getInterventionRoom(alertId);
       socket.to(interventionRoom).emit('expert_message_sent', {
         expertId,
-        expertName: 'CHUN❤️',
+        expertName,
         message,
         timestamp
       });
 
       logger.info(`📤 Expert message delivered to user ${userId}`);
-    });
-
-    // Expert typing indicator
-    socket.on('expert_typing', (data: {
-      alertId: string;
-      userId: string;
-      sessionId: string;
-      isTyping: boolean;
-    }) => {
-      const userRoom = getUserRoom(data.userId, data.sessionId);
-      userNamespace.to(userRoom).emit('expert_typing', {
-        expertName: 'CHUN❤️',
-        isTyping: data.isTyping,
-      });
-    });
-
-    // Mark messages as read
-    socket.on('mark_read', async (data: { alertId: string }) => {
-      try {
-        await InterventionMessage.updateMany(
-          { alertId: data.alertId, sender: 'user', read: false },
-          { read: true }
-        );
-      } catch (err) {
-        logger.warn('Failed to mark messages as read:', err);
-      }
     });
 
     // Expert closes intervention
@@ -467,7 +255,7 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         // Notify user
         const userRoom = getUserRoom(userId, sessionId);
         userNamespace.to(userRoom).emit('intervention_ended', {
-          message: `❤️ CHUN❤️ đã kết thúc can thiệp. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️ hoặc liên hệ lại bất cứ lúc nào.
+          message: `👨‍⚕️ Chuyên gia đã kết thúc can thiệp. Bạn có thể tiếp tục chat với AI hoặc liên hệ lại bất cứ lúc nào.
           
 📧 Email: kendo2605@gmail.com
 📞 Hotline: 0938021111`,
@@ -477,9 +265,6 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
         // Leave intervention room
         const interventionRoom = getInterventionRoom(alertId);
         socket.leave(interventionRoom);
-
-        // Clear tracking
-        currentIntervention = null;
 
         // Confirm to expert
         socket.emit('intervention_closed', { alertId, success: true });
@@ -491,189 +276,9 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       }
     });
 
-    // =========================================================================
-    // DIRECT CHAT — Expert initiates conversation with any active user
-    // =========================================================================
-
-    // Expert requests list of connected users
-    socket.on('get_active_users', () => {
-      const users = Array.from(connectedUsers.values());
-      socket.emit('active_users', users);
-    });
-
-    // Expert starts direct chat with a user
-    socket.on('start_direct_chat', async (data: {
-      userId: string;
-      sessionId: string;
-      rejoin?: boolean;
-    }) => {
-      const { userId, sessionId, rejoin } = data;
-      logger.info(`👨‍⚕️ Expert ${expertName} ${rejoin ? 're-joining' : 'starting'} direct chat with ${userId}`);
-
-      const directRoom = getDirectChatRoom(userId, sessionId);
-      socket.join(directRoom);
-
-      // Track active direct chat for disconnect cleanup
-      currentDirectChat = { userId, sessionId };
-      currentIntervention = null; // Can only be in one mode
-
-      // Load conversation history (skip on rejoin — frontend already has it)
-      if (!rejoin) {
-        try {
-          const history = await getSessionHistory(sessionId);
-          socket.emit('direct_chat_history', { userId, sessionId, history });
-        } catch (error) {
-          socket.emit('direct_chat_history', { userId, sessionId, history: [] });
-        }
-
-        // Notify user (only on first join, not re-join after reconnect)
-        const userRoom = getUserRoom(userId, sessionId);
-        userNamespace.to(userRoom).emit('expert_joined', {
-          expertName: 'CHUN❤️',
-          message: `❤️ CHUN❤️ đã tham gia cuộc trò chuyện.`,
-          timestamp: new Date()
-        });
-      }
-
-      socket.emit('direct_chat_started', { userId, sessionId, success: true });
-    });
-
-    // Expert sends direct message to user (no alertId needed)
-    socket.on('direct_message', async (data: {
-      userId: string;
-      sessionId: string;
-      message: string;
-      timestamp: Date;
-    }) => {
-      const { userId, sessionId, message, timestamp } = data;
-
-      logger.info(`💬 Expert direct message to ${userId}: ${message.substring(0, 50)}...`);
-
-      // Persist to InterventionMessage for proper history retrieval
-      InterventionMessage.create({
-        sessionId,
-        sender: 'expert',
-        senderName: expertName,
-        message,
-        timestamp: timestamp || new Date(),
-        read: true,
-      }).catch(err => logger.warn('Failed to persist direct message:', err));
-
-      // Send to user
-      const userRoom = getUserRoom(userId, sessionId);
-      userNamespace.to(userRoom).emit('expert_message', {
-        from: 'expert',
-        expertName: 'CHUN❤️',
-        message,
-        timestamp
-      });
-
-      // Broadcast to other experts in same direct chat
-      const directRoom = getDirectChatRoom(userId, sessionId);
-      socket.to(directRoom).emit('expert_message_sent', {
-        expertId, expertName: 'CHUN❤️', message, timestamp
-      });
-    });
-
-    // Expert typing indicator in direct chat
-    socket.on('direct_typing', (data: {
-      userId: string;
-      sessionId: string;
-      isTyping: boolean;
-    }) => {
-      const userRoom = getUserRoom(data.userId, data.sessionId);
-      userNamespace.to(userRoom).emit('expert_typing', {
-        expertName: 'CHUN❤️',
-        isTyping: data.isTyping,
-      });
-    });
-
-    // Expert ends direct chat
-    socket.on('end_direct_chat', (data: { userId: string; sessionId: string }) => {
-      const { userId, sessionId } = data;
-      const directRoom = getDirectChatRoom(userId, sessionId);
-      socket.leave(directRoom);
-
-      // Clear tracking
-      currentDirectChat = null;
-
-      // Notify user
-      const userRoom = getUserRoom(userId, sessionId);
-      userNamespace.to(userRoom).emit('intervention_ended', {
-        message: '❤️ CHUN❤️ đã kết thúc cuộc trò chuyện. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️.',
-        timestamp: new Date()
-      });
-
-      socket.emit('direct_chat_ended', { userId, sessionId, success: true });
-      logger.info(`👨‍⚕️ Expert ${expertName} ended direct chat with ${userId}`);
-    });
-
-    // Handle disconnection — clean up and notify affected users
-    socket.on('disconnect', async () => {
+    // Handle disconnection
+    socket.on('disconnect', () => {
       logger.info(`👨‍⚕️ Expert disconnected: ${expertName}`);
-
-      // If expert was in an active intervention, notify user and reset alert
-      if (currentIntervention) {
-        const { alertId, userId, sessionId } = currentIntervention;
-        logger.warn(`⚠️ Expert ${expertName} disconnected during intervention ${alertId}`);
-
-        // Check if any OTHER experts are still in the intervention room
-        const interventionRoom = getInterventionRoom(alertId);
-        const remainingSockets = await io.of('/expert').in(interventionRoom).fetchSockets();
-        
-        if (remainingSockets.length === 0) {
-          // No other expert is handling this — notify user and reset alert
-          const userRoom = getUserRoom(userId, sessionId);
-          userNamespace.to(userRoom).emit('intervention_ended', {
-            message: '❤️ CHUN❤️ tạm thời mất kết nối. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️ — chuyên gia sẽ quay lại sớm nhất.',
-            timestamp: new Date(),
-          });
-
-          // Reset alert back to 'pending' so escalation timer can re-fire
-          // and other experts can pick it up
-          try {
-            const resetAlert = await criticalInterventionService.resetAlertToPending(alertId);
-            if (resetAlert) {
-              // Re-broadcast to all experts
-              expertNamespace.to(getExpertRoom()).emit('hitl_alert', {
-                alertId: resetAlert.id,
-                userId: resetAlert.userId,
-                sessionId: resetAlert.sessionId,
-                riskLevel: resetAlert.riskLevel,
-                riskType: resetAlert.riskType,
-                message: resetAlert.userMessage,
-                keywords: resetAlert.detectedKeywords,
-                timestamp: resetAlert.timestamp,
-                rebroadcast: true,
-              });
-
-              logger.warn(`🔄 Alert ${alertId} reset to pending and re-broadcast`);
-            }
-          } catch (err) {
-            logger.error('Error resetting alert on expert disconnect:', err);
-          }
-        }
-        currentIntervention = null;
-      }
-
-      // If expert was in a direct chat, notify user
-      if (currentDirectChat) {
-        const { userId, sessionId } = currentDirectChat;
-        logger.warn(`⚠️ Expert ${expertName} disconnected during direct chat with ${userId}`);
-
-        // Check if any OTHER experts are still in the direct room
-        const directRoom = getDirectChatRoom(userId, sessionId);
-        const remainingSockets = await io.of('/expert').in(directRoom).fetchSockets();
-
-        if (remainingSockets.length === 0) {
-          const userRoom = getUserRoom(userId, sessionId);
-          userNamespace.to(userRoom).emit('intervention_ended', {
-            message: '❤️ CHUN❤️ tạm thời mất kết nối. Bạn có thể tiếp tục chat với 𝑺𝒆𝒄𝒓𝒆𝒕❤️ — chuyên gia sẽ quay lại sớm nhất.',
-            timestamp: new Date(),
-          });
-        }
-        currentDirectChat = null;
-      }
     });
 
     // Send welcome message
@@ -682,28 +287,6 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
       expertId,
       expertName
     });
-
-    // Send active alerts to the reconnecting expert (in case they refreshed)
-    (async () => {
-      try {
-        const activeAlerts = criticalInterventionService.getActiveAlerts();
-        if (activeAlerts.length > 0) {
-          socket.emit('active_alerts_restore', activeAlerts.map(alert => ({
-            alertId: alert.id,
-            userId: alert.userId,
-            sessionId: alert.sessionId,
-            riskLevel: alert.riskLevel,
-            riskType: alert.riskType,
-            message: alert.userMessage,
-            keywords: alert.detectedKeywords,
-            timestamp: alert.timestamp,
-            status: alert.status,
-          })));
-        }
-      } catch (err) {
-        logger.warn('Failed to restore active alerts for expert:', err);
-      }
-    })();
   });
 
   // =============================================================================
@@ -728,27 +311,9 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     logger.info(`📡 HITL alert broadcasted to expert dashboard`);
   };
 
-  // =============================================================================
-  // PGE MONITORING BROADCASTER — Real-time expert monitoring (Phase 13)
-  // =============================================================================
-
-  expertMonitoringService.setBroadcaster((event: string, data: any) => {
-    expertNamespace.to(getExpertRoom()).emit(event, data);
-  });
-
-  // Hydrate monitoring service with recent user data from DB
-  expertMonitoringService.hydrate().catch(err => {
-    logger.warn('Expert monitoring hydration failed:', err);
-  });
-
   logger.info('✅ Socket.io server initialized successfully');
   logger.info('   - User namespace: /user');
   logger.info('   - Expert namespace: /expert');
-  logger.info('   - Direct chat: enabled');
-  logger.info('   - PGE monitoring broadcaster: attached');
-
-  // Expose connected users for REST API access
-  (io as any).getConnectedUsers = () => Array.from(connectedUsers.values());
 
   return io;
 }
@@ -793,36 +358,9 @@ async function getActiveInterventionForSession(sessionId: string): Promise<HITLA
  */
 async function getSessionHistory(sessionId: string): Promise<any[]> {
   try {
-    // 1. Get intervention messages from MongoDB
-    const interventionMsgs = await InterventionMessage.find({ sessionId })
-      .sort({ timestamp: 1 })
-      .limit(100)
-      .lean();
-
-    if (interventionMsgs.length > 0) {
-      return interventionMsgs.map(m => ({
-        sender: m.sender,
-        senderName: m.senderName,
-        message: m.message,
-        timestamp: m.timestamp,
-        read: m.read,
-      }));
-    }
-
-    // 2. Fallback: Get recent chatbot conversation from ConversationLog
-    const chatLogs = await ConversationLog.find({ sessionId })
-      .sort({ timestamp: -1 })
-      .limit(20)
-      .lean();
-
-    const history: any[] = [];
-    for (const log of chatLogs.reverse()) {
-      history.push(
-        { sender: 'user', message: log.userMessage, timestamp: log.timestamp },
-        { sender: 'assistant', message: log.aiResponse, timestamp: log.timestamp }
-      );
-    }
-    return history;
+    // TODO: Implement MongoDB query to get conversation history
+    // For now, return empty array
+    return [];
   } catch (error) {
     logger.error('Error getting session history:', error);
     return [];
@@ -830,4 +368,6 @@ async function getSessionHistory(sessionId: string): Promise<any[]> {
 }
 
 export default initializeSocketServer;
+
+
 

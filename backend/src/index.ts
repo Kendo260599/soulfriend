@@ -32,6 +32,22 @@ import researchRoutes from './routes/research';
 import testRoutes from './routes/tests';
 import userRoutes from './routes/user';
 
+// ✅ MISSING ROUTES - Added after security audit
+import userAuthRoutes from './routes/userAuth';
+import uploadRoutes from './routes/upload';
+import spsiRoutes from './routes/spsi';
+import pgeRoutes from './routes/pge';
+import abTestingRoutes from './routes/abTesting';
+import fineTuningRoutes from './routes/fineTuning';
+import memoryTestRoutes from './routes/memoryTest';
+
+// v5 Routes
+import analyticsRoutes from './routes/v5/analytics';
+import learningPipelineRoutes from './routes/v5/learningPipeline';
+import systemHealthRoutes from './routes/v5/systemHealth';
+import experimentsRoutes from './routes/v5/experiments';
+import knowledgeGraphRoutes from './routes/v5/knowledgeGraph';
+
 // Import Models (để MongoDB tạo collections)
 import './models/ConversationLog';
 import './models/Expert';
@@ -105,18 +121,34 @@ app.use(
   })
 );
 
-// CORS configuration - MUST be before other middleware
-// Use simple origin allow all for now to debug
-app.use(
-  cors({
-    origin: true, // Allow all origins temporarily to debug
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
-    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
-    optionsSuccessStatus: 200,
-  })
-);
+// CORS configuration - SECURE whitelist
+const allowedOrigins = config.CORS_ORIGIN;
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    // In production, you may want to set origin: false and be more strict
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check if origin is in whitelist
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
+    // Log blocked origins for security monitoring
+    console.warn(`CORS blocked request from unauthorized origin: ${origin}`);
+    callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Version'],
+  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // ====================
 // CORS MIDDLEWARE - ALWAYS SET HEADERS
@@ -208,6 +240,21 @@ app.use('/api/v2/user', userRoutes);
 app.use('/api/v2/research', researchRoutes);
 app.use('/api/v2/chatbot', chatbotRoutes);
 app.use('/api/v2/gamefi', gamefiRoutes);
+
+// ✅ MISSING ROUTES - Added after security audit
+app.use('/api/v2/auth', userAuthRoutes);
+app.use('/api/v2/spsi', spsiRoutes);
+app.use('/api/v2/pge', pgeRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/v2/ab-testing', abTestingRoutes);
+app.use('/api/v2/fine-tuning', fineTuningRoutes);
+
+// v5 Routes (beta features)
+app.use('/api/v5/analytics', analyticsRoutes);
+app.use('/api/v5/learning', learningPipelineRoutes);
+app.use('/api/v5/system', systemHealthRoutes);
+app.use('/api/v5/experiments', experimentsRoutes);
+app.use('/api/v5/knowledge', knowledgeGraphRoutes);
 
 // ✨ NEW: HITL Feedback Loop & Conversation Learning
 app.use('/api/hitl-feedback', hitlFeedbackRoutes);

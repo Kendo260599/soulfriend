@@ -10,12 +10,13 @@ import logger from '../utils/logger';
 
 const router = express.Router();
 
-// JWT Secret - MUST be set via environment variable
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is not set');
-  process.exit(1);
+// JWT Secret (REQUIRED in production - throw error if not set)
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: JWT_SECRET environment variable is required in production');
 }
-const JWT_SECRET: string = process.env.JWT_SECRET;
+// Use a default for development only (should never happen in production)
+const effectiveJwtSecret = JWT_SECRET || 'dev-only-secret-do-not-use-in-production';
 const JWT_EXPIRES_IN = '7d'; // Token valid for 7 days
 
 // =============================================================================
@@ -35,42 +36,10 @@ router.post('/register', async (req: Request, res: Response) => {
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (typeof email !== 'string' || !emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email format',
-      });
-    }
-
-    if (typeof password !== 'string' || password.length < 8) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
         error: 'Password must be at least 8 characters',
-      });
-    }
-
-    if (typeof name !== 'string' || name.length < 2 || name.length > 100) {
-      return res.status(400).json({
-        success: false,
-        error: 'Name must be between 2 and 100 characters',
-      });
-    }
-
-    // Validate optional fields
-    const validRoles = ['crisis_counselor', 'psychologist', 'psychiatrist', 'social_worker', 'supervisor'];
-    if (role && (typeof role !== 'string' || !validRoles.includes(role))) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
-      });
-    }
-
-    if (phone && (typeof phone !== 'string' || phone.length > 20)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid phone number',
       });
     }
 
@@ -131,19 +100,10 @@ router.post('/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     // Validation
-    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
         error: 'Email and password are required',
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email format',
       });
     }
 
@@ -194,7 +154,7 @@ router.post('/login', async (req: Request, res: Response) => {
         name: expert.name,
         role: expert.role,
       },
-      JWT_SECRET,
+      effectiveJwtSecret,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
@@ -335,201 +295,6 @@ router.patch('/availability', authenticateExpert, async (req: Request, res: Resp
 });
 
 // =============================================================================
-// ADMIN MIDDLEWARE: Require supervisor role
-// =============================================================================
-
-function requireAdmin(req: Request, res: Response, next: any) {
-  const role = (req as any).expert?.role;
-  if (role !== 'supervisor' && role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      error: 'Admin or supervisor role required',
-    });
-  }
-  next();
-}
-
-// =============================================================================
-// GET /api/v2/expert/list
-// List all experts (admin/supervisor only)
-// =============================================================================
-
-router.get('/list', authenticateExpert, requireAdmin, async (req: Request, res: Response) => {
-  try {
-    const experts = await Expert.find({}).select('-password').sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: experts.length,
-      experts: experts.map(e => ({
-        id: e._id,
-        email: e.email,
-        name: e.name,
-        role: e.role,
-        phone: e.phone,
-        specialty: e.specialty,
-        availability: e.availability,
-        verified: e.verified,
-        active: e.active,
-        lastLogin: e.lastLogin,
-        interventionStats: e.interventionStats,
-        createdAt: e.createdAt,
-      })),
-    });
-  } catch (error) {
-    logger.error('Error listing experts:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to list experts',
-    });
-  }
-});
-
-// =============================================================================
-// PATCH /api/v2/expert/:id/verify
-// Verify an expert account (admin/supervisor only)
-// =============================================================================
-
-router.patch('/:id/verify', authenticateExpert, requireAdmin, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { verified } = req.body;
-
-    const expert = await Expert.findByIdAndUpdate(
-      id,
-      { verified: verified !== false },
-      { new: true }
-    ).select('-password');
-
-    if (!expert) {
-      return res.status(404).json({
-        success: false,
-        error: 'Expert not found',
-      });
-    }
-
-    logger.info(`✅ Expert ${expert.email} verification set to ${expert.verified} by ${(req as any).expert.email}`);
-
-    res.status(200).json({
-      success: true,
-      message: `Expert ${expert.verified ? 'verified' : 'unverified'} successfully`,
-      expert: {
-        id: expert._id,
-        email: expert.email,
-        name: expert.name,
-        verified: expert.verified,
-        active: expert.active,
-      },
-    });
-  } catch (error) {
-    logger.error('Error verifying expert:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to verify expert',
-    });
-  }
-});
-
-// =============================================================================
-// PATCH /api/v2/expert/:id/activate
-// Activate/deactivate an expert account (admin/supervisor only)
-// =============================================================================
-
-router.patch('/:id/activate', authenticateExpert, requireAdmin, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { active } = req.body;
-
-    const expert = await Expert.findByIdAndUpdate(
-      id,
-      { active: active !== false },
-      { new: true }
-    ).select('-password');
-
-    if (!expert) {
-      return res.status(404).json({
-        success: false,
-        error: 'Expert not found',
-      });
-    }
-
-    logger.info(`✅ Expert ${expert.email} activation set to ${expert.active} by ${(req as any).expert.email}`);
-
-    res.status(200).json({
-      success: true,
-      message: `Expert ${expert.active ? 'activated' : 'deactivated'} successfully`,
-      expert: {
-        id: expert._id,
-        email: expert.email,
-        name: expert.name,
-        verified: expert.verified,
-        active: expert.active,
-      },
-    });
-  } catch (error) {
-    logger.error('Error activating expert:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to activate expert',
-    });
-  }
-});
-
-// =============================================================================
-// PATCH /api/v2/expert/:id/role
-// Change expert role (admin/supervisor only)
-// =============================================================================
-
-router.patch('/:id/role', authenticateExpert, requireAdmin, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
-
-    const validRoles = ['crisis_counselor', 'psychologist', 'psychiatrist', 'social_worker', 'supervisor'];
-    if (!role || !validRoles.includes(role)) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
-      });
-    }
-
-    const expert = await Expert.findByIdAndUpdate(
-      id,
-      { role },
-      { new: true }
-    ).select('-password');
-
-    if (!expert) {
-      return res.status(404).json({
-        success: false,
-        error: 'Expert not found',
-      });
-    }
-
-    logger.info(`✅ Expert ${expert.email} role changed to ${role} by ${(req as any).expert.email}`);
-
-    res.status(200).json({
-      success: true,
-      message: `Expert role updated to ${role}`,
-      expert: {
-        id: expert._id,
-        email: expert.email,
-        name: expert.name,
-        role: expert.role,
-        verified: expert.verified,
-        active: expert.active,
-      },
-    });
-  } catch (error) {
-    logger.error('Error changing expert role:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to change role',
-    });
-  }
-});
-
-// =============================================================================
 // MIDDLEWARE: Authenticate Expert via JWT
 // =============================================================================
 
@@ -547,7 +312,7 @@ export function authenticateExpert(req: Request, res: Response, next: any) {
     const token = authHeader.substring(7); // Remove 'Bearer '
 
     // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, effectiveJwtSecret) as any;
 
     // Attach expert info to request
     (req as any).expert = {
@@ -568,4 +333,6 @@ export function authenticateExpert(req: Request, res: Response, next: any) {
 }
 
 export default router;
+
+
 

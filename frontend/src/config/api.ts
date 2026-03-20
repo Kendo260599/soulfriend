@@ -16,7 +16,6 @@ export const API_CONFIG = {
     CHATBOT: '/api/v2/chatbot'
   },
   TIMEOUT: 10000, // 10 seconds for normal APIs
-  FOUNDATION_TIMEOUT: 45000, // allow backend cold-start for foundation endpoints
   RETRY_ATTEMPTS: 3
 };
 

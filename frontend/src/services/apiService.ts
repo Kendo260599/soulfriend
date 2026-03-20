@@ -95,100 +95,16 @@ class ApiService {
     return this.post('/api/v2/admin/login', credentials);
   }
 
-  public async getFoundationLesson(learnerId = 1): Promise<AxiosResponse> {
-    return this.get(`/api/v2/foundation/lesson?learnerId=${encodeURIComponent(String(learnerId))}`, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async getFoundationTrackLesson(
-    track: 'grammar' | 'vocab',
-    lessonId: string,
-    learnerId = 1,
-  ): Promise<AxiosResponse> {
-    const query = [
-      `learnerId=${encodeURIComponent(String(learnerId))}`,
-      `track=${encodeURIComponent(track)}`,
-      `lessonId=${encodeURIComponent(lessonId)}`,
-    ].join('&');
-    return this.get(`/api/v2/foundation/lesson?${query}`, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async getFoundationCurriculum(): Promise<AxiosResponse> {
-    return this.get('/api/v2/foundation/curriculum', {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async getFoundationProgress(learnerId = 1): Promise<AxiosResponse> {
-    return this.get(`/api/v2/foundation/progress?learnerId=${encodeURIComponent(String(learnerId))}`, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async submitFoundationVocabCheck(payload: {
-    learnerId: number;
-    lessonId: string;
-    answers: Array<{ wordId: number; correct: boolean }>;
-  }): Promise<AxiosResponse> {
-    return this.post('/api/v2/foundation/vocab-check', payload, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async submitFoundationGrammarCheck(payload: {
-    learnerId: number;
-    lessonId: string;
-    grammarId: number;
-    correct: boolean;
-  }): Promise<AxiosResponse> {
-    return this.post('/api/v2/foundation/grammar-check', payload, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async getFoundationReview(learnerId = 1, limit = 20): Promise<AxiosResponse> {
-    const query = [
-      `learnerId=${encodeURIComponent(String(learnerId))}`,
-      `limit=${encodeURIComponent(String(limit))}`,
-    ].join('&');
-
-    return this.get(`/api/v2/foundation/review?${query}`, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  public async submitFoundationReview(payload: {
-    learnerId: number;
-    answers: Array<{ wordId: number; correct: boolean }>;
-  }): Promise<AxiosResponse> {
-    return this.post('/api/v2/foundation/review-submit', payload, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
-  }
-
-  // IELTS Listening Module (Stub methods for now)
   public async getListeningSections(partNum: number): Promise<AxiosResponse> {
-    // TODO: Implement backend endpoint
-    return this.get(`/api/v2/ielts/listening/sections/${partNum}`, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
+    return this.get(`/api/foundation/listening/sections/${partNum}`);
   }
 
   public async getListeningSectionDetails(sectionId: number): Promise<AxiosResponse> {
-    // TODO: Implement backend endpoint
-    return this.get(`/api/v2/ielts/listening/sections/${sectionId}`, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
+    return this.get(`/api/foundation/listening/sections/${sectionId}/details`);
   }
 
-  public async verifyListeningAnswers(payload: any): Promise<AxiosResponse> {
-    // TODO: Implement backend endpoint
-    return this.post('/api/v2/ielts/listening/verify', payload, {
-      timeout: API_CONFIG.FOUNDATION_TIMEOUT,
-    });
+  public async verifyListeningAnswers(data: any): Promise<AxiosResponse> {
+    return this.post('/api/foundation/listening/verify', data);
   }
 }
 

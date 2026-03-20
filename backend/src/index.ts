@@ -368,194 +368,118 @@ app.use(errorHandler);
 // DATABASE & SERVER STARTUP
 // ====================
 
+// ====================
+// CRITICAL: BIND PORT IMMEDIATELY ON MODULE LOAD
+// This ensures Render can detect the port as soon as possible
+// ====================
+const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
+
+// Start HTTP server IMMEDIATELY - this binds the port synchronously
+console.log(`🚀 CRITICAL: Binding to port ${actualPort} IMMEDIATELY...`);
+httpServer.listen(actualPort, '0.0.0.0', () => {
+  console.log(`✅ CRITICAL: Server successfully bound to port ${actualPort} at ${new Date().toISOString()}`);
+  console.log('╔══════════════════════════════════════════════════════════╗');
+  console.log('║          🚀 SoulFriend V4.0 Server Started!              ║');
+  console.log('╠══════════════════════════════════════════════════════════╣');
+  console.log(`║  Environment: ${config.NODE_ENV.padEnd(42)}║`);
+  console.log(`║  Port: ${actualPort.toString().padEnd(47)}║`);
+  console.log(`║  Health: http://0.0.0.0:${actualPort}/api/health        ║`);
+  console.log('╚══════════════════════════════════════════════════════════╝');
+});
+
+// Handle server errors
+httpServer.on('error', (error: any) => {
+  console.error('❌ Server binding error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${actualPort} is already in use`);
+    process.exit(1);
+  }
+});
+
+// Verify binding
+httpServer.on('listening', () => {
+  const address = httpServer.address();
+  console.log(`✅ Server listening event fired - port ${actualPort} is OPEN`);
+  console.log(`✅ Server address: ${JSON.stringify(address)}`);
+  console.log('✅ Render should now detect this port!');
+});
+
+// ====================
+// SERVER STARTUP - Initialize services after port is bound
+// ====================
 const startServer = async () => {
-  // CRITICAL: Calculate port FIRST, before any async operations
-  // This ensures we always have a port to bind to
-  const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
-  console.log('📊 Starting server...');
-  console.log(`📊 Environment: ${config.NODE_ENV}`);
-  console.log(`📊 Config PORT: ${PORT}`);
-  console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
-  console.log(`📊 Actual port to bind: ${actualPort}`);
+  console.log('📊 Starting background service initialization...');
 
-  // CRITICAL: Start HTTP server FIRST and IMMEDIATELY
-  // This ensures Render health check can detect the port immediately
-  // Socket.io and database will be initialized AFTER server is listening
-  console.log(`📊 Starting server on port: ${actualPort}`);
-  console.log(`📊 About to call httpServer.listen()...`);
-  console.log(`📊 Server address before listen: ${httpServer.address() || 'not listening'}`);
-
-  // CRITICAL: Always bind to port IMMEDIATELY, before any other initialization
-  // This ensures Render can detect the service is running
-  // Note: httpServer.listen() is SYNCHRONOUS and binds immediately
-  // The callback is called asynchronously when ready, but port is bound right away
+  // Initialize Socket.io (non-blocking)
   try {
-    // CRITICAL: Bind port synchronously - this MUST happen before any async operations
-    const server = httpServer.listen(actualPort, '0.0.0.0', () => {
-      console.log(`✅ Server successfully bound to port ${actualPort}`);
-      console.log(`✅ Render should now detect port ${actualPort}`);
-      console.log('╔════════════════════════════════════════════╗');
-      console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
-      console.log('╠════════════════════════════════════════════╣');
-      console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-      console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
-      console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
-      console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
-      console.log('╚════════════════════════════════════════════╝');
+    console.log('🔌 Initializing Socket.io...');
+    const io = initializeSocketServer(httpServer);
+    app.set('io', io);
+    (global as any).io = io;
+    console.log('✅ Socket.io initialized');
+  } catch (socketError) {
+    console.error('⚠️  Socket.io initialization failed:', socketError);
+  }
 
-      // Initialize Socket.io AFTER server is listening (non-blocking)
-      try {
-        console.log('🔌 Initializing Socket.io for real-time communication...');
-        const io = initializeSocketServer(httpServer);
-        
-        // Make io available to the app
-        app.set('io', io);
-        (global as any).io = io;
-        
-        console.log('✅ Socket.io initialized successfully');
-        console.log(`║   Socket.io: ENABLED (real-time chat)    ║`);
-      } catch (socketError) {
-        console.error('⚠️  Socket.io initialization failed, continuing without Socket.io:', socketError);
-        // Continue without Socket.io - server can still function
-      }
+  // Connect to database (non-blocking)
+  console.log('📊 Connecting to database...');
+  databaseConnection.connect().catch(err => {
+    console.warn('⚠️  Database connection failed:', err.message);
+  });
 
-      // Connect to database AFTER server starts (non-blocking)
-      console.log('📊 Connecting to database (non-blocking)...');
-      databaseConnection.connect().catch(err => {
-        console.warn('⚠️  Database connection failed, continuing without database:', err.message);
-      });
-
-      // Test email service connection
-      if (emailService.isReady()) {
-        emailService.testConnection().then((success: boolean) => {
-          if (success) {
-            console.log('✅ Email service ready for HITL alerts');
-          } else {
-            console.warn('⚠️  Email service connection test failed');
-          }
-        }).catch((err: Error) => {
-          console.warn('⚠️  Email service connection test error:', err.message);
-        });
-      } else {
-        console.warn('⚠️  Email service not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)');
-      }
+  // Test email service (non-blocking)
+  if (emailService.isReady()) {
+    emailService.testConnection().then((success: boolean) => {
+      console.log(success ? '✅ Email service ready' : '⚠️  Email service test failed');
+    }).catch((err: Error) => {
+      console.warn('⚠️  Email service error:', err.message);
     });
+  }
 
-    // Verify server is actually listening
-    server.on('listening', () => {
-      const address = server.address();
-      const listeningPort = typeof address === 'string' ? actualPort : (address?.port || actualPort);
-      console.log(`✅ Server is listening on port ${listeningPort}`);
-      console.log(`✅ Server address: ${JSON.stringify(address)}`);
-      console.log(`✅ Render health check should now be able to detect port ${listeningPort}`);
-      console.log(`✅ Health endpoint: http://0.0.0.0:${listeningPort}/api/health`);
-      
-      // Force flush logs to ensure Render sees them
-      if (process.stdout.isTTY === false) {
-        process.stdout.write('\n');
-      }
-    });
+  console.log('📊 Background service initialization complete');
+};
 
-    // Handle server errors
-    server.on('error', (error: any) => {
-      console.error('❌ Server error:', error);
-      if (error.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${actualPort} is already in use`);
-        process.exit(1);
-      } else {
-        console.error('❌ Server failed to start:', error.message);
-        process.exit(1);
-      }
-    });
+// Start background services
+startServer();
 
-    // Graceful shutdown
-    const gracefulShutdown = async (signal: string) => {
-      console.log(`\n⚠️  Received ${signal}. Starting graceful shutdown...`);
+// Graceful shutdown
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-      server.close(async () => {
-        console.log('🔒 HTTP server closed');
+// Handle uncaught exceptions
+process.on('uncaughtException', error => {
+  console.error('💥 Uncaught Exception:', error);
+  gracefulShutdown('uncaughtException');
+});
 
-        try {
-          await databaseConnection.disconnect();
-          console.log('👋 Graceful shutdown complete');
-          process.exit(0);
-        } catch (error) {
-          console.error('❌ Error during shutdown:', error);
-          process.exit(1);
-        }
-      });
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('unhandledRejection');
+});
 
-      // Force shutdown after 30 seconds
-      setTimeout(() => {
-        console.error('⏰ Shutdown timeout - forcing exit');
-        process.exit(1);
-      }, 30000);
-    };
+function gracefulShutdown(signal: string) {
+  console.log(`\n⚠️  Received ${signal}. Starting graceful shutdown...`);
 
-    // Handle termination signals
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-    // Handle uncaught exceptions
-    process.on('uncaughtException', error => {
-      console.error('💥 Uncaught Exception:', error);
-      gracefulShutdown('uncaughtException');
-    });
-
-    // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-      gracefulShutdown('unhandledRejection');
-    });
-  } catch (listenError) {
-    console.error('❌ Failed to bind server to port:', listenError);
-    console.error('Error details:', listenError instanceof Error ? listenError.stack : listenError);
-    // If listen fails, try fallback mode
-    console.log('🔄 Attempting to start server in FALLBACK mode...');
+  httpServer.close(async () => {
+    console.log('🔒 HTTP server closed');
 
     try {
-      const actualPort = parseInt(process.env.PORT || String(PORT) || '8080', 10);
-      console.log(`📊 Starting fallback server on port: ${actualPort}`);
-
-      const server = httpServer.listen(actualPort, '0.0.0.0', () => {
-        console.log('╔════════════════════════════════════════════╗');
-        console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
-        console.log('║   ⚠️  FALLBACK MODE (Error Recovery)     ║');
-        console.log('╠════════════════════════════════════════════╣');
-        console.log(`║   Environment: ${config.NODE_ENV.padEnd(28)}║`);
-        console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
-        console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
-        console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
-        console.log('║   ⚠️  Server running in fallback mode    ║');
-        console.log('╚════════════════════════════════════════════╝');
-      });
-
-      // Handle server errors in fallback mode
-      server.on('error', (error: any) => {
-        console.error('❌ Fallback server error:', error);
-        if (error.code === 'EADDRINUSE') {
-          console.error(`❌ Port ${actualPort} is already in use`);
-        }
-        process.exit(1);
-      });
-
-      // Graceful shutdown for fallback mode
-      const gracefulShutdown = async (signal: string) => {
-        console.log(`\n⚠️  Received ${signal}. Shutting down...`);
-        server.close(() => {
-          console.log('👋 Server closed');
-          process.exit(0);
-        });
-      };
-
-      process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-      process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    } catch (fallbackError) {
-      console.error('❌ Failed to start fallback server:', fallbackError);
+      await databaseConnection.disconnect();
+      console.log('👋 Graceful shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error);
       process.exit(1);
     }
-  }
-};
+  });
+
+  // Force shutdown after 30 seconds
+  setTimeout(() => {
+    console.error('⏰ Shutdown timeout - forcing exit');
+    process.exit(1);
+  }, 30000);
+}
 
 // Helper function
 function getDbStatusMessage(state: number): string {
@@ -567,20 +491,6 @@ function getDbStatusMessage(state: number): string {
     99: 'Uninitialized',
   };
   return states[state] || 'Unknown';
-}
-
-// Start the server
-if (require.main === module) {
-  startServer().catch((error) => {
-    console.error('❌ Fatal error starting server:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : error);
-    // Don't exit immediately - let the server try to bind port first
-    // Process will exit naturally if server fails to start
-    setTimeout(() => {
-      console.error('❌ Server failed to start after error handling');
-      process.exit(1);
-    }, 5000); // Give server 5 seconds to bind port
-  });
 }
 
 export default app;

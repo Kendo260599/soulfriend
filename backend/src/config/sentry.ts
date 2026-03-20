@@ -64,9 +64,7 @@ export function initSentry(): void {
         nodeProfilingIntegration(),
         
         // Console logging integration - captures console.log, console.error, etc.
-        Sentry.consoleIntegration({
-          levels: ['log', 'warn', 'error'], // Capture these console levels
-        }),
+        Sentry.consoleIntegration(),
       ],
       
       // Enable debug mode in development

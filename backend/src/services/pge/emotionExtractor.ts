@@ -108,8 +108,9 @@ async function extractWithOpenAI(text: string): Promise<{
     timeout: 15000,
   });
 
-  const response: any = await openAICircuit.executeWithRetry(() =>
-    client.post('/chat/completions', {
+  // Cast axios response properly - axios returns IPromise which doesn't match Promise type
+  const rawResponse: any = await openAICircuit.executeWithRetry(
+    () => client.post('/chat/completions', {
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: EXTRACTION_SYSTEM_PROMPT },
@@ -118,8 +119,9 @@ async function extractWithOpenAI(text: string): Promise<{
       max_tokens: 500,
       temperature: 0.2, // low temperature for consistent analysis
       response_format: { type: 'json_object' },
-    })
+    }) as any
   );
+  const response = rawResponse;
 
   const content = response.data?.choices?.[0]?.message?.content;
   if (!content) throw new Error('Empty response from OpenAI');

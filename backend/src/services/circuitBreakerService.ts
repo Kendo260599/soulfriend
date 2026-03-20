@@ -142,7 +142,9 @@ export class CircuitBreaker {
 
     for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
       try {
-        return await this.execute(fn);
+        // Wrap the function to ensure we get a proper Promise
+        const result = await Promise.resolve(this.execute(fn));
+        return result as T;
       } catch (error: any) {
         lastError = error;
 

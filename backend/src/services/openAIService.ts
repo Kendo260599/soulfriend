@@ -79,8 +79,8 @@ export class OpenAIService {
 - Nếu phát hiện bạo hành: Gọi 113 ngay lập tức
 - Luôn khuyến nghị gặp chuyên gia cho vấn đề nghiêm trọng`;
 
-      const response: any = await openAICircuit.executeWithRetry(() =>
-        this.client.post('/chat/completions', {
+      const response: any = await openAICircuit.executeWithRetry(
+        () => this.client.post('/chat/completions', {
           model: this.MODEL,
           messages: [
             {
@@ -97,7 +97,7 @@ export class OpenAIService {
           top_p: 0.9,
           frequency_penalty: 0.1,
           presence_penalty: 0.1,
-        })
+        }) as any
       );
 
       const aiResponse = response.data?.choices?.[0]?.message?.content;
@@ -178,8 +178,8 @@ export class OpenAIService {
         },
       ];
 
-      const response: any = await openAICircuit.executeWithRetry(() =>
-        this.client.post('/chat/completions', {
+      const response: any = await openAICircuit.executeWithRetry(
+        () => this.client.post('/chat/completions', {
           model: this.MODEL,
           messages: messages,
           max_tokens: 1000,
@@ -187,7 +187,7 @@ export class OpenAIService {
           top_p: 0.9,
           frequency_penalty: 0.1,
           presence_penalty: 0.1,
-        })
+        }) as any
       );
 
       const aiResponse = response.data?.choices?.[0]?.message?.content;

@@ -390,8 +390,10 @@ const startServer = async () => {
   // Note: httpServer.listen() is SYNCHRONOUS and binds immediately
   // The callback is called asynchronously when ready, but port is bound right away
   try {
+    // CRITICAL: Bind port synchronously - this MUST happen before any async operations
     const server = httpServer.listen(actualPort, '0.0.0.0', () => {
       console.log(`✅ Server successfully bound to port ${actualPort}`);
+      console.log(`✅ Render should now detect port ${actualPort}`);
       console.log('╔════════════════════════════════════════════╗');
       console.log('║   🚀 SoulFriend V4.0 Server Started!     ║');
       console.log('╠════════════════════════════════════════════╣');
@@ -442,8 +444,16 @@ const startServer = async () => {
     // Verify server is actually listening
     server.on('listening', () => {
       const address = server.address();
-      console.log(`✅ Server is listening on ${typeof address === 'string' ? address : address?.port || actualPort}`);
-      console.log(`✅ Render health check should now be able to detect port ${actualPort}`);
+      const listeningPort = typeof address === 'string' ? actualPort : (address?.port || actualPort);
+      console.log(`✅ Server is listening on port ${listeningPort}`);
+      console.log(`✅ Server address: ${JSON.stringify(address)}`);
+      console.log(`✅ Render health check should now be able to detect port ${listeningPort}`);
+      console.log(`✅ Health endpoint: http://0.0.0.0:${listeningPort}/api/health`);
+      
+      // Force flush logs to ensure Render sees them
+      if (process.stdout.isTTY === false) {
+        process.stdout.write('\n');
+      }
     });
 
     // Handle server errors
@@ -561,7 +571,16 @@ function getDbStatusMessage(state: number): string {
 
 // Start the server
 if (require.main === module) {
-  startServer();
+  startServer().catch((error) => {
+    console.error('❌ Fatal error starting server:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : error);
+    // Don't exit immediately - let the server try to bind port first
+    // Process will exit naturally if server fails to start
+    setTimeout(() => {
+      console.error('❌ Server failed to start after error handling');
+      process.exit(1);
+    }, 5000); // Give server 5 seconds to bind port
+  });
 }
 
 export default app;

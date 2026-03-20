@@ -25,7 +25,6 @@ import consentRoutes from './routes/consent';
 import conversationLearningRoutes from './routes/conversationLearning';
 import criticalAlertsRoutes from './routes/criticalAlerts';
 import expertAuthRoutes from './routes/expertAuth';
-import foundationRoutes from './routes/foundation';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
 import hitlInterventionRoutes from './routes/hitlIntervention';
 import researchRoutes from './routes/research';
@@ -219,36 +218,6 @@ app.use('/api/alerts', criticalAlertsRoutes);
 // ✨ NEW: Expert Authentication & Dashboard
 app.use('/api/v2/expert', expertAuthRoutes);
 
-// ✨ English Foundation Module
-app.use('/api/foundation', foundationRoutes);
-app.use('/api/v2/foundation', foundationRoutes);
-
-// Compatibility routes for frontend (redirect to foundation endpoints)
-app.get('/api/curriculum', async (req: Request, res: Response) => {
-  try {
-    const { getFoundationCurriculum } = await import('./services/foundationBridgeService');
-    const data = await getFoundationCurriculum();
-    res.status(200).json(data);
-  } catch (error: any) {
-    res.status(500).json({
-      message: error?.message || 'Failed to load curriculum',
-    });
-  }
-});
-
-app.get('/api/progress', async (req: Request, res: Response) => {
-  try {
-    const learnerId = Number(req.query.learnerID || req.query.learnerId || 1);
-    const { getFoundationProgress } = await import('./services/foundationBridgeService');
-    const data = await getFoundationProgress(Number.isFinite(learnerId) ? learnerId : 1);
-    res.status(200).json(data);
-  } catch (error: any) {
-    res.status(500).json({
-      message: error?.message || 'Failed to load progress',
-    });
-  }
-});
-
 // API v1 routes (legacy - deprecated)
 app.use('/api/consent', consentRoutes);
 app.use('/api/tests', testRoutes);
@@ -409,28 +378,17 @@ const startServer = async () => {
   console.log(`📊 Process.env.PORT: ${process.env.PORT}`);
   console.log(`📊 Actual port to bind: ${actualPort}`);
 
-  try {
-    // Initialize Socket.io BEFORE starting server
-    console.log('🔌 Initializing Socket.io for real-time communication...');
-    const io = initializeSocketServer(httpServer);
-    
-    // Make io available to the app
-    app.set('io', io);
-    (global as any).io = io;
-    
-    console.log('✅ Socket.io initialized successfully');
-  } catch (socketError) {
-    console.error('⚠️  Socket.io initialization failed, continuing without Socket.io:', socketError);
-    // Continue without Socket.io - server can still function
-  }
-
-  // Start HTTP server FIRST - before database connection
-  // This ensures Render health check can reach server immediately
+  // CRITICAL: Start HTTP server FIRST and IMMEDIATELY
+  // This ensures Render health check can detect the port immediately
+  // Socket.io and database will be initialized AFTER server is listening
   console.log(`📊 Starting server on port: ${actualPort}`);
   console.log(`📊 About to call httpServer.listen()...`);
+  console.log(`📊 Server address before listen: ${httpServer.address() || 'not listening'}`);
 
-  // CRITICAL: Always bind to port, even if there are errors later
+  // CRITICAL: Always bind to port IMMEDIATELY, before any other initialization
   // This ensures Render can detect the service is running
+  // Note: httpServer.listen() is SYNCHRONOUS and binds immediately
+  // The callback is called asynchronously when ready, but port is bound right away
   try {
     const server = httpServer.listen(actualPort, '0.0.0.0', () => {
       console.log(`✅ Server successfully bound to port ${actualPort}`);
@@ -441,8 +399,23 @@ const startServer = async () => {
       console.log(`║   Port: ${actualPort.toString().padEnd(35)}║`);
       console.log(`║   API v2: http://localhost:${actualPort}/api/v2     ║`);
       console.log(`║   Health: http://localhost:${actualPort}/api/health ║`);
-      console.log(`║   Socket.io: ENABLED (real-time chat)    ║`);
       console.log('╚════════════════════════════════════════════╝');
+
+      // Initialize Socket.io AFTER server is listening (non-blocking)
+      try {
+        console.log('🔌 Initializing Socket.io for real-time communication...');
+        const io = initializeSocketServer(httpServer);
+        
+        // Make io available to the app
+        app.set('io', io);
+        (global as any).io = io;
+        
+        console.log('✅ Socket.io initialized successfully');
+        console.log(`║   Socket.io: ENABLED (real-time chat)    ║`);
+      } catch (socketError) {
+        console.error('⚠️  Socket.io initialization failed, continuing without Socket.io:', socketError);
+        // Continue without Socket.io - server can still function
+      }
 
       // Connect to database AFTER server starts (non-blocking)
       console.log('📊 Connecting to database (non-blocking)...');
@@ -464,6 +437,13 @@ const startServer = async () => {
       } else {
         console.warn('⚠️  Email service not configured (SMTP_HOST, SMTP_USER, SMTP_PASS required)');
       }
+    });
+
+    // Verify server is actually listening
+    server.on('listening', () => {
+      const address = server.address();
+      console.log(`✅ Server is listening on ${typeof address === 'string' ? address : address?.port || actualPort}`);
+      console.log(`✅ Render health check should now be able to detect port ${actualPort}`);
     });
 
     // Handle server errors

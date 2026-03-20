@@ -9,11 +9,27 @@
 
 import { memorySystem, WorkingMemoryData, ShortTermMemoryData, LongTermMemoryData } from './memorySystem';
 import { enhancedChatbotService, EnhancedResponse } from './enhancedChatbotService';
-import { toNumericScore } from '../types/risk';
+import { toNumericScore, RiskLevel } from '../types/risk';
 import { logger } from '../utils/logger';
 import redisService from './redisService';
 import { memoryConsolidationService } from './memoryConsolidationService';
 import { therapeuticContextService } from './therapeuticContextService';
+
+/**
+ * Map 'MEDIUM' to 'MODERATE' for compatibility with RiskLevel enum
+ */
+function toRiskLevel(level: string): RiskLevel {
+  const mapping: Record<string, RiskLevel> = {
+    'LOW': RiskLevel.LOW,
+    'MEDIUM': RiskLevel.MODERATE,
+    'HIGH': RiskLevel.HIGH,
+    'CRITICAL': RiskLevel.CRITICAL,
+    'NONE': RiskLevel.NONE,
+    'MODERATE': RiskLevel.MODERATE,
+    'EXTREME': RiskLevel.EXTREME,
+  };
+  return mapping[level.toUpperCase()] ?? RiskLevel.NONE;
+}
 
 export interface MemoryAwareResponse extends EnhancedResponse {
   relevantMemories?: Array<{
@@ -138,7 +154,7 @@ export class MemoryAwareChatbotService {
       const newWorkingMemory: WorkingMemoryData = {
         emotion: response.emotionalState || workingMemory?.emotion || 'neutral',
         intent: response.intent,
-        crisisLevel: toNumericScore(response.riskLevel),
+        crisisLevel: toNumericScore(toRiskLevel(response.riskLevel)),
         conversationHistory: [
           ...(workingMemory?.conversationHistory || []).slice(-5), // Keep last 5 messages
           `User: ${message}`,
@@ -155,7 +171,7 @@ export class MemoryAwareChatbotService {
         timestamp: Date.now(),
         message: message,
         emotion: response.emotionalState || 'neutral',
-        crisisScore: toNumericScore(response.riskLevel),
+        crisisScore: toNumericScore(toRiskLevel(response.riskLevel)),
       };
 
       await memorySystem.saveShortTermMemory(userId, shortTermData);

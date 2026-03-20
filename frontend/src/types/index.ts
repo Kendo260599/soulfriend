@@ -405,24 +405,9 @@ export interface UseActionResult<T = void> {
 
 // ============================================
 // Export default for convenience
+// Note: Interfaces cannot be exported as values in TypeScript
+// Use named exports instead: import { ApiResponse, User } from '../types'
 // ============================================
 
-export default {
-  ApiResponse,
-  PaginatedResponse,
-  User,
-  Expert,
-  AdminUser,
-  TestResult,
-  TestEvaluation,
-  ChatMessage,
-  ChatSession,
-  Consent,
-  GameFiProfile,
-  PGEState,
-  CriticalAlert,
-  AIInsight,
-  AIAnalysis,
-  Notification,
-  AppError,
-};
+// Removed default export - interfaces are types, not values
+// Use named imports: import { ApiResponse, User, TestResult } from '../types'

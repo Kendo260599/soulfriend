@@ -179,6 +179,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       // Generate insights based on test type and score
       if (testType === 'PHQ-9' && score >= 15) {
         generatedInsights.push({
+          type: 'alert' as const,
           title: 'Dấu hiệu trầm cảm',
           content: 'Kết quả PHQ-9 cho thấy các dấu hiệu trầm cảm ở mức độ cần được quan tâm. Khuyến nghị trao đổi với chuyên gia tâm lý.',
           severity: 'high',
@@ -188,6 +189,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
 
       if (testType === 'GAD-7' && score >= 10) {
         generatedInsights.push({
+          type: 'alert' as const,
           title: 'Mức độ lo âu cao',
           content: 'Kết quả GAD-7 cho thấy mức độ lo âu cần được chú ý. Các kỹ thuật thư giãn và tư vấn chuyên nghiệp có thể giúp ích.',
           severity: 'medium',
@@ -197,6 +199,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
 
       if (testType === 'DASS-21' && score >= 21) {
         generatedInsights.push({
+          type: 'alert' as const,
           title: 'Stress và căng thẳng',
           content: 'Kết quả DASS-21 cho thấy mức độ stress cao. Hãy ưu tiên chăm sóc bản thân và nghỉ ngơi.',
           severity: 'high',
@@ -208,6 +211,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     // Add positive insight if no issues found
     if (generatedInsights.length === 0 && testResults.length > 0) {
       generatedInsights.push({
+        type: 'progress' as const,
         title: 'Sức khỏe tâm lý tốt',
         content: 'Các chỉ số sức khỏe tâm lý của bạn đang trong giới hạn bình thường. Hãy tiếp tục duy trì lối sống tích cực!',
         severity: 'low',

@@ -4,17 +4,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-
-// Interface cho kết quả test
-interface TestResult {
-  testType: string;
-  answers: number[];
-  totalScore: number;
-  evaluation: {
-    level: string;
-    description: string;
-  };
-}
+import { TestResult } from '../types';
 
 // Styled Components
 const Container = styled.div`

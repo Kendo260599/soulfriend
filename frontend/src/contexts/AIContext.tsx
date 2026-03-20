@@ -5,41 +5,7 @@
 
 import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import { offlineChatService } from '../services/offlineChatService';
-
-// Types
-export interface TestResult {
-  testType: string;
-  totalScore: number;
-  evaluation: {
-    level: string;
-    description: string;
-  };
-}
-
-export interface UserProfile {
-  age?: number;
-  gender?: string;
-  testHistory?: TestResult[];
-  preferences?: string[];
-  culturalContext?: string;
-}
-
-export interface AIResponse {
-  text: string;
-  crisisDetected: boolean;
-  recommendations: string[];
-  nextActions: string[];
-  confidence?: number;
-  aiGenerated?: boolean;
-  interactionEventId?: string | null;
-}
-
-export interface AIInsight {
-  title: string;
-  content: string;
-  severity?: 'low' | 'medium' | 'high';
-  actionable?: boolean;
-}
+import { TestResult, UserProfile, AIResponse, AIInsight } from '../types';
 
 export interface AIContextType {
   // State

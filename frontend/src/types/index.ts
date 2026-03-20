@@ -288,6 +288,24 @@ export interface AIInsight {
   generatedAt?: string;
 }
 
+export interface AIResponse {
+  text: string;
+  crisisDetected: boolean;
+  recommendations: string[];
+  nextActions: string[];
+  confidence?: number;
+  aiGenerated?: boolean;
+  interactionEventId?: string | null;
+}
+
+export interface UserProfile {
+  age?: number;
+  gender?: string;
+  testHistory?: TestResult[];
+  preferences?: string[];
+  culturalContext?: string;
+}
+
 export interface AIAnalysis {
   sentiment: 'positive' | 'neutral' | 'negative';
   emotions: string[];

@@ -8,17 +8,7 @@ import { TestType } from './TestSelection';
 import DASS21Test from './DASS21Test';
 import axios from 'axios';
 import styled from 'styled-components';
-
-// Interface cho kết quả test
-interface TestResult {
-  testType: TestType;
-  answers: number[];
-  totalScore: number;
-  evaluation: {
-    level: string;
-    description: string;
-  };
-}
+import { TestResult } from '../types';
 
 // Styled Components
 const Container = styled.div`

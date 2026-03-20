@@ -333,7 +333,9 @@ const App: React.FC = () => {
   }
 
   return (
-    <ErrorBoundary>
+    // Temporarily removed ErrorBoundary for debugging
+    // <ErrorBoundary>
+    <>
       <AIProvider>
         <GlobalStyle />
         <AppContainer>
@@ -345,7 +347,8 @@ const App: React.FC = () => {
           <ChatBot testResults={testResults} />
         </AppContainer>
       </AIProvider>
-    </ErrorBoundary>
+    </>
+    // </ErrorBoundary>
   );
 };
 

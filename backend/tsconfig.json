@@ -3,7 +3,7 @@
     "target": "es2020",
     "module": "commonjs",
     "lib": ["es2020"],
-    "rootDir": "./src",
+    "rootDir": "..",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -18,6 +18,6 @@
     "allowSyntheticDefaultImports": true,
     "allowJs": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "../gamefi/**/*", "../integration/**/*"],
+  "exclude": ["node_modules", "dist", "../gamefi/test/**", "../integration/test/**"]
 }

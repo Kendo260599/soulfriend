@@ -1,0 +1,11 @@
+database:
+  type: psql
+
+services:
+  - type: web
+    name: soulfriend-api
+    env: node
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: node dist/backend/src/index.js
+    healthCheckPath: /api/health

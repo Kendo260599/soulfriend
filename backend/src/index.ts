@@ -25,6 +25,7 @@ import consentRoutes from './routes/consent';
 import conversationLearningRoutes from './routes/conversationLearning';
 import criticalAlertsRoutes from './routes/criticalAlerts';
 import expertAuthRoutes from './routes/expertAuth';
+import gamefiRoutes from './routes/gamefi';
 import hitlFeedbackRoutes from './routes/hitlFeedback';
 import hitlInterventionRoutes from './routes/hitlIntervention';
 import researchRoutes from './routes/research';
@@ -206,6 +207,7 @@ app.use('/api/v2/admin', adminRoutes);
 app.use('/api/v2/user', userRoutes);
 app.use('/api/v2/research', researchRoutes);
 app.use('/api/v2/chatbot', chatbotRoutes);
+app.use('/api/v2/gamefi', gamefiRoutes);
 
 // ✨ NEW: HITL Feedback Loop & Conversation Learning
 app.use('/api/hitl-feedback', hitlFeedbackRoutes);

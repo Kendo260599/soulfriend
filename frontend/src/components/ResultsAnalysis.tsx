@@ -610,11 +610,11 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                 </InfoRow>
                 <InfoRow>
                   <InfoLabel>📊 Phân bố điểm:</InfoLabel>
-                  <InfoValue>{getScoreDistribution(result.answers)}</InfoValue>
+                  <InfoValue>{getScoreDistribution(result.answers || [])}</InfoValue>
                 </InfoRow>
                 <InfoRow>
                   <InfoLabel>🔍 Xu hướng:</InfoLabel>
-                  <InfoValue>{getTrendAnalysis(result.answers)}</InfoValue>
+                  <InfoValue>{getTrendAnalysis(result.answers || [])}</InfoValue>
                 </InfoRow>
                 <InfoRow>
                   <InfoLabel>⚠️ Cảnh báo:</InfoLabel>
@@ -640,11 +640,11 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                   </AnalysisItem>
                   <AnalysisItem>
                     <AnalysisLabel>🎯 Điểm mạnh:</AnalysisLabel>
-                    <AnalysisValue>{getStrengths(result.testType, result.answers)}</AnalysisValue>
+                    <AnalysisValue>{getStrengths(result.testType, result.answers || [])}</AnalysisValue>
                   </AnalysisItem>
                   <AnalysisItem>
                     <AnalysisLabel>⚠️ Điểm cần cải thiện:</AnalysisLabel>
-                    <AnalysisValue>{getImprovementAreas(result.testType, result.answers)}</AnalysisValue>
+                    <AnalysisValue>{getImprovementAreas(result.testType, result.answers || [])}</AnalysisValue>
                   </AnalysisItem>
                   <AnalysisItem>
                     <AnalysisLabel>📈 Dự đoán xu hướng:</AnalysisLabel>

@@ -7,7 +7,7 @@
         "build": "tsc",
         "start": "node dist/backend/src/index.js",
         "dev": "nodemon src/index.ts",
-        "setup": "npm run build && node dist/scripts/createDefaultAdmin.js",
+        "setup": "npm run build && node dist/backend/scripts/createDefaultAdmin.js",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",

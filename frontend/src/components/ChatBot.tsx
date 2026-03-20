@@ -3,6 +3,7 @@ import styled, { keyframes } from 'styled-components';
 import { io, Socket } from 'socket.io-client';
 import AnimatedButton from './AnimatedButton';
 import { useAI } from '../contexts/AIContext';
+import { TestResult } from '../types';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://soulfriend-production.up.railway.app';
 
@@ -405,14 +406,7 @@ interface ChatMessage {
 }
 
 interface ChatBotProps {
-  testResults?: Array<{
-    testType: string;
-    totalScore: number;
-    evaluation: {
-      level: string;
-      description: string;
-    };
-  }>;
+  testResults?: TestResult[];
 }
 
 const ChatBot: React.FC<ChatBotProps> = ({ testResults = [] }) => {

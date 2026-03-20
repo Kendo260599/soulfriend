@@ -387,12 +387,12 @@ const TestResults: React.FC<TestResultsProps> = ({ results, onRetakeTests, onNew
               </ScoreRow>
               <ScoreRow>
                 <ScoreLabel>Số câu hỏi:</ScoreLabel>
-                <ScoreValue>{result.answers.length}</ScoreValue>
+                <ScoreValue>{result.answers?.length ?? 0}</ScoreValue>
               </ScoreRow>
               <ScoreRow>
                 <ScoreLabel>Điểm trung bình:</ScoreLabel>
                 <ScoreValue>
-                  {(result.totalScore / result.answers.length).toFixed(1)}
+                  {result.answers?.length ? (result.totalScore / result.answers.length).toFixed(1) : 'N/A'}
                 </ScoreValue>
               </ScoreRow>
             </ScoreDetails>

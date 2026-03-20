@@ -63,7 +63,7 @@ export interface AdminUser {
 export interface TestResult {
   id?: string;
   testType: string | TestType;
-  answers: number[];
+  answers?: number[];
   totalScore: number;
   maxScore?: number;
   evaluation: TestEvaluation;
@@ -279,7 +279,7 @@ export interface CriticalAlert {
 // ============================================
 
 export interface AIInsight {
-  type: 'analysis' | 'recommendation' | 'alert' | 'progress';
+  type?: 'analysis' | 'recommendation' | 'alert' | 'progress';
   title: string;
   content: string;
   severity?: 'low' | 'medium' | 'high';
@@ -402,27 +402,3 @@ export interface UseActionResult<T = void> {
   loading: boolean;
   error: AppError | null;
 }
-
-// ============================================
-// Export default for convenience
-// ============================================
-
-export default {
-  ApiResponse,
-  PaginatedResponse,
-  User,
-  Expert,
-  AdminUser,
-  TestResult,
-  TestEvaluation,
-  ChatMessage,
-  ChatSession,
-  Consent,
-  GameFiProfile,
-  PGEState,
-  CriticalAlert,
-  AIInsight,
-  AIAnalysis,
-  Notification,
-  AppError,
-};

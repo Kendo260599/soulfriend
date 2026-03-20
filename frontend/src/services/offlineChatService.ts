@@ -4,28 +4,13 @@
  * Đảm bảo chatbot luôn hoạt động ngay cả khi offline
  */
 
+import { TestResult, UserProfile } from '../types';
+
 export interface OfflineResponse {
   text: string;
   crisisDetected: boolean;
   recommendations: string[];
   nextActions: string[];
-}
-
-export interface TestResult {
-  testType: string;
-  totalScore: number;
-  evaluation: {
-    level: string;
-    description: string;
-  };
-}
-
-export interface UserProfile {
-  age?: number;
-  gender?: string;
-  testHistory?: TestResult[];
-  preferences?: string[];
-  culturalContext?: string;
 }
 
 export class OfflineChatService {

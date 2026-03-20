@@ -1,0 +1,3 @@
+chore: ensure Vercel rebuild
+
+Trigger fresh build to pick up TestResult type fix from 984e646.

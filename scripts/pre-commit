@@ -1,0 +1,21 @@
+#!/bin/sh
+# Root-level pre-commit script
+# Usage: ./scripts/pre-commit.sh
+
+set -e
+
+echo "🔍 Running TypeScript type-check..."
+
+# Backend type-check
+echo "Checking backend..."
+cd backend
+npm run type-check
+cd ..
+
+# Frontend type-check
+echo "Checking frontend..."
+cd frontend
+npx tsc --noEmit
+cd ..
+
+echo "✅ All type-checks passed!"

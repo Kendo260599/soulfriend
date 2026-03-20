@@ -91,6 +91,9 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+// Import ErrorBoundary
+import ErrorBoundary from './ErrorBoundary';
+
 // App container
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -249,47 +252,6 @@ const NavLink = styled.button`
   }
 `;
 
-// Error boundary class
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error?: Error }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <ErrorContainer>
-          <ErrorCard>
-            <ErrorIcon>😔</ErrorIcon>
-            <ErrorTitle>Đã xảy ra lỗi</ErrorTitle>
-            <ErrorMessage>
-              Xin lỗi, đã có lỗi xảy ra trong ứng dụng. 
-              Vui lòng thử lại hoặc liên hệ hỗ trợ nếu vấn đề tiếp tục.
-            </ErrorMessage>
-            <RetryButton onClick={() => window.location.reload()}>
-              Thử lại
-            </RetryButton>
-          </ErrorCard>
-        </ErrorContainer>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
 // Main App component
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -333,9 +295,7 @@ const App: React.FC = () => {
   }
 
   return (
-    // Temporarily removed ErrorBoundary for debugging
-    // <ErrorBoundary>
-    <>
+    <ErrorBoundary>
       <AIProvider>
         <GlobalStyle />
         <AppContainer>
@@ -347,8 +307,7 @@ const App: React.FC = () => {
           <ChatBot testResults={testResults} />
         </AppContainer>
       </AIProvider>
-    </>
-    // </ErrorBoundary>
+    </ErrorBoundary>
   );
 };
 

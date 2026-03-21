@@ -102,7 +102,7 @@ const DEFAULT_CONFIG: InterventionConfig = {
   clinicalTeam: [
     {
       id: 'crisis_team_1',
-      name: 'Chuyên Gia Tâm Lý CHUN',
+      name: 'Chuyên Gia Tâm Lý Chun',
       role: 'crisis_counselor',
       email: 'kendo2605@gmail.com', // Chuyên gia tâm lý chính
       phone: '+84-938021111', // 0938021111

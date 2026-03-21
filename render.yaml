@@ -8,5 +8,5 @@ services:
     region: singapore
     rootDir: backend
     buildCommand: npm install && npm run build
-    startCommand: node dist/backend/src/index.js
+    startCommand: npm start
     healthCheckPath: /api/health

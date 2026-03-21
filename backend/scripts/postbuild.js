@@ -14,11 +14,8 @@ const realEntry = path.join(distDir, 'backend', 'src', 'index.js');
 
 if (fs.existsSync(realEntry)) {
   const shimContent = [
-    '// Auto-generated shim — forwards to the real entry point',
-    'const app = require("./backend/src/index");',
-    '// require.main !== module in this shim, so startServer() won\'t auto-run.',
-    '// We must NOT call startServer() here because the real index.js',
-    '// now starts unconditionally. See the guard removal in index.ts.',
+    '// Auto-generated shim for Render — requires real entry point (executes server startup)',
+    'require("./backend/src/index");',
     '',
   ].join('\n');
   fs.writeFileSync(shimPath, shimContent);

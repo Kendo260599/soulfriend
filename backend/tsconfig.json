@@ -4,7 +4,7 @@
     "module": "commonjs",
     "lib": ["es2020"],
     "rootDir": "..",
-    "outDir": "./dist/backend",
+    "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

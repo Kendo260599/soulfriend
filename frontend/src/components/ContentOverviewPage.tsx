@@ -59,15 +59,6 @@ const slideInRight = keyframes`
   }
 `;
 
-const float = keyframes`
-  0%, 100% { 
-    transform: translateY(0px); 
-  }
-  50% { 
-    transform: translateY(-10px); 
-  }
-`;
-
 const pulse = keyframes`
   0%, 100% { 
     transform: scale(1);
@@ -233,138 +224,6 @@ const SectionSubtitle = styled.p`
   animation: ${fadeInUp} 1s ease-out 0.2s both;
 `;
 
-const ContentGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-  margin-bottom: 3rem;
-`;
-
-const ContentCard = styled.div<{ variant?: string }>`
-  background: ${overviewColors.cardBg};
-  border: 2px solid ${props => {
-    switch (props.variant) {
-      case 'primary': return 'rgba(99, 102, 241, 0.2)';
-      case 'secondary': return 'rgba(16, 185, 129, 0.2)';
-      case 'accent': return 'rgba(245, 158, 11, 0.2)';
-      case 'danger': return 'rgba(239, 68, 68, 0.2)';
-      default: return 'rgba(99, 102, 241, 0.2)';
-    }
-  }};
-  border-radius: 1.5rem;
-  padding: 2rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  box-shadow: ${overviewColors.shadow};
-  position: relative;
-  overflow: hidden;
-  
-  &:hover {
-    transform: translateY(-8px);
-    box-shadow: ${overviewColors.shadowHover};
-    border-color: ${props => {
-      switch (props.variant) {
-        case 'primary': return 'rgba(99, 102, 241, 0.5)';
-        case 'secondary': return 'rgba(16, 185, 129, 0.5)';
-        case 'accent': return 'rgba(245, 158, 11, 0.5)';
-        case 'danger': return 'rgba(239, 68, 68, 0.5)';
-        default: return 'rgba(99, 102, 241, 0.5)';
-      }
-    }};
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: ${props => {
-      switch (props.variant) {
-        case 'primary': return overviewColors.primary;
-        case 'secondary': return overviewColors.secondary;
-        case 'accent': return overviewColors.accent;
-        case 'danger': return overviewColors.danger;
-        default: return overviewColors.primary;
-      }
-    }};
-  }
-`;
-
-const CardIcon = styled.div<{ variant?: string }>`
-  width: 64px;
-  height: 64px;
-  background: ${props => {
-    switch (props.variant) {
-      case 'primary': return 'linear-gradient(135deg, #6366f1, #8b5cf6)';
-      case 'secondary': return 'linear-gradient(135deg, #10b981, #34d399)';
-      case 'accent': return 'linear-gradient(135deg, #f59e0b, #fbbf24)';
-      case 'danger': return 'linear-gradient(135deg, #ef4444, #f87171)';
-      default: return 'linear-gradient(135deg, #6366f1, #8b5cf6)';
-    }
-  }};
-  border-radius: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  margin-bottom: 1.5rem;
-  animation: ${float} 3s ease-in-out infinite;
-`;
-
-const CardTitle = styled.h3`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: ${overviewColors.text};
-  margin: 0 0 1rem 0;
-`;
-
-const CardDescription = styled.p`
-  color: ${overviewColors.lightText};
-  line-height: 1.6;
-  margin: 0 0 1.5rem 0;
-  font-size: 1rem;
-`;
-
-const CardHighlights = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1.5rem 0;
-`;
-
-const CardHighlight = styled.li`
-  color: ${overviewColors.lightText};
-  margin-bottom: 0.5rem;
-  padding-left: 1.5rem;
-  position: relative;
-  
-  &::before {
-    content: '✓';
-    position: absolute;
-    left: 0;
-    color: ${overviewColors.secondary};
-    font-weight: bold;
-  }
-`;
-
-const CardCTA = styled.div`
-  margin-top: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(99, 102, 241, 0.1);
-  border-radius: 0.5rem;
-  text-align: center;
-  font-weight: 600;
-  color: ${overviewColors.primary};
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(99, 102, 241, 0.2);
-    transform: translateY(-1px);
-  }
-`;
-
 const TestGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -513,41 +372,6 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
     }
   ];
 
-  const contentCategories = [
-    {
-      icon: '🧠',
-      title: 'DASS-21 Assessment',
-      count: '3-in-1 Test',
-      description: 'Đánh giá Trầm cảm, Lo âu và Stress chuẩn quốc tế',
-      variant: 'primary' as const,
-      action: () => setActiveTab('tests')
-    },
-    {
-      icon: '🤖',
-      title: 'AI Chatbot 𝑺𝒆𝒄𝒓𝒆𝒕❤️',
-      count: '24/7 support',
-      description: 'Trợ lý AI với khả năng phát hiện khủng hoảng',
-      variant: 'secondary' as const,
-      action: onViewAI
-    },
-    {
-      icon: '📊',
-      title: 'Research Data',
-      count: 'Nghiên cứu VN',
-      description: 'Dữ liệu nghiên cứu thực tế tại Việt Nam',
-      variant: 'accent' as const,
-      action: onViewResearch
-    },
-    {
-      icon: '🚨',
-      title: 'Crisis Support',
-      count: 'HITL System',
-      description: 'Hệ thống can thiệp khủng hoảng với con người',
-      variant: 'danger' as const,
-      action: onViewCrisis
-    }
-  ];
-
   const researchData = [
     {
       number: '15.2%',
@@ -637,38 +461,6 @@ const ContentOverviewPage: React.FC<ContentOverviewPageProps> = ({
       </Navigation>
 
       <Content>
-        <Section>
-          <SectionTitle>Tính năng Chính</SectionTitle>
-          <SectionSubtitle>
-            Khám phá kho tàng kiến thức về sức khỏe tâm lý với công nghệ AI tiên tiến
-          </SectionSubtitle>
-          
-          <ContentGrid>
-            {contentCategories.map((category, index) => (
-              <ContentCard 
-                key={index}
-                variant={category.variant}
-                onClick={category.action}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <CardIcon variant={category.variant}>
-                  {category.icon}
-                </CardIcon>
-                <CardTitle>{category.title}</CardTitle>
-                <CardDescription>{category.description}</CardDescription>
-                <CardHighlights>
-                  <CardHighlight>{category.count}</CardHighlight>
-                  <CardHighlight>Chuyên nghiệp & Khoa học</CardHighlight>
-                  <CardHighlight>Dành cho phụ nữ Việt Nam</CardHighlight>
-                </CardHighlights>
-                <CardCTA onClick={category.action}>
-                  Khám phá ngay
-                </CardCTA>
-              </ContentCard>
-            ))}
-          </ContentGrid>
-        </Section>
-
         {(activeTab === 'all' || activeTab === 'tests') && (
           <Section>
             <SectionTitle>DASS-21 Assessment</SectionTitle>

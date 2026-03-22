@@ -18,7 +18,10 @@ jobs:
       - name: Trigger Render deployment
         run: |
           echo "Triggering Render deployment..."
-          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+          printf '{"clearCache":false}\n' > deploy_body.json
+          curl -f -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Accept: application/json" \
             -H "Content-Type: application/json" \
-            --data-raw '{"clearCache":false}'
+            -d @deploy_body.json
+          echo "Done"

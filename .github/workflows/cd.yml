@@ -70,10 +70,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [build-and-push]
-    # FIXED: removed tag-only condition — deploys on every push to main
-    environment:
-      name: production
-      url: https://api.soulfriend.vn
+    # Deploys on every push to main (no tag requirement)
 
     steps:
       - name: Checkout code

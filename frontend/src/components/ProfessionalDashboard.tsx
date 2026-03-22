@@ -317,24 +317,15 @@ const Footer = styled.footer`
 `;
 
 interface ProfessionalDashboardProps {
-  onNewTest?: () => void;
-  onViewProfile?: () => void;
-  onDataBackup?: () => void;
-  onResearchDashboard?: () => void;
-  onCommunitySupport?: () => void;
-  onAICompanion?: () => void;
   onStartTests?: () => void;
+  /** Điều hướng tới trang kết quả (vd. /results) */
+  onViewResults?: () => void;
   testResults?: any[];
 }
 
 const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
-  onNewTest = () => {},
-  onViewProfile = () => {},
-  onDataBackup = () => {},
-  onResearchDashboard = () => {},
-  onCommunitySupport = () => {},
-  onAICompanion = () => {},
   onStartTests = () => {},
+  onViewResults = () => {},
   testResults = []
 }) => {
   const [userName, setUserName] = useState('Người dùng');
@@ -361,8 +352,7 @@ const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
   };
 
   const handleViewResults = () => {
-    // Navigate to results - handled by parent component
-    console.log('View results clicked');
+    onViewResults();
   };
 
   const tests = [

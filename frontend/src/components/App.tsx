@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Route, BrowserRouter as Router, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, BrowserRouter as Router, Routes, useNavigate, useParams } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -19,6 +19,8 @@ import ResultsAnalysis from './ResultsAnalysis';
 import TestResults from './TestResults';
 import TestTaking from './TestTaking';
 import WelcomePage from './WelcomePage';
+import { TestType } from './TestSelection';
+import TestFlow from '../App';
 
 // GameFi — Lazy loaded
 const GameFi = React.lazy(() => import('./GameFi'));
@@ -388,6 +390,23 @@ const App: React.FC = () => {
   );
 };
 
+// Reads testType from URL param so /test/DASS-21 works
+const TestTakingWithParams: React.FC<{
+  onComplete: (results: any[]) => void;
+  onBack: () => void;
+}> = ({ onComplete, onBack }) => {
+  const { testType } = useParams<{ testType: string }>();
+  const resolvedType = testType as TestType | undefined;
+  return (
+    <TestTaking
+      selectedTests={resolvedType ? [resolvedType] : []}
+      consentId=""
+      onComplete={onComplete}
+      onBack={onBack}
+    />
+  );
+};
+
 // Auth guard for protected routes
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -447,8 +466,8 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
           />
         } />
 
-        {/* Start test flow */}
-        <Route path="/start" element={<WelcomePage />} />
+        {/* Start test flow — fully wired: Consent → DASS-21 → Results */}
+        <Route path="/start" element={<TestFlow />} />
 
         {/* Content Overview */}
         <Route path="/content" element={
@@ -505,22 +524,28 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
         <Route path="/expert/dashboard" element={<ExpertDashboard />} />
 
         {/* Test flow routes */}
-        <Route path="/dashboard" element={<ProfessionalDashboard testResults={testResults} />} />
-        <Route path="/test/:testType" element={<TestTaking 
-          selectedTests={[]} 
-          consentId="" 
-          onComplete={() => {}} 
-          onBack={() => {}} 
+        <Route path="/dashboard" element={
+          <ProfessionalDashboard
+            testResults={testResults}
+            onStartTests={() => navigate('/start')}
+            onViewResults={() => navigate('/results')}
+          />
+        } />
+        <Route path="/test/:testType" element={
+          <TestTakingWithParams
+            onComplete={() => navigate('/results')}
+            onBack={() => navigate('/start')}
+          />
+        } />
+        <Route path="/results" element={<TestResults
+          results={testResults}
+          onRetakeTests={() => navigate('/test/DASS-21')}
+          onNewTests={() => navigate('/start')}
         />} />
-        <Route path="/results" element={<TestResults 
-          results={testResults} 
-          onRetakeTests={() => {}} 
-          onNewTests={() => {}} 
-        />} />
-        <Route path="/analysis" element={<ResultsAnalysis 
-          testResults={testResults} 
-          onContinue={() => {}} 
-          onViewAI={() => {}} 
+        <Route path="/analysis" element={<ResultsAnalysis
+          testResults={testResults}
+          onContinue={() => navigate('/dashboard')}
+          onViewAI={() => navigate('/start')}
         />} />
 
         {/* Fallback */}

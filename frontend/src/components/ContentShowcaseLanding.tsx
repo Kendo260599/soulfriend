@@ -583,7 +583,7 @@ const ContentShowcaseLanding: React.FC<ContentShowcaseLandingProps> = ({
         'Emergency contacts Việt Nam'
       ],
       cta: 'Tìm hiểu HITL System',
-      action: () => {},
+      action: onViewResearch,
       variant: 'danger' as const
     }
   ];

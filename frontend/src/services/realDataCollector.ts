@@ -63,12 +63,16 @@ class RealDataCollector {
         return;
       }
 
+      // [] hoặc chưa có bài nào — không log (tránh spam mỗi 2s từ setInterval)
+      if (parsed.length === 0) {
+        return;
+      }
+
       console.log(`Found ${parsed.length} test results in localStorage`);
 
       // Lấy dữ liệu mới nhất
       const latestTest = parsed[parsed.length - 1];
       if (!latestTest) {
-        console.log('No latest test found');
         return;
       }
 

@@ -105,34 +105,66 @@ const EVENT_TO_NARRATIVE: Record<PsychEventType, NarrativeInputType> = {
 
 // ══════════════════════════════════════════════
 // IN-MEMORY CHARACTER STORE (bridge-level)
+// Max 100k chars ≈ ~100MB; production should persist to DB via backend API.
+// Using LRU eviction: keep recently active users, evict the least recently used.
 // ══════════════════════════════════════════════
 
-const characterMap: Map<string, Character> = new Map();
-const MAX_CHARACTERS = 10000;
+const characterMap: Map<string, Character> = new Map(); // key: userId, value: Character
+const characterLastSeen: Map<string, number> = new Map(); // key: userId, value: timestamp
+let evictionCount = 0;
+const MAX_CHARACTERS = 100000;
+
+/** Touch — update last-seen timestamp (called on every character access) */
+function touch(userId: string): void {
+  characterLastSeen.set(userId, Date.now());
+}
+
+/** Evict the least-recently-used character to make room. */
+function evictLRU(): string | null {
+  if (characterMap.size === 0) return null;
+  let oldestId: string | null = null;
+  let oldestTs = Infinity;
+  for (const [id, ts] of characterLastSeen) {
+    if (ts < oldestTs) { oldestTs = ts; oldestId = id; }
+  }
+  if (oldestId !== null) {
+    characterMap.delete(oldestId);
+    characterLastSeen.delete(oldestId);
+    evictionCount++;
+    console.warn(`[GameFi] LRU eviction #${evictionCount}: character "${oldestId}" removed (map size: ${characterMap.size})`);
+    return oldestId;
+  }
+  return null;
+}
 
 /** Get or create character for a userId */
 export function getOrCreateCharacter(userId: string): Character {
   let char = characterMap.get(userId);
   if (!char) {
+    if (characterMap.size >= MAX_CHARACTERS) {
+      evictLRU();
+    }
     char = createCharacter(userId, 'Người Khám Phá');
     characterMap.set(userId, char);
-    if (characterMap.size > MAX_CHARACTERS) {
-      // Evict oldest entry
-      const firstKey = characterMap.keys().next().value;
-      if (firstKey !== undefined) characterMap.delete(firstKey);
-    }
   }
+  touch(userId);
   return char;
 }
 
-/** Get character by userId (no auto-create) */
+/** Get character by userId (no auto-create). Updates LRU order. */
 export function getCharacter(userId: string): Character | undefined {
-  return characterMap.get(userId);
+  const char = characterMap.get(userId);
+  if (char) touch(userId);
+  return char;
 }
 
 /** Load a character into the in-memory map (for persistence restore) */
 export function setCharacter(userId: string, char: Character): void {
+  if (characterMap.size >= MAX_CHARACTERS && !characterMap.has(userId)) {
+    evictLRU();
+  }
   characterMap.set(userId, char);
+  touch(userId);
 }
 
 /** Get all characters currently in memory (for persistence save) */
@@ -140,9 +172,16 @@ export function getAllCharacters(): Map<string, Character> {
   return characterMap;
 }
 
+/** Get eviction statistics */
+export function getEvictionStats(): { currentSize: number; maxSize: number; evictionCount: number } {
+  return { currentSize: characterMap.size, maxSize: MAX_CHARACTERS, evictionCount };
+}
+
 /** Reset event handler (testing) */
 export function resetEventHandler(): void {
   characterMap.clear();
+  characterLastSeen.clear();
+  evictionCount = 0;
 }
 
 // ══════════════════════════════════════════════

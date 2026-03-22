@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Route, BrowserRouter as Router, Routes, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
+import { useAuth } from '../contexts/AuthContext';
 
 // Import components
 import ChatBot from './ChatBot';
@@ -13,6 +14,7 @@ import FeaturesShowcase from './FeaturesShowcase';
 import ProfessionalDashboard from './ProfessionalDashboard';
 import { ResearchDashboard } from './ResearchDashboard';
 import ResearchImpactDashboard from './ResearchImpactDashboard';
+import UnifiedResearchExpertPage from './UnifiedResearchExpertPage';
 import ResultsAnalysis from './ResultsAnalysis';
 import TestResults from './TestResults';
 import TestTaking from './TestTaking';
@@ -20,6 +22,81 @@ import WelcomePage from './WelcomePage';
 
 // GameFi — Lazy loaded
 const GameFi = React.lazy(() => import('./GameFi'));
+
+// ── GameFi loading fallback ──────────────────────────────────────────────────
+const GameFiLoadingWrapper = styled.div`
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+`;
+
+const GameFiLoadingCard = styled.div`
+  background: white;
+  border-radius: 24px;
+  padding: 3rem 4rem;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 380px;
+`;
+
+const GameFiLoadingEmoji = styled.div`
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+`;
+
+const GameFiLoadingTitle = styled.h2`
+  color: #667eea;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+`;
+
+const GameFiLoadingSubtitle = styled.p`
+  color: #888;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+`;
+
+const GameFiSpinner = styled.div`
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1.5rem;
+  border: 4px solid rgba(102, 126, 234, 0.2);
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const GameFiLoadingDots = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 1rem;
+
+  span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #667eea;
+    animation: bounce 1.4s infinite ease-in-out both;
+
+    &:nth-child(1) { animation-delay: -0.32s; }
+    &:nth-child(2) { animation-delay: -0.16s; }
+    &:nth-child(3) { animation-delay: 0s; }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+`;
 
 // Import AI Context
 import { AIProvider } from '../contexts/AIContext';
@@ -311,8 +388,31 @@ const App: React.FC = () => {
   );
 };
 
+// Auth guard for protected routes
+const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <LoadingContainer>
+        <LoadingCenter>
+          <LoadingSpinner />
+          <LoadingText>Đang kiểm tra đăng nhập...</LoadingText>
+        </LoadingCenter>
+      </LoadingContainer>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/start" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // Inner component with access to useNavigate
 const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -326,8 +426,12 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
           <NavLink onClick={() => navigate('/research')}>Nghiên cứu</NavLink>
           <NavLink onClick={() => navigate('/community')}>Cộng đồng</NavLink>
           <NavLink onClick={() => navigate('/start')}>Làm test</NavLink>
-          <NavLink onClick={() => navigate('/dashboard')}>Dashboard</NavLink>
-          <NavLink onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLink>
+          {isAuthenticated && (
+            <>
+              <NavLink onClick={() => navigate('/dashboard')}>Dashboard</NavLink>
+              <NavLink onClick={() => navigate('/gamefi')}>🎮 GameFi</NavLink>
+            </>
+          )}
         </NavLinks>
       </NavBar>
 
@@ -357,9 +461,9 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
           />
         } />
 
-        {/* Research Dashboard */}
+        {/* Research & Expert Hub (Unified Page) */}
         <Route path="/research" element={
-          <ResearchDashboard onBack={() => navigate('/')} />
+          <UnifiedResearchExpertPage onBack={() => navigate('/')} />
         } />
 
         {/* V5 Impact Analytics Dashboard */}
@@ -375,10 +479,24 @@ const RoutedApp: React.FC<{ testResults: any[] }> = ({ testResults }) => {
         {/* Features Showcase */}
         <Route path="/features" element={<FeaturesShowcase />} />
 
-        {/* GameFi — Gamification Engine */}
+        {/* GameFi — Gamification Engine (auth-protected) */}
         <Route path="/gamefi" element={
-          <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem' }}>Đang tải GameFi...</div>}>
-            <GameFi />
+          <React.Suspense fallback={
+            <GameFiLoadingWrapper>
+              <GameFiLoadingCard>
+                <GameFiLoadingEmoji>🎮</GameFiLoadingEmoji>
+                <GameFiLoadingTitle>GameFi</GameFiLoadingTitle>
+                <GameFiLoadingSubtitle>Đang khám phá Thế Giới Nội Tâm...</GameFiLoadingSubtitle>
+                <GameFiSpinner />
+                <GameFiLoadingDots>
+                  <span /><span /><span />
+                </GameFiLoadingDots>
+              </GameFiLoadingCard>
+            </GameFiLoadingWrapper>
+          }>
+            <RequireAuth>
+              <GameFi />
+            </RequireAuth>
           </React.Suspense>
         } />
 

@@ -713,15 +713,15 @@ assert(coreLoop.length === 6, '6 steps in core loop');
 assert(coreLoop[0].includes('quest'), 'First step mentions quest');
 
 // Weekly challenges
-initWeeklyChallenges('2025-03-03');
-const weeklies = getAllWeeklyChallenges();
+initWeeklyChallenges(hero.id, '2025-03-03');
+const weeklies = getAllWeeklyChallenges(hero.id);
 assert(weeklies.length === 5, '5 weekly challenges');
 assert(weeklies[0].xpReward >= 40, 'Weekly gives \u226540 XP');
 assert(!weeklies[0].completed, 'Weekly not completed at start');
 
-const completedWeek = completeWeeklyChallenge(weeklies[0].id);
+const completedWeek = completeWeeklyChallenge(hero.id, weeklies[0].id);
 assert(completedWeek!.completed, 'Weekly marked completed');
-assert(completeWeeklyChallenge(weeklies[0].id)!.completed, 'Double complete stays completed');
+assert(completeWeeklyChallenge(hero.id, weeklies[0].id)!.completed, 'Double complete stays completed');
 
 // Seasonal goals
 initSeasonalGoals();

@@ -8,6 +8,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { FullGameData, AdaptiveQuestData, QuestDbData, DailyQuest, RewardData } from './types';
 import { API_URL, QUEST_ROUTES } from './config';
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_KEY = 'gamefi_cache_v1';
+
 interface GameFiCtx {
   data: FullGameData | null;
   loading: boolean;
@@ -213,6 +216,30 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, []);
 
+  // ── localStorage cache helpers ─────────────────────────────────────────────
+
+  const readCache = useCallback((): { data: FullGameData | null; stale: boolean } => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return { data: null, stale: false };
+      const cached = JSON.parse(raw) as { userId: string; data: FullGameData; ts: number };
+      return {
+        data: cached.userId === userId ? cached.data : null,
+        stale: Date.now() - cached.ts > CACHE_TTL_MS,
+      };
+    } catch {
+      return { data: null, stale: false };
+    }
+  }, [userId]);
+
+  const writeCache = useCallback((data: FullGameData) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, data, ts: Date.now() }));
+    } catch { /* quota exceeded — ignore */ }
+  }, [userId]);
+
+  // ── fetchAll with cache-first strategy ─────────────────────────────────────
+
   const fetchAll = useCallback(async () => {
     if (fetchAllInFlightRef.current) {
       return fetchAllInFlightRef.current;
@@ -223,8 +250,16 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchAllAbortRef.current = controller;
 
     const run = async () => {
-      setLoading(true);
-      setError(null);
+      // Step 1: Show cached data immediately (no loading flash for warm cache)
+      const { data: cached, stale } = readCache();
+      if (cached && !stale) {
+        setData(cached);
+        setLoading(false);
+        setError(null);
+      }
+
+      // Step 2: Fetch fresh data from backend in background
+      setLoading(cached === null);
 
       const maxAttempts = 2;
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -248,6 +283,8 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           }
 
           setData(json.data);
+          writeCache(json.data);
+          setError(null);
           return;
         } catch (err) {
           if (err instanceof DOMException && err.name === 'AbortError') {
@@ -267,7 +304,10 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
           }
 
-          setError(formatApiError(err, 'Không thể tải dữ liệu'));
+          // Only set error if we had no cached data to fall back on
+          if (!cached) {
+            setError(formatApiError(err, 'Không thể tải dữ liệu'));
+          }
           return;
         }
       }
@@ -283,14 +323,28 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       setLoading(false);
     }
-  }, [userId, authHeaders, classifyApiError, formatApiError, waitWithAbort]);
+  }, [userId, authHeaders, classifyApiError, formatApiError, waitWithAbort, readCache, writeCache]);
 
+  // Cleanup on unmount — abort any in-flight requests
   useEffect(() => {
     return () => {
       fetchAllAbortRef.current?.abort();
       fetchAllInFlightRef.current = null;
     };
   }, []);
+
+  // Re-fetch when user changes (handles async auth load: mount → anonymous → real user)
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll, user?.id]);
+
+  // Invalidate cache when user logs out
+  useEffect(() => {
+    if (!token) {
+      setData(null);
+      try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    }
+  }, [token]);
 
   const apiPost = async (path: string, body: Record<string, unknown>) => {
     try {

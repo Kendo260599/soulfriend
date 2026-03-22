@@ -15,6 +15,7 @@ import { encryptTestResult } from '../middleware/encryption';
 import { checkConsent } from '../middleware/consentEnforcement';
 import { dassTestBridge } from '../services/pge/dassTestBridge';
 import { therapeuticContextService } from '../services/therapeuticContextService';
+import { pddCollectionService } from '../services/pge/pddCollectionService';
 import logger from '../utils/logger';
 
 import mongoose from 'mongoose';
@@ -70,6 +71,18 @@ router.post(
         completedAt: new Date(),
       });
 
+      // Fire-and-forget research_events logging (works for both mock and real paths)
+      if (userId) {
+        pddCollectionService.logSurveyEvent({
+          userId,
+          sessionId: `session_test_${testResult.id || Date.now()}`,
+          testType,
+          totalScore,
+          subscaleScores: evaluation.subscaleScores,
+          severity: evaluation.severity,
+        }).catch((e) => logger.warn('pddCollectionService.logSurveyEvent failed:', e));
+      }
+
       return res.status(201).json({
         success: true,
         message: 'Đã lưu kết quả test thành công (Mock mode)',
@@ -102,6 +115,17 @@ router.post(
       therapeuticContextService.invalidateCache(userId);
       logger.info('Test submitted — caches invalidated for PGE & therapeutic context', { userId, testType });
     }
+
+    // Log to PDD research_events collection (survey_event type)
+    // Fire-and-forget: do not block the response
+    pddCollectionService.logSurveyEvent({
+      userId: userId!,
+      sessionId: `session_test_${testResult._id || Date.now()}`,
+      testType,
+      totalScore,
+      subscaleScores: evaluation.subscaleScores,
+      severity: evaluation.severity,
+    }).catch((e) => logger.warn('pddCollectionService.logSurveyEvent failed:', e));
 
     res.status(201).json({
       success: true,

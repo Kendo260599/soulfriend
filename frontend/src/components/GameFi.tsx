@@ -29,6 +29,23 @@ import JournalInputModal from './gamefi/JournalInputModal';
 
 const PlayerDashboard = lazy(() => import('./PlayerDashboard'));
 
+// ErrorBoundary catches rejected lazy chunks and renders a fallback instead of crashing
+class PlayerDashboardErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state: { hasError: boolean } = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <LoadingContainer>
+          <div style={{ fontSize: '2rem' }}>⚠️</div>
+          <p>Không tải được Profile. Vui lòng F5 để thử lại.</p>
+        </LoadingContainer>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const ONBOARDING_KEY = 'gamefi_onboarding_done';
 const FIRST_FOCUS_START_KEY = 'gamefi_first_focus_started_at';
 const FIRST_FOCUS_WINDOW_MS = 10 * 60 * 1000;
@@ -50,8 +67,7 @@ const GameFiInner: React.FC = () => {
     return `Hôm nay bạn tăng mạnh ${growthName} (+${topValue}). Đây là tiến bộ thật, không chỉ là điểm số.`;
   };
 
-  // I4: detect new player for onboarding
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  // fetchAll được gọi trong GameFiProvider (theo user?.id) — tránh gọi trùng ở đây
   useEffect(() => {
     if (data && data.profile.character.level === 1 && data.profile.character.completedQuestIds.length === 0) {
       if (!localStorage.getItem(ONBOARDING_KEY)) setShowOnboarding(true);
@@ -263,7 +279,13 @@ const GameFiInner: React.FC = () => {
         </Tab>
       </TabBar>
 
-      {tab === 'profile' && <Suspense fallback={<LoadingContainer><div style={{fontSize:'2rem'}}>🌸</div>Đang tải...</LoadingContainer>}><PlayerDashboard /></Suspense>}
+      {tab === 'profile' && (
+        <PlayerDashboardErrorBoundary>
+          <Suspense fallback={<LoadingContainer><div style={{fontSize:'2rem'}}>🌸</div>Đang tải...</LoadingContainer>}>
+            <PlayerDashboard />
+          </Suspense>
+        </PlayerDashboardErrorBoundary>
+      )}
       {tab === 'dashboard' && <DashboardTab />}
       {tab === 'world' && <WorldMapTab />}
       {tab === 'skills' && <SkillTreeTab />}

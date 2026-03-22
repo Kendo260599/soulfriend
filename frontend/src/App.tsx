@@ -26,18 +26,52 @@ function TestFlow() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const { user, token } = useAuth();
 
-  // Auto-complete quest_dass when DASS test is finished
-  const completeDassQuest = async () => {
+  /** Auto-complete quest_dass when DASS test is finished (requires đăng nhập). */
+  const completeDassQuest = async (): Promise<void> => {
     const userId = user?.id;
-    if (!userId || !token) return;
+    if (!userId || !token) {
+      console.warn('[GameFi] Bỏ qua auto-complete quest DASS: chưa đăng nhập hoặc thiếu token.');
+      return;
+    }
     const today = new Date().toISOString().slice(0, 10);
+    const questId = `quest_dass_${today}`;
     try {
-      await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
+      const res = await fetch(`${API_URL}/api/v2/gamefi/quest/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ userId, questId: `quest_dass_${today}`, autoEvent: true }),
+        body: JSON.stringify({ userId, questId, autoEvent: true }),
       });
-    } catch { /* best-effort */ }
+      let body: { success?: boolean; error?: string; message?: string } = {};
+      try {
+        body = await res.json();
+      } catch {
+        /* ignore */
+      }
+      // 409 = quest đã hoàn thành trước đó — vẫn refetch để UI đồng bộ
+      if (res.status === 409) {
+        try {
+          localStorage.removeItem('gamefi_cache_v1');
+        } catch {
+          /* ignore */
+        }
+        window.dispatchEvent(new CustomEvent('gamefi:invalidate-cache'));
+        return;
+      }
+
+      if (!res.ok || body.success === false) {
+        console.warn('[GameFi] Không thể auto-complete quest DASS:', body.error || body.message || res.status);
+        return;
+      }
+
+      try {
+        localStorage.removeItem('gamefi_cache_v1');
+      } catch {
+        /* ignore */
+      }
+      window.dispatchEvent(new CustomEvent('gamefi:invalidate-cache'));
+    } catch (e) {
+      console.warn('[GameFi] Lỗi mạng khi auto-complete quest DASS:', e);
+    }
   };
 
   const handleConsentGiven = (id: string) => {
@@ -58,7 +92,17 @@ function TestFlow() {
             onComplete={(results) => {
               setTestResults(results);
               setCurrentStep(AppStep.RESULTS);
-              completeDassQuest();
+              // Lưu vào localStorage để realDataCollector nhặt được — fix research data pipeline
+              try {
+                const stored: TestResult[] = JSON.parse(localStorage.getItem('testResults') || '[]');
+                const updated: TestResult[] = [...stored, ...results];
+                localStorage.setItem('testResults', JSON.stringify(updated));
+                // Bắn sự kiện để realDataCollector xử lý ngay (thay vì đợi 2s polling)
+                window.dispatchEvent(new CustomEvent('test-completed', { detail: results }));
+              } catch {
+                /* quota exceeded — ignore */
+              }
+              void completeDassQuest().catch((e) => console.warn('[GameFi] completeDassQuest:', e));
             }}
             onBack={() => setCurrentStep(AppStep.CONSENT)}
           />

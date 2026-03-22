@@ -4,6 +4,7 @@
  */
 
 import { realResearchService } from './realResearchService';
+import type { TestResult } from '../types';
 
 class RealDataCollector {
   private isInitialized = false;
@@ -17,9 +18,16 @@ class RealDataCollector {
    */
   private initialize(): void {
     if (this.isInitialized) return;
-    
-    // Lắng nghe sự kiện test hoàn thành
+
+    // Lắng nghe sự kiện từ localStorage
     this.setupTestCompletionListener();
+    // Lắng nghe sự kiện test-completed từ TestFlow (xử lý ngay, không cần đợi polling)
+    window.addEventListener('test-completed', ((e: Event) => {
+      const customEvent = e as CustomEvent<TestResult[]>;
+      if (customEvent.detail) {
+        this.processNewTestData();
+      }
+    }) as EventListener);
     this.isInitialized = true;
     console.log('Real Data Collector initialized');
   }

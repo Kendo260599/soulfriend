@@ -157,11 +157,14 @@ class RealResearchService {
     }
 
     // Chuyển đổi dữ liệu thật thành format nghiên cứu
-    this.researchData = realTestResults.map((testData, index) => {
-      const participantId = `P${String(index + 1).padStart(4, '0')}`;
-      const timestamp = new Date(testData.timestamp || Date.now());
-      
-      return {
+    // Chỉ thêm những record chưa có trong researchData (tránh duplicate khi realDataCollector đã xử lý trước)
+    const existingIds = new Set(this.researchData.map(r => r.id));
+    const newRecords = realTestResults
+      .filter((testData) => !existingIds.has(`research_${testData.id || testData.testId || ''}`))
+      .map((testData, index) => {
+        const participantId = `P${String(this.researchData.length + index + 1).padStart(4, '0')}`;
+        const timestamp = new Date(testData.timestamp || Date.now());
+        return {
         id: `research_${index}`,
         participantId,
         timestamp,
@@ -190,6 +193,7 @@ class RealResearchService {
       };
     });
 
+    this.researchData.push(...newRecords);
     console.log(`Loaded ${this.researchData.length} real test records`);
   }
 

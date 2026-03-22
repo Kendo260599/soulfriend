@@ -333,6 +333,15 @@ export const GameFiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
+  // Sau khi hoàn thành DASS-21 (TestFlow) — xóa cache và refetch ngay
+  useEffect(() => {
+    const onInvalidate = () => {
+      void fetchAll();
+    };
+    window.addEventListener('gamefi:invalidate-cache', onInvalidate);
+    return () => window.removeEventListener('gamefi:invalidate-cache', onInvalidate);
+  }, [fetchAll]);
+
   // Re-fetch when user changes (handles async auth load: mount → anonymous → real user)
   useEffect(() => {
     fetchAll();

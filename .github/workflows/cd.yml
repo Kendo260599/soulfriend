@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   deploy-render:
     name: Deploy to Render
@@ -15,9 +18,7 @@ jobs:
       - name: Trigger Render deployment
         run: |
           echo "Triggering Render deployment..."
-          RESPONSE=$(curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"clearCache": false}')
-          echo "Response: $RESPONSE"
-          echo "Render deployment triggered"
+            --data-raw '{"clearCache":false}'

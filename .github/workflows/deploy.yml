@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Deploy to Render
       run: |
         echo "🚀 Triggering Render deployment..."
-        curl -X POST "https://api.render.com/v1/services/srv-8jGdu2vni/deploys" \
+        curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
           -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
           -H "Content-Type: application/json" \
           -d '{"clearCache": "clear"}'
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Deploy to Vercel
       run: |
         echo "🚀 Triggering Vercel deployment..."
@@ -48,16 +48,16 @@ jobs:
     steps:
     - name: Wait for deployment
       run: sleep 300
-      
+
     - name: Test Backend
       run: |
         echo "🧪 Testing backend..."
         curl -f https://soulfriend-api.onrender.com/api/health || exit 1
         curl -f https://soulfriend-api.onrender.com/api/conversation-learning/insights || exit 1
         echo "✅ Backend tests passed"
-        
+
     - name: Test Frontend
       run: |
         echo "🧪 Testing frontend..."
-        curl -f https://frontend-8jgdu2vni-kendo260599s-projects.vercel.app || exit 1
+        curl -f https://soulfriend-kendo260599s-projects.vercel.app || exit 1
         echo "✅ Frontend tests passed"

@@ -16,16 +16,16 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # ==============================================================================
-  # Build and Push Docker Image
-  # ==============================================================================
+  # ============================================================================
+  # Build and Push Docker Image (runs on every push to main)
+  # ============================================================================
   build-and-push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,38 +55,41 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ==============================================================================
-  # Deploy to Production (Example - Customize for your platform)
-  # ==============================================================================
+  # ============================================================================
+  # Deploy to Production (runs on every push to main, not just tags)
+  # ============================================================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [build-and-push]
-    if: startsWith(github.ref, 'refs/tags/v')
+    # FIXED: removed tag-only condition — deploys on every push to main
     environment:
       name: production
       url: https://api.soulfriend.vn
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Example: Deploy to Render
+      # Deploy to Render — use RENDER_API_KEY + RENDER_SERVICE_ID secrets
       - name: Deploy to Render
-        if: ${{ secrets.RENDER_API_KEY != '' }}
+        if: ${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
         run: |
-          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+          echo "🚀 Triggering Render deployment..."
+          RESPONSE=$(curl -s -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"clearCache": false}'
+            -d '{"clearCache": false}')
+          echo "Response: $RESPONSE"
+          echo "✅ Render deployment triggered"
 
       # Example: Deploy to Railway
       - name: Deploy to Railway
@@ -96,13 +99,6 @@ jobs:
           railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      # Example: Deploy to DigitalOcean
-      - name: Deploy to DigitalOcean
-        if: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       # Example: Deploy via SSH
       - name: Deploy via SSH
@@ -119,9 +115,9 @@ jobs:
             docker-compose up -d
             docker-compose exec backend npm run db:migrate
 
-  # ==============================================================================
-  # Create GitHub Release
-  # ==============================================================================
+  # ============================================================================
+  # Create GitHub Release (ONLY runs when a tag is pushed)
+  # ============================================================================
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
@@ -129,7 +125,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -158,17 +154,17 @@ jobs:
           release_name: Release ${{ github.ref_name }}
           body: |
             ## What's Changed
-            
+
             ${{ steps.changelog.outputs.changelog }}
-            
+
             ## Docker Image
-            
+
             ```bash
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
             ```
-            
+
             ## Deployment
-            
+
             Deployed to production: https://api.soulfriend.vn
           draft: false
           prerelease: false

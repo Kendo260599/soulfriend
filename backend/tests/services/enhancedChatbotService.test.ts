@@ -94,8 +94,8 @@ describe('EnhancedChatbotService with Moderation', () => {
             expect(criticalInterventionService.createCriticalAlert).toHaveBeenCalled();
             const alertCall = criticalInterventionService.createCriticalAlert.mock.calls[0];
             expect(alertCall[2].riskLevel).toBe('CRITICAL');
-            expect(alertCall[2].metadata.assessment).toBeDefined();
-            expect(alertCall[2].metadata.assessment.level).toBe('CRITICAL');
+            expect(alertCall[2].metadata.moderation).toBeDefined();
+            expect(alertCall[2].metadata.moderation.riskLevel).toBe('critical');
         });
 
         it('should include moderation metadata in HITL alert', async () => {
@@ -106,12 +106,11 @@ describe('EnhancedChatbotService with Moderation', () => {
             await service.processMessage('Tôi muốn chết', sessionId, userId);
 
             const alertCall = criticalInterventionService.createCriticalAlert.mock.calls[0];
-            const metadata = alertCall[2].metadata.assessment;
+            const moderation = alertCall[2].metadata.moderation;
 
-            expect(metadata).toBeDefined();
-            expect(metadata.level).toBe('CRITICAL');
-            expect(metadata.score).toBeGreaterThan(0);
-            expect(metadata.signals).toBeDefined();
+            expect(moderation).toBeDefined();
+            expect(moderation.signalCount).toBeGreaterThan(0);
+            expect(moderation.signals).toBeDefined();
         });
     });
 
